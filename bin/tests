@@ -1,0 +1,7 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+compile_status="${1:-No status}"
+echo "Compilation status: $compile_status"
+./node_modules/karma/bin/karma start --single-run
