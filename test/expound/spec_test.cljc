@@ -572,4 +572,32 @@ should satisfy
 Detected 2 errors"
          (e.s/pretty-explain-str :cat-wrapped-in-or-spec/kv-or-string {"foo" "hi"}))))
 
-;; TODO - need to add unit tests for map-of specs!!!
+(s/def :map-of-spec/name string?)
+(s/def :map-of-spec/age pos-int?)
+(s/def :map-of-spec/name->age (s/map-of :map-of-spec/name :map-of-spec/age))
+(deftest map-of-spec
+  (is (= "-- Spec failed --------------------
+
+  {\"Sally\" \"30\"}
+           ^^^^
+
+should satisfy
+
+  pos-int?
+
+-- Relevant specs -------
+
+:map-of-spec/age:
+  cljs.core/pos-int?
+:map-of-spec/name->age:
+  (cljs.spec.alpha/map-of :map-of-spec/name :map-of-spec/age)
+
+-------------------------
+Detected 1 error"
+         (e.s/pretty-explain-str :map-of-spec/name->age {"Sally" "30"})))
+  ;; FIXME - this won't work due to an issue with how 'in' paths work
+  ;; when they key itself is invalid. See
+  ;; https://dev.clojure.org/jira/browse/CLJ-2080
+  ;; for context (but not a full fix)
+  #_(is (= "foobar"
+           (er/pretty-explain-str :map-of-spec/name->age {:sally 30}))))
