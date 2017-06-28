@@ -11,14 +11,12 @@
     (is (= "\"Fred\"\n^^^^^^"
            (e.s/highlighted-form
             "Fred"
-            []
-            "Fred"))))
+            []))))
   (testing "value in vector"
     (is (= "[... :b ...]\n     ^^"
            (e.s/highlighted-form
             [:a :b :c]
-            [1]
-            :b))))
+            [1]))))
   (testing "long, composite values are pretty-printed"
     (is (= "{:letters {:a \"aaaaaaaa\",
            :b \"bbbbbbbb\",
@@ -33,13 +31,7 @@
               :c "cccccccd"
               :d "dddddddd"
               :e "eeeeeeee"}}
-            [:letters]
-            ;; TODO - revert the expected-value change!!
-            {:a "aaaaaaaa"
-             :b "bbbbbbbb"
-             :c "cccccccd"
-             :d "dddddddd"
-             :e "eeeeeeee"})))))
+            [:letters])))))
 
 (s/def :simple-type-based-spec/str string?)
 

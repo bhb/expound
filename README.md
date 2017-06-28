@@ -16,6 +16,7 @@ cider-connect
 
 ## Running CLJS tests
 
+`lein with-profile test-web cljsbuild auto test`
 `ls ./resources/public/test-web/test.js | entr -s 'sleep 1; bin/tests'`
 
 

@@ -136,7 +136,7 @@
 (defn highlighted-form
   "Given a form and a path into that form, returns a pretty printed
    string that highlights the value at the path."
-  [form path expected-val]
+  [form path]
   (let [value-at-path (value-in form path)
         regex (re-pattern (str "(.*)" ::relevant ".*"))
         s (binding [*print-namespace-maps* false] (pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form form path))))
@@ -151,11 +151,11 @@
   "Given a form and a path into that form, returns a string
    that helps the user understand where that path is located
    in the form"
-  [form path expected-val]
+  [form path]
   (let [val (value-in form path)]
     (if (== form val)
       (pr-str val)
-      (highlighted-form form path expected-val))))
+      (highlighted-form form path))))
 
 (defn spec-str [spec]
   (if (keyword? spec)
@@ -194,12 +194,12 @@ should have additional elements. The next element is named `%s` and satisfies
    (pr-str (first (:path problem)))
    (indent (:pred problem))))
 
-(defn extra-input [val path expected-val]
+(defn extra-input [val path]
   (gstring/format
    "Value has extra input
 
 %s"
-   (indent (value-in-context val path expected-val))))
+   (indent (value-in-context val path))))
 
 (defn missing-key [form]
   (let [[_contains _arg key-keyword] form]
@@ -320,10 +320,11 @@ should be one of: %s
      (header-label "Syntax error")
      (case (:reason problem)
        "Insufficient input" (insufficient-input val path problem)
-       "Extra input" (extra-input val path (:val problem)))
+       "Extra input" (extra-input val path))
      (relevant-specs problems))))
 
 (defmethod problem-group-str :problem/unknown [_type val path problems]
+  ;; TODO - remove double assert
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " (map :val problems)))
   (gstring/format
@@ -337,7 +338,7 @@ should satisfy
 
 %s"
    (header-label "Spec failed")
-   (indent (value-in-context val path (:val (first problems))))
+   (indent (value-in-context val path))
    (preds (map :pred problems))
    (relevant-specs problems)))
 
