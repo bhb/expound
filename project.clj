@@ -14,7 +14,7 @@
   :cljsbuild {:builds
               [{:id "test"
                 :source-paths ["src" "test"]
-                :notify-command ["./bin/tests"]
+                ;;:notify-command ["./bin/tests"]
                 :figwheel true
                 :compiler { ;; If you change output-to or output-dir,
                            ;; you must update karma.conf.js to match
@@ -30,7 +30,7 @@
 
              ;; :server-ip "127.0.0.1"
 
-             :css-dirs ["resources/public/css"] ;; watch and update CSS
+             ;; :css-dirs ["resources/public/css"] ;; watch and update CSS
 
              ;; Start an nREPL server into the running figwheel process
              :nrepl-port 7800

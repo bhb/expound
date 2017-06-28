@@ -14,6 +14,10 @@ cider-connect
 (start-figwheel!)
 (cljs-repl)
 
+## Running CLJS tests
+
+`ls ./resources/public/test-web/test.js | entr -s 'sleep 1; bin/tests'`
+
 
 ## License
 

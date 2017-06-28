@@ -46,11 +46,16 @@
                         (map #(str (apply str (repeat rest-lines-indent " ")) %) lines))))))
 
 (defn prefix-path?
-  "True iff partial-path is a prefix of full-path"
+  "True iff partial-path is a prefix of full-path."
   [partial-path full-path]
   (and (< (count partial-path) (count full-path))
        (= partial-path
           (subvec full-path 0 (count partial-path)))))
+
+(defrecord KeyPathSegment [key])
+
+(defn kps? [x]
+  (instance? KeyPathSegment x))
 
 (def mapv-indexed (comp vec map-indexed))
 
@@ -61,7 +66,7 @@
      (vector? form) (outer path (mapv-indexed (fn [idx x] (inner (conj path idx) x)) form))
      (record? form) (outer path form)
      (map? form)    (outer path (reduce-kv (fn [m k v]
-                                             (assoc m k (inner (conj path k) v)))
+                                             (assoc m (inner (conj path (->KeyPathSegment k)) k) (inner (conj path k) v)))
                                            {}
                                            form))
      :else          (outer path form))))
@@ -70,6 +75,10 @@
   ([f form] (postwalk-with-path f [] form))
   ([f path form]
    (walk-with-path (partial postwalk-with-path f) f path form)))
+
+(defn kps-path? [x]
+  (and (vector? x)
+       (kps? (last x))))
 
 (defn summary-form
   "Given a form and a path to highlight, returns a data structure that marks
@@ -87,6 +96,9 @@
        (prefix-path? path highlighted-path)
        x
 
+       (kps-path? path)
+       x
+
        :else
        ::irrelevant))
    form))
@@ -95,43 +107,6 @@
   (let [max-width (apply max (map #(count (str %)) (string/split-lines replacement)))]
     (indent (count (str prefix))
             (apply str (repeat max-width "^")))))
-
-;; TODO - delete
-(defn get-or-nth
-  ([c x]
-   (get-or-nth c x nil))
-  ([c x not-found]
-   (if (or (zero? x) (pos-int? x))
-     (cond
-       (map? c)
-       (nth (seq c) x not-found)
-       
-       (associative? c)
-       (get c x not-found)
-       
-       :else
-       (nth c x not-found))
-     
-     (get c x not-found))))
-
-(defn get-or-nth-in
-  "Returns the value in a nested sequential structure,
-  where ks is a sequence of keys or positions. Returns nil if the key
-  is not present, or the not-found value if supplied."  
-  {:added "1.2"
-   :static true}
-  ([m ks]
-     (reduce get-or-nth m ks))
-  ([m ks not-found]
-     (loop [sentinel lookup-sentinel
-            m m
-            ks (seq ks)]
-       (if-not (nil? ks)
-         (let [m (get-or-nth m (first ks) sentinel)]
-           (if (identical? sentinel m)
-             not-found
-             (recur sentinel m (next ks))))
-         m))))
 
 (defn paths-for-val [form v]
   (let [paths (atom [])]
@@ -143,28 +118,28 @@
      form)
     @paths))
 
-;; Works around some issues in spec where the 'in'
-;; value does not actually get us the value.
-(defn adjust-in-path [form problem]
-  (if (contains? #{"Insufficient input" "Extra input"} (:reason problem))
-    (assoc problem :in1 (:in problem))
-    (let [{:keys [in val]} problem
-          found-val (get-in form in)]
-      (if (= found-val val)
-        (assoc problem :in1 in)
-        (let [matching-paths (paths-for-val form val)]
-          (case (count matching-paths)
-            0 (throw (js/Error. (str "Cannot find " (pr-str val) " in " (pr-str form))))
-            1 (assoc problem :in1 (first matching-paths))
-            (throw (js/Error. (str "'in' value was incorrect and found multiple copies of " (pr-str val) " in " (pr-str form))))))))))
+(defn value-in [form in]
+  (let [[k & rst] in]
+    (cond
+      (empty? in)
+      form
+
+      (and (map? form) (kps? k))
+      (:key k)
+
+      (associative? form)
+      (recur (get form k) rst)
+
+      (int? k)
+      (recur (nth form k) rst))))
 
 (defn highlighted-form
   "Given a form and a path into that form, returns a pretty printed
    string that highlights the value at the path."
   [form path expected-val]
-  (let [value-at-path (get-in form path)
+  (let [value-at-path (value-in form path)
         regex (re-pattern (str "(.*)" ::relevant ".*"))
-        s (pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form form path)))
+        s (binding [*print-namespace-maps* false] (pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form form path))))
         [line prefix & _more] (re-find regex s)
         highlighted-line (-> line
                              (string/replace (str ::relevant) (indent 0 (count prefix) (pprint-str value-at-path)))
@@ -177,7 +152,7 @@
    that helps the user understand where that path is located
    in the form"
   [form path expected-val]
-  (let [val (get-in form path)]
+  (let [val (value-in form path)]
     (if (== form val)
       (pr-str val)
       (highlighted-form form path expected-val))))
@@ -275,21 +250,22 @@ should have additional elements. The next element is named `%s` and satisfies
     (gstring/format
      "Cannot find spec for
 
-%s
+ %s
 
-Spec multimethod:      `%s`
-Dispatch function:     `%s`
-Dispatch value:        `%s`
-"
+ Spec multimethod:      `%s`
+ Dispatch function:     `%s`
+ Dispatch value:        `%s`
+ "
      (indent (value-in-context val path (:val problem)))
      (pr-str mm)
      (pr-str retag)
-     (pr-str (if retag (retag (get-in val path)) nil)))))
+     (pr-str (if retag (retag (value-in val path)) nil)))))
 
 (defmulti problem-group-str (fn [type _val _path _problems] type))
 
 (defmethod problem-group-str :problem/missing-key [_type val path problems]
-    (assert (apply = (map :val problems)) "All values should be the same")
+  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
+  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " (map :val problems)))
   (gstring/format
    "%s
 
@@ -304,7 +280,8 @@ should contain keys: %s
    (relevant-specs problems)))
 
 (defmethod problem-group-str :problem/not-in-set [_type val path problems]
-  (assert (apply = (map :val problems)) "All values should be the same")
+  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
+  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " (map :val problems)))
   (s/assert ::singleton problems)
   (gstring/format
    "%s
@@ -347,7 +324,8 @@ should be one of: %s
      (relevant-specs problems))))
 
 (defmethod problem-group-str :problem/unknown [_type val path problems]
-  (assert (apply = (map :val problems)) "All values should be the same")
+  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
+  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " (map :val problems)))
   (gstring/format
    "%s
 
@@ -397,20 +375,45 @@ should satisfy
   [problems]
   (group-by (juxt :in1 problem-type) problems))
 
+(defn in-with-kps [form in in1]
+  (let [[k & rst] in
+        [idx & rst2] rst]
+    (cond
+      (empty? in)
+      in1
+
+      ;; detect a `:in` path that points at a key in a map-of spec
+      (and (map? form) (zero? idx) (empty? rst2) (not (sequential? (get form k))))
+      (recur k rst2 (conj in1 (->KeyPathSegment k)))
+
+      ;; detect a `:in` path that points at a value in a map-of spec
+      (and (map? form) (= 1 idx) (empty? rst2) (not (sequential? (get form k))))
+      (recur (get form k) rst2 (conj in1 k))
+
+      (associative? form)
+      (recur (get form k) rst (conj in1 k))
+
+      (int? k)
+      (recur (nth form k) rst (conj in1 k)))))
+
+(defn adjust-in [form problem]
+  (assoc problem :in1 (in-with-kps form (:in problem) [])))
+
 ;;;;;; public ;;;;;;
 
 (defn pretty-explain-str
   "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
-  [spec val]
-  (let [problems (::s/problems (s/explain-data spec val))
+  [spec form]
+  (let [problems (::s/problems (s/explain-data spec form))
         _ (doseq [problem problems]
             (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
-        leaf-problems (leaf-problems (map (partial adjust-in-path val) (::s/problems (s/explain-data spec val))))
+        leaf-problems (leaf-problems (map (partial adjust-in form) (::s/problems (s/explain-data spec form))))
+        _ (assert (every? :in1 leaf-problems) leaf-problems)
         grouped-problems (sort (path+problem-type->problems leaf-problems))]
     (if (empty? problems)
       "Success!\n"
       (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
-                                               (problem-group-str type val in1 problems)))]
+                                               (problem-group-str type form in1 problems)))]
         (no-trailing-whitespace
          (gstring/format
           "%s

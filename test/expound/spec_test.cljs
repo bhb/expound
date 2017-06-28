@@ -36,10 +36,10 @@
             [:letters]
             ;; TODO - revert the expected-value change!!
             {:a "aaaaaaaa"
-              :b "bbbbbbbb"
-              :c "cccccccd"
-              :d "dddddddd"
-              :e "eeeeeeee"})))))
+             :b "bbbbbbbb"
+             :c "cccccccd"
+             :d "dddddddd"
+             :e "eeeeeeee"})))))
 
 (s/def :simple-type-based-spec/str string?)
 
@@ -415,11 +415,11 @@ Detected 1 error"
 
 Cannot find spec for
 
-  {}
+   {}
 
-Spec multimethod:      `expound.spec-test/el-type`
-Dispatch function:     `:multi-spec/el-type`
-Dispatch value:        `nil`
+ Spec multimethod:      `expound.spec-test/el-type`
+ Dispatch function:     `:multi-spec/el-type`
+ Dispatch value:        `nil`
 
 
 -- Relevant specs -------
@@ -438,11 +438,11 @@ Detected 1 error"
 
 Cannot find spec for
 
-  {:multi-spec/el-type :image}
+   {:multi-spec/el-type :image}
 
-Spec multimethod:      `expound.spec-test/el-type`
-Dispatch function:     `:multi-spec/el-type`
-Dispatch value:        `:image`
+ Spec multimethod:      `expound.spec-test/el-type`
+ Dispatch function:     `:multi-spec/el-type`
+ Dispatch value:        `:image`
 
 
 -- Relevant specs -------
@@ -595,9 +595,22 @@ should satisfy
 -------------------------
 Detected 1 error"
          (e.s/pretty-explain-str :map-of-spec/name->age {"Sally" "30"})))
-  ;; FIXME - this won't work due to an issue with how 'in' paths work
-  ;; when they key itself is invalid. See
-  ;; https://dev.clojure.org/jira/browse/CLJ-2080
-  ;; for context (but not a full fix)
-  #_(is (= "foobar"
-           (er/pretty-explain-str :map-of-spec/name->age {:sally 30}))))
+  (is (= "-- Spec failed --------------------
+
+  {:sally ...}
+   ^^^^^^
+
+should satisfy
+
+  string?
+
+-- Relevant specs -------
+
+:map-of-spec/name:
+  cljs.core/string?
+:map-of-spec/name->age:
+  (cljs.spec.alpha/map-of :map-of-spec/name :map-of-spec/age)
+
+-------------------------
+Detected 1 error"
+         (e.s/pretty-explain-str :map-of-spec/name->age {:sally 30}))))

@@ -12,3 +12,5 @@ pom.xml.asc
 figwheel_server.log
 node_modules/
 resources/
+.idea
+expound.iml
