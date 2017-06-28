@@ -265,7 +265,6 @@ should have additional elements. The next element is named `%s` and satisfies
 
 (defmethod problem-group-str :problem/missing-key [_type val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
-  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " (map :val problems)))
   (gstring/format
    "%s
 
@@ -281,7 +280,6 @@ should contain keys: %s
 
 (defmethod problem-group-str :problem/not-in-set [_type val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
-  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " (map :val problems)))
   (s/assert ::singleton problems)
   (gstring/format
    "%s
@@ -324,9 +322,7 @@ should be one of: %s
      (relevant-specs problems))))
 
 (defmethod problem-group-str :problem/unknown [_type val path problems]
-  ;; TODO - remove double assert
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
-  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " (map :val problems)))
   (gstring/format
    "%s
 
