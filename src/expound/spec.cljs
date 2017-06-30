@@ -290,7 +290,7 @@ should be one of: %s
 
 %s"
    (header-label "Spec failed")
-   (indent (value-in-context val path (:val (first problems))))
+   (indent (value-in-context val path))
    (string/join "," (map #(str "`" % "`") (:pred (first problems))))
    (relevant-specs problems)))
 
