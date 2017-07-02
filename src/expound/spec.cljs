@@ -71,6 +71,7 @@
    value to 'inner' and 'outer' functions"
   ([inner outer path form]
    (cond
+     (list? form)   (outer path (apply list (map-indexed (fn [idx x] (inner (conj path idx) x)) form)))
      (vector? form) (outer path (mapv-indexed (fn [idx x] (inner (conj path idx) x)) form))
      (record? form) (outer path form)
      (map? form)    (outer path (reduce-kv (fn [m k v]
@@ -120,17 +121,9 @@
     (indent (count (str prefix))
             (apply str (repeat max-width "^")))))
 
-(defn paths-for-val [form v]
-  (let [paths (atom [])]
-    (postwalk-with-path
-     (fn [path x]
-       (when (= x v)
-         (swap! paths conj path))
-       x)
-     form)
-    @paths))
-
-(defn value-in [form in]
+(defn value-in
+  "Similar to get-in, but works with paths that reference map keys"
+  [form in]
   (let [[k & rst] in]
     (cond
       (empty? in)
@@ -145,6 +138,10 @@
       (int? k)
       (recur (nth form k) rst))))
 
+;; TODO - perhaps a more useful API would be an API on 'problems'?
+;; - group problems
+;; - print out data structure given problem
+;; - categorize problem
 (defn highlighted-form
   "Given a form and a path into that form, returns a pretty printed
    string that highlights the value at the path."
