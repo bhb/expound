@@ -1,5 +1,5 @@
 (ns expound.spec
-  "Drop-in replacement for clojure.spec.alpha, with 
+  "Drop-in replacement for clojure.spec.alpha, with
   human-readable `explain` function"
   (:require [clojure.data]
             [cljs.spec.alpha :as s]
@@ -16,17 +16,7 @@
 
 (def header-size 35)
 (def section-size 25)
-
-(defn pprint-str [x]
-  (pprint/write x :stream nil))
-
 (def indent-level 2)
-
-(defn no-trailing-whitespace [s]
-  (->> s
-       string/split-lines
-       (map string/trimr)
-       (string/join "\n")))
 
 (def headers {:problem/missing-key   "Spec failed"
               :problem/not-in-set    "Spec failed"
@@ -34,7 +24,24 @@
               :problem/regex-failure "Syntax error"
               :problem/unknown       "Spec failed"})
 
+(defn pprint-str
+  "Returns the pretty-printed string"
+  [x]
+  (pprint/write x :stream nil))
+
+(defn no-trailing-whitespace
+  "Given an potentially multi-line string, returns that string with all
+  trailing whitespace removed."
+  [s]
+  (->> s
+       string/split-lines
+       (map string/trimr)
+       (string/join "\n")))
+
 (defn indent
+  "Given an potentially multi-line string, returns that string indented by
+   'indent-level' spaces. Optionally, can indent first line and other lines
+   different amounts."
   ([s]
    (indent indent-level s))
   ([indent-level s]
@@ -46,7 +53,7 @@
                         (map #(str (apply str (repeat rest-lines-indent " ")) %) lines))))))
 
 (defn prefix-path?
-  "True iff partial-path is a prefix of full-path."
+  "True if partial-path is a prefix of full-path."
   [partial-path full-path]
   (and (< (count partial-path) (count full-path))
        (= partial-path
@@ -60,7 +67,8 @@
 (def mapv-indexed (comp vec map-indexed))
 
 (defn walk-with-path
-  "Like walk but passes both the path and current value to inner and outer."
+  "Recursively walks data structure. Passes both the path and current
+   value to 'inner' and 'outer' functions"
   ([inner outer path form]
    (cond
      (vector? form) (outer path (mapv-indexed (fn [idx x] (inner (conj path idx) x)) form))
@@ -76,7 +84,9 @@
   ([f path form]
    (walk-with-path (partial postwalk-with-path f) f path form)))
 
-(defn kps-path? [x]
+(defn kps-path?
+  "True if path points to a key"
+  [x]
   (and (vector? x)
        (kps? (last x))))
 
@@ -103,7 +113,9 @@
        ::irrelevant))
    form))
 
-(defn highlight-line [prefix replacement]
+;; TODO - this function is not intuitive.
+(defn highlight-line
+  [prefix replacement]
   (let [max-width (apply max (map #(count (str %)) (string/split-lines replacement)))]
     (indent (count (str prefix))
             (apply str (repeat max-width "^")))))
@@ -190,7 +202,7 @@
 should have additional elements. The next element is named `%s` and satisfies
 
 %s"
-   (indent (value-in-context val path (:val problem)))
+   (indent (value-in-context val path))
    (pr-str (first (:path problem)))
    (indent (:pred problem))))
 
@@ -256,7 +268,7 @@ should have additional elements. The next element is named `%s` and satisfies
  Dispatch function:     `%s`
  Dispatch value:        `%s`
  "
-     (indent (value-in-context val path (:val problem)))
+     (indent (value-in-context val path))
      (pr-str mm)
      (pr-str retag)
      (pr-str (if retag (retag (value-in val path)) nil)))))
@@ -274,7 +286,7 @@ should contain keys: %s
 
 %s"
    (header-label "Spec failed")
-   (indent (value-in-context val path (:val (first problems))))
+   (indent (value-in-context val path))
    (string/join "," (map #(str "`" (missing-key (:pred %)) "`") problems))
    (relevant-specs problems)))
 
@@ -405,6 +417,7 @@ should satisfy
         _ (doseq [problem problems]
             (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
         leaf-problems (leaf-problems (map (partial adjust-in form) (::s/problems (s/explain-data spec form))))
+
         _ (assert (every? :in1 leaf-problems) leaf-problems)
         grouped-problems (sort (path+problem-type->problems leaf-problems))]
     (if (empty? problems)
