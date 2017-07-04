@@ -609,13 +609,6 @@ should satisfy
 Detected 1 error"
          (e.s/pretty-explain-str :map-of-spec/name->age {:sally 30}))))
 
-(s/def :specs/string string?)
-(s/def :specs/vector vector?)
-(s/def :specs/int int?)
-(s/def :specs/boolean boolean?)
-(s/def :specs/keyword keyword?)
-(s/def :specs/map map?)
-
 (s/def :specs.coll-of/into #{[] '() #{}})
 (s/def :specs.coll-of/kind #{vector? list? set?})
 (s/def :specs.coll-of/count pos-int?)
@@ -634,29 +627,41 @@ Detected 1 error"
 (defn apply-coll-of [spec {:keys [into kind count max-count min-count distinct gen-max gen-into gen] :as opts}]
   (s/coll-of spec :into into :kind kind :min-count min-count :max-count max-count :distinct distinct))
 
-(s/def :specs/spec
-  #{:specs/type
-    :specs/set})
+;; TODO - and
+;; TODO - or
+;; TODO - keys
+;; TODO - map-of
 ;; TODO - cat + alt, + ? *
 
-(deftest spec-combinations
+(def simple-spec-gen (gen/one-of
+                      [(gen/elements [vector?
+                                      int?
+                                      boolean?
+                                      keyword?
+                                      map?
+                                      symbol?
+                                      pos-int?
+                                      neg-int?
+                                      zero?])
+                       (gen/set gen/simple-type-printable)]))
+
+(deftest generated-simple-spec
   (checking
-   "explaining a spec failure doesn't throw an error"
+   "simple spec"
    20
-   [base-spec (gen/elements
-               [:specs/vector
-                :specs/int
-                :specs/boolean
-                :specs/keyword
-                :specs/map
-                #{:a :b :c}
-                #{}])
+   [simple-spec simple-spec-gen
+    :let [sp-form (s/form simple-spec)]
+    form gen/any-printable]
+   (e.s/pretty-explain-str simple-spec form)))
+
+(deftest generated-coll-of-specs
+  (checking
+   "coll-of spec"
+   20
+   [simple-spec simple-spec-gen
     coll-of-args (s/gen :specs/coll-of-args)
     ;; TODO - do i need to wrap this 'let'??
-    :let [coll-of-spec (apply-coll-of base-spec coll-of-args)]
-    sp (gen/elements
-        [base-spec
-         coll-of-spec])
-    :let [sp-form (s/form sp)]
+    :let [coll-of-spec (apply-coll-of simple-spec coll-of-args)]
+    :let [sp-form (s/form coll-of-spec)]
     form gen/any-printable]
-   (e.s/pretty-explain-str sp form)))
+   (e.s/pretty-explain-str coll-of-spec form)))
