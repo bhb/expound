@@ -8,11 +8,20 @@ FIXME
 
 ## Clojurescript REPL
 
+```
 lein with-profile +test-web,+cljs-repl repl
-cider-connect
+````
+
+```
+M-x cider-connect
 (use 'figwheel-sidecar.repl-api)
 (start-figwheel!)
 (cljs-repl)
+```
+
+```
+open http://localhost:3446/index.html
+```
 
 ## Running CLJS tests
 
