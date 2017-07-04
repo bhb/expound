@@ -627,12 +627,6 @@ Detected 1 error"
 (defn apply-coll-of [spec {:keys [into kind count max-count min-count distinct gen-max gen-into gen] :as opts}]
   (s/coll-of spec :into into :kind kind :min-count min-count :max-count max-count :distinct distinct))
 
-;; TODO - and
-;; TODO - or
-;; TODO - keys
-;; TODO - map-of
-;; TODO - cat + alt, + ? *
-
 (def simple-spec-gen (gen/one-of
                       [(gen/elements [vector?
                                       int?
@@ -656,11 +650,37 @@ Detected 1 error"
 
 (deftest generated-coll-of-specs
   (checking
-   "coll-of spec"
+   "'coll-of' spec"
    30
    [simple-spec simple-spec-gen
     coll-of-args (s/gen :specs/coll-of-args)
-    :let [coll-of-spec (apply-coll-of simple-spec coll-of-args)]
-    :let [sp-form (s/form coll-of-spec)]
+    :let [spec (apply-coll-of simple-spec coll-of-args)]
+    :let [sp-form (s/form spec)]
     form gen/any-printable]
-   (e.s/pretty-explain-str coll-of-spec form)))
+   (e.s/pretty-explain-str spec form)))
+
+(deftest generated-and-specs
+  (checking
+   "'and' spec"
+   30
+   [simple-spec1 simple-spec-gen
+    simple-spec2 simple-spec-gen
+    :let [spec (s/and simple-spec1 simple-spec2)]
+    :let [sp-form (s/form spec)]
+    form gen/any-printable]
+   (e.s/pretty-explain-str spec form)))
+
+(deftest generated-or-specs
+  (checking
+   "'or' spec"
+   30
+   [simple-spec1 simple-spec-gen
+    simple-spec2 simple-spec-gen
+    :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
+    :let [sp-form (s/form spec)]
+    form gen/any-printable]
+   (e.s/pretty-explain-str spec form)))
+
+;; TODO - keys
+;; TODO - map-of
+;; TODO - cat + alt, + ? *
