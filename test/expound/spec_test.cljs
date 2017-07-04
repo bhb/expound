@@ -648,7 +648,7 @@ Detected 1 error"
 (deftest generated-simple-spec
   (checking
    "simple spec"
-   20
+   30
    [simple-spec simple-spec-gen
     :let [sp-form (s/form simple-spec)]
     form gen/any-printable]
@@ -657,10 +657,9 @@ Detected 1 error"
 (deftest generated-coll-of-specs
   (checking
    "coll-of spec"
-   20
+   30
    [simple-spec simple-spec-gen
     coll-of-args (s/gen :specs/coll-of-args)
-    ;; TODO - do i need to wrap this 'let'??
     :let [coll-of-spec (apply-coll-of simple-spec coll-of-args)]
     :let [sp-form (s/form coll-of-spec)]
     form gen/any-printable]
