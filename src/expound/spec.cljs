@@ -60,9 +60,13 @@
           (subvec full-path 0 (count partial-path)))))
 
 (defrecord KeyPathSegment [key])
+(defrecord KeyValuePathSegment [idx])
 
 (defn kps? [x]
   (instance? KeyPathSegment x))
+
+(defn kvps? [x]
+  (instance? KeyValuePathSegment x))
 
 (def mapv-indexed (comp vec map-indexed))
 
@@ -74,10 +78,13 @@
      (list? form)   (outer path (apply list (map-indexed (fn [idx x] (inner (conj path idx) x)) form)))
      (vector? form) (outer path (mapv-indexed (fn [idx x] (inner (conj path idx) x)) form))
      (record? form) (outer path form)
-     (map? form)    (outer path (reduce-kv (fn [m k v]
-                                             (assoc m (inner (conj path (->KeyPathSegment k)) k) (inner (conj path k) v)))
-                                           {}
-                                           form))
+     (map? form)    (outer path (reduce (fn [m [idx [k v]]]
+                                          (conj m
+                                                (inner
+                                                 (conj path (->KeyValuePathSegment idx))
+                                                 [(inner (conj path (->KeyPathSegment k)) k) (inner (conj path k) v)])))
+                                        {}
+                                        (map vector (range) (seq form))))
      :else          (outer path form))))
 
 (defn postwalk-with-path
@@ -91,6 +98,12 @@
   (and (vector? x)
        (kps? (last x))))
 
+(defn kvps-path?
+  "True if path points to a key/value pair"
+  [x]
+  (and (vector? x)
+       (some kvps? x)))
+
 (defn summary-form
   "Given a form and a path to highlight, returns a data structure that marks
    the highlighted and irrelevant data"
@@ -101,6 +114,9 @@
        (= ::irrelevant x)
        ::irrelevant
 
+       (and (kvps-path? path) (= path highlighted-path))
+       [::kv-relevant ::kv-relevant]
+
        (= path highlighted-path)
        ::relevant
 
@@ -108,6 +124,9 @@
        x
 
        (kps-path? path)
+       x
+
+       (kvps-path? path)
        x
 
        :else
@@ -132,6 +151,9 @@
       (and (map? form) (kps? k))
       (:key k)
 
+      (and (map? form) (kvps? k))
+      (nth (seq form) (:idx k))
+
       (associative? form)
       (recur (get form k) rst)
 
@@ -147,13 +169,15 @@
    string that highlights the value at the path."
   [form path]
   (let [value-at-path (value-in form path)
-        regex (re-pattern (str "(.*)" ::relevant ".*"))
+        ;; TODO - refactor
+        relevant (str "(" ::relevant "|(" ::kv-relevant "\\s+" ::kv-relevant "))")
+        regex (re-pattern (str "(.*)(" ::relevant "|(" ::kv-relevant "\\s+" ::kv-relevant ")).*"))
         s (binding [*print-namespace-maps* false] (pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form form path))))
         [line prefix & _more] (re-find regex s)
         highlighted-line (-> line
-                             (string/replace (str ::relevant) (indent 0 (count prefix) (pprint-str value-at-path)))
+                             (string/replace (re-pattern relevant) (indent 0 (count prefix) (pprint-str value-at-path)))
                              (str "\n" (highlight-line prefix (pprint-str value-at-path))))]
-
+    ;;highlighted-line
     (no-trailing-whitespace (string/replace s line highlighted-line))))
 
 (defn value-in-context
@@ -395,6 +419,10 @@ should satisfy
       ;; detect a `:in` path that points at a value in a map-of spec
       (and (map? form) (= 1 idx) (empty? rst2) (not (sequential? (get form k))))
       (recur (get form k) rst2 (conj in1 k))
+
+      ;; detech a `:in` path that points to a key/value pair in a coll-of spec
+      (and (map? form) (int? k) (empty? rst))
+      (conj in1 (->KeyValuePathSegment k))
 
       (associative? form)
       (recur (get form k) rst (conj in1 k))

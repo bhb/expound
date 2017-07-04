@@ -1,5 +1,7 @@
 (ns expound.spec-test
   (:require [cljs.test :as ct :refer [is testing deftest use-fixtures]]
+            [com.gfredericks.test.chuck.clojure-test :refer-macros [checking]]
+            [clojure.test.check.generators :as gen]
             [cljs.spec.alpha :as s]
             [expound.spec :as e.s]
             [expound.test-utils :as test-utils]))
@@ -606,3 +608,55 @@ should satisfy
 -------------------------
 Detected 1 error"
          (e.s/pretty-explain-str :map-of-spec/name->age {:sally 30}))))
+
+(s/def :specs/string string?)
+(s/def :specs/vector vector?)
+(s/def :specs/int int?)
+(s/def :specs/boolean boolean?)
+(s/def :specs/keyword keyword?)
+(s/def :specs/map map?)
+
+(s/def :specs.coll-of/into #{[] '() #{}})
+(s/def :specs.coll-of/kind #{vector? list? set?})
+(s/def :specs.coll-of/count pos-int?)
+(s/def :specs.coll-of/max-count pos-int?)
+(s/def :specs.coll-of/min-count pos-int?)
+(s/def :specs.coll-of/distinct boolean?)
+(s/def :specs/coll-of-args
+  (s/keys :opt-un
+          [:specs.coll-of/into
+           :specs.coll-of/kind
+           :specs.coll-of/count
+           :specs.coll-of/max-count
+           :specs.coll-of/min-count
+           :specs.coll-of/distinct]))
+
+(defn apply-coll-of [spec {:keys [into kind count max-count min-count distinct gen-max gen-into gen] :as opts}]
+  (s/coll-of spec :into into :kind kind :min-count min-count :max-count max-count :distinct distinct))
+
+(s/def :specs/spec
+  #{:specs/type
+    :specs/set})
+;; TODO - cat + alt, + ? *
+
+(deftest spec-combinations
+  (checking
+   "explaining a spec failure doesn't throw an error"
+   20
+   [base-spec (gen/elements
+               [:specs/vector
+                :specs/int
+                :specs/boolean
+                :specs/keyword
+                :specs/map
+                #{:a :b :c}
+                #{}])
+    coll-of-args (s/gen :specs/coll-of-args)
+    ;; TODO - do i need to wrap this 'let'??
+    :let [coll-of-spec (apply-coll-of base-spec coll-of-args)]
+    sp (gen/elements
+        [base-spec
+         coll-of-spec])
+    :let [sp-form (s/form sp)]
+    form gen/any-printable]
+   (e.s/pretty-explain-str sp form)))
