@@ -169,9 +169,8 @@
    string that highlights the value at the path."
   [form path]
   (let [value-at-path (value-in form path)
-        ;; TODO - refactor
         relevant (str "(" ::relevant "|(" ::kv-relevant "\\s+" ::kv-relevant "))")
-        regex (re-pattern (str "(.*)(" ::relevant "|(" ::kv-relevant "\\s+" ::kv-relevant ")).*"))
+        regex (re-pattern (str "(.*)" relevant ".*"))
         s (binding [*print-namespace-maps* false] (pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form form path))))
         [line prefix & _more] (re-find regex s)
         highlighted-line (-> line
