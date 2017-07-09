@@ -87,9 +87,9 @@
      (record? form) (outer path form)
      (map? form)    (outer path (reduce (fn [m [idx [k v]]]
                                           (conj m
-                                                (inner
+                                                (outer
                                                  (conj path (->KeyValuePathSegment idx))
-                                                 [(inner (conj path (->KeyPathSegment k)) k) (inner (conj path k) v)])))
+                                                 [(outer (conj path (->KeyPathSegment k)) k) (inner (conj path k) v)])))
                                         {}
                                         (map vector (range) (seq form))))
      :else          (outer path form))))
@@ -121,6 +121,9 @@
        (= ::irrelevant x)
        ::irrelevant
 
+       (= ::relevant x)
+       ::relevant
+
        (and (kvps-path? path) (= path highlighted-path))
        [::kv-relevant ::kv-relevant]
 
@@ -140,7 +143,7 @@
        ::irrelevant))
    form))
 
-;; TODO - this function is not intuitive.
+;; FIXME - this function is not intuitive.
 (defn highlight-line
   [prefix replacement]
   (let [max-width (apply max (map #(count (str %)) (string/split-lines replacement)))]
@@ -419,11 +422,19 @@ should satisfy
       in1
 
       ;; detect a `:in` path that points at a key in a map-of spec
-      (and (map? form) (zero? idx) (empty? rst2) (not (sequential? (get form k))))
-      (recur k rst2 (conj in1 (->KeyPathSegment k)))
+      (and (map? form)
+           (zero? idx)
+           (empty? rst2)
+           (or (not (associative? (get form k)))
+               (not (contains? (get form k) idx))))
+      (conj in1 (->KeyPathSegment k))
 
       ;; detect a `:in` path that points at a value in a map-of spec
-      (and (map? form) (= 1 idx) (empty? rst2) (not (sequential? (get form k))))
+      (and (map? form)
+           (= 1 idx)
+           (empty? rst2)
+           (or (not (associative? (get form k)))
+               (not (contains? (get form k) idx))))
       (recur (get form k) rst2 (conj in1 k))
 
       ;; detech a `:in` path that points to a key/value pair in a coll-of spec
@@ -439,6 +450,36 @@ should satisfy
 (defn adjust-in [form problem]
   (assoc problem :in1 (in-with-kps form (:in problem) [])))
 
+(defn compare-path-segment [x y]
+  (cond
+    (and (int? x) (kvps? y))
+    (compare x (:idx y))
+
+    (and (kvps? x) (int? y))
+    (compare (:idx x) y)
+
+    (and (kps? x) (not (kps? y)))
+    -1
+
+    (and (not (kps? x)) (kps? y))
+    1
+
+    (and (vector? x) (vector? y))
+    (first (filter #(not (zero? %)) (map compare-path-segment x y)))
+
+    :else
+    (compare x y)))
+
+(defn compare-paths [path1 path2]
+  (first (filter #(not (zero? %)) (map compare-path-segment path1 path2))))
+
+(defn safe-sort-by
+  "Same as sort-by, but if an error is raised, returns the original unsorted collection"
+  [key-fn comp coll]
+  (try
+    (sort-by key-fn comp coll)
+    (catch :default e coll)))
+
 ;;;;;; public ;;;;;;
 
 (defn pretty-explain-str
@@ -450,7 +491,11 @@ should satisfy
         leaf-problems (leaf-problems (map (partial adjust-in form) (::s/problems (s/explain-data spec form))))
 
         _ (assert (every? :in1 leaf-problems) leaf-problems)
-        grouped-problems (sort (path+problem-type->problems leaf-problems))]
+        ;; We attempt to sort the problems by path, but it's not feasible to sort in
+        ;; all cases, since paths could contain arbitrary user-defined data structures.
+        ;; If there is an error, we just give up on sorting.
+        grouped-problems (safe-sort-by first compare-paths
+                                       (path+problem-type->problems leaf-problems))]
     (if (empty? problems)
       "Success!\n"
       (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]

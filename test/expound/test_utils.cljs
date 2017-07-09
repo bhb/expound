@@ -15,3 +15,10 @@
 (def check-spec-assertions
   {:before #(s/check-asserts true)
    :after #(s/check-asserts false)})
+
+(defn nan? [x]
+  (and (number? x)
+       (js/isNaN x)))
+
+(defn contains-nan? [x]
+  (boolean (some nan? (tree-seq coll? identity x))))

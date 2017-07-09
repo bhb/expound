@@ -8,6 +8,8 @@
 
 (use-fixtures :once test-utils/check-spec-assertions)
 
+(def any-printable-wo-nan (gen/such-that (complement test-utils/contains-nan?) gen/any-printable))
+
 (deftest highlighted-form
   (testing "atomic value"
     (is (= "\"Fred\"\n^^^^^^"
@@ -615,8 +617,9 @@ Detected 1 error"
 (s/def :specs.coll-of/max-count pos-int?)
 (s/def :specs.coll-of/min-count pos-int?)
 (s/def :specs.coll-of/distinct boolean?)
-(s/def :specs/coll-of-args
-  (s/keys :opt-un
+
+(s/def :specs/every-args
+  (s/keys :req-un
           [:specs.coll-of/into
            :specs.coll-of/kind
            :specs.coll-of/count
@@ -625,18 +628,36 @@ Detected 1 error"
            :specs.coll-of/distinct]))
 
 (defn apply-coll-of [spec {:keys [into kind count max-count min-count distinct gen-max gen-into gen] :as opts}]
-  (s/coll-of spec :into into :kind kind :min-count min-count :max-count max-count :distinct distinct))
+  (s/coll-of spec :into into :min-count min-count :max-count max-count :distinct distinct))
+
+(defn apply-map-of [spec1 spec2 {:keys [into kind count max-count min-count distinct gen-max gen-into gen] :as opts}]
+  (s/map-of spec1 spec2 :into into :min-count min-count :max-count max-count :distinct distinct))
+
+;; Since CLJS prints out entire source of a function when
+;; it pretty-prints a failure, the output becomes much nicer if
+;; we wrap each function in a simple spec
+(s/def :specs/string string?)
+(s/def :specs/vector vector?)
+(s/def :specs/int int?)
+(s/def :specs/boolean boolean?)
+(s/def :specs/keyword keyword?)
+(s/def :specs/map map?)
+(s/def :specs/symbol symbol?)
+(s/def :specs/pos-int pos-int?)
+(s/def :specs/neg-int neg-int?)
+(s/def :specs/zero zero?)
 
 (def simple-spec-gen (gen/one-of
-                      [(gen/elements [vector?
-                                      int?
-                                      boolean?
-                                      keyword?
-                                      map?
-                                      symbol?
-                                      pos-int?
-                                      neg-int?
-                                      zero?])
+                      [(gen/elements [:specs/string
+                                      :specs/vector
+                                      :specs/int
+                                      :specs/boolean
+                                      :specs/keyword
+                                      :specs/map
+                                      :specs/symbol
+                                      :specs/pos-int
+                                      :specs/neg-int
+                                      :specs/zero])
                        (gen/set gen/simple-type-printable)]))
 
 (deftest generated-simple-spec
@@ -653,8 +674,8 @@ Detected 1 error"
    "'coll-of' spec"
    30
    [simple-spec simple-spec-gen
-    coll-of-args (s/gen :specs/coll-of-args)
-    :let [spec (apply-coll-of simple-spec coll-of-args)]
+    every-args (s/gen :specs/every-args)
+    :let [spec (apply-coll-of simple-spec every-args)]
     :let [sp-form (s/form spec)]
     form gen/any-printable]
    (e.s/pretty-explain-str spec form)))
@@ -681,6 +702,28 @@ Detected 1 error"
     form gen/any-printable]
    (e.s/pretty-explain-str spec form)))
 
+(deftest generated-map-of-specs
+  (checking
+   "'map-of' spec"
+   25
+   [simple-spec1 simple-spec-gen
+    simple-spec2 simple-spec-gen
+    every-args (s/gen :specs/every-args)
+    :let [spec (apply-map-of simple-spec1 simple-spec2 every-args)
+          sp-form (s/form spec)]
+    form any-printable-wo-nan]
+   (e.s/pretty-explain-str spec form)))
+
 ;; TODO - keys
-;; TODO - map-of
 ;; TODO - cat + alt, + ? *
+;; TODO - nilable
+;; TODO - test coll-of that is a set . can i should a bad element of a set?
+
+(deftest compare-paths-test
+  (checking
+   "path to a key comes before a path to a value"
+   10
+   [m (gen/map gen/simple-type-printable gen/simple-type-printable)
+    k gen/simple-type-printable]
+   (is (= -1 (e.s/compare-paths [(e.s/->KeyPathSegment k)] [k])))
+   (is (= 1 (e.s/compare-paths [k] [(e.s/->KeyPathSegment k)])))))
