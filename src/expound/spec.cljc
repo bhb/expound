@@ -2,11 +2,12 @@
   "Drop-in replacement for clojure.spec.alpha, with
   human-readable `explain` function"
   (:require [clojure.data]
-            [cljs.spec.alpha :as s]
+            [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.walk :as walk]
-            [goog.string :as gstring]
-            [cljs.pprint :as pprint]))
+            #?(:cljs [goog.string])
+            [clojure.pprint :as pprint])
+  (:refer-clojure :exclude [format]))
 
 ;;;;;; specs   ;;;;;;
 
@@ -23,6 +24,11 @@
               :problem/missing-spec  "Missing spec"
               :problem/regex-failure "Syntax error"
               :problem/unknown       "Spec failed"})
+
+#?(:cljs
+   (defn format [fmt & args]
+     (apply goog.string/format fmt args))
+   :clj (def format clojure.core/format))
 
 (defn pprint-str
   "Returns the pretty-printed string"
@@ -47,7 +53,7 @@
   ([indent-level s]
    (indent indent-level indent-level s))
   ([first-line-indent rest-lines-indent s]
-   (let [[line & lines] (string/split-lines s)]
+   (let [[line & lines] (string/split-lines (str s))]
      (string/join "\n"
                   (into [(str (apply str (repeat first-line-indent " ")) line)]
                         (map #(str (apply str (repeat rest-lines-indent " ")) %) lines))))))
@@ -60,14 +66,20 @@
           (subvec full-path 0 (count partial-path)))))
 
 (defrecord KeyPathSegment [key]
-  IComparable
-  (-compare [this that]
-    (compare (:key this) (:key that))))
+  ;; TODO - remove
+  ;; IComparable
+  ;; (-compare [this that]
+  ;;   (compare (:key this) (:key that)))
+
+  )
 
 (defrecord KeyValuePathSegment [idx]
-  IComparable
-  (-compare [this that]
-    (compare (:idx this) (:idx that))))
+  ;; TODO - remove
+  ;; IComparable
+  ;; (-compare [this that]
+  ;;   (compare (:idx this) (:idx that)))
+
+  )
 
 (defn kps? [x]
   (instance? KeyPathSegment x))
@@ -195,13 +207,13 @@
    in the form"
   [form path]
   (let [val (value-in form path)]
-    (if (== form val)
-      (pr-str val)
+    (if (= form val)
+      (binding [*print-namespace-maps* false] (pr-str val))
       (highlighted-form form path))))
 
 (defn spec-str [spec]
   (if (keyword? spec)
-    (gstring/format
+    (format
      "%s:\n%s"
      spec
      (indent (pprint-str (s/form spec))))
@@ -222,11 +234,20 @@
        (map spec-str)
        (string/join "\n")))
 
+(defn named? [x]
+  #?(:clj (instance? clojure.lang.Named x)
+     :cljs (implements? cljs.core.INamed x)))
+
+(defn pr-pred [pred]
+  (if (named? pred)
+    (name pred)
+    (pr-str pred)))
+
 (defn preds [preds]
-  (string/join "\n\nor\n\n" (map indent preds)))
+  (string/join "\n\nor\n\n" (map (comp indent pr-pred) preds)))
 
 (defn insufficient-input [val path problem]
-  (gstring/format
+  (format
    "%s
 
 should have additional elements. The next element is named `%s` and satisfies
@@ -234,19 +255,25 @@ should have additional elements. The next element is named `%s` and satisfies
 %s"
    (indent (value-in-context val path))
    (pr-str (first (:path problem)))
-   (indent (:pred problem))))
+   (indent (pr-pred (:pred problem)))))
 
 (defn extra-input [val path]
-  (gstring/format
+  (format
    "Value has extra input
 
 %s"
    (indent (value-in-context val path))))
 
 (defn missing-key [form]
-  (let [[_contains _arg key-keyword] form]
-    (s/assert #{'contains?} _contains)
-    key-keyword))
+  #?(:cljs (let [[contains _arg key-keyword] form]
+             (s/assert #{'contains?} contains)
+             key-keyword)
+     ;; FIXME - this duplicates the structure of how
+     ;; spec builds the 'contains?' function. Extract this into spec
+     ;; and use conform instead of this ad-hoc validation.
+     :clj (let [[fn _ [contains _arg key-keyword] & rst] form]
+            (s/assert #{'clojure.core/contains?} contains)
+            key-keyword)))
 
 (defn label
   ([size]
@@ -260,7 +287,7 @@ should have additional elements. The next element is named `%s` and satisfies
 (def section-label (partial label section-size))
 
 (defn relevant-specs [problems]
-  (gstring/format
+  (format
    "%s
 
 %s"
@@ -278,10 +305,19 @@ should have additional elements. The next element is named `%s` and satisfies
   (set? (:pred problem)))
 
 (defn missing-key? [problem]
-  (let [pred (:pred problem)]
-    (and (list? pred)
-         (map? (:val problem))
-         (= 'contains? (first pred)))))
+  #?(:cljs
+     (let [pred (:pred problem)]
+       (and (list? pred)
+            (map? (:val problem))
+            (= 'contains? (first pred))))
+     :clj
+     (let [pred (:pred problem)]
+       (and (seq? pred)
+            (map? (:val problem))
+            (let [[fn _ [contains _] & rst] pred]
+              (and
+               (= 'clojure.core/fn fn)
+               (= 'clojure.core/contains? contains)))))))
 
 (defn regex-failure? [problem]
   (contains? #{"Insufficient input" "Extra input"} (:reason problem)))
@@ -289,7 +325,7 @@ should have additional elements. The next element is named `%s` and satisfies
 (defn no-method [val path problem]
   (let [sp (s/spec (last (:via problem)))
         {:keys [mm retag]} (multi-spec-parts sp)]
-    (gstring/format
+    (format
      "Cannot find spec for
 
  %s
@@ -307,7 +343,7 @@ should have additional elements. The next element is named `%s` and satisfies
 
 (defmethod problem-group-str :problem/missing-key [_type val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
-  (gstring/format
+  (format
    "%s
 
 %s
@@ -323,7 +359,7 @@ should contain keys: %s
 (defmethod problem-group-str :problem/not-in-set [_type val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (s/assert ::singleton problems)
-  (gstring/format
+  (format
    "%s
 
 %s
@@ -338,7 +374,7 @@ should be one of: %s
 
 (defmethod problem-group-str :problem/missing-spec [_type val path problems]
   (s/assert ::singleton problems)
-  (gstring/format
+  (format
    "%s
 
 %s
@@ -351,7 +387,7 @@ should be one of: %s
 (defmethod problem-group-str :problem/regex-failure [_type val path problems]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
-    (gstring/format
+    (format
      "%s
 
 %s
@@ -365,7 +401,7 @@ should be one of: %s
 
 (defmethod problem-group-str :problem/unknown [_type val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
-  (gstring/format
+  (format
    "%s
 
 %s
@@ -423,7 +459,7 @@ should satisfy
 
       ;; detect a `:in` path that points at a key in a map-of spec
       (and (map? form)
-           (zero? idx)
+           (= 0 idx)
            (empty? rst2)
            (or (not (associative? (get form k)))
                (not (contains? (get form k) idx))))
@@ -465,20 +501,21 @@ should satisfy
     1
 
     (and (vector? x) (vector? y))
-    (first (filter #(not (zero? %)) (map compare-path-segment x y)))
+    (first (filter #(not= 0 %) (map compare-path-segment x y)))
 
     :else
     (compare x y)))
 
 (defn compare-paths [path1 path2]
-  (first (filter #(not (zero? %)) (map compare-path-segment path1 path2))))
+  (first (filter #(not= 0 %) (map compare-path-segment path1 path2))))
 
 (defn safe-sort-by
   "Same as sort-by, but if an error is raised, returns the original unsorted collection"
   [key-fn comp coll]
   (try
     (sort-by key-fn comp coll)
-    (catch :default e coll)))
+    (catch #?(:cljs :default
+              :clj Exception) e coll)))
 
 ;;;;;; public ;;;;;;
 
@@ -501,7 +538,7 @@ should satisfy
       (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
                                                (problem-group-str type form in1 problems)))]
         (no-trailing-whitespace
-         (gstring/format
+         (format
           "%s
 
 %s

@@ -7,7 +7,8 @@
                  [org.clojure/clojurescript "1.9.542"]
                  [org.clojure/core.specs.alpha "0.1.10"]]
 
-  :plugins [[lein-cljfmt "0.5.6"]
+  :plugins [[com.jakemccrary/lein-test-refresh "0.20.0"]
+            [lein-cljfmt "0.5.6"]
             [lein-cljsbuild "1.1.5" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.10"]]
 
