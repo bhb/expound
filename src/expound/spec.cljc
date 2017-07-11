@@ -2,11 +2,12 @@
   "Drop-in replacement for clojure.spec.alpha, with
   human-readable `explain` function"
   (:require [clojure.data]
-            [cljs.spec.alpha :as s]
+            [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.walk :as walk]
-            [goog.string :as gstring]
-            [cljs.pprint :as pprint]))
+            #?(:cljs [goog.string])
+            [clojure.pprint :as pprint])
+  (:refer-clojure :exclude [format]))
 
 ;;;;;; specs   ;;;;;;
 
@@ -23,6 +24,11 @@
               :problem/missing-spec  "Missing spec"
               :problem/regex-failure "Syntax error"
               :problem/unknown       "Spec failed"})
+
+#?(:cljs
+   (defn format [fmt & args]
+     (apply goog.string/format fmt args))
+   :clj (def format clojure.core/format))
 
 (defn pprint-str
   "Returns the pretty-printed string"
@@ -47,7 +53,7 @@
   ([indent-level s]
    (indent indent-level indent-level s))
   ([first-line-indent rest-lines-indent s]
-   (let [[line & lines] (string/split-lines s)]
+   (let [[line & lines] (string/split-lines (str s))]
      (string/join "\n"
                   (into [(str (apply str (repeat first-line-indent " ")) line)]
                         (map #(str (apply str (repeat rest-lines-indent " ")) %) lines))))))
@@ -59,8 +65,21 @@
        (= partial-path
           (subvec full-path 0 (count partial-path)))))
 
-(defrecord KeyPathSegment [key])
-(defrecord KeyValuePathSegment [idx])
+(defrecord KeyPathSegment [key]
+  ;; TODO - remove
+  ;; IComparable
+  ;; (-compare [this that]
+  ;;   (compare (:key this) (:key that)))
+
+  )
+
+(defrecord KeyValuePathSegment [idx]
+  ;; TODO - remove
+  ;; IComparable
+  ;; (-compare [this that]
+  ;;   (compare (:idx this) (:idx that)))
+
+  )
 
 (defn kps? [x]
   (instance? KeyPathSegment x))
@@ -80,9 +99,9 @@
      (record? form) (outer path form)
      (map? form)    (outer path (reduce (fn [m [idx [k v]]]
                                           (conj m
-                                                (inner
+                                                (outer
                                                  (conj path (->KeyValuePathSegment idx))
-                                                 [(inner (conj path (->KeyPathSegment k)) k) (inner (conj path k) v)])))
+                                                 [(outer (conj path (->KeyPathSegment k)) k) (inner (conj path k) v)])))
                                         {}
                                         (map vector (range) (seq form))))
      :else          (outer path form))))
@@ -114,6 +133,9 @@
        (= ::irrelevant x)
        ::irrelevant
 
+       (= ::relevant x)
+       ::relevant
+
        (and (kvps-path? path) (= path highlighted-path))
        [::kv-relevant ::kv-relevant]
 
@@ -133,7 +155,7 @@
        ::irrelevant))
    form))
 
-;; TODO - this function is not intuitive.
+;; FIXME - this function is not intuitive.
 (defn highlight-line
   [prefix replacement]
   (let [max-width (apply max (map #(count (str %)) (string/split-lines replacement)))]
@@ -185,13 +207,13 @@
    in the form"
   [form path]
   (let [val (value-in form path)]
-    (if (== form val)
-      (pr-str val)
+    (if (= form val)
+      (binding [*print-namespace-maps* false] (pr-str val))
       (highlighted-form form path))))
 
 (defn spec-str [spec]
   (if (keyword? spec)
-    (gstring/format
+    (format
      "%s:\n%s"
      spec
      (indent (pprint-str (s/form spec))))
@@ -212,11 +234,20 @@
        (map spec-str)
        (string/join "\n")))
 
+(defn named? [x]
+  #?(:clj (instance? clojure.lang.Named x)
+     :cljs (implements? cljs.core.INamed x)))
+
+(defn pr-pred [pred]
+  (if (named? pred)
+    (name pred)
+    (pr-str pred)))
+
 (defn preds [preds]
-  (string/join "\n\nor\n\n" (map indent preds)))
+  (string/join "\n\nor\n\n" (map (comp indent pr-pred) preds)))
 
 (defn insufficient-input [val path problem]
-  (gstring/format
+  (format
    "%s
 
 should have additional elements. The next element is named `%s` and satisfies
@@ -224,19 +255,25 @@ should have additional elements. The next element is named `%s` and satisfies
 %s"
    (indent (value-in-context val path))
    (pr-str (first (:path problem)))
-   (indent (:pred problem))))
+   (indent (pr-pred (:pred problem)))))
 
 (defn extra-input [val path]
-  (gstring/format
+  (format
    "Value has extra input
 
 %s"
    (indent (value-in-context val path))))
 
 (defn missing-key [form]
-  (let [[_contains _arg key-keyword] form]
-    (s/assert #{'contains?} _contains)
-    key-keyword))
+  #?(:cljs (let [[contains _arg key-keyword] form]
+             (s/assert #{'contains?} contains)
+             key-keyword)
+     ;; FIXME - this duplicates the structure of how
+     ;; spec builds the 'contains?' function. Extract this into spec
+     ;; and use conform instead of this ad-hoc validation.
+     :clj (let [[fn _ [contains _arg key-keyword] & rst] form]
+            (s/assert #{'clojure.core/contains?} contains)
+            key-keyword)))
 
 (defn label
   ([size]
@@ -250,7 +287,7 @@ should have additional elements. The next element is named `%s` and satisfies
 (def section-label (partial label section-size))
 
 (defn relevant-specs [problems]
-  (gstring/format
+  (format
    "%s
 
 %s"
@@ -268,10 +305,19 @@ should have additional elements. The next element is named `%s` and satisfies
   (set? (:pred problem)))
 
 (defn missing-key? [problem]
-  (let [pred (:pred problem)]
-    (and (list? pred)
-         (map? (:val problem))
-         (= 'contains? (first pred)))))
+  #?(:cljs
+     (let [pred (:pred problem)]
+       (and (list? pred)
+            (map? (:val problem))
+            (= 'contains? (first pred))))
+     :clj
+     (let [pred (:pred problem)]
+       (and (seq? pred)
+            (map? (:val problem))
+            (let [[fn _ [contains _] & rst] pred]
+              (and
+               (= 'clojure.core/fn fn)
+               (= 'clojure.core/contains? contains)))))))
 
 (defn regex-failure? [problem]
   (contains? #{"Insufficient input" "Extra input"} (:reason problem)))
@@ -279,7 +325,7 @@ should have additional elements. The next element is named `%s` and satisfies
 (defn no-method [val path problem]
   (let [sp (s/spec (last (:via problem)))
         {:keys [mm retag]} (multi-spec-parts sp)]
-    (gstring/format
+    (format
      "Cannot find spec for
 
  %s
@@ -297,7 +343,7 @@ should have additional elements. The next element is named `%s` and satisfies
 
 (defmethod problem-group-str :problem/missing-key [_type val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
-  (gstring/format
+  (format
    "%s
 
 %s
@@ -313,7 +359,7 @@ should contain keys: %s
 (defmethod problem-group-str :problem/not-in-set [_type val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (s/assert ::singleton problems)
-  (gstring/format
+  (format
    "%s
 
 %s
@@ -328,7 +374,7 @@ should be one of: %s
 
 (defmethod problem-group-str :problem/missing-spec [_type val path problems]
   (s/assert ::singleton problems)
-  (gstring/format
+  (format
    "%s
 
 %s
@@ -341,7 +387,7 @@ should be one of: %s
 (defmethod problem-group-str :problem/regex-failure [_type val path problems]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
-    (gstring/format
+    (format
      "%s
 
 %s
@@ -355,7 +401,7 @@ should be one of: %s
 
 (defmethod problem-group-str :problem/unknown [_type val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
-  (gstring/format
+  (format
    "%s
 
 %s
@@ -412,11 +458,19 @@ should satisfy
       in1
 
       ;; detect a `:in` path that points at a key in a map-of spec
-      (and (map? form) (zero? idx) (empty? rst2) (not (sequential? (get form k))))
-      (recur k rst2 (conj in1 (->KeyPathSegment k)))
+      (and (map? form)
+           (= 0 idx)
+           (empty? rst2)
+           (or (not (associative? (get form k)))
+               (not (contains? (get form k) idx))))
+      (conj in1 (->KeyPathSegment k))
 
       ;; detect a `:in` path that points at a value in a map-of spec
-      (and (map? form) (= 1 idx) (empty? rst2) (not (sequential? (get form k))))
+      (and (map? form)
+           (= 1 idx)
+           (empty? rst2)
+           (or (not (associative? (get form k)))
+               (not (contains? (get form k) idx))))
       (recur (get form k) rst2 (conj in1 k))
 
       ;; detech a `:in` path that points to a key/value pair in a coll-of spec
@@ -432,6 +486,37 @@ should satisfy
 (defn adjust-in [form problem]
   (assoc problem :in1 (in-with-kps form (:in problem) [])))
 
+(defn compare-path-segment [x y]
+  (cond
+    (and (int? x) (kvps? y))
+    (compare x (:idx y))
+
+    (and (kvps? x) (int? y))
+    (compare (:idx x) y)
+
+    (and (kps? x) (not (kps? y)))
+    -1
+
+    (and (not (kps? x)) (kps? y))
+    1
+
+    (and (vector? x) (vector? y))
+    (first (filter #(not= 0 %) (map compare-path-segment x y)))
+
+    :else
+    (compare x y)))
+
+(defn compare-paths [path1 path2]
+  (first (filter #(not= 0 %) (map compare-path-segment path1 path2))))
+
+(defn safe-sort-by
+  "Same as sort-by, but if an error is raised, returns the original unsorted collection"
+  [key-fn comp coll]
+  (try
+    (sort-by key-fn comp coll)
+    (catch #?(:cljs :default
+              :clj Exception) e coll)))
+
 ;;;;;; public ;;;;;;
 
 (defn pretty-explain-str
@@ -443,13 +528,17 @@ should satisfy
         leaf-problems (leaf-problems (map (partial adjust-in form) (::s/problems (s/explain-data spec form))))
 
         _ (assert (every? :in1 leaf-problems) leaf-problems)
-        grouped-problems (sort (path+problem-type->problems leaf-problems))]
+        ;; We attempt to sort the problems by path, but it's not feasible to sort in
+        ;; all cases, since paths could contain arbitrary user-defined data structures.
+        ;; If there is an error, we just give up on sorting.
+        grouped-problems (safe-sort-by first compare-paths
+                                       (path+problem-type->problems leaf-problems))]
     (if (empty? problems)
       "Success!\n"
       (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
                                                (problem-group-str type form in1 problems)))]
         (no-trailing-whitespace
-         (gstring/format
+         (format
           "%s
 
 %s

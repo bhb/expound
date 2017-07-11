@@ -1,6 +1,6 @@
 (ns expound.test-utils
-  (:require [cljs.spec.alpha :as s]
-            [cljs.test :as ct]
+  (:require [clojure.spec.alpha :as s]
+            [clojure.test :as ct]
             [com.gfredericks.test.chuck.clojure-test :as chuck]))
 
 ;; test.chuck defines a reporter for the shrunk results, but only for the
@@ -12,6 +12,14 @@
   (let [f (get (methods ct/report) [::ct/default ::chuck/shrunk])]
     (f m)))
 
-(def check-spec-assertions
-  {:before #(s/check-asserts true)
-   :after #(s/check-asserts false)})
+(defn check-spec-assertions [test-fn]
+  (s/check-asserts true)
+  (test-fn)
+  (s/check-asserts false))
+
+(defn nan? [x]
+  #?(:clj false
+     :cljs (and (number? x) (js/isNaN x))))
+
+(defn contains-nan? [x]
+  (boolean (some nan? (tree-seq coll? identity x))))

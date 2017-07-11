@@ -1,12 +1,23 @@
 (ns expound.spec-test
-  (:require [cljs.test :as ct :refer [is testing deftest use-fixtures]]
-            [com.gfredericks.test.chuck.clojure-test :refer-macros [checking]]
+  (:require [clojure.test :as ct :refer [is testing deftest use-fixtures]]
+            [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [clojure.test.check.generators :as gen]
-            [cljs.spec.alpha :as s]
+            [clojure.spec.alpha :as s]
             [expound.spec :as e.s]
-            [expound.test-utils :as test-utils]))
+            [expound.test-utils :as test-utils]
+            [clojure.string :as string]))
 
 (use-fixtures :once test-utils/check-spec-assertions)
+
+(def any-printable-wo-nan (gen/such-that (complement test-utils/contains-nan?) gen/any-printable))
+
+(defn pf
+  "Fixes platform-specific namespaces and also formats using printf syntax"
+  [s & args]
+  (apply e.s/format
+   #?(:cljs (string/replace s "pf." "cljs.")
+      :clj (string/replace s "pf." "clojure."))
+   args))
 
 (deftest highlighted-form
   (testing "atomic value"
@@ -20,12 +31,14 @@
             [:a :b :c]
             [1]))))
   (testing "long, composite values are pretty-printed"
-    (is (= "{:letters {:a \"aaaaaaaa\",
+    (is (= (str "{:letters {:a \"aaaaaaaa\",
            :b \"bbbbbbbb\",
            :c \"cccccccd\",
            :d \"dddddddd\",
-           :e \"eeeeeeee\"}}
-          ^^^^^^^^^^^^^^^^"
+           :e \"eeeeeeee\"}}"
+                #?(:clj  "\n          ^^^^^^^^^^^^^^^"
+                   :cljs "\n          ^^^^^^^^^^^^^^^^"))
+           ;; ^- the above works in clojure - maybe not CLJS?
            (e.s/highlighted-form
             {:letters
              {:a "aaaaaaaa"
@@ -44,7 +57,7 @@
 
   (testing "invalid value"
     (is (=
-         "-- Spec failed --------------------
+         (pf "-- Spec failed --------------------
 
   1
 
@@ -55,10 +68,10 @@ should satisfy
 -- Relevant specs -------
 
 :simple-type-based-spec/str:
-  cljs.core/string?
+  pf.core/string?
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
          (e.s/pretty-explain-str :simple-type-based-spec/str 1)))))
 
 (s/def :set-based-spec/tag #{:foo :bar})
@@ -82,7 +95,7 @@ Detected 1 error"
            (e.s/pretty-explain-str :set-based-spec/tag :baz))))
   ;; FIXME - we should fix nilable and or specs better so they are clearly grouped
   (testing "nilable version"
-    (is (= "-- Spec failed --------------------
+    (is (= (pf "-- Spec failed --------------------
 
   :baz
 
@@ -93,7 +106,7 @@ should be one of: `:bar`,`:foo`
 :set-based-spec/tag:
   #{:bar :foo}
 :set-based-spec/nilable-tag:
-  (cljs.spec.alpha/nilable :set-based-spec/tag)
+  (pf.spec.alpha/nilable :set-based-spec/tag)
 
 -- Spec failed --------------------
 
@@ -106,10 +119,10 @@ should satisfy
 -- Relevant specs -------
 
 :set-based-spec/nilable-tag:
-  (cljs.spec.alpha/nilable :set-based-spec/tag)
+  (pf.spec.alpha/nilable :set-based-spec/tag)
 
 -------------------------
-Detected 2 errors"
+Detected 2 errors")
            (e.s/pretty-explain-str :set-based-spec/nilable-tag :baz)))))
 
 (s/def :nested-type-based-spec/str string?)
@@ -117,7 +130,7 @@ Detected 2 errors"
 
 (deftest nested-type-based-spec
   (is (=
-       "-- Spec failed --------------------
+       (pf "-- Spec failed --------------------
 
   [... ... 33]
            ^^
@@ -129,12 +142,12 @@ should satisfy
 -- Relevant specs -------
 
 :nested-type-based-spec/str:
-  cljs.core/string?
+  pf.core/string?
 :nested-type-based-spec/strs:
-  (cljs.spec.alpha/coll-of :nested-type-based-spec/str)
+  (pf.spec.alpha/coll-of :nested-type-based-spec/str)
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
        (e.s/pretty-explain-str :nested-type-based-spec/strs ["one" "two" 33]))))
 
 (s/def :nested-type-based-spec-special-summary-string/int int?)
@@ -142,7 +155,7 @@ Detected 1 error"
 
 (deftest nested-type-based-spec-special-summary-string
   (is (=
-       "-- Spec failed --------------------
+       (pf "-- Spec failed --------------------
 
   [... ... \"...\"]
            ^^^^^
@@ -154,13 +167,13 @@ should satisfy
 -- Relevant specs -------
 
 :nested-type-based-spec-special-summary-string/int:
-  cljs.core/int?
+  pf.core/int?
 :nested-type-based-spec-special-summary-string/ints:
-  (cljs.spec.alpha/coll-of
+  (pf.spec.alpha/coll-of
    :nested-type-based-spec-special-summary-string/int)
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
        (e.s/pretty-explain-str :nested-type-based-spec-special-summary-string/ints [1 2 "..."]))))
 
 (s/def :or-spec/str-or-int (s/or :int int? :str string?))
@@ -168,7 +181,7 @@ Detected 1 error"
 
 (deftest or-spec
   (testing "simple value"
-    (is (= "-- Spec failed --------------------
+    (is (= (pf "-- Spec failed --------------------
 
   :kw
 
@@ -183,13 +196,13 @@ or
 -- Relevant specs -------
 
 :or-spec/str-or-int:
-  (cljs.spec.alpha/or :int cljs.core/int? :str cljs.core/string?)
+  (pf.spec.alpha/or :int pf.core/int? :str pf.core/string?)
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
            (e.s/pretty-explain-str :or-spec/str-or-int :kw))))
   (testing "collection of values"
-    (is (= "-- Spec failed --------------------
+    (is (= (pf "-- Spec failed --------------------
 
   [... ... :kw ...]
            ^^^
@@ -205,56 +218,59 @@ or
 -- Relevant specs -------
 
 :or-spec/str-or-int:
-  (cljs.spec.alpha/or :int cljs.core/int? :str cljs.core/string?)
+  (pf.spec.alpha/or :int pf.core/int? :str pf.core/string?)
 :or-spec/vals:
-  (cljs.spec.alpha/coll-of :or-spec/str-or-int)
+  (pf.spec.alpha/coll-of :or-spec/str-or-int)
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
            (e.s/pretty-explain-str :or-spec/vals [0 "hi" :kw "bye"])))))
 
 (s/def :and-spec/name (s/and string? #(pos? (count %))))
 (s/def :and-spec/names (s/coll-of :and-spec/name))
 (deftest and-spec
   (testing "simple value"
-    (is (= "-- Spec failed --------------------
+    (is (= (pf "-- Spec failed --------------------
 
   \"\"
 
 should satisfy
 
-  (pos? (count %))
+  %s
 
 -- Relevant specs -------
 
 :and-spec/name:
-  (cljs.spec.alpha/and
-   cljs.core/string?
-   (cljs.core/fn [%] (cljs.core/pos? (cljs.core/count %))))
+  (pf.spec.alpha/and
+   pf.core/string?
+   (pf.core/fn [%%] (pf.core/pos? (pf.core/count %%))))
 
 -------------------------
 Detected 1 error"
+               #?(:cljs "(pos? (count %))"
+                  :clj "(clojure.core/fn [%] (clojure.core/pos? (clojure.core/count %)))")
+               )
            (e.s/pretty-explain-str :and-spec/name ""))))
 
   (testing "shows both failures in order"
     (is (=
-         "-- Spec failed --------------------
+         (pf "-- Spec failed --------------------
 
   [... ... \"\" ...]
            ^^
 
 should satisfy
 
-  (pos? (count %))
+  %s
 
 -- Relevant specs -------
 
 :and-spec/name:
-  (cljs.spec.alpha/and
-   cljs.core/string?
-   (cljs.core/fn [%] (cljs.core/pos? (cljs.core/count %))))
+  (pf.spec.alpha/and
+   pf.core/string?
+   (pf.core/fn [%%] (pf.core/pos? (pf.core/count %%))))
 :and-spec/names:
-  (cljs.spec.alpha/coll-of :and-spec/name)
+  (pf.spec.alpha/coll-of :and-spec/name)
 
 -- Spec failed --------------------
 
@@ -268,14 +284,17 @@ should satisfy
 -- Relevant specs -------
 
 :and-spec/name:
-  (cljs.spec.alpha/and
-   cljs.core/string?
-   (cljs.core/fn [%] (cljs.core/pos? (cljs.core/count %))))
+  (pf.spec.alpha/and
+   pf.core/string?
+   (pf.core/fn [%%] (pf.core/pos? (pf.core/count %%))))
 :and-spec/names:
-  (cljs.spec.alpha/coll-of :and-spec/name)
+  (pf.spec.alpha/coll-of :and-spec/name)
 
 -------------------------
 Detected 2 errors"
+             #?(:cljs "(pos? (count %))"
+                :clj "(clojure.core/fn [%] (clojure.core/pos? (clojure.core/count %)))")
+             )
          (e.s/pretty-explain-str :and-spec/names ["bob" "sally" "" 1])))))
 
 (s/def :coll-of-spec/big-int-coll (s/coll-of int? :min-count 10))
@@ -283,27 +302,30 @@ Detected 2 errors"
 (deftest coll-of-spec
   (testing "min count"
     (is (=
-         "-- Spec failed --------------------
+         (pf "-- Spec failed --------------------
 
   []
 
 should satisfy
 
-  (cljs.core/<= 10 (cljs.core/count %) 9007199254740991)
+  (pf.core/<= 10 (pf.core/count %%) %s)
 
 -- Relevant specs -------
 
 :coll-of-spec/big-int-coll:
-  (cljs.spec.alpha/coll-of cljs.core/int? :min-count 10)
+  (pf.spec.alpha/coll-of pf.core/int? :min-count 10)
 
 -------------------------
 Detected 1 error"
+             #?(:cljs "9007199254740991"
+                :clj "Integer/MAX_VALUE")
+             )
          (e.s/pretty-explain-str :coll-of-spec/big-int-coll [])))))
 
 (s/def :cat-spec/kw (s/cat :k keyword? :v any?))
 (deftest cat-spec
   (testing "too few elements"
-    (is (= "-- Syntax error -------------------
+    (is (= (pf "-- Syntax error -------------------
 
   []
 
@@ -314,12 +336,12 @@ should have additional elements. The next element is named `:k` and satisfies
 -- Relevant specs -------
 
 :cat-spec/kw:
-  (cljs.spec.alpha/cat :k cljs.core/keyword? :v cljs.core/any?)
+  (pf.spec.alpha/cat :k pf.core/keyword? :v pf.core/any?)
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
            (e.s/pretty-explain-str :cat-spec/kw [])))
-    (is (= "-- Syntax error -------------------
+    (is (= (pf "-- Syntax error -------------------
 
   [:foo]
 
@@ -330,13 +352,13 @@ should have additional elements. The next element is named `:v` and satisfies
 -- Relevant specs -------
 
 :cat-spec/kw:
-  (cljs.spec.alpha/cat :k cljs.core/keyword? :v cljs.core/any?)
+  (pf.spec.alpha/cat :k pf.core/keyword? :v pf.core/any?)
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
            (e.s/pretty-explain-str :cat-spec/kw [:foo]))))
   (testing "too many elements"
-    (is (= "-- Syntax error -------------------
+    (is (= (pf "-- Syntax error -------------------
 
 Value has extra input
 
@@ -346,10 +368,10 @@ Value has extra input
 -- Relevant specs -------
 
 :cat-spec/kw:
-  (cljs.spec.alpha/cat :k cljs.core/keyword? :v cljs.core/any?)
+  (pf.spec.alpha/cat :k pf.core/keyword? :v pf.core/any?)
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
            (e.s/pretty-explain-str :cat-spec/kw [:foo 1 :bar :baz])))))
 
 (s/def :keys-spec/name string?)
@@ -358,7 +380,7 @@ Detected 1 error"
                                :req-un [:keys-spec/age]))
 (deftest keys-spec
   (testing "missing keys"
-    (is (= "-- Spec failed --------------------
+    (is (= (pf "-- Spec failed --------------------
 
   {}
 
@@ -367,13 +389,17 @@ should contain keys: `:keys-spec/name`,`:age`
 -- Relevant specs -------
 
 :keys-spec/user:
-  (cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])
+  %s
 
 -------------------------
 Detected 1 error"
+               #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
+                  :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"
+                  )
+               )
            (e.s/pretty-explain-str :keys-spec/user {}))))
   (testing "invalid key"
-    (is (= "-- Spec failed --------------------
+    (is (= (pf "-- Spec failed --------------------
 
   {:age ..., :keys-spec/name :bob}
                              ^^^^
@@ -385,12 +411,14 @@ should satisfy
 -- Relevant specs -------
 
 :keys-spec/name:
-  cljs.core/string?
+  pf.core/string?
 :keys-spec/user:
-  (cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])
+  %s
 
 -------------------------
 Detected 1 error"
+               #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
+                  :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
            (e.s/pretty-explain-str :keys-spec/user {:age 1 :keys-spec/name :bob})))))
 
 (s/def :multi-spec/value string?)
@@ -405,7 +433,7 @@ Detected 1 error"
 (deftest multi-spec
   (testing "missing dispatch key"
     (is (=
-         "-- Missing spec -------------------
+         (pf "-- Missing spec -------------------
 
 Cannot find spec for
 
@@ -419,16 +447,16 @@ Cannot find spec for
 -- Relevant specs -------
 
 :multi-spec/el:
-  (cljs.spec.alpha/multi-spec
+  (pf.spec.alpha/multi-spec
    expound.spec-test/el-type
    :multi-spec/el-type)
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
          (e.s/pretty-explain-str :multi-spec/el {}))))
   (testing "invalid dispatch value"
     (is (=
-         "-- Missing spec -------------------
+         (pf "-- Missing spec -------------------
 
 Cannot find spec for
 
@@ -442,17 +470,17 @@ Cannot find spec for
 -- Relevant specs -------
 
 :multi-spec/el:
-  (cljs.spec.alpha/multi-spec
+  (pf.spec.alpha/multi-spec
    expound.spec-test/el-type
    :multi-spec/el-type)
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
          (e.s/pretty-explain-str :multi-spec/el {:multi-spec/el-type :image}))))
 
   (testing "valid dispatch value, but other error"
     (is (=
-         "-- Spec failed --------------------
+         (pf "-- Spec failed --------------------
 
   {:multi-spec/el-type :text}
 
@@ -461,12 +489,12 @@ should contain keys: `:multi-spec/value`
 -- Relevant specs -------
 
 :multi-spec/el:
-  (cljs.spec.alpha/multi-spec
+  (pf.spec.alpha/multi-spec
    expound.spec-test/el-type
    :multi-spec/el-type)
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
          (e.s/pretty-explain-str :multi-spec/el {:multi-spec/el-type :text})))))
 
 (s/def :recursive-spec/tag #{:text :group})
@@ -478,7 +506,7 @@ Detected 1 error"
 
 (deftest recursive-spec
   (testing "only shows problem with data at 'leaves' (not problems with all parents in tree)"
-    (is (= "-- Spec failed --------------------
+    (is (= (pf "-- Spec failed --------------------
 
   {:tag ...,
    :children
@@ -492,7 +520,11 @@ should satisfy
 
 -- Relevant specs -------
 
-:recursive-spec/on-tap:
+%s
+
+-------------------------
+Detected 1 error"
+               #?(:cljs ":recursive-spec/on-tap:
   (cljs.spec.alpha/coll-of cljs.core/map? :kind cljs.core/vector?)
 :recursive-spec/props:
   (cljs.spec.alpha/keys :opt-un [:recursive-spec/on-tap])
@@ -506,10 +538,25 @@ should satisfy
    :req-un
    [:recursive-spec/tag]
    :opt-un
-   [:recursive-spec/props :recursive-spec/children])
-
--------------------------
-Detected 1 error"
+   [:recursive-spec/props :recursive-spec/children])"
+                 :clj ":recursive-spec/on-tap:
+  (clojure.spec.alpha/coll-of
+   clojure.core/map?
+   :kind
+   clojure.core/vector?)
+:recursive-spec/props:
+  (clojure.spec.alpha/keys :opt-un [:recursive-spec/on-tap])
+:recursive-spec/children:
+  (clojure.spec.alpha/coll-of
+   (clojure.spec.alpha/nilable :recursive-spec/el)
+   :kind
+   clojure.core/vector?)
+:recursive-spec/el:
+  (clojure.spec.alpha/keys
+   :req-un
+   [:recursive-spec/tag]
+   :opt-un
+   [:recursive-spec/props :recursive-spec/children])"))
            (e.s/pretty-explain-str
             :recursive-spec/el
             {:tag :group
@@ -526,7 +573,7 @@ Detected 1 error"
                                              :kv :cat-wrapped-in-or-spec/kv))
 (deftest cat-wrapped-in-or-spec
   ;; FIXME - make multiple types of specs on the same value display as single error
-  (is (= "-- Spec failed --------------------
+  (is (= (pf "-- Spec failed --------------------
 
   {\"foo\" \"hi\"}
 
@@ -535,9 +582,9 @@ should contain keys: `:cat-wrapped-in-or-spec/type`
 -- Relevant specs -------
 
 :cat-wrapped-in-or-spec/kv-or-string:
-  (cljs.spec.alpha/or
+  (pf.spec.alpha/or
    :map
-   (cljs.spec.alpha/keys :req [:cat-wrapped-in-or-spec/type])
+   (pf.spec.alpha/keys :req [:cat-wrapped-in-or-spec/type])
    :kv
    :cat-wrapped-in-or-spec/kv)
 
@@ -552,25 +599,25 @@ should satisfy
 -- Relevant specs -------
 
 :cat-wrapped-in-or-spec/kv:
-  (cljs.spec.alpha/and
-   cljs.core/sequential?
-   (cljs.spec.alpha/cat :k cljs.core/keyword? :v cljs.core/any?))
+  (pf.spec.alpha/and
+   pf.core/sequential?
+   (pf.spec.alpha/cat :k pf.core/keyword? :v pf.core/any?))
 :cat-wrapped-in-or-spec/kv-or-string:
-  (cljs.spec.alpha/or
+  (pf.spec.alpha/or
    :map
-   (cljs.spec.alpha/keys :req [:cat-wrapped-in-or-spec/type])
+   (pf.spec.alpha/keys :req [:cat-wrapped-in-or-spec/type])
    :kv
    :cat-wrapped-in-or-spec/kv)
 
 -------------------------
-Detected 2 errors"
+Detected 2 errors")
          (e.s/pretty-explain-str :cat-wrapped-in-or-spec/kv-or-string {"foo" "hi"}))))
 
 (s/def :map-of-spec/name string?)
 (s/def :map-of-spec/age pos-int?)
 (s/def :map-of-spec/name->age (s/map-of :map-of-spec/name :map-of-spec/age))
 (deftest map-of-spec
-  (is (= "-- Spec failed --------------------
+  (is (= (pf "-- Spec failed --------------------
 
   {\"Sally\" \"30\"}
            ^^^^
@@ -582,14 +629,14 @@ should satisfy
 -- Relevant specs -------
 
 :map-of-spec/age:
-  cljs.core/pos-int?
+  pf.core/pos-int?
 :map-of-spec/name->age:
-  (cljs.spec.alpha/map-of :map-of-spec/name :map-of-spec/age)
+  (pf.spec.alpha/map-of :map-of-spec/name :map-of-spec/age)
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
          (e.s/pretty-explain-str :map-of-spec/name->age {"Sally" "30"})))
-  (is (= "-- Spec failed --------------------
+  (is (= (pf "-- Spec failed --------------------
 
   {:sally ...}
    ^^^^^^
@@ -601,29 +648,30 @@ should satisfy
 -- Relevant specs -------
 
 :map-of-spec/name:
-  cljs.core/string?
+  pf.core/string?
 :map-of-spec/name->age:
-  (cljs.spec.alpha/map-of :map-of-spec/name :map-of-spec/age)
+  (pf.spec.alpha/map-of :map-of-spec/name :map-of-spec/age)
 
 -------------------------
-Detected 1 error"
+Detected 1 error")
          (e.s/pretty-explain-str :map-of-spec/name->age {:sally 30}))))
 
-(s/def :specs/string string?)
-(s/def :specs/vector vector?)
-(s/def :specs/int int?)
-(s/def :specs/boolean boolean?)
-(s/def :specs/keyword keyword?)
-(s/def :specs/map map?)
-
-(s/def :specs.coll-of/into #{[] '() #{}})
+;; I want to do something like
+;; (s/def :specs.coll-of/into #{[] '() #{}})
+;; but Clojure (not Clojurescript) won't allow
+;; this. As a workaround, I'll just use vectors instead
+;; of vectors and lists.
+;; TODO - force a specific type of into/kind one for each test
+;; (one for vectors, one for lists, etc)
+(s/def :specs.coll-of/into #{[] #{}})
 (s/def :specs.coll-of/kind #{vector? list? set?})
 (s/def :specs.coll-of/count pos-int?)
 (s/def :specs.coll-of/max-count pos-int?)
 (s/def :specs.coll-of/min-count pos-int?)
 (s/def :specs.coll-of/distinct boolean?)
-(s/def :specs/coll-of-args
-  (s/keys :opt-un
+
+(s/def :specs/every-args
+  (s/keys :req-un
           [:specs.coll-of/into
            :specs.coll-of/kind
            :specs.coll-of/count
@@ -632,31 +680,102 @@ Detected 1 error"
            :specs.coll-of/distinct]))
 
 (defn apply-coll-of [spec {:keys [into kind count max-count min-count distinct gen-max gen-into gen] :as opts}]
-  (s/coll-of spec :into into :kind kind :min-count min-count :max-count max-count :distinct distinct))
+  (s/coll-of spec :into into :min-count min-count :max-count max-count :distinct distinct))
 
-(s/def :specs/spec
-  #{:specs/type
-    :specs/set})
-;; TODO - cat + alt, + ? *
+(defn apply-map-of [spec1 spec2 {:keys [into kind count max-count min-count distinct gen-max gen-into gen] :as opts}]
+  (s/map-of spec1 spec2 :into into :min-count min-count :max-count max-count :distinct distinct))
 
-(deftest spec-combinations
+;; Since CLJS prints out entire source of a function when
+;; it pretty-prints a failure, the output becomes much nicer if
+;; we wrap each function in a simple spec
+(s/def :specs/string string?)
+(s/def :specs/vector vector?)
+(s/def :specs/int int?)
+(s/def :specs/boolean boolean?)
+(s/def :specs/keyword keyword?)
+(s/def :specs/map map?)
+(s/def :specs/symbol symbol?)
+(s/def :specs/pos-int pos-int?)
+(s/def :specs/neg-int neg-int?)
+(s/def :specs/zero #(and (number? %) (zero? %)))
+
+(def simple-spec-gen (gen/one-of
+                      [(gen/elements [:specs/string
+                                      :specs/vector
+                                      :specs/int
+                                      :specs/boolean
+                                      :specs/keyword
+                                      :specs/map
+                                      :specs/symbol
+                                      :specs/pos-int
+                                      :specs/neg-int
+                                      :specs/zero])
+                       (gen/set gen/simple-type-printable)]))
+
+(deftest generated-simple-spec
   (checking
-   "explaining a spec failure doesn't throw an error"
-   20
-   [base-spec (gen/elements
-               [:specs/vector
-                :specs/int
-                :specs/boolean
-                :specs/keyword
-                :specs/map
-                #{:a :b :c}
-                #{}])
-    coll-of-args (s/gen :specs/coll-of-args)
-    ;; TODO - do i need to wrap this 'let'??
-    :let [coll-of-spec (apply-coll-of base-spec coll-of-args)]
-    sp (gen/elements
-        [base-spec
-         coll-of-spec])
-    :let [sp-form (s/form sp)]
+   "simple spec"
+   30
+   [simple-spec simple-spec-gen
+    :let [sp-form (s/form simple-spec)]
     form gen/any-printable]
-   (e.s/pretty-explain-str sp form)))
+   (e.s/pretty-explain-str simple-spec form)))
+
+(deftest generated-coll-of-specs
+  (checking
+   "'coll-of' spec"
+   30
+   [simple-spec simple-spec-gen
+    every-args (s/gen :specs/every-args)
+    :let [spec (apply-coll-of simple-spec every-args)]
+    :let [sp-form (s/form spec)]
+    form gen/any-printable]
+   (e.s/pretty-explain-str spec form)))
+
+#_(deftest generated-and-specs
+  (checking
+   "'and' spec"
+   30
+   [simple-spec1 simple-spec-gen
+    simple-spec2 simple-spec-gen
+    :let [spec (s/and simple-spec1 simple-spec2)]
+    :let [sp-form (s/form spec)]
+    form gen/any-printable]
+   (e.s/pretty-explain-str spec form)))
+
+#_(deftest generated-or-specs
+  (checking
+   "'or' spec"
+   30
+   [simple-spec1 simple-spec-gen
+    simple-spec2 simple-spec-gen
+    :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
+    :let [sp-form (s/form spec)]
+    form gen/any-printable]
+   (e.s/pretty-explain-str spec form)))
+
+#_(deftest generated-map-of-specs
+  (checking
+   "'map-of' spec"
+   25
+   [simple-spec1 simple-spec-gen
+    simple-spec2 simple-spec-gen
+    every-args (s/gen :specs/every-args)
+    :let [spec (apply-map-of simple-spec1 simple-spec2 every-args)
+          sp-form (s/form spec)]
+    form any-printable-wo-nan]
+   (e.s/pretty-explain-str spec form)))
+
+;; TODO - keys
+;; TODO - cat + alt, + ? *
+;; TODO - nilable
+;; TODO - test coll-of that is a set . can i should a bad element of a set?
+
+#_(deftest compare-paths-test
+  (checking
+   "path to a key comes before a path to a value"
+   10
+   [m (gen/map gen/simple-type-printable gen/simple-type-printable)
+    k gen/simple-type-printable]
+   (is (= -1 (e.s/compare-paths [(e.s/->KeyPathSegment k)] [k])))
+   (is (= 1 (e.s/compare-paths [k] [(e.s/->KeyPathSegment k)])))))
