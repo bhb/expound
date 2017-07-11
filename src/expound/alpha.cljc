@@ -1,4 +1,4 @@
-(ns expound.spec
+(ns expound.alpha
   "Drop-in replacement for clojure.spec.alpha, with
   human-readable `explain` function"
   (:require [clojure.data]
