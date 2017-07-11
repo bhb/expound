@@ -1,6 +1,6 @@
 (ns expound.test-runner
   (:require [jx.reporter.karma :refer-macros [run-tests run-all-tests]]
-            [expound.spec-test]
+            [expound.alpha-test]
             [expound.test-utils]))
 
 (enable-console-print!)
@@ -19,4 +19,4 @@
 ;; runs all tests in the given namespaces
 ;; You can use this by changing client.args in karma.conf.js
 #_(defn ^:export run [karma]
-    (run-tests karma 'expound.spec-test))
+    (run-tests karma 'expound.alpha-test))

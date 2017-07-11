@@ -1,4 +1,4 @@
-(ns expound.spec
+(ns expound.alpha
   "Drop-in replacement for clojure.spec.alpha, with
   human-readable `explain` function"
   (:require [clojure.data]
@@ -65,21 +65,9 @@
        (= partial-path
           (subvec full-path 0 (count partial-path)))))
 
-(defrecord KeyPathSegment [key]
-  ;; TODO - remove
-  ;; IComparable
-  ;; (-compare [this that]
-  ;;   (compare (:key this) (:key that)))
+(defrecord KeyPathSegment [key])
 
-  )
-
-(defrecord KeyValuePathSegment [idx]
-  ;; TODO - remove
-  ;; IComparable
-  ;; (-compare [this that]
-  ;;   (compare (:idx this) (:idx that)))
-
-  )
+(defrecord KeyValuePathSegment [idx])
 
 (defn kps? [x]
   (instance? KeyPathSegment x))
@@ -519,7 +507,7 @@ should satisfy
 
 ;;;;;; public ;;;;;;
 
-(defn pretty-explain-str
+(defn expound
   "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
   [spec form]
   (let [problems (::s/problems (s/explain-data spec form))
