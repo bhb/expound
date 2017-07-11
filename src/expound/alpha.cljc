@@ -65,21 +65,9 @@
        (= partial-path
           (subvec full-path 0 (count partial-path)))))
 
-(defrecord KeyPathSegment [key]
-  ;; TODO - remove
-  ;; IComparable
-  ;; (-compare [this that]
-  ;;   (compare (:key this) (:key that)))
+(defrecord KeyPathSegment [key])
 
-  )
-
-(defrecord KeyValuePathSegment [idx]
-  ;; TODO - remove
-  ;; IComparable
-  ;; (-compare [this that]
-  ;;   (compare (:idx this) (:idx that)))
-
-  )
+(defrecord KeyValuePathSegment [idx])
 
 (defn kps? [x]
   (instance? KeyPathSegment x))
