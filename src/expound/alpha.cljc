@@ -507,7 +507,7 @@ should satisfy
 
 ;;;;;; public ;;;;;;
 
-(defn pretty-explain-str
+(defn expound
   "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
   [spec form]
   (let [problems (::s/problems (s/explain-data spec form))
