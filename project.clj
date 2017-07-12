@@ -1,6 +1,6 @@
 (defproject expound "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "Human-optimized error messages for clojure.spec"
+  :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0-alpha17"]
@@ -89,5 +89,4 @@
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
                               ["with-profile" "test-web" "cljsbuild" "once" "test"]
-                              ["with-profile" "test-web" "cljsbuild" "auto" "test"]]}
-  )
+                              ["with-profile" "test-web" "cljsbuild" "auto" "test"]]})
