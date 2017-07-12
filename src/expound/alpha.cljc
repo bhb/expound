@@ -535,21 +535,3 @@ Detected %s %s"
           (section-label)
           (count grouped-problems)
           (if (= 1 (count grouped-problems)) "error" "errors")))))))
-
-(comment
-  (require '[clojure.spec.alpha :as s])
-  (require '[expound.alpha :as expound])
-  
-  (s/def :example.place/city string?)
-  (s/def :example.place/state string?)
-  (s/def :example/place (s/keys :req-un [:example.place/city :example.place/state]))
-
-  (println (s/explain-str :example/place {}))
-  ;; val: {} fails spec: :example/place predicate: (contains? % :city)
-  ;; val: {} fails spec: :example/place predicate: (contains? % :state)
-  ;; :clojure.spec.alpha/spec  :example/place
-  ;; :clojure.spec.alpha/value  {}
-
-  (println (expound/expound :example/place {}))
-
-  )
