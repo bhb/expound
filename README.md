@@ -8,7 +8,7 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 INSERT jar info here
 
-Replace calls to `clojure.spec.alpha/explain-str` with `expound.alpha/expound`
+Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and to `clojure.spec.alpha/explain-str` with `expound.alpha/expound-str`.
 
 ```clojure
 (require '[clojure.spec.alpha :as s])
@@ -18,13 +18,13 @@ Replace calls to `clojure.spec.alpha/explain-str` with `expound.alpha/expound`
 (s/def :example.place/state string?)
 (s/def :example/place (s/keys :req-un [:example.place/city :example.place/state]))
 
-(println (s/explain-str :example/place {}))
+(s/explain :example/place {})
 ;; val: {} fails spec: :example/place predicate: (contains? % :city)
 ;; val: {} fails spec: :example/place predicate: (contains? % :state)
 ;; :clojure.spec.alpha/spec  :example/place
 ;; :clojure.spec.alpha/value  {}
 
-(println (expound/expound :example/place {}))
+(expound/expound :example/place {})
 ;; -- Spec failed --------------------
 
 ;;   {}
@@ -41,12 +41,12 @@ Replace calls to `clojure.spec.alpha/explain-str` with `expound.alpha/expound`
 ;; -------------------------
 ;; Detected 1 error
 
-(println (s/explain-str :example/place {:city "Denver", :state :CO}))
+(s/explain :example/place {:city "Denver", :state :CO})
 ;; In: [:state] val: :CO fails spec: :example.place/state at: [:state] predicate: string?
 ;; :clojure.spec.alpha/spec  :example/place
 ;; :clojure.spec.alpha/value  {:city "Denver", :state :CO}
 
-(println (expound/expound :example/place {:city "Denver", :state :CO}))
+(expound/expound :example/place {:city "Denver", :state :CO})
 ;; -- Spec failed --------------------
 
 ;;   {:city ..., :state :CO}

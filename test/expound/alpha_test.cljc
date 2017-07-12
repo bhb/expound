@@ -53,7 +53,7 @@
 (deftest simple-type-based-spec
   (testing "valid value"
     (is (= "Success!\n"
-           (expound/expound :simple-type-based-spec/str ""))))
+           (expound/expound-str :simple-type-based-spec/str ""))))
 
   (testing "invalid value"
     (is (=
@@ -72,7 +72,7 @@ should satisfy
 
 -------------------------
 Detected 1 error")
-          (expound/expound :simple-type-based-spec/str 1)))))
+          (expound/expound-str :simple-type-based-spec/str 1)))))
 
 (s/def :set-based-spec/tag #{:foo :bar})
 (s/def :set-based-spec/nilable-tag (s/nilable :set-based-spec/tag))
@@ -92,7 +92,7 @@ should be one of: `:bar`,`:foo`
 
 -------------------------
 Detected 1 error"
-           (expound/expound :set-based-spec/tag :baz))))
+           (expound/expound-str :set-based-spec/tag :baz))))
   ;; FIXME - we should fix nilable and or specs better so they are clearly grouped
   (testing "nilable version"
     (is (= (pf "-- Spec failed --------------------
@@ -123,7 +123,7 @@ should satisfy
 
 -------------------------
 Detected 2 errors")
-           (expound/expound :set-based-spec/nilable-tag :baz)))))
+           (expound/expound-str :set-based-spec/nilable-tag :baz)))))
 
 (s/def :nested-type-based-spec/str string?)
 (s/def :nested-type-based-spec/strs (s/coll-of :nested-type-based-spec/str))
@@ -148,7 +148,7 @@ should satisfy
 
 -------------------------
 Detected 1 error")
-        (expound/expound :nested-type-based-spec/strs ["one" "two" 33]))))
+        (expound/expound-str :nested-type-based-spec/strs ["one" "two" 33]))))
 
 (s/def :nested-type-based-spec-special-summary-string/int int?)
 (s/def :nested-type-based-spec-special-summary-string/ints (s/coll-of :nested-type-based-spec-special-summary-string/int))
@@ -174,7 +174,7 @@ should satisfy
 
 -------------------------
 Detected 1 error")
-        (expound/expound :nested-type-based-spec-special-summary-string/ints [1 2 "..."]))))
+        (expound/expound-str :nested-type-based-spec-special-summary-string/ints [1 2 "..."]))))
 
 (s/def :or-spec/str-or-int (s/or :int int? :str string?))
 (s/def :or-spec/vals (s/coll-of :or-spec/str-or-int))
@@ -200,7 +200,7 @@ or
 
 -------------------------
 Detected 1 error")
-           (expound/expound :or-spec/str-or-int :kw))))
+           (expound/expound-str :or-spec/str-or-int :kw))))
   (testing "collection of values"
     (is (= (pf "-- Spec failed --------------------
 
@@ -224,7 +224,7 @@ or
 
 -------------------------
 Detected 1 error")
-           (expound/expound :or-spec/vals [0 "hi" :kw "bye"])))))
+           (expound/expound-str :or-spec/vals [0 "hi" :kw "bye"])))))
 
 (s/def :and-spec/name (s/and string? #(pos? (count %))))
 (s/def :and-spec/names (s/coll-of :and-spec/name))
@@ -250,7 +250,7 @@ Detected 1 error"
                #?(:cljs "(pos? (count %))"
                   :clj "(clojure.core/fn [%] (clojure.core/pos? (clojure.core/count %)))")
                )
-           (expound/expound :and-spec/name ""))))
+           (expound/expound-str :and-spec/name ""))))
 
   (testing "shows both failures in order"
     (is (=
@@ -295,7 +295,7 @@ Detected 2 errors"
              #?(:cljs "(pos? (count %))"
                 :clj "(clojure.core/fn [%] (clojure.core/pos? (clojure.core/count %)))")
              )
-          (expound/expound :and-spec/names ["bob" "sally" "" 1])))))
+          (expound/expound-str :and-spec/names ["bob" "sally" "" 1])))))
 
 (s/def :coll-of-spec/big-int-coll (s/coll-of int? :min-count 10))
 
@@ -320,7 +320,7 @@ Detected 1 error"
              #?(:cljs "9007199254740991"
                 :clj "Integer/MAX_VALUE")
              )
-          (expound/expound :coll-of-spec/big-int-coll [])))))
+          (expound/expound-str :coll-of-spec/big-int-coll [])))))
 
 (s/def :cat-spec/kw (s/cat :k keyword? :v any?))
 (deftest cat-spec
@@ -340,7 +340,7 @@ should have additional elements. The next element is named `:k` and satisfies
 
 -------------------------
 Detected 1 error")
-           (expound/expound :cat-spec/kw [])))
+           (expound/expound-str :cat-spec/kw [])))
     (is (= (pf "-- Syntax error -------------------
 
   [:foo]
@@ -356,7 +356,7 @@ should have additional elements. The next element is named `:v` and satisfies
 
 -------------------------
 Detected 1 error")
-           (expound/expound :cat-spec/kw [:foo]))))
+           (expound/expound-str :cat-spec/kw [:foo]))))
   (testing "too many elements"
     (is (= (pf "-- Syntax error -------------------
 
@@ -372,7 +372,7 @@ Value has extra input
 
 -------------------------
 Detected 1 error")
-           (expound/expound :cat-spec/kw [:foo 1 :bar :baz])))))
+           (expound/expound-str :cat-spec/kw [:foo 1 :bar :baz])))))
 
 (s/def :keys-spec/name string?)
 (s/def :keys-spec/age int?)
@@ -397,7 +397,7 @@ Detected 1 error"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"
                   )
                )
-           (expound/expound :keys-spec/user {}))))
+           (expound/expound-str :keys-spec/user {}))))
   (testing "invalid key"
     (is (= (pf "-- Spec failed --------------------
 
@@ -419,7 +419,7 @@ should satisfy
 Detected 1 error"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
-           (expound/expound :keys-spec/user {:age 1 :keys-spec/name :bob})))))
+           (expound/expound-str :keys-spec/user {:age 1 :keys-spec/name :bob})))))
 
 (s/def :multi-spec/value string?)
 (s/def :multi-spec/children vector?)
@@ -453,7 +453,7 @@ Cannot find spec for
 
 -------------------------
 Detected 1 error")
-          (expound/expound :multi-spec/el {}))))
+          (expound/expound-str :multi-spec/el {}))))
   (testing "invalid dispatch value"
     (is (=
           (pf "-- Missing spec -------------------
@@ -476,7 +476,7 @@ Cannot find spec for
 
 -------------------------
 Detected 1 error")
-          (expound/expound :multi-spec/el {:multi-spec/el-type :image}))))
+          (expound/expound-str :multi-spec/el {:multi-spec/el-type :image}))))
 
   (testing "valid dispatch value, but other error"
     (is (=
@@ -495,7 +495,7 @@ should contain keys: `:multi-spec/value`
 
 -------------------------
 Detected 1 error")
-          (expound/expound :multi-spec/el {:multi-spec/el-type :text})))))
+          (expound/expound-str :multi-spec/el {:multi-spec/el-type :text})))))
 
 (s/def :recursive-spec/tag #{:text :group})
 (s/def :recursive-spec/on-tap (s/coll-of map? :kind vector?))
@@ -557,7 +557,7 @@ Detected 1 error"
    [:recursive-spec/tag]
    :opt-un
    [:recursive-spec/props :recursive-spec/children])"))
-           (expound/expound
+           (expound/expound-str
             :recursive-spec/el
             {:tag :group
              :children [{:tag :group
@@ -611,7 +611,7 @@ should satisfy
 
 -------------------------
 Detected 2 errors")
-         (expound/expound :cat-wrapped-in-or-spec/kv-or-string {"foo" "hi"}))))
+         (expound/expound-str :cat-wrapped-in-or-spec/kv-or-string {"foo" "hi"}))))
 
 (s/def :map-of-spec/name string?)
 (s/def :map-of-spec/age pos-int?)
@@ -635,7 +635,7 @@ should satisfy
 
 -------------------------
 Detected 1 error")
-         (expound/expound :map-of-spec/name->age {"Sally" "30"})))
+         (expound/expound-str :map-of-spec/name->age {"Sally" "30"})))
   (is (= (pf "-- Spec failed --------------------
 
   {:sally ...}
@@ -654,7 +654,7 @@ should satisfy
 
 -------------------------
 Detected 1 error")
-         (expound/expound :map-of-spec/name->age {:sally 30}))))
+         (expound/expound-str :map-of-spec/name->age {:sally 30}))))
 
 ;; I want to do something like
 ;; (s/def :specs.coll-of/into #{[] '() #{}})
@@ -719,7 +719,7 @@ Detected 1 error")
     [simple-spec simple-spec-gen
     :let [sp-form (s/form simple-spec)]
     form gen/any-printable]
-    (expound/expound simple-spec form)))
+    (expound/expound-str simple-spec form)))
 
 #_(deftest generated-coll-of-specs
     (checking
@@ -730,7 +730,7 @@ Detected 1 error")
     :let [spec (apply-coll-of simple-spec every-args)]
     :let [sp-form (s/form spec)]
     form gen/any-printable]
-      (expound/expound spec form)))
+      (expound/expound-str spec form)))
 
 #_(deftest generated-and-specs
     (checking
@@ -741,7 +741,7 @@ Detected 1 error")
     :let [spec (s/and simple-spec1 simple-spec2)]
     :let [sp-form (s/form spec)]
     form gen/any-printable]
-      (expound/expound spec form)))
+      (expound/expound-str spec form)))
 
 #_(deftest generated-or-specs
     (checking
@@ -752,7 +752,7 @@ Detected 1 error")
     :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
     :let [sp-form (s/form spec)]
     form gen/any-printable]
-      (expound/expound spec form)))
+      (expound/expound-str spec form)))
 
 ;; TODO - get these two tests running!
 #_(deftest generated-map-of-specs
@@ -765,7 +765,7 @@ Detected 1 error")
     :let [spec (apply-map-of simple-spec1 simple-spec2 every-args)
           sp-form (s/form spec)]
     form any-printable-wo-nan]
-      (expound/expound spec form)))
+      (expound/expound-str spec form)))
 
 ;; TODO - keys
 ;; TODO - cat + alt, + ? *

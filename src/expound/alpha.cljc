@@ -507,7 +507,7 @@ should satisfy
 
 ;;;;;; public ;;;;;;
 
-(defn expound
+(defn expound-str
   "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
   [spec form]
   (let [problems (::s/problems (s/explain-data spec form))
@@ -535,3 +535,6 @@ Detected %s %s"
           (section-label)
           (count grouped-problems)
           (if (= 1 (count grouped-problems)) "error" "errors")))))))
+
+(defn expound [spec form]
+  (println (expound-str spec form)))
