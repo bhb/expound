@@ -1,6 +1,8 @@
 # Expound
 
-Expound formats clojure.spec `problems` in a way that is optimized for humans to read.
+Expound formats `clojure.spec` errors in a way that is optimized for humans to read.
+
+Expound is in alpha while `clojure.spec` is in alpha.
 
 ## Usage
 
@@ -74,14 +76,8 @@ Replace calls to `clojure.spec.alpha/explain-str` with `expound.alpha/expound`
 * [Clojure Error Message Catalog](https://github.com/yogthos/clojure-error-message-catalog)
 * [The Usability of beginner-oriented Clojure error messages](http://wiki.science.ru.nl/tfpie/images/6/6e/TFPIE16-slides-emachkasova.pdf)
 
-
-
-
-
-
 ## License
 
 Copyright © 2017 Ben Brinckerhoff
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Distributed under the Eclipse Public License version 1.0, just like Clojure.
