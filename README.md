@@ -6,7 +6,7 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ## Usage
 
-INSERT jar info here
+[![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
 
 Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and to `clojure.spec.alpha/explain-str` with `expound.alpha/expound-str`.
 
