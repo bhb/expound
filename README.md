@@ -12,6 +12,8 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 
 ```clojure
 (require '[clojure.spec.alpha :as s])
+;; for clojurescript:
+;; (require '[cljs.spec.alpha :as s])
 (require '[expound.alpha :as expound])
 
 (s/def :example.place/city string?)
