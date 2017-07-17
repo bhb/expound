@@ -5,6 +5,7 @@
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.walk :as walk]
+            #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
             [clojure.pprint :as pprint])
   (:refer-clojure :exclude [format]))
