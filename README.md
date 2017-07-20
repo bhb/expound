@@ -8,6 +8,8 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
 
+### `expound`
+
 Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and to `clojure.spec.alpha/explain-str` with `expound.alpha/expound-str`.
 
 ```clojure
@@ -69,6 +71,33 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 
 ;; -------------------------
 ;; Detected 1 error
+```
+
+### `*explain-out*`
+
+To use other Spec functions, you can set `clojure.spec.alpha/*explain-out*` (or `cljs.spec.alpha/*explain-out*`.
+
+(Setting `*explain-out*` does not work correctly in Clojurescript versions prior to `1.9.562` due to differences in `explain-data`)
+
+```clojure
+;; Temporarily set the dynamic var
+(require '[clojure.spec.alpha :as s])
+;; for clojurescript:
+;; (require '[cljs.spec.alpha :as s])
+(require '[expound.alpha :as expound])
+
+(s/def :example.place/city string?)
+
+;;  Use s/assert
+(s/check-asserts true) ; enable asserts
+
+;; Set printer in the scope of 'binding'
+(binding [s/*explain-out* printer]
+  (s/assert :example.place/city 1))
+
+;; Or set it globally
+(set! s/*explain-out* printer)
+(s/assert :example.place/city 1)
 ```
 
 ## Prior Art

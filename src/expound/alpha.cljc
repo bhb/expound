@@ -228,7 +228,7 @@
      :cljs (implements? cljs.core.INamed x)))
 
 (defn pr-pred [pred]
-  (if (named? pred)
+  (if (or (symbol? pred) (named? pred))
     (name pred)
     (pr-str pred)))
 
@@ -255,8 +255,11 @@ should have additional elements. The next element is named `%s` and satisfies
 
 (defn missing-key [form]
   #?(:cljs (let [[contains _arg key-keyword] form]
-             (s/assert #{'contains?} contains)
-             key-keyword)
+             (if (contains? #{'cljs.core/contains? 'contains?} contains)
+               key-keyword
+               (let [[fn _ [contains _arg key-keyword] & rst] form]
+                 (s/assert #{'cljs.core/contains? 'contains?} contains)
+                 key-keyword)))
      ;; FIXME - this duplicates the structure of how
      ;; spec builds the 'contains?' function. Extract this into spec
      ;; and use conform instead of this ad-hoc validation.
@@ -276,12 +279,15 @@ should have additional elements. The next element is named `%s` and satisfies
 (def section-label (partial label section-size))
 
 (defn relevant-specs [problems]
-  (format
-   "%s
+  (let [sp-str (specs-str problems)]
+    (if (string/blank? sp-str)
+      ""
+      (format
+       "%s
 
 %s"
-   (section-label "Relevant specs")
-   (specs-str problems)))
+       (section-label "Relevant specs")
+       sp-str))))
 
 (defn multi-spec-parts [spec]
   (let [[_multi-spec mm retag]  (s/form spec)]
@@ -298,7 +304,11 @@ should have additional elements. The next element is named `%s` and satisfies
      (let [pred (:pred problem)]
        (and (list? pred)
             (map? (:val problem))
-            (= 'contains? (first pred))))
+            (or (= 'contains? (first pred))
+                (let [[fn _ [contains _] & rst] pred]
+                  (and
+                   (= 'cljs.core/fn fn)
+                   (= 'cljs.core/contains? contains))))))
      :clj
      (let [pred (:pred problem)]
        (and (seq? pred)
@@ -508,34 +518,43 @@ should satisfy
 
 ;;;;;; public ;;;;;;
 
-(defn expound-str
-  "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
-  [spec form]
-  (let [problems (::s/problems (s/explain-data spec form))
-        _ (doseq [problem problems]
-            (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
-        leaf-problems (leaf-problems (map (partial adjust-in form) (::s/problems (s/explain-data spec form))))
-
-        _ (assert (every? :in1 leaf-problems) leaf-problems)
-        ;; We attempt to sort the problems by path, but it's not feasible to sort in
-        ;; all cases, since paths could contain arbitrary user-defined data structures.
-        ;; If there is an error, we just give up on sorting.
-        grouped-problems (safe-sort-by first compare-paths
-                                       (path+problem-type->problems leaf-problems))]
-    (if (empty? problems)
-      "Success!\n"
-      (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
-                                               (problem-group-str type form in1 problems)))]
-        (no-trailing-whitespace
-         (format
-          "%s
+(defn printer [explain-data]
+  ;; TODO - use namespace destructuring
+  (print
+   (if-not explain-data
+     "Success!\n"
+     (let [problems (::s/problems explain-data)
+           form (::s/value explain-data)
+           spec (::s/spec explain-data)
+           _ (doseq [problem problems]
+               (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
+           leaf-problems (leaf-problems (map (partial adjust-in form) problems))
+           _ (assert (every? :in1 leaf-problems) leaf-problems)
+           ;; We attempt to sort the problems by path, but it's not feasible to sort in
+           ;; all cases, since paths could contain arbitrary user-defined data structures.
+           ;; If there is an error, we just give up on sorting.
+           grouped-problems (safe-sort-by first compare-paths
+                                          (path+problem-type->problems leaf-problems))]
+       (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
+                                                (problem-group-str type form in1 problems)))]
+         (no-trailing-whitespace
+          (format
+           ;; TODO - add a newline here to make specs look nice
+           "%s
 
 %s
 Detected %s %s"
-          problems-str
-          (section-label)
-          (count grouped-problems)
-          (if (= 1 (count grouped-problems)) "error" "errors")))))))
+           problems-str
+           (section-label)
+           (count grouped-problems)
+           (if (= 1 (count grouped-problems)) "error" "errors"))))))))
+
+(defn expound-str
+  "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
+  [spec form]
+  (binding [s/*explain-out* printer]
+    (s/explain-str spec form)))
 
 (defn expound [spec form]
-  (println (expound-str spec form)))
+  (binding [s/*explain-out* printer]
+    (s/explain spec form)))

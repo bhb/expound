@@ -247,7 +247,7 @@ should satisfy
 
 -------------------------
 Detected 1 error"
-               #?(:cljs "(pos? (count %))"
+               #?(:cljs "(cljs.core/fn [%] (cljs.core/pos? (cljs.core/count %)))"
                   :clj "(clojure.core/fn [%] (clojure.core/pos? (clojure.core/count %)))")
                )
            (expound/expound-str :and-spec/name ""))))
@@ -292,7 +292,7 @@ should satisfy
 
 -------------------------
 Detected 2 errors"
-             #?(:cljs "(pos? (count %))"
+             #?(:cljs "(cljs.core/fn [%] (cljs.core/pos? (cljs.core/count %)))"
                 :clj "(clojure.core/fn [%] (clojure.core/pos? (clojure.core/count %)))")
              )
           (expound/expound-str :and-spec/names ["bob" "sally" "" 1])))))
@@ -571,6 +571,7 @@ Detected 1 error"
 (s/def :cat-wrapped-in-or-spec/kv-or-string (s/or
                                              :map (s/keys :req [:cat-wrapped-in-or-spec/type])
                                              :kv :cat-wrapped-in-or-spec/kv))
+
 (deftest cat-wrapped-in-or-spec
   ;; FIXME - make multiple types of specs on the same value display as single error
   (is (= (pf "-- Spec failed --------------------
@@ -780,3 +781,46 @@ Detected 1 error")
     k gen/simple-type-printable]
    (is (= -1 (expound/compare-paths [(expound/->KeyPathSegment k)] [k])))
    (is (= 1 (expound/compare-paths [k] [(expound/->KeyPathSegment k)])))))
+
+(s/def :test-assert/name string?)
+(deftest test-assert
+  (testing "assertion passes"
+      (is (= "hello"
+             (s/assert :test-assert/name "hello"))))
+  (testing "assertion fails"
+    #?(:cljs
+       (try
+         (binding [s/*explain-out* expound/printer]
+           (s/assert :test-assert/name :hello))
+         (catch :default e
+           (is (= "Spec assertion failed\n-- Spec failed --------------------
+
+  :hello
+
+should satisfy
+
+  string?
+
+
+
+-------------------------
+Detected 1 error"
+                  (.-message e)))))
+       :clj
+       (try
+         (binding [s/*explain-out* expound/printer]
+           (s/assert :test-assert/name :hello))
+         (catch Exception e
+           (is (= "Spec assertion failed\n-- Spec failed --------------------
+
+  :hello
+
+should satisfy
+
+  string?
+
+
+
+-------------------------
+Detected 1 error"
+                  (:cause (Throwable->map e)))))))))

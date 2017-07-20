@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0-alpha17" :scope "provided"]
-                 [org.clojure/clojurescript "1.9.542" :scope "provided"]
+                 [org.clojure/clojurescript "1.9.562" :scope "provided"]
                  [org.clojure/spec.alpha "0.1.123" :scope "provided"]]
 
   :plugins [[com.jakemccrary/lein-test-refresh "0.20.0"]
