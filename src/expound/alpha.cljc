@@ -519,13 +519,11 @@ should satisfy
 ;;;;;; public ;;;;;;
 
 (defn printer [explain-data]
-  ;; TODO - use namespace destructuring
   (print
    (if-not explain-data
      "Success!\n"
-     (let [problems (::s/problems explain-data)
-           form (::s/value explain-data)
-           spec (::s/spec explain-data)
+     (let [{:keys [::s/problems ::s/value]} explain-data
+           form value
            _ (doseq [problem problems]
                (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
            leaf-problems (leaf-problems (map (partial adjust-in form) problems))
@@ -549,12 +547,18 @@ Detected %s %s"
            (count grouped-problems)
            (if (= 1 (count grouped-problems)) "error" "errors"))))))))
 
+(defn expound [spec form]
+  ;; expound was initially released with support
+  ;; for CLJS 1.9.542 which did not include
+  ;; the value in the explain data, so we patch it
+  ;; in to avoid breaking back compat (at least for now)
+  (let [explain-data (s/explain-data spec form)]
+    (printer (if explain-data
+               (assoc explain-data
+                      ::s/value form)
+               nil))))
+
 (defn expound-str
   "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
   [spec form]
-  (binding [s/*explain-out* printer]
-    (s/explain-str spec form)))
-
-(defn expound [spec form]
-  (binding [s/*explain-out* printer]
-    (s/explain spec form)))
+  (with-out-str (expound spec form)))
