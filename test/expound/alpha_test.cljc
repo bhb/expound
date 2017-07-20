@@ -824,3 +824,23 @@ should satisfy
 -------------------------
 Detected 1 error"
                   (:cause (Throwable->map e)))))))))
+
+(s/def :test-explain-str/name string?)
+(deftest test-explain-str
+  (is (= (pf "-- Spec failed --------------------
+
+  :hello
+
+should satisfy
+
+  string?
+
+-- Relevant specs -------
+
+:test-assert/name:
+  pf.core/string?
+
+-------------------------
+Detected 1 error")
+         (binding [s/*explain-out* expound/printer]
+           (s/explain-str :test-assert/name :hello)))))
