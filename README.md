@@ -75,9 +75,9 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 
 ### `*explain-out*`
 
-To use other Spec functions, you can set `clojure.spec.alpha/*explain-out*` (or `cljs.spec.alpha/*explain-out*`.
+To use other Spec functions, you can set `clojure.spec.alpha/*explain-out*` (or `cljs.spec.alpha/*explain-out*` for ClojureScript).
 
-(Setting `*explain-out*` does not work correctly in Clojurescript versions prior to `1.9.562` due to differences in `explain-data`)
+(Setting `*explain-out*` does not work correctly in ClojureScript versions prior to `1.9.562` due to differences in `explain-data`)
 
 ```clojure
 ;; Temporarily set the dynamic var
@@ -87,8 +87,9 @@ To use other Spec functions, you can set `clojure.spec.alpha/*explain-out*` (or 
 (require '[expound.alpha :as expound])
 
 (s/def :example.place/city string?)
+(s/def :example.place/state string?)
 
-;;  Use s/assert
+;;  Use `assert`
 (s/check-asserts true) ; enable asserts
 
 ;; Set printer in the scope of 'binding'
@@ -96,8 +97,22 @@ To use other Spec functions, you can set `clojure.spec.alpha/*explain-out*` (or 
   (s/assert :example.place/city 1))
 
 ;; Or set it globally
-(set! s/*explain-out* printer)
+(set! s/*explain-out* expound/printer)
 (s/assert :example.place/city 1)
+
+;; Use `instrument`
+(require '[clojure.spec.test.alpha :as st])
+
+(s/fdef pr-loc :args (s/cat :city :example.place/city
+                            :state :example.place/state))
+(defn pr-loc [city state]
+  (str city ", " state))
+
+(st/instrument `pr-loc)
+(pr-loc "denver" :CO)
+
+;; You can use `explain` without converting to expound
+(s/explain :example.place/city 123)
 ```
 
 ## Prior Art
