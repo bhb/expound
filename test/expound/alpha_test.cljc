@@ -3,6 +3,7 @@
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [clojure.test.check.generators :as gen]
             [clojure.spec.alpha :as s]
+            [clojure.spec.test.alpha :as st]
             [expound.alpha :as expound]
             [expound.test-utils :as test-utils]
             [clojure.string :as string]))
@@ -15,10 +16,11 @@
   "Fixes platform-specific namespaces and also formats using printf syntax"
   [s & args]
   (apply expound/format
-   #?(:cljs (string/replace s "pf." "cljs.")
-      :clj (string/replace s "pf." "clojure."))
-   args))
+         #?(:cljs (string/replace s "pf." "cljs.")
+            :clj (string/replace s "pf." "clojure."))
+         args))
 
+(defn get-args [& args] args)
 (deftest highlighted-form
   (testing "atomic value"
     (is (= "\"Fred\"\n^^^^^^"
@@ -46,7 +48,12 @@
               :c "cccccccd"
               :d "dddddddd"
               :e "eeeeeeee"}}
-            [:letters])))))
+            [:letters]))))
+  (testing "args to function"
+    (is (= "(1 ... ...)\n ^"
+           (expound/highlighted-form
+            (get-args 1 2 3)
+            [0])))))
 
 (s/def :simple-type-based-spec/str string?)
 
@@ -57,7 +64,7 @@
 
   (testing "invalid value"
     (is (=
-          (pf "-- Spec failed --------------------
+         (pf "-- Spec failed --------------------
 
   1
 
@@ -72,7 +79,7 @@ should satisfy
 
 -------------------------
 Detected 1 error")
-          (expound/expound-str :simple-type-based-spec/str 1)))))
+         (expound/expound-str :simple-type-based-spec/str 1)))))
 
 (s/def :set-based-spec/tag #{:foo :bar})
 (s/def :set-based-spec/nilable-tag (s/nilable :set-based-spec/tag))
@@ -130,7 +137,7 @@ Detected 2 errors")
 
 (deftest nested-type-based-spec
   (is (=
-        (pf "-- Spec failed --------------------
+       (pf "-- Spec failed --------------------
 
   [... ... 33]
            ^^
@@ -148,14 +155,14 @@ should satisfy
 
 -------------------------
 Detected 1 error")
-        (expound/expound-str :nested-type-based-spec/strs ["one" "two" 33]))))
+       (expound/expound-str :nested-type-based-spec/strs ["one" "two" 33]))))
 
 (s/def :nested-type-based-spec-special-summary-string/int int?)
 (s/def :nested-type-based-spec-special-summary-string/ints (s/coll-of :nested-type-based-spec-special-summary-string/int))
 
 (deftest nested-type-based-spec-special-summary-string
   (is (=
-        (pf "-- Spec failed --------------------
+       (pf "-- Spec failed --------------------
 
   [... ... \"...\"]
            ^^^^^
@@ -174,7 +181,7 @@ should satisfy
 
 -------------------------
 Detected 1 error")
-        (expound/expound-str :nested-type-based-spec-special-summary-string/ints [1 2 "..."]))))
+       (expound/expound-str :nested-type-based-spec-special-summary-string/ints [1 2 "..."]))))
 
 (s/def :or-spec/str-or-int (s/or :int int? :str string?))
 (s/def :or-spec/vals (s/coll-of :or-spec/str-or-int))
@@ -254,7 +261,7 @@ Detected 1 error"
 
   (testing "shows both failures in order"
     (is (=
-          (pf "-- Spec failed --------------------
+         (pf "-- Spec failed --------------------
 
   [... ... \"\" ...]
            ^^
@@ -295,14 +302,14 @@ Detected 2 errors"
              #?(:cljs "(cljs.core/fn [%] (cljs.core/pos? (cljs.core/count %)))"
                 :clj "(clojure.core/fn [%] (clojure.core/pos? (clojure.core/count %)))")
              )
-          (expound/expound-str :and-spec/names ["bob" "sally" "" 1])))))
+         (expound/expound-str :and-spec/names ["bob" "sally" "" 1])))))
 
 (s/def :coll-of-spec/big-int-coll (s/coll-of int? :min-count 10))
 
 (deftest coll-of-spec
   (testing "min count"
     (is (=
-          (pf "-- Spec failed --------------------
+         (pf "-- Spec failed --------------------
 
   []
 
@@ -320,7 +327,7 @@ Detected 1 error"
              #?(:cljs "9007199254740991"
                 :clj "Integer/MAX_VALUE")
              )
-          (expound/expound-str :coll-of-spec/big-int-coll [])))))
+         (expound/expound-str :coll-of-spec/big-int-coll [])))))
 
 (s/def :cat-spec/kw (s/cat :k keyword? :v any?))
 (deftest cat-spec
@@ -433,7 +440,7 @@ Detected 1 error"
 (deftest multi-spec
   (testing "missing dispatch key"
     (is (=
-          (pf "-- Missing spec -------------------
+         (pf "-- Missing spec -------------------
 
 Cannot find spec for
 
@@ -453,10 +460,10 @@ Cannot find spec for
 
 -------------------------
 Detected 1 error")
-          (expound/expound-str :multi-spec/el {}))))
+         (expound/expound-str :multi-spec/el {}))))
   (testing "invalid dispatch value"
     (is (=
-          (pf "-- Missing spec -------------------
+         (pf "-- Missing spec -------------------
 
 Cannot find spec for
 
@@ -476,11 +483,11 @@ Cannot find spec for
 
 -------------------------
 Detected 1 error")
-          (expound/expound-str :multi-spec/el {:multi-spec/el-type :image}))))
+         (expound/expound-str :multi-spec/el {:multi-spec/el-type :image}))))
 
   (testing "valid dispatch value, but other error"
     (is (=
-          (pf "-- Spec failed --------------------
+         (pf "-- Spec failed --------------------
 
   {:multi-spec/el-type :text}
 
@@ -495,7 +502,7 @@ should contain keys: `:multi-spec/value`
 
 -------------------------
 Detected 1 error")
-          (expound/expound-str :multi-spec/el {:multi-spec/el-type :text})))))
+         (expound/expound-str :multi-spec/el {:multi-spec/el-type :text})))))
 
 (s/def :recursive-spec/tag #{:text :group})
 (s/def :recursive-spec/on-tap (s/coll-of map? :kind vector?))
@@ -539,7 +546,7 @@ Detected 1 error"
    [:recursive-spec/tag]
    :opt-un
    [:recursive-spec/props :recursive-spec/children])"
-                 :clj ":recursive-spec/on-tap:
+                  :clj ":recursive-spec/on-tap:
   (clojure.spec.alpha/coll-of
    clojure.core/map?
    :kind
@@ -715,58 +722,58 @@ Detected 1 error")
 
 (deftest generated-simple-spec
   (checking
-    "simple spec"
-    30
-    [simple-spec simple-spec-gen
+   "simple spec"
+   30
+   [simple-spec simple-spec-gen
     :let [sp-form (s/form simple-spec)]
     form gen/any-printable]
-    (expound/expound-str simple-spec form)))
+   (expound/expound-str simple-spec form)))
 
 #_(deftest generated-coll-of-specs
     (checking
-      "'coll-of' spec"
-      30
-      [simple-spec simple-spec-gen
-    every-args (s/gen :specs/every-args)
-    :let [spec (apply-coll-of simple-spec every-args)]
-    :let [sp-form (s/form spec)]
-    form gen/any-printable]
-      (expound/expound-str spec form)))
+     "'coll-of' spec"
+     30
+     [simple-spec simple-spec-gen
+      every-args (s/gen :specs/every-args)
+      :let [spec (apply-coll-of simple-spec every-args)]
+      :let [sp-form (s/form spec)]
+      form gen/any-printable]
+     (expound/expound-str spec form)))
 
 #_(deftest generated-and-specs
     (checking
-      "'and' spec"
-      30
-      [simple-spec1 simple-spec-gen
-    simple-spec2 simple-spec-gen
-    :let [spec (s/and simple-spec1 simple-spec2)]
-    :let [sp-form (s/form spec)]
-    form gen/any-printable]
-      (expound/expound-str spec form)))
+     "'and' spec"
+     30
+     [simple-spec1 simple-spec-gen
+      simple-spec2 simple-spec-gen
+      :let [spec (s/and simple-spec1 simple-spec2)]
+      :let [sp-form (s/form spec)]
+      form gen/any-printable]
+     (expound/expound-str spec form)))
 
 #_(deftest generated-or-specs
     (checking
-      "'or' spec"
-      30
-      [simple-spec1 simple-spec-gen
-    simple-spec2 simple-spec-gen
-    :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
-    :let [sp-form (s/form spec)]
-    form gen/any-printable]
-      (expound/expound-str spec form)))
+     "'or' spec"
+     30
+     [simple-spec1 simple-spec-gen
+      simple-spec2 simple-spec-gen
+      :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
+      :let [sp-form (s/form spec)]
+      form gen/any-printable]
+     (expound/expound-str spec form)))
 
 ;; TODO - get these two tests running!
 #_(deftest generated-map-of-specs
     (checking
-      "'map-of' spec"
-      25
-      [simple-spec1 simple-spec-gen
-    simple-spec2 simple-spec-gen
-    every-args (s/gen :specs/every-args)
-    :let [spec (apply-map-of simple-spec1 simple-spec2 every-args)
-          sp-form (s/form spec)]
-    form any-printable-wo-nan]
-      (expound/expound-str spec form)))
+     "'map-of' spec"
+     25
+     [simple-spec1 simple-spec-gen
+      simple-spec2 simple-spec-gen
+      every-args (s/gen :specs/every-args)
+      :let [spec (apply-map-of simple-spec1 simple-spec2 every-args)
+            sp-form (s/form spec)]
+      form any-printable-wo-nan]
+     (expound/expound-str spec form)))
 
 ;; TODO - keys
 ;; TODO - cat + alt, + ? *
@@ -774,19 +781,19 @@ Detected 1 error")
 ;; TODO - test coll-of that is a set . can i should a bad element of a set?
 
 #_(deftest compare-paths-test
-  (checking
-   "path to a key comes before a path to a value"
-   10
-   [m (gen/map gen/simple-type-printable gen/simple-type-printable)
-    k gen/simple-type-printable]
-   (is (= -1 (expound/compare-paths [(expound/->KeyPathSegment k)] [k])))
-   (is (= 1 (expound/compare-paths [k] [(expound/->KeyPathSegment k)])))))
+    (checking
+     "path to a key comes before a path to a value"
+     10
+     [m (gen/map gen/simple-type-printable gen/simple-type-printable)
+      k gen/simple-type-printable]
+     (is (= -1 (expound/compare-paths [(expound/->KeyPathSegment k)] [k])))
+     (is (= 1 (expound/compare-paths [k] [(expound/->KeyPathSegment k)])))))
 
 (s/def :test-assert/name string?)
 (deftest test-assert
   (testing "assertion passes"
-      (is (= "hello"
-             (s/assert :test-assert/name "hello"))))
+    (is (= "hello"
+           (s/assert :test-assert/name "hello"))))
   (testing "assertion fails"
     #?(:cljs
        (try
@@ -823,6 +830,7 @@ should satisfy
 
 -------------------------
 Detected 1 error"
+                  ;; FIXME - move assertion out of catch, similar to instrument tests
                   (:cause (Throwable->map e)))))))))
 
 (s/def :test-explain-str/name string?)
@@ -844,3 +852,60 @@ should satisfy
 Detected 1 error")
          (binding [s/*explain-out* expound/printer]
            (s/explain-str :test-assert/name :hello)))))
+
+
+(s/def :test-instrument/name string?)
+(s/fdef test-instrument-adder
+        :args (s/cat :x int? :y int?))
+(defn test-instrument-adder [x y]
+  (+ x y))
+
+(defn no-linum [s]
+  (string/replace s #".cljc:\d+" ".cljc:LINUM"))
+
+(deftest test-instrument
+  (st/instrument `test-instrument-adder)
+  #?(:cljs (is (=
+                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+<filename missing>:<line number missing>
+
+-- Spec failed --------------------
+
+  (\"\" ...)
+   ^^
+
+should satisfy
+
+  int?
+
+
+
+-------------------------
+Detected 1 error"
+                (.-message (try
+                             (binding [s/*explain-out* expound/printer]
+                               (test-instrument-adder "" :x))
+                             (catch :default e e)))))
+     :clj
+     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+alpha_test.cljc:LINUM
+
+-- Spec failed --------------------
+
+  (\"\" ...)
+   ^^
+
+should satisfy
+
+  int?
+
+
+
+-------------------------
+Detected 1 error"
+            (no-linum
+             (:cause
+               (Throwable->map (try
+                                 (binding [s/*explain-out* expound/printer]
+                                   (test-instrument-adder "" :x))
+                                 (catch Exception e e)))))))))

@@ -20,11 +20,11 @@
 (def section-size 25)
 (def indent-level 2)
 
-(def headers {:problem/missing-key   "Spec failed"
-              :problem/not-in-set    "Spec failed"
-              :problem/missing-spec  "Missing spec"
-              :problem/regex-failure "Syntax error"
-              :problem/unknown       "Spec failed"})
+(def headers {:problem/missing-key     "Spec failed"
+              :problem/not-in-set      "Spec failed"
+              :problem/missing-spec    "Missing spec"
+              :problem/regex-failure   "Syntax error"
+              :problem/unknown         "Spec failed"})
 
 #?(:cljs
    (defn format [fmt & args]
@@ -85,6 +85,7 @@
    (cond
      (list? form)   (outer path (apply list (map-indexed (fn [idx x] (inner (conj path idx) x)) form)))
      (vector? form) (outer path (mapv-indexed (fn [idx x] (inner (conj path idx) x)) form))
+     (seq? form)    (outer path (doall (map-indexed (fn [idx x] (inner (conj path idx) x)) form)))
      (record? form) (outer path form)
      (map? form)    (outer path (reduce (fn [m [idx [k v]]]
                                           (conj m
@@ -171,7 +172,7 @@
       (int? k)
       (recur (nth form k) rst))))
 
-;; TODO - perhaps a more useful API would be an API on 'problems'?
+;; FIXME - perhaps a more useful API would be an API on 'problems'?
 ;; - group problems
 ;; - print out data structure given problem
 ;; - categorize problem
@@ -518,12 +519,25 @@ should satisfy
 
 ;;;;;; public ;;;;;;
 
+(defn instrumentation-info [failure caller]
+  ;; As of version 1.9.562, Clojurescript does
+  ;; not include failure or caller info, so
+  ;; if these are null, print a placeholder
+  (if (= :instrument failure)
+    (format "%s:%s
+\n"
+            (:file caller "<filename missing>")
+            (:line caller "<line number missing>"))
+    ""))
+
 (defn printer [explain-data]
   (print
    (if-not explain-data
      "Success!\n"
-     (let [{:keys [::s/problems ::s/value]} explain-data
-           form value
+     (let [{:keys [::s/problems ::s/value ::s/args ::s/failure :clojure.spec.test.alpha/caller]} explain-data
+           form (if (= :instrument failure)
+                  args
+                  value)
            _ (doseq [problem problems]
                (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
            leaf-problems (leaf-problems (map (partial adjust-in form) problems))
@@ -534,18 +548,21 @@ should satisfy
            grouped-problems (safe-sort-by first compare-paths
                                           (path+problem-type->problems leaf-problems))]
        (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
+                                                #_"foobar"
                                                 (problem-group-str type form in1 problems)))]
          (no-trailing-whitespace
-          (format
-           ;; TODO - add a newline here to make specs look nice
-           "%s
+          (str
+           (instrumentation-info failure caller)
+           (format
+            ;; TODO - add a newline here to make specs look nice
+            "%s
 
 %s
 Detected %s %s"
-           problems-str
-           (section-label)
-           (count grouped-problems)
-           (if (= 1 (count grouped-problems)) "error" "errors"))))))))
+            problems-str
+            (section-label)
+            (count grouped-problems)
+            (if (= 1 (count grouped-problems)) "error" "errors")))))))))
 
 (defn expound [spec form]
   ;; expound was initially released with support
