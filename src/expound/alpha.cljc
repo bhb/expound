@@ -13,6 +13,19 @@
 ;;;;;; specs   ;;;;;;
 
 (s/def ::singleton (s/coll-of any? :count 1))
+(s/def ::path vector?)
+
+;;;;;; types ;;;;;;
+
+(defrecord KeyPathSegment [key])
+
+(defrecord KeyValuePathSegment [idx])
+
+(defn kps? [x]
+  (instance? KeyPathSegment x))
+
+(defn kvps? [x]
+  (instance? KeyValuePathSegment x))
 
 ;;;;;; private ;;;;;;
 
@@ -31,11 +44,17 @@
      (apply goog.string/format fmt args))
    :clj (def format clojure.core/format))
 
+(s/fdef pprint-str
+        :args (s/cat :x any?)
+        :ret string?)
 (defn pprint-str
   "Returns the pretty-printed string"
   [x]
   (pprint/write x :stream nil))
 
+(s/fdef no-trailing-whitespace
+        :args (s/cat :s string?)
+        :ret string?)
 (defn no-trailing-whitespace
   "Given an potentially multi-line string, returns that string with all
   trailing whitespace removed."
@@ -45,6 +64,12 @@
        (map string/trimr)
        (string/join "\n")))
 
+(s/fdef indent
+        :args (s/cat
+               :first-line-indent-level (s/? nat-int?)
+               :indent-level (s/? nat-int?)
+               :s string?)
+        :ret string?)
 (defn indent
   "Given an potentially multi-line string, returns that string indented by
    'indent-level' spaces. Optionally, can indent first line and other lines
@@ -59,22 +84,17 @@
                   (into [(str (apply str (repeat first-line-indent " ")) line)]
                         (map #(str (apply str (repeat rest-lines-indent " ")) %) lines))))))
 
+(s/fdef prefix-path?
+        :args (s/cat
+               :partial-path ::path
+               :partial-path ::path)
+        :ret boolean?)
 (defn prefix-path?
   "True if partial-path is a prefix of full-path."
   [partial-path full-path]
   (and (< (count partial-path) (count full-path))
        (= partial-path
           (subvec full-path 0 (count partial-path)))))
-
-(defrecord KeyPathSegment [key])
-
-(defrecord KeyValuePathSegment [idx])
-
-(defn kps? [x]
-  (instance? KeyPathSegment x))
-
-(defn kvps? [x]
-  (instance? KeyValuePathSegment x))
 
 (def mapv-indexed (comp vec map-indexed))
 
@@ -101,17 +121,23 @@
   ([f path form]
    (walk-with-path (partial postwalk-with-path f) f path form)))
 
+(s/fdef kps-path?
+        :args (s/cat :x any?)
+        :ret boolean?)
 (defn kps-path?
   "True if path points to a key"
   [x]
-  (and (vector? x)
-       (kps? (last x))))
+  (boolean (and (vector? x)
+                (kps? (last x)))))
 
+(s/fdef kvps-path?
+        :args (s/cat :x any?)
+        :ret boolean?)
 (defn kvps-path?
   "True if path points to a key/value pair"
   [x]
-  (and (vector? x)
-       (some kvps? x)))
+  (boolean (and (vector? x)
+                 (some kvps? x))))
 
 (defn summary-form
   "Given a form and a path to highlight, returns a data structure that marks
@@ -534,9 +560,11 @@ should satisfy
   (print
    (if-not explain-data
      "Success!\n"
-     (let [{:keys [::s/problems ::s/value ::s/args ::s/failure :clojure.spec.test.alpha/caller]} explain-data
+     (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/failure :clojure.spec.test.alpha/caller]} explain-data
            form (if (= :instrument failure)
-                  args
+                  (if (contains? explain-data ::s/ret)
+                    ret
+                    args)
                   value)
            _ (doseq [problem problems]
                (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))

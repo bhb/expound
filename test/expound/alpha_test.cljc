@@ -8,7 +8,9 @@
             [expound.test-utils :as test-utils]
             [clojure.string :as string]))
 
-(use-fixtures :once test-utils/check-spec-assertions)
+(use-fixtures :once
+  test-utils/check-spec-assertions
+  test-utils/instrument-all)
 
 (def any-printable-wo-nan (gen/such-that (complement test-utils/contains-nan?) gen/any-printable))
 
