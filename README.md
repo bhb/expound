@@ -4,6 +4,8 @@ Expound formats `clojure.spec` errors in a way that is optimized for humans to r
 
 Expound is in alpha while `clojure.spec` is in alpha.
 
+Expound is tested with Clojure 1.9.0-alpha17 and Clojurescript 1.9.562. Clojurescript 1.9.542 only supports using `expound` and `expound-str` functions directly.
+
 ## Usage
 
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
@@ -75,12 +77,11 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 
 ### `*explain-out*`
 
-To use other Spec functions, you can set `clojure.spec.alpha/*explain-out*` (or `cljs.spec.alpha/*explain-out*` for ClojureScript).
+To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.spec.alpha/*explain-out*` for ClojureScript) to `expound/printer`.
 
 (Setting `*explain-out*` does not work correctly in ClojureScript versions prior to `1.9.562` due to differences in `explain-data`)
 
 ```clojure
-;; Temporarily set the dynamic var
 (require '[clojure.spec.alpha :as s])
 ;; for clojurescript:
 ;; (require '[cljs.spec.alpha :as s])
@@ -92,8 +93,8 @@ To use other Spec functions, you can set `clojure.spec.alpha/*explain-out*` (or 
 ;;  Use `assert`
 (s/check-asserts true) ; enable asserts
 
-;; Set printer in the scope of 'binding'
-(binding [s/*explain-out* printer]
+;; Set var in the scope of 'binding'
+(binding [s/*explain-out* expound/printer]
   (s/assert :example.place/city 1))
 
 ;; Or set it globally
