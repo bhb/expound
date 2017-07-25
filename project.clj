@@ -89,7 +89,8 @@
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.10"]
-                                        [karma-reporter "1.0.1"]]}]}
+                                        [karma-reporter "1.0.1"]]}]
+             :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.1"]]}}
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
                               ["with-profile" "test-web" "cljsbuild" "once" "test"]
