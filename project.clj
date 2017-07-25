@@ -1,4 +1,4 @@
-(defproject expound "0.1.2-SNAPSHOT"
+(defproject expound "0.1.3-SNAPSHOT"
   :description "Human-optimized error messages for clojure.spec"
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
@@ -89,7 +89,8 @@
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.10"]
-                                        [karma-reporter "1.0.1"]]}]}
+                                        [karma-reporter "1.0.1"]]}]
+             :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.1"]]}}
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
                               ["with-profile" "test-web" "cljsbuild" "once" "test"]

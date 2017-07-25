@@ -5,20 +5,23 @@ All notable changes to this project will be documented in this file. This change
 ### Changed
 - Add a new arity to `make-widget-async` to provide a different widget shape.
 
-## [0.1.1] - 2017-06-25
-### Changed
-- Documentation on how to make the widgets.
+## [0.1.2] - 2017-07-22
 
-### Removed
-- `make-widget-sync` - we're all async, all the time.
+### Added
+- Added [support for instrumentation](https://github.com/bhb/expound/issues/4)
+- Added [support for Spec asserts](https://github.com/bhb/expound/issues/5)
+
+## [0.1.1] - 2017-07-17
 
 ### Fixed
-- Fixed widget maker to keep working when daylight savings switches over.
+- Fixed [bug with loading goog.string/format](https://github.com/bhb/expound/issues/3)
 
-## 0.1.0 - 2017-06-25
+## 0.1.0 - 2017-07-12
+
 ### Added
-- Files from the new template.
-- Widget maker public API - `make-widget-sync`.
+- Added `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/your-name/expound/compare/0.1.1...HEAD
-[0.1.1]: https://github.com/your-name/expound/compare/0.1.0...0.1.1
+[Unreleased]: https://github.com/bhb/expound/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/bhb/expound/compare/v0.1.0...v0.1.1
+[0.1.2]: https://github.com/bhb/expound/compare/v0.1.1...v0.1.2
+
