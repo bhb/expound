@@ -13,6 +13,19 @@
 ;;;;;; specs   ;;;;;;
 
 (s/def ::singleton (s/coll-of any? :count 1))
+(s/def ::path vector?)
+
+;;;;;; types ;;;;;;
+
+(defrecord KeyPathSegment [key])
+
+(defrecord KeyValuePathSegment [idx])
+
+(defn kps? [x]
+  (instance? KeyPathSegment x))
+
+(defn kvps? [x]
+  (instance? KeyValuePathSegment x))
 
 ;;;;;; private ;;;;;;
 
@@ -20,22 +33,28 @@
 (def section-size 25)
 (def indent-level 2)
 
-(def headers {:problem/missing-key   "Spec failed"
-              :problem/not-in-set    "Spec failed"
-              :problem/missing-spec  "Missing spec"
-              :problem/regex-failure "Syntax error"
-              :problem/unknown       "Spec failed"})
+(def headers {:problem/missing-key     "Spec failed"
+              :problem/not-in-set      "Spec failed"
+              :problem/missing-spec    "Missing spec"
+              :problem/regex-failure   "Syntax error"
+              :problem/unknown         "Spec failed"})
 
 #?(:cljs
    (defn format [fmt & args]
      (apply goog.string/format fmt args))
    :clj (def format clojure.core/format))
 
+(s/fdef pprint-str
+        :args (s/cat :x any?)
+        :ret string?)
 (defn pprint-str
   "Returns the pretty-printed string"
   [x]
   (pprint/write x :stream nil))
 
+(s/fdef no-trailing-whitespace
+        :args (s/cat :s string?)
+        :ret string?)
 (defn no-trailing-whitespace
   "Given an potentially multi-line string, returns that string with all
   trailing whitespace removed."
@@ -45,6 +64,12 @@
        (map string/trimr)
        (string/join "\n")))
 
+(s/fdef indent
+        :args (s/cat
+               :first-line-indent-level (s/? nat-int?)
+               :indent-level (s/? nat-int?)
+               :s string?)
+        :ret string?)
 (defn indent
   "Given an potentially multi-line string, returns that string indented by
    'indent-level' spaces. Optionally, can indent first line and other lines
@@ -59,22 +84,17 @@
                   (into [(str (apply str (repeat first-line-indent " ")) line)]
                         (map #(str (apply str (repeat rest-lines-indent " ")) %) lines))))))
 
+(s/fdef prefix-path?
+        :args (s/cat
+               :partial-path ::path
+               :partial-path ::path)
+        :ret boolean?)
 (defn prefix-path?
   "True if partial-path is a prefix of full-path."
   [partial-path full-path]
   (and (< (count partial-path) (count full-path))
        (= partial-path
           (subvec full-path 0 (count partial-path)))))
-
-(defrecord KeyPathSegment [key])
-
-(defrecord KeyValuePathSegment [idx])
-
-(defn kps? [x]
-  (instance? KeyPathSegment x))
-
-(defn kvps? [x]
-  (instance? KeyValuePathSegment x))
 
 (def mapv-indexed (comp vec map-indexed))
 
@@ -85,6 +105,7 @@
    (cond
      (list? form)   (outer path (apply list (map-indexed (fn [idx x] (inner (conj path idx) x)) form)))
      (vector? form) (outer path (mapv-indexed (fn [idx x] (inner (conj path idx) x)) form))
+     (seq? form)    (outer path (doall (map-indexed (fn [idx x] (inner (conj path idx) x)) form)))
      (record? form) (outer path form)
      (map? form)    (outer path (reduce (fn [m [idx [k v]]]
                                           (conj m
@@ -100,17 +121,23 @@
   ([f path form]
    (walk-with-path (partial postwalk-with-path f) f path form)))
 
+(s/fdef kps-path?
+        :args (s/cat :x any?)
+        :ret boolean?)
 (defn kps-path?
   "True if path points to a key"
   [x]
-  (and (vector? x)
-       (kps? (last x))))
+  (boolean (and (vector? x)
+                (kps? (last x)))))
 
+(s/fdef kvps-path?
+        :args (s/cat :x any?)
+        :ret boolean?)
 (defn kvps-path?
   "True if path points to a key/value pair"
   [x]
-  (and (vector? x)
-       (some kvps? x)))
+  (boolean (and (vector? x)
+                 (some kvps? x))))
 
 (defn summary-form
   "Given a form and a path to highlight, returns a data structure that marks
@@ -171,7 +198,7 @@
       (int? k)
       (recur (nth form k) rst))))
 
-;; TODO - perhaps a more useful API would be an API on 'problems'?
+;; FIXME - perhaps a more useful API would be an API on 'problems'?
 ;; - group problems
 ;; - print out data structure given problem
 ;; - categorize problem
@@ -228,7 +255,7 @@
      :cljs (implements? cljs.core.INamed x)))
 
 (defn pr-pred [pred]
-  (if (named? pred)
+  (if (or (symbol? pred) (named? pred))
     (name pred)
     (pr-str pred)))
 
@@ -255,8 +282,11 @@ should have additional elements. The next element is named `%s` and satisfies
 
 (defn missing-key [form]
   #?(:cljs (let [[contains _arg key-keyword] form]
-             (s/assert #{'contains?} contains)
-             key-keyword)
+             (if (contains? #{'cljs.core/contains? 'contains?} contains)
+               key-keyword
+               (let [[fn _ [contains _arg key-keyword] & rst] form]
+                 (s/assert #{'cljs.core/contains? 'contains?} contains)
+                 key-keyword)))
      ;; FIXME - this duplicates the structure of how
      ;; spec builds the 'contains?' function. Extract this into spec
      ;; and use conform instead of this ad-hoc validation.
@@ -276,12 +306,15 @@ should have additional elements. The next element is named `%s` and satisfies
 (def section-label (partial label section-size))
 
 (defn relevant-specs [problems]
-  (format
-   "%s
+  (let [sp-str (specs-str problems)]
+    (if (string/blank? sp-str)
+      ""
+      (format
+       "%s
 
 %s"
-   (section-label "Relevant specs")
-   (specs-str problems)))
+       (section-label "Relevant specs")
+       sp-str))))
 
 (defn multi-spec-parts [spec]
   (let [[_multi-spec mm retag]  (s/form spec)]
@@ -298,7 +331,11 @@ should have additional elements. The next element is named `%s` and satisfies
      (let [pred (:pred problem)]
        (and (list? pred)
             (map? (:val problem))
-            (= 'contains? (first pred))))
+            (or (= 'contains? (first pred))
+                (let [[fn _ [contains _] & rst] pred]
+                  (and
+                   (= 'cljs.core/fn fn)
+                   (= 'cljs.core/contains? contains))))))
      :clj
      (let [pred (:pred problem)]
        (and (seq? pred)
@@ -508,34 +545,65 @@ should satisfy
 
 ;;;;;; public ;;;;;;
 
-(defn expound-str
-  "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
-  [spec form]
-  (let [problems (::s/problems (s/explain-data spec form))
-        _ (doseq [problem problems]
-            (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
-        leaf-problems (leaf-problems (map (partial adjust-in form) (::s/problems (s/explain-data spec form))))
+(defn instrumentation-info [failure caller]
+  ;; As of version 1.9.562, Clojurescript does
+  ;; not include failure or caller info, so
+  ;; if these are null, print a placeholder
+  (if (= :instrument failure)
+    (format "%s:%s
+\n"
+            (:file caller "<filename missing>")
+            (:line caller "<line number missing>"))
+    ""))
 
-        _ (assert (every? :in1 leaf-problems) leaf-problems)
-        ;; We attempt to sort the problems by path, but it's not feasible to sort in
-        ;; all cases, since paths could contain arbitrary user-defined data structures.
-        ;; If there is an error, we just give up on sorting.
-        grouped-problems (safe-sort-by first compare-paths
-                                       (path+problem-type->problems leaf-problems))]
-    (if (empty? problems)
-      "Success!\n"
-      (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
-                                               (problem-group-str type form in1 problems)))]
-        (no-trailing-whitespace
-         (format
-          "%s
+(defn printer [explain-data]
+  (print
+   (if-not explain-data
+     "Success!\n"
+     (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/failure :clojure.spec.test.alpha/caller]} explain-data
+           form (if (= :instrument failure)
+                  (if (contains? explain-data ::s/ret)
+                    ret
+                    args)
+                  value)
+           _ (doseq [problem problems]
+               (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
+           leaf-problems (leaf-problems (map (partial adjust-in form) problems))
+           _ (assert (every? :in1 leaf-problems) leaf-problems)
+           ;; We attempt to sort the problems by path, but it's not feasible to sort in
+           ;; all cases, since paths could contain arbitrary user-defined data structures.
+           ;; If there is an error, we just give up on sorting.
+           grouped-problems (safe-sort-by first compare-paths
+                                          (path+problem-type->problems leaf-problems))]
+       (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
+                                                #_"foobar"
+                                                (problem-group-str type form in1 problems)))]
+         (no-trailing-whitespace
+          (str
+           (instrumentation-info failure caller)
+           (format
+            ;; TODO - add a newline here to make specs look nice
+            "%s
 
 %s
 Detected %s %s"
-          problems-str
-          (section-label)
-          (count grouped-problems)
-          (if (= 1 (count grouped-problems)) "error" "errors")))))))
+            problems-str
+            (section-label)
+            (count grouped-problems)
+            (if (= 1 (count grouped-problems)) "error" "errors")))))))))
 
 (defn expound [spec form]
-  (println (expound-str spec form)))
+  ;; expound was initially released with support
+  ;; for CLJS 1.9.542 which did not include
+  ;; the value in the explain data, so we patch it
+  ;; in to avoid breaking back compat (at least for now)
+  (let [explain-data (s/explain-data spec form)]
+    (printer (if explain-data
+               (assoc explain-data
+                      ::s/value form)
+               nil))))
+
+(defn expound-str
+  "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
+  [spec form]
+  (with-out-str (expound spec form)))

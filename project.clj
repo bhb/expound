@@ -1,10 +1,13 @@
-(defproject expound "0.1.1"
+(defproject expound "0.1.2-SNAPSHOT"
   :description "Human-optimized error messages for clojure.spec"
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0-alpha17" :scope "provided"]
-                 [org.clojure/clojurescript "1.9.542" :scope "provided"]
+                 ;; expound launched with this version
+                 ;; and only supported expound and expound-str
+                 ;;[org.clojure/clojurescript "1.9.542" :scope "provided"]
+                 [org.clojure/clojurescript "1.9.562" :scope "provided"]
                  [org.clojure/spec.alpha "0.1.123" :scope "provided"]]
 
   :plugins [[com.jakemccrary/lein-test-refresh "0.20.0"]
@@ -71,7 +74,8 @@
              }
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.2"]
                                   [figwheel-sidecar "0.5.10"]
-                                  [com.cemerick/piggieback "0.2.1"]]
+                                  [com.cemerick/piggieback "0.2.1"]
+                                  [orchestra "2017.07.04-1"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
                    ;; for CIDER

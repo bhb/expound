@@ -1,5 +1,12 @@
 (ns expound.test-utils
   (:require [clojure.spec.alpha :as s]
+            #?(:cljs
+               [clojure.spec.test.alpha :as st]
+               ;; orchestra is supposed to work with cljs but
+               ;; it isn't working for me right now
+               #_[orchestra-cljs.spec.test :as st]
+               :clj [orchestra.spec.test :as st])
+            [expound.alpha :as expound]
             [clojure.test :as ct]
             [com.gfredericks.test.chuck.clojure-test :as chuck]))
 
@@ -16,6 +23,12 @@
   (s/check-asserts true)
   (test-fn)
   (s/check-asserts false))
+
+(defn instrument-all [test-fn]
+  (set! s/*explain-out* expound/printer)
+  (st/instrument)
+  (test-fn)
+  (st/unstrument))
 
 (defn nan? [x]
   #?(:clj false

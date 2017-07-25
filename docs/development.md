@@ -4,7 +4,7 @@
 
 ```
 lein with-profile +test-web,+cljs-repl repl
-````
+```
 
 ```
 M-x cider-connect
