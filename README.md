@@ -116,6 +116,11 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 (s/explain :example.place/city 123)
 ```
 
+## Related work
+
+- [Inspectable](https://github.com/jpmonettas/inspectable) - Tools to explore specs and spec failures at the REPL
+- [Pretty-Spec](https://github.com/jpmonettas/pretty-spec) - Pretty printer for specs
+
 ## Prior Art
 
 * Error messages in [Elm](http://elm-lang.org/), in particular the [error messages catalog](https://github.com/elm-lang/error-message-catalog)
