@@ -59,10 +59,13 @@
   "Given an potentially multi-line string, returns that string with all
   trailing whitespace removed."
   [s]
-  (->> s
-       string/split-lines
-       (map string/trimr)
-       (string/join "\n")))
+  (let [s' (->> s
+                string/split-lines
+                (map string/trimr)
+                (string/join "\n"))]
+    (if (= \newline (last s))
+      (str s' "\n")
+      s')))
 
 (s/fdef indent
         :args (s/cat
@@ -586,7 +589,7 @@ should satisfy
             "%s
 
 %s
-Detected %s %s"
+Detected %s %s\n"
             problems-str
             (section-label)
             (count grouped-problems)
