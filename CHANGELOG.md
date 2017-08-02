@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 ### Changed
-- Add a new arity to `make-widget-async` to provide a different widget shape.
+- Append [newline to expound output](https://github.com/bhb/expound/issues/8)
 
 ## [0.1.2] - 2017-07-22
 

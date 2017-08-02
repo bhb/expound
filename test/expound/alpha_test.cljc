@@ -57,6 +57,11 @@
             (get-args 1 2 3)
             [0])))))
 
+;; https://github.com/bhb/expound/issues/8
+(deftest expound-output-ends-in-newline
+  (is (= "\n" (str (last (expound/expound-str string? 1)))))
+  (is (= "\n" (str (last (expound/expound-str string? ""))))))
+
 (s/def :simple-type-based-spec/str string?)
 
 (deftest simple-type-based-spec
@@ -80,7 +85,7 @@ should satisfy
   pf.core/string?
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
          (expound/expound-str :simple-type-based-spec/str 1)))))
 
 (s/def :set-based-spec/tag #{:foo :bar})
@@ -100,7 +105,7 @@ should be one of: `:bar`,`:foo`
   #{:bar :foo}
 
 -------------------------
-Detected 1 error"
+Detected 1 error\n"
            (expound/expound-str :set-based-spec/tag :baz))))
   ;; FIXME - we should fix nilable and or specs better so they are clearly grouped
   (testing "nilable version"
@@ -131,7 +136,7 @@ should satisfy
   (pf.spec.alpha/nilable :set-based-spec/tag)
 
 -------------------------
-Detected 2 errors")
+Detected 2 errors\n")
            (expound/expound-str :set-based-spec/nilable-tag :baz)))))
 
 (s/def :nested-type-based-spec/str string?)
@@ -156,7 +161,7 @@ should satisfy
   (pf.spec.alpha/coll-of :nested-type-based-spec/str)
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
        (expound/expound-str :nested-type-based-spec/strs ["one" "two" 33]))))
 
 (s/def :nested-type-based-spec-special-summary-string/int int?)
@@ -182,7 +187,7 @@ should satisfy
    :nested-type-based-spec-special-summary-string/int)
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
        (expound/expound-str :nested-type-based-spec-special-summary-string/ints [1 2 "..."]))))
 
 (s/def :or-spec/str-or-int (s/or :int int? :str string?))
@@ -208,7 +213,7 @@ or
   (pf.spec.alpha/or :int pf.core/int? :str pf.core/string?)
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
            (expound/expound-str :or-spec/str-or-int :kw))))
   (testing "collection of values"
     (is (= (pf "-- Spec failed --------------------
@@ -232,7 +237,7 @@ or
   (pf.spec.alpha/coll-of :or-spec/str-or-int)
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
            (expound/expound-str :or-spec/vals [0 "hi" :kw "bye"])))))
 
 (s/def :and-spec/name (s/and string? #(pos? (count %))))
@@ -255,7 +260,7 @@ should satisfy
    (pf.core/fn [%%] (pf.core/pos? (pf.core/count %%))))
 
 -------------------------
-Detected 1 error"
+Detected 1 error\n"
                #?(:cljs "(cljs.core/fn [%] (cljs.core/pos? (cljs.core/count %)))"
                   :clj "(clojure.core/fn [%] (clojure.core/pos? (clojure.core/count %)))")
                )
@@ -300,7 +305,7 @@ should satisfy
   (pf.spec.alpha/coll-of :and-spec/name)
 
 -------------------------
-Detected 2 errors"
+Detected 2 errors\n"
              #?(:cljs "(cljs.core/fn [%] (cljs.core/pos? (cljs.core/count %)))"
                 :clj "(clojure.core/fn [%] (clojure.core/pos? (clojure.core/count %)))")
              )
@@ -325,7 +330,7 @@ should satisfy
   (pf.spec.alpha/coll-of pf.core/int? :min-count 10)
 
 -------------------------
-Detected 1 error"
+Detected 1 error\n"
              #?(:cljs "9007199254740991"
                 :clj "Integer/MAX_VALUE")
              )
@@ -348,7 +353,7 @@ should have additional elements. The next element is named `:k` and satisfies
   (pf.spec.alpha/cat :k pf.core/keyword? :v pf.core/any?)
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
            (expound/expound-str :cat-spec/kw [])))
     (is (= (pf "-- Syntax error -------------------
 
@@ -364,7 +369,7 @@ should have additional elements. The next element is named `:v` and satisfies
   (pf.spec.alpha/cat :k pf.core/keyword? :v pf.core/any?)
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
            (expound/expound-str :cat-spec/kw [:foo]))))
   (testing "too many elements"
     (is (= (pf "-- Syntax error -------------------
@@ -380,7 +385,7 @@ Value has extra input
   (pf.spec.alpha/cat :k pf.core/keyword? :v pf.core/any?)
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
            (expound/expound-str :cat-spec/kw [:foo 1 :bar :baz])))))
 
 (s/def :keys-spec/name string?)
@@ -401,7 +406,7 @@ should contain keys: `:keys-spec/name`,`:age`
   %s
 
 -------------------------
-Detected 1 error"
+Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"
                   )
@@ -425,7 +430,7 @@ should satisfy
   %s
 
 -------------------------
-Detected 1 error"
+Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
            (expound/expound-str :keys-spec/user {:age 1 :keys-spec/name :bob})))))
@@ -461,7 +466,7 @@ Cannot find spec for
    :multi-spec/el-type)
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
          (expound/expound-str :multi-spec/el {}))))
   (testing "invalid dispatch value"
     (is (=
@@ -484,7 +489,7 @@ Cannot find spec for
    :multi-spec/el-type)
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
          (expound/expound-str :multi-spec/el {:multi-spec/el-type :image}))))
 
   (testing "valid dispatch value, but other error"
@@ -503,7 +508,7 @@ should contain keys: `:multi-spec/value`
    :multi-spec/el-type)
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
          (expound/expound-str :multi-spec/el {:multi-spec/el-type :text})))))
 
 (s/def :recursive-spec/tag #{:text :group})
@@ -532,7 +537,7 @@ should satisfy
 %s
 
 -------------------------
-Detected 1 error"
+Detected 1 error\n"
                #?(:cljs ":recursive-spec/on-tap:
   (cljs.spec.alpha/coll-of cljs.core/map? :kind cljs.core/vector?)
 :recursive-spec/props:
@@ -620,7 +625,7 @@ should satisfy
    :cat-wrapped-in-or-spec/kv)
 
 -------------------------
-Detected 2 errors")
+Detected 2 errors\n")
          (expound/expound-str :cat-wrapped-in-or-spec/kv-or-string {"foo" "hi"}))))
 
 (s/def :map-of-spec/name string?)
@@ -644,7 +649,7 @@ should satisfy
   (pf.spec.alpha/map-of :map-of-spec/name :map-of-spec/age)
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
          (expound/expound-str :map-of-spec/name->age {"Sally" "30"})))
   (is (= (pf "-- Spec failed --------------------
 
@@ -663,7 +668,7 @@ should satisfy
   (pf.spec.alpha/map-of :map-of-spec/name :map-of-spec/age)
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
          (expound/expound-str :map-of-spec/name->age {:sally 30}))))
 
 ;; I want to do something like
@@ -813,7 +818,7 @@ should satisfy
 
 
 -------------------------
-Detected 1 error"
+Detected 1 error\n"
                   (.-message e)))))
        :clj
        (try
@@ -831,7 +836,7 @@ should satisfy
 
 
 -------------------------
-Detected 1 error"
+Detected 1 error\n"
                   ;; FIXME - move assertion out of catch, similar to instrument tests
                   (:cause (Throwable->map e)))))))))
 
@@ -851,7 +856,7 @@ should satisfy
   pf.core/string?
 
 -------------------------
-Detected 1 error")
+Detected 1 error\n")
          (binding [s/*explain-out* expound/printer]
            (s/explain-str :test-assert/name :hello)))))
 
@@ -883,7 +888,7 @@ should satisfy
 
 
 -------------------------
-Detected 1 error"
+Detected 1 error\n"
                 (.-message (try
                              (binding [s/*explain-out* expound/printer]
                                (test-instrument-adder "" :x))
@@ -904,7 +909,7 @@ should satisfy
 
 
 -------------------------
-Detected 1 error"
+Detected 1 error\n"
             (no-linum
              (:cause
                (Throwable->map (try
