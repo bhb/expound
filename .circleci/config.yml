@@ -31,6 +31,7 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
+      - run: sudo apt-get install chromium-browser
       - run: lein deps
       - run: sudo bin/install-node && npm install
 
