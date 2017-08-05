@@ -32,7 +32,7 @@ jobs:
           - v1-dependencies-
 
       - run: bin/install-chrome
-      - run: lein deps
+      - run: lein with-profile +test-common,+test-web,+dev deps
       - run: sudo bin/install-node && npm install
 
       - save_cache:
