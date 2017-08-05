@@ -6,7 +6,7 @@ ARCH=x64
 curl -SLO https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-$ARCH.tar.xz
 
 EXPECTED_SHA=$(grep "node-v$NODE_VERSION-linux-$ARCH.tar.xz" SHASUMS256.txt.asc)
-ACTUAL_SHA=$(gsha256sum node-v6.11.2-linux-x64.tar.xz)
+ACTUAL_SHA=$(sha256sum node-v6.11.2-linux-x64.tar.xz)
 
 echo "Expected: $EXPECTED_SHA"
 echo "Actual:   $ACTUAL_SHA"
