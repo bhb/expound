@@ -14,8 +14,7 @@ echo "Actual:   $ACTUAL_SHA"
 if [ "$EXPECTED_SHA" = "$ACTUAL_SHA" ]; then
   echo "OK, proceeding"
   tar -xJf "node-v$NODE_VERSION-linux-$ARCH.tar.xz" -C /usr/local --strip-components=1 &&
-  ln -s /usr/local/bin/node /usr/local/bin/nodejs &&
-  ln -s /usr/local/bin/npm /usr/local/bin/npm
+  ln -s /usr/local/bin/node /usr/local/bin/nodejs
 else
   echo "SHA did not match. Quitting."
 fi
