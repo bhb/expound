@@ -32,7 +32,7 @@ jobs:
           - v1-dependencies-
 
       - run: lein deps
-      - run: in/install-node && npm install
+      - run: bin/install-node && npm install
 
       - save_cache:
           paths:
