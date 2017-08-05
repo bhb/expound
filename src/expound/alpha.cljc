@@ -562,7 +562,8 @@ should satisfy
   (print
    (if-not explain-data
      "Success!\n"
-     (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/failure :clojure.spec.test.alpha/caller]} explain-data
+     (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/failure]} explain-data
+           caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
            form (if (= :instrument failure)
                   (if (contains? explain-data ::s/ret)
                     ret

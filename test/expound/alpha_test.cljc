@@ -6,7 +6,9 @@
             [clojure.spec.test.alpha :as st]
             [expound.alpha :as expound]
             [expound.test-utils :as test-utils]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            #?(:clj [orchestra.spec.test :as orch.st]
+               :cljs [orchestra-cljs.spec.test :as orch.st])))
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -863,7 +865,9 @@ Detected 1 error\n")
 
 (s/def :test-instrument/name string?)
 (s/fdef test-instrument-adder
-        :args (s/cat :x int? :y int?))
+        :args (s/cat :x int? :y int?)
+        :fn #(> (:ret %) (-> % :args :x))
+        :ret pos-int?)
 (defn test-instrument-adder [x y]
   (+ x y))
 
@@ -915,4 +919,99 @@ Detected 1 error\n"
                (Throwable->map (try
                                  (binding [s/*explain-out* expound/printer]
                                    (test-instrument-adder "" :x))
-                                 (catch Exception e e)))))))))
+                                 (catch Exception e e)))))))
+     (st/unstrument `test-instrument-adder)))
+
+(deftest test-instrument-with-orchestra-arg-failure
+  (orch.st/instrument `test-instrument-adder)
+  #?(:cljs (is (=
+                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+<filename missing>:<line number missing>
+
+-- Spec failed --------------------
+
+  (\"\" ...)
+   ^^
+
+should satisfy
+
+  int?
+
+
+
+-------------------------
+Detected 1 error\n"
+                (.-message (try
+                             (binding [s/*explain-out* expound/printer]
+                               (test-instrument-adder "" :x))
+                             (catch :default e e)))))
+     :clj
+     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+alpha_test.cljc:LINUM
+
+-- Spec failed --------------------
+
+  (\"\" ...)
+   ^^
+
+should satisfy
+
+  int?
+
+
+
+-------------------------
+Detected 1 error\n"
+            (no-linum
+             (:cause
+               (Throwable->map (try
+                                 (binding [s/*explain-out* expound/printer]
+                                   (test-instrument-adder "" :x))
+                                 (catch Exception e e))))))))
+  (orch.st/unstrument `test-instrument-adder))
+
+(deftest test-instrument-with-orchestra-ret-failure
+  (orch.st/instrument `test-instrument-adder)
+  #?(:cljs (is (=
+                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+<filename missing>:<line number missing>
+
+-- Spec failed --------------------
+
+  -3
+
+should satisfy
+
+  pos-int?
+
+
+
+-------------------------
+Detected 1 error\n"
+                (.-message (try
+                             (binding [s/*explain-out* expound/printer]
+                               (test-instrument-adder -1 -2))
+                             (catch :default e e)))))
+     :clj
+     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+alpha_test.cljc:LINUM
+
+-- Spec failed --------------------
+
+  -3
+
+should satisfy
+
+  pos-int?
+
+
+
+-------------------------
+Detected 1 error\n"
+            (no-linum
+             (:cause
+               (Throwable->map (try
+                                 (binding [s/*explain-out* expound/printer]
+                                   (test-instrument-adder -1 -2))
+                                 (catch Exception e e)))))))
+     (orch.st/unstrument `test-instrument-adder)))
