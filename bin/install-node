@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+NODE_VERSION=6.11.2
+ARCH=x64
+
+curl -SLO https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-$ARCH.tar.xz
+
+EXPECTED_SHA=$(grep "node-v$NODE_VERSION-linux-$ARCH.tar.xz" SHASUMS256.txt.asc)
+ACTUAL_SHA=$(sha256sum node-v6.11.2-linux-x64.tar.xz)
+
+echo "Expected: $EXPECTED_SHA"
+echo "Actual:   $ACTUAL_SHA"
+
+if [ "$EXPECTED_SHA" = "$ACTUAL_SHA" ]; then
+  echo "OK, proceeding"
+  tar -xJf "node-v$NODE_VERSION-linux-$ARCH.tar.xz" -C /usr/local --strip-components=1 &&
+  ln -s /usr/local/bin/node /usr/local/bin/nodejs
+else
+  echo "SHA did not match. Quitting."
+fi

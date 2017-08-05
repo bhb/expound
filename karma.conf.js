@@ -19,7 +19,7 @@ module.exports = function(config) {
 
     // singleRun set to false does not work!
     singleRun: true,
-    browsers: ['Safari'],
+    browsers: ['ChromeHeadless'],
     autoWatch: false,
     logLevel: config.LOG_INFO,
     concurrency: 1,

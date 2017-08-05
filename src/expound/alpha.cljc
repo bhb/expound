@@ -1,8 +1,7 @@
 (ns expound.alpha
   "Drop-in replacement for clojure.spec.alpha, with
   human-readable `explain` function"
-  (:require [clojure.data]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.walk :as walk]
             #?(:cljs [goog.string.format])
@@ -293,7 +292,7 @@ should have additional elements. The next element is named `%s` and satisfies
      ;; FIXME - this duplicates the structure of how
      ;; spec builds the 'contains?' function. Extract this into spec
      ;; and use conform instead of this ad-hoc validation.
-     :clj (let [[fn _ [contains _arg key-keyword] & rst] form]
+     :clj (let [[_fn _ [contains _arg key-keyword] & _rst] form]
             (s/assert #{'clojure.core/contains?} contains)
             key-keyword)))
 
@@ -343,7 +342,7 @@ should have additional elements. The next element is named `%s` and satisfies
      (let [pred (:pred problem)]
        (and (seq? pred)
             (map? (:val problem))
-            (let [[fn _ [contains _] & rst] pred]
+            (let [[fn _ [contains _] & _rst] pred]
               (and
                (= 'clojure.core/fn fn)
                (= 'clojure.core/contains? contains)))))))
