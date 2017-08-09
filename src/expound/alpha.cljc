@@ -217,11 +217,11 @@
   "Given a form and a path into that form, returns a string
    that helps the user understand where that path is located
    in the form"
-  [form path]
+  [spec-name form path]
   (let [val (value-in form path)]
     (if (= form val)
-      (binding [*print-namespace-maps* false] (pr-str val))
-      (highlighted-form form path))))
+                     (binding [*print-namespace-maps* false] (pr-str val))
+                     (highlighted-form form path))))
 
 (defn spec-str [spec]
   (if (keyword? spec)
@@ -255,26 +255,36 @@
     (name pred)
     (pr-str pred)))
 
+(defn show-spec-name [spec-name value]
+  (if spec-name
+    (str
+     (case spec-name
+       :args "Function arguments"
+       :ret "Return value")
+     "\n\n"
+     value)
+    value))
+
 (defn preds [preds]
   (string/join "\n\nor\n\n" (map (comp indent pr-pred) preds)))
 
-(defn insufficient-input [val path problem]
+(defn insufficient-input [spec-name val path problem]
   (format
    "%s
 
 should have additional elements. The next element is named `%s` and satisfies
 
 %s"
-   (indent (value-in-context val path))
+   (show-spec-name spec-name (indent (value-in-context spec-name val path)))
    (pr-str (first (:path problem)))
    (indent (pr-pred (:pred problem)))))
 
-(defn extra-input [val path]
+(defn extra-input [spec-name val path]
   (format
    "Value has extra input
 
 %s"
-   (indent (value-in-context val path))))
+   (show-spec-name spec-name (indent (value-in-context spec-name val path)))))
 
 (defn missing-key [form]
   #?(:cljs (let [[contains _arg key-keyword] form]
@@ -344,7 +354,7 @@ should have additional elements. The next element is named `%s` and satisfies
 (defn regex-failure? [problem]
   (contains? #{"Insufficient input" "Extra input"} (:reason problem)))
 
-(defn no-method [val path problem]
+(defn no-method [spec-name val path problem]
   (let [sp (s/spec (last (:via problem)))
         {:keys [mm retag]} (multi-spec-parts sp)]
     (format
@@ -356,14 +366,14 @@ should have additional elements. The next element is named `%s` and satisfies
  Dispatch function:     `%s`
  Dispatch value:        `%s`
  "
-     (indent (value-in-context val path))
+     (show-spec-name spec-name (indent (value-in-context spec-name val path)))
      (pr-str mm)
      (pr-str retag)
      (pr-str (if retag (retag (value-in val path)) nil)))))
 
-(defmulti problem-group-str (fn [type _val _path _problems] type))
+(defmulti problem-group-str (fn [type spec-name _val _path _problems] type))
 
-(defmethod problem-group-str :problem/missing-key [_type val path problems]
+(defmethod problem-group-str :problem/missing-key [_type spec-name val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (format
    "%s
@@ -374,11 +384,11 @@ should contain keys: %s
 
 %s"
    (header-label "Spec failed")
-   (indent (value-in-context val path))
+   (show-spec-name spec-name (indent (value-in-context spec-name val path)))
    (string/join "," (map #(str "`" (missing-key (:pred %)) "`") problems))
    (relevant-specs problems)))
 
-(defmethod problem-group-str :problem/not-in-set [_type val path problems]
+(defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (s/assert ::singleton problems)
   (format
@@ -390,11 +400,11 @@ should be one of: %s
 
 %s"
    (header-label "Spec failed")
-   (indent (value-in-context val path))
+   (show-spec-name spec-name (indent (value-in-context spec-name val path)))
    (string/join "," (map #(str "`" % "`") (:pred (first problems))))
    (relevant-specs problems)))
 
-(defmethod problem-group-str :problem/missing-spec [_type val path problems]
+(defmethod problem-group-str :problem/missing-spec [_type spec-name val path problems]
   (s/assert ::singleton problems)
   (format
    "%s
@@ -403,10 +413,10 @@ should be one of: %s
 
 %s"
    (header-label "Missing spec")
-   (no-method val path (first problems))
+   (no-method spec-name val path (first problems))
    (relevant-specs problems)))
 
-(defmethod problem-group-str :problem/regex-failure [_type val path problems]
+(defmethod problem-group-str :problem/regex-failure [_type spec-name val path problems]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (format
@@ -417,11 +427,11 @@ should be one of: %s
 %s"
      (header-label "Syntax error")
      (case (:reason problem)
-       "Insufficient input" (insufficient-input val path problem)
-       "Extra input" (extra-input val path))
+       "Insufficient input" (insufficient-input spec-name val path problem)
+       "Extra input" (extra-input spec-name val path))
      (relevant-specs problems))))
 
-(defmethod problem-group-str :problem/unknown [_type val path problems]
+(defmethod problem-group-str :problem/unknown [_type spec-name val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (format
    "%s
@@ -434,7 +444,7 @@ should satisfy
 
 %s"
    (header-label "Spec failed")
-   (indent (value-in-context val path))
+   (show-spec-name spec-name (indent (value-in-context spec-name val path)))
    (preds (map :pred problems))
    (relevant-specs problems)))
 
@@ -552,6 +562,15 @@ should satisfy
             (:line caller "<line number missing>"))
     ""))
 
+(defn spec-name [ed]
+  (if (::s/failure ed)
+    (-> ed ::s/problems first :path first)
+    nil))
+
+(comment
+  (spec-name '{:clojure.spec.alpha/problems [{:path [:ret], :pred clojure.core/pos-int?, :val -3, :via [], :in []}], :clojure.spec.alpha/spec :fake-spec, :clojure.spec.alpha/value -3, :clojure.spec.alpha/ret -3, :clojure.spec.alpha/failure :instrument, :orchestra.spec.test/caller {:file "form-init1594219068689749611.clj", :line 1022, :var-scope expound.alpha-test/eval63966}})
+  )
+
 (defn printer [explain-data]
   (print
    (if-not explain-data
@@ -574,7 +593,7 @@ should satisfy
                                           (path+problem-type->problems leaf-problems))]
        (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
                                                 #_"foobar"
-                                                (problem-group-str type form in1 problems)))]
+                                                (problem-group-str type (spec-name explain-data) form in1 problems)))]
          (no-trailing-whitespace
           (str
            (instrumentation-info failure caller)

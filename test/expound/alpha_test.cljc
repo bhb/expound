@@ -827,7 +827,8 @@ Detected 1 error\n"
          (binding [s/*explain-out* expound/printer]
            (s/assert :test-assert/name :hello))
          (catch Exception e
-           (is (= "Spec assertion failed\n-- Spec failed --------------------
+           (is (= "Spec assertion failed
+-- Spec failed --------------------
 
   :hello
 
@@ -882,6 +883,8 @@ Detected 1 error\n")
 
 -- Spec failed --------------------
 
+Function arguments
+
   (\"\" ...)
    ^^
 
@@ -902,6 +905,8 @@ Detected 1 error\n"
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
+
+Function arguments
 
   (\"\" ...)
    ^^
@@ -930,6 +935,8 @@ Detected 1 error\n"
 
 -- Spec failed --------------------
 
+Function arguments
+
   (\"\" ...)
    ^^
 
@@ -950,6 +957,8 @@ Detected 1 error\n"
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
+
+Function arguments
 
   (\"\" ...)
    ^^
@@ -978,6 +987,8 @@ Detected 1 error\n"
 
 -- Spec failed --------------------
 
+Return value
+
   -3
 
 should satisfy
@@ -998,6 +1009,8 @@ alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
 
+Return value
+
   -3
 
 should satisfy
@@ -1015,3 +1028,20 @@ Detected 1 error\n"
                                    (test-instrument-adder -1 -2))
                                  (catch Exception e e)))))))
      (orch.st/unstrument `test-instrument-adder)))
+
+(comment
+  (+ 1 1 )
+  (orch.st/instrument `test-instrument-adder)
+  (binding [s/*explain-out* expound/printer]
+                               (test-instrument-adder :a :B))
+
+  (test-instrument-adder :a :b)
+
+  '{:clojure.spec.alpha/problems [{:path [:ret], :pred clojure.core/pos-int?, :val -3, :via [], :in []}], :clojure.spec.alpha/spec :fake-spec, :clojure.spec.alpha/value -3, :clojure.spec.alpha/ret -3, :clojure.spec.alpha/failure :instrument, :orchestra.spec.test/caller {:file "form-init1594219068689749611.clj", :line 1022, :var-scope expound.alpha-test/eval63966}}
+  
+
+
+
+
+  
+  )
