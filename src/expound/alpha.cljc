@@ -32,12 +32,6 @@
 (def section-size 25)
 (def indent-level 2)
 
-(def headers {:problem/missing-key     "Spec failed"
-              :problem/not-in-set      "Spec failed"
-              :problem/missing-spec    "Missing spec"
-              :problem/regex-failure   "Syntax error"
-              :problem/unknown         "Spec failed"})
-
 #?(:cljs
    (defn format [fmt & args]
      (apply goog.string/format fmt args))
