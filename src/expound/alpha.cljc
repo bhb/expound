@@ -218,10 +218,12 @@
    that helps the user understand where that path is located
    in the form"
   [spec-name form path]
-  (let [val (value-in form path)]
-    (if (= form val)
-                     (binding [*print-namespace-maps* false] (pr-str val))
-                     (highlighted-form form path))))
+  (if (= :fn spec-name)
+    (binding [*print-namespace-maps* false] (pr-str form))
+    (let [val (value-in form path)]
+      (if (= form val)
+        (binding [*print-namespace-maps* false] (pr-str val))
+        (highlighted-form form path)))))
 
 (defn spec-str [spec]
   (if (keyword? spec)
@@ -250,17 +252,22 @@
   #?(:clj (instance? clojure.lang.Named x)
      :cljs (implements? cljs.core.INamed x)))
 
+(defn elide-core-ns [s]
+  #?(:cljs (string/replace s "cljs.core/" "")
+     :clj (string/replace s "clojure.core/" "")))
+
 (defn pr-pred [pred]
   (if (or (symbol? pred) (named? pred))
     (name pred)
-    (pr-str pred)))
+    (elide-core-ns (binding [*print-namespace-maps* false] (pprint-str pred)))))
 
 (defn show-spec-name [spec-name value]
   (if spec-name
     (str
      (case spec-name
        :args "Function arguments"
-       :ret "Return value")
+       :ret "Return value"
+       :fn "Function arguments and return value")
      "\n\n"
      value)
     value))
@@ -567,21 +574,18 @@ should satisfy
     (-> ed ::s/problems first :path first)
     nil))
 
-(comment
-  (spec-name '{:clojure.spec.alpha/problems [{:path [:ret], :pred clojure.core/pos-int?, :val -3, :via [], :in []}], :clojure.spec.alpha/spec :fake-spec, :clojure.spec.alpha/value -3, :clojure.spec.alpha/ret -3, :clojure.spec.alpha/failure :instrument, :orchestra.spec.test/caller {:file "form-init1594219068689749611.clj", :line 1022, :var-scope expound.alpha-test/eval63966}})
-  )
-
 (defn printer [explain-data]
   (print
    (if-not explain-data
      "Success!\n"
-     (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/failure]} explain-data
+     (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure]} explain-data
            caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
-           form (if (= :instrument failure)
-                  (if (contains? explain-data ::s/ret)
-                    ret
-                    args)
-                  value)
+           form (if (not= :instrument failure)
+                  value
+                  (cond
+                    (contains? explain-data ::s/ret) ret
+                    (contains? explain-data ::s/fn) fn
+                    (contains? explain-data ::s/args) args))
            _ (doseq [problem problems]
                (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
            leaf-problems (leaf-problems (map (partial adjust-in form) problems))
