@@ -1,6 +1,6 @@
 # Expound
 
-Expound formats `clojure.spec` errors in a way that is optimized for humans to read.
+Expound formats `clojure.spec` error messages in a way that is optimized for humans to read.
 
 Expound is in alpha while `clojure.spec` is in alpha.
 
@@ -114,6 +114,44 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 
 ;; You can use `explain` without converting to expound
 (s/explain :example.place/city 123)
+```
+
+### Using Orchestra
+
+Use [Orchestra](https://github.com/jeaye/orchestra) with Expound to get human-optimized error messages when checking your `:ret` and `:fn` specs.
+
+```clojure
+(require '[orchestra.spec.test :as st])
+
+(s/fdef location
+        :args (s/cat :city :example.place/city
+                     :state :example.place/state)
+        :ret string?)
+(defn location [city state]
+  ;; incorrect implementation
+  nil)
+
+(st/instrument)
+(set! s/*explain-out* expound/printer)
+(location "Seattle" "WA")
+
+;;ExceptionInfo Call to #'user/location did not conform to spec:
+;; form-init3240528896421126128.clj:1
+;;
+;; -- Spec failed --------------------
+;;
+;; Return value
+;;
+;; nil
+;;
+;; should satisfy
+;;
+;; string?
+;;
+;;
+;;
+;; -------------------------
+;; Detected 1 error
 ```
 
 ## Related work
