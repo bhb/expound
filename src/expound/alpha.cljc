@@ -283,7 +283,7 @@ should have additional elements. The next element is named `%s` and satisfies
 
 %s"
    (show-spec-name spec-name (indent (value-in-context spec-name val path)))
-   (pr-str (first (:path problem)))
+   (pr-str (first (:path1 problem)))
    (indent (pr-pred (:pred problem)))))
 
 (defn extra-input [spec-name val path]
@@ -525,6 +525,12 @@ should satisfy
 (defn adjust-in [form problem]
   (assoc problem :in1 (in-with-kps form (:in problem) [])))
 
+(defn adjust-path [failure problem]
+  (assoc problem :path1
+         (if (= :instrument failure)
+           (vec (rest (:path problem)))
+           (:path problem))))
+
 (defn compare-path-segment [x y]
   (cond
     (and (int? x) (kvps? y))
@@ -588,7 +594,8 @@ should satisfy
                     (contains? explain-data ::s/args) args))
            _ (doseq [problem problems]
                (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
-           leaf-problems (leaf-problems (map (partial adjust-in form) problems))
+           leaf-problems (leaf-problems (map (comp (partial adjust-in form) (partial adjust-path failure))
+                                             problems))
            _ (assert (every? :in1 leaf-problems) leaf-problems)
            ;; We attempt to sort the problems by path, but it's not feasible to sort in
            ;; all cases, since paths could contain arbitrary user-defined data structures.
@@ -596,7 +603,6 @@ should satisfy
            grouped-problems (safe-sort-by first compare-paths
                                           (path+problem-type->problems leaf-problems))]
        (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
-                                                #_"foobar"
                                                 (problem-group-str type (spec-name explain-data) form in1 problems)))]
          (no-trailing-whitespace
           (str

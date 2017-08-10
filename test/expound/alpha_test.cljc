@@ -927,7 +927,7 @@ Detected 1 error\n"
                                  (catch Exception e e))))))))
   (st/unstrument `test-instrument-adder))
 
-(deftest test-instrument-with-orchestra-arg-failure
+(deftest test-instrument-with-orchestra-args-spec-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
                 "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
@@ -976,6 +976,56 @@ Detected 1 error\n"
                (Throwable->map (try
                                  (binding [s/*explain-out* expound/printer]
                                    (test-instrument-adder "" :x))
+                                 (catch Exception e e))))))))
+  (orch.st/unstrument `test-instrument-adder))
+
+(deftest test-instrument-with-orchestra-args-syntax-failure
+  (orch.st/instrument `test-instrument-adder)
+  #?(:cljs (is (=
+                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+<filename missing>:<line number missing>
+
+-- Syntax error -------------------
+
+Function arguments
+
+  (1)
+
+should have additional elements. The next element is named `:y` and satisfies
+
+  int?
+
+
+
+-------------------------
+Detected 1 error\n"
+                (.-message (try
+                             (binding [s/*explain-out* expound/printer]
+                               (test-instrument-adder 1))
+                             (catch :default e e)))))
+     :clj
+     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+alpha_test.cljc:LINUM
+
+-- Syntax error -------------------
+
+Function arguments
+
+  (1)
+
+should have additional elements. The next element is named `:y` and satisfies
+
+  int?
+
+
+
+-------------------------
+Detected 1 error\n"
+            (no-linum
+             (:cause
+               (Throwable->map (try
+                                 (binding [s/*explain-out* expound/printer]
+                                   (test-instrument-adder 1))
                                  (catch Exception e e))))))))
   (orch.st/unstrument `test-instrument-adder))
 
