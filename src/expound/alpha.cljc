@@ -233,6 +233,15 @@
      (indent (pprint-str (s/form spec))))
     (pprint-str (s/form spec))))
 
+(s/def :spec/spec keyword?)
+(s/def :spec/specs (s/coll-of :spec/spec))
+(s/def :spec.problem/via (s/coll-of :spec/spec :kind vector?))
+(s/def :spec/problem (s/keys :req-un [:spec.problem/via]))
+(s/def :spec/problems (s/coll-of :spec/problem))
+
+(s/fdef specs
+        :args (s/cat :problems :spec/problems)
+        :ret :spec/specs)
 (defn specs
   "Given a collection of problems, returns the specs for those problems, with duplicates removed"
   [problems]
