@@ -924,8 +924,8 @@ Detected 1 error\n"
                (Throwable->map (try
                                  (binding [s/*explain-out* expound/printer]
                                    (test-instrument-adder "" :x))
-                                 (catch Exception e e)))))))
-     (st/unstrument `test-instrument-adder)))
+                                 (catch Exception e e))))))))
+  (st/unstrument `test-instrument-adder))
 
 (deftest test-instrument-with-orchestra-arg-failure
   (orch.st/instrument `test-instrument-adder)
@@ -1026,8 +1026,8 @@ Detected 1 error\n"
                (Throwable->map (try
                                  (binding [s/*explain-out* expound/printer]
                                    (test-instrument-adder -1 -2))
-                                 (catch Exception e e)))))))
-     (orch.st/unstrument `test-instrument-adder)))
+                                 (catch Exception e e))))))))
+  (orch.st/unstrument `test-instrument-adder))
 
 (deftest test-instrument-with-orchestra-fn-failure
   (orch.st/instrument `test-instrument-adder)
@@ -1078,5 +1078,5 @@ Detected 1 error\n"
                (Throwable->map (try
                                  (binding [s/*explain-out* expound/printer]
                                    (test-instrument-adder 1 0))
-                                 (catch Exception e e)))))))
-     (orch.st/unstrument `test-instrument-adder)))
+                                 (catch Exception e e))))))))
+  (orch.st/unstrument `test-instrument-adder))
