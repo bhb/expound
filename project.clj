@@ -86,7 +86,7 @@
                                                      :target-path]}
              :test-common {:dependencies [[org.clojure/test.check "0.9.0"]
                                           [com.gfredericks/test.chuck "0.2.7"]
-                                          [orchestra "2017.07.04-1"]]}
+                                          [orchestra "2017.08.13"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.10"]
