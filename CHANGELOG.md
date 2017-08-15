@@ -2,8 +2,12 @@
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
 ## [Unreleased]
+
 ### Changed
 - Append [newline to expound output](https://github.com/bhb/expound/issues/8)
+- Pretty print predicates
+- Omit `clojure.core` and `cljs.core` prefix when printing predicates
+- Add support for [Orchestra](https://github.com/jeaye/orchestra) instrumentation
 
 ## [0.1.2] - 2017-07-22
 
