@@ -213,6 +213,62 @@
     ;;highlighted-line
     (no-trailing-whitespace (string/replace s line highlighted-line))))
 
+(defn in-with-kps [form in in1]
+  (let [[k & rst] in
+        [idx & rst2] rst]
+    (cond
+      (empty? in)
+      in1
+
+      ;; detect a `:in` path that points at a key in a map-of spec
+      (and (map? form)
+           (= 0 idx)
+           (empty? rst2)
+           (or (not (associative? (get form k)))
+               (not (contains? (get form k) idx))))
+      (conj in1 (->KeyPathSegment k))
+
+      ;; detect a `:in` path that points at a value in a map-of spec
+      (and (map? form)
+           (= 1 idx)
+           (empty? rst2)
+           (or (not (associative? (get form k)))
+               (not (contains? (get form k) idx))))
+      (recur (get form k) rst2 (conj in1 k))
+
+      ;; detech a `:in` path that points to a key/value pair in a coll-of spec
+      (and (map? form) (int? k) (empty? rst))
+      (conj in1 (->KeyValuePathSegment k))
+
+      (associative? form)
+      (recur (get form k) rst (conj in1 k))
+
+      (int? k)
+      (recur (nth form k) rst (conj in1 k)))))
+
+(defn adjust-in [form problem]
+  (assoc problem :in1 (in-with-kps form (:in problem) [])))
+
+;; Like highlighted-form, but takes form and problem
+;; Should I be able to pass explain-data to this?
+;; The issue is that highlighted forms are about a single
+;; 'problem', not really a set of problems.
+;; Only used for debugging right now.
+(defn highlighted-form1 [explain-datum]
+  (let [{:keys [:expound/problem ::s/value]} explain-datum
+        {:keys [in1]} (adjust-in value problem)]
+    (highlighted-form value in1)))
+
+;; Only used in tests right now for debugging
+(defn explain-datum
+  "Takes explain-data and returns a new data structure
+   with just a single problem"
+  [explain-data]
+  (let [{:keys [::s/problems]} explain-data]
+    (s/assert ::singleton problems)
+    (assoc explain-data
+           :expound/problem (first problems))))
+
 (defn value-in-context
   "Given a form and a path into that form, returns a string
    that helps the user understand where that path is located
@@ -497,42 +553,6 @@ should satisfy
   "Returns problems grouped by path (i.e. the 'in' key) then and then problem-type"
   [problems]
   (group-by (juxt :in1 problem-type) problems))
-
-(defn in-with-kps [form in in1]
-  (let [[k & rst] in
-        [idx & rst2] rst]
-    (cond
-      (empty? in)
-      in1
-
-      ;; detect a `:in` path that points at a key in a map-of spec
-      (and (map? form)
-           (= 0 idx)
-           (empty? rst2)
-           (or (not (associative? (get form k)))
-               (not (contains? (get form k) idx))))
-      (conj in1 (->KeyPathSegment k))
-
-      ;; detect a `:in` path that points at a value in a map-of spec
-      (and (map? form)
-           (= 1 idx)
-           (empty? rst2)
-           (or (not (associative? (get form k)))
-               (not (contains? (get form k) idx))))
-      (recur (get form k) rst2 (conj in1 k))
-
-      ;; detech a `:in` path that points to a key/value pair in a coll-of spec
-      (and (map? form) (int? k) (empty? rst))
-      (conj in1 (->KeyValuePathSegment k))
-
-      (associative? form)
-      (recur (get form k) rst (conj in1 k))
-
-      (int? k)
-      (recur (nth form k) rst (conj in1 k)))))
-
-(defn adjust-in [form problem]
-  (assoc problem :in1 (in-with-kps form (:in problem) [])))
 
 (defn adjust-path [failure problem]
   (assoc problem :path1
