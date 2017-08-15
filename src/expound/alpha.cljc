@@ -260,10 +260,23 @@
            (s/explain-data :spec-with-confomer/a-b-str "ab")
            )
 
+  ;; HERE - if a value is conformed, how should we display it?
+  ;; The 
   {:clojure.spec.alpha/problems [{:path [:a], :pred #{\A}, :val \a, :via [:spec-with-confomer/a-b-str :spec-with-conformer/a-b-seq :spec-with-conformer/a-b-seq], :in [0]}], :clojure.spec.alpha/spec :spec-with-confomer/a-b-str, :clojure.spec.alpha/value "ab", :expound/problem {:path [:a], :pred #{\A}, :val \a, :via [:spec-with-confomer/a-b-str :spec-with-conformer/a-b-seq :spec-with-conformer/a-b-seq], :in [0]}}
+
+  ;; HERE - should we allow paths to access parts of strings? are there
+  ;; other cases for conformers
+  ;; the path above says the problem is "ab" is in [0] which could
+  ;; logically be "a", but we'd have to handle this specially.
+  
+  #_(explain-datum
+   (s/explain-data :spec-with-confomer/a-b-seq ["a" "b"])
+   )
   
   
   (expound.alpha/highlighted-form "ab" [0])
+
+  
   
   )
 
