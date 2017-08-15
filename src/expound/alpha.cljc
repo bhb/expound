@@ -249,6 +249,24 @@
 (defn adjust-in [form problem]
   (assoc problem :in1 (in-with-kps form (:in problem) [])))
 
+(s/def :spec-with-conformer/a-b-seq (s/cat :a #{\A} :b #{\B}))
+(s/def :spec-with-confomer/a-b-str (s/and
+                                    string?
+                                    (s/conformer seq)
+                                    :spec-with-conformer/a-b-seq))
+
+(comment
+  (explain-datum
+           (s/explain-data :spec-with-confomer/a-b-str "ab")
+           )
+
+  {:clojure.spec.alpha/problems [{:path [:a], :pred #{\A}, :val \a, :via [:spec-with-confomer/a-b-str :spec-with-conformer/a-b-seq :spec-with-conformer/a-b-seq], :in [0]}], :clojure.spec.alpha/spec :spec-with-confomer/a-b-str, :clojure.spec.alpha/value "ab", :expound/problem {:path [:a], :pred #{\A}, :val \a, :via [:spec-with-confomer/a-b-str :spec-with-conformer/a-b-seq :spec-with-conformer/a-b-seq], :in [0]}}
+  
+  
+  (expound.alpha/highlighted-form "ab" [0])
+  
+  )
+
 ;; Like highlighted-form, but takes form and problem
 ;; Should I be able to pass explain-data to this?
 ;; The issue is that highlighted forms are about a single
@@ -257,6 +275,8 @@
 (defn highlighted-form1 [explain-datum]
   (let [{:keys [:expound/problem ::s/value]} explain-datum
         {:keys [in1]} (adjust-in value problem)]
+    (prn `(highlighted-form ~value ~in1))
+    
     (highlighted-form value in1)))
 
 ;; Only used in tests right now for debugging
