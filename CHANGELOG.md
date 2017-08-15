@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.2.0] - 2017-08-14
+
 ### Changed
 - Append [newline to expound output](https://github.com/bhb/expound/issues/8)
 - Pretty print predicates
