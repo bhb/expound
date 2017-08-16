@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+- Fixed [bug with including extraneous compiled Javascript in JAR file](https://github.com/bhb/expound/issues/16)
+
 ## [0.2.0] - 2017-08-14
 
 ### Changed
