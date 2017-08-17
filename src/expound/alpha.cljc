@@ -1,7 +1,8 @@
 (ns expound.alpha
   "Drop-in replacement for clojure.spec.alpha, with
   human-readable `explain` function"
-  (:require [clojure.spec.alpha :as s]
+  (:require [expound.paths :as paths]
+            [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.walk :as walk]
             #?(:cljs [goog.string.format])
@@ -12,19 +13,6 @@
 ;;;;;; specs   ;;;;;;
 
 (s/def ::singleton (s/coll-of any? :count 1))
-(s/def ::path vector?)
-
-;;;;;; types ;;;;;;
-
-(defrecord KeyPathSegment [key])
-
-(defrecord KeyValuePathSegment [idx])
-
-(defn kps? [x]
-  (instance? KeyPathSegment x))
-
-(defn kvps? [x]
-  (instance? KeyValuePathSegment x))
 
 ;;;;;; private ;;;;;;
 
@@ -80,66 +68,11 @@
                   (into [(str (apply str (repeat first-line-indent " ")) line)]
                         (map #(str (apply str (repeat rest-lines-indent " ")) %) lines))))))
 
-(s/fdef prefix-path?
-        :args (s/cat
-               :partial-path ::path
-               :partial-path ::path)
-        :ret boolean?)
-(defn prefix-path?
-  "True if partial-path is a prefix of full-path."
-  [partial-path full-path]
-  (and (< (count partial-path) (count full-path))
-       (= partial-path
-          (subvec full-path 0 (count partial-path)))))
-
-(def mapv-indexed (comp vec map-indexed))
-
-(defn walk-with-path
-  "Recursively walks data structure. Passes both the path and current
-   value to 'inner' and 'outer' functions"
-  ([inner outer path form]
-   (cond
-     (list? form)   (outer path (apply list (map-indexed (fn [idx x] (inner (conj path idx) x)) form)))
-     (vector? form) (outer path (mapv-indexed (fn [idx x] (inner (conj path idx) x)) form))
-     (seq? form)    (outer path (doall (map-indexed (fn [idx x] (inner (conj path idx) x)) form)))
-     (record? form) (outer path form)
-     (map? form)    (outer path (reduce (fn [m [idx [k v]]]
-                                          (conj m
-                                                (outer
-                                                 (conj path (->KeyValuePathSegment idx))
-                                                 [(outer (conj path (->KeyPathSegment k)) k) (inner (conj path k) v)])))
-                                        {}
-                                        (map vector (range) (seq form))))
-     :else          (outer path form))))
-
-(defn postwalk-with-path
-  ([f form] (postwalk-with-path f [] form))
-  ([f path form]
-   (walk-with-path (partial postwalk-with-path f) f path form)))
-
-(s/fdef kps-path?
-        :args (s/cat :x any?)
-        :ret boolean?)
-(defn kps-path?
-  "True if path points to a key"
-  [x]
-  (boolean (and (vector? x)
-                (kps? (last x)))))
-
-(s/fdef kvps-path?
-        :args (s/cat :x any?)
-        :ret boolean?)
-(defn kvps-path?
-  "True if path points to a key/value pair"
-  [x]
-  (boolean (and (vector? x)
-                 (some kvps? x))))
-
 (defn summary-form
   "Given a form and a path to highlight, returns a data structure that marks
    the highlighted and irrelevant data"
   [form highlighted-path]
-  (postwalk-with-path
+  (paths/postwalk-with-path
    (fn [path x]
      (cond
        (= ::irrelevant x)
@@ -148,19 +81,19 @@
        (= ::relevant x)
        ::relevant
 
-       (and (kvps-path? path) (= path highlighted-path))
+       (and (paths/kvps-path? path) (= path highlighted-path))
        [::kv-relevant ::kv-relevant]
 
        (= path highlighted-path)
        ::relevant
 
-       (prefix-path? path highlighted-path)
+       (paths/prefix-path? path highlighted-path)
        x
 
-       (kps-path? path)
+       (paths/kps-path? path)
        x
 
-       (kvps-path? path)
+       (paths/kvps-path? path)
        x
 
        :else
@@ -182,10 +115,10 @@
       (empty? in)
       form
 
-      (and (map? form) (kps? k))
+      (and (map? form) (paths/kps? k))
       (:key k)
 
-      (and (map? form) (kvps? k))
+      (and (map? form) (paths/kvps? k))
       (nth (seq form) (:idx k))
 
       (associative? form)
@@ -489,7 +422,7 @@ should satisfy
      (fn [problem]
        (some
         (fn [path]
-          (prefix-path? (:expound/in problem) path))
+          (paths/prefix-path? (:expound/in problem) path))
         paths-to-data))
      problems)))
 
@@ -498,70 +431,14 @@ should satisfy
   [problems]
   (group-by (juxt :expound/in problem-type) problems))
 
-(defn in-with-kps [form in in1]
-  (let [[k & rst] in
-        [idx & rst2] rst]
-    (cond
-      (empty? in)
-      in1
-
-      ;; detect a `:in` path that points at a key in a map-of spec
-      (and (map? form)
-           (= 0 idx)
-           (empty? rst2)
-           (or (not (associative? (get form k)))
-               (not (contains? (get form k) idx))))
-      (conj in1 (->KeyPathSegment k))
-
-      ;; detect a `:in` path that points at a value in a map-of spec
-      (and (map? form)
-           (= 1 idx)
-           (empty? rst2)
-           (or (not (associative? (get form k)))
-               (not (contains? (get form k) idx))))
-      (recur (get form k) rst2 (conj in1 k))
-
-      ;; detech a `:in` path that points to a key/value pair in a coll-of spec
-      (and (map? form) (int? k) (empty? rst))
-      (conj in1 (->KeyValuePathSegment k))
-
-      (associative? form)
-      (recur (get form k) rst (conj in1 k))
-
-      (int? k)
-      (recur (nth form k) rst (conj in1 k)))))
-
 (defn adjust-in [form problem]
-  (assoc problem :expound/in (in-with-kps form (:in problem) [])))
+  (assoc problem :expound/in (paths/in-with-kps form (:in problem) [])))
 
 (defn adjust-path [failure problem]
   (assoc problem :expound/path
                  (if (= :instrument failure)
            (vec (rest (:path problem)))
            (:path problem))))
-
-(defn compare-path-segment [x y]
-  (cond
-    (and (int? x) (kvps? y))
-    (compare x (:idx y))
-
-    (and (kvps? x) (int? y))
-    (compare (:idx x) y)
-
-    (and (kps? x) (not (kps? y)))
-    -1
-
-    (and (not (kps? x)) (kps? y))
-    1
-
-    (and (vector? x) (vector? y))
-    (first (filter #(not= 0 %) (map compare-path-segment x y)))
-
-    :else
-    (compare x y)))
-
-(defn compare-paths [path1 path2]
-  (first (filter #(not= 0 %) (map compare-path-segment path1 path2))))
 
 (defn safe-sort-by
   "Same as sort-by, but if an error is raised, returns the original unsorted collection"
@@ -609,7 +486,7 @@ should satisfy
            ;; We attempt to sort the problems by path, but it's not feasible to sort in
            ;; all cases, since paths could contain arbitrary user-defined data structures.
            ;; If there is an error, we just give up on sorting.
-           grouped-problems (safe-sort-by first compare-paths
+           grouped-problems (safe-sort-by first paths/compare-paths
                                           (path+problem-type->problems leaf-problems))]
        (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
                                                 (problem-group-str type (spec-name explain-data) form in1 problems)))]
