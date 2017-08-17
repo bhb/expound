@@ -64,6 +64,11 @@
   (is (= "\n" (str (last (expound/expound-str string? 1)))))
   (is (= "\n" (str (last (expound/expound-str string? ""))))))
 
+(deftest expound-prints-expound-str
+  (is (=
+       (expound/expound-str string? 1)
+       (with-out-str (expound/expound string? 1)))))
+
 (s/def :simple-type-based-spec/str string?)
 
 (deftest simple-type-based-spec

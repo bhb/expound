@@ -436,7 +436,7 @@ should satisfy
 
 (defn adjust-path [failure problem]
   (assoc problem :expound/path
-                 (if (= :instrument failure)
+         (if (= :instrument failure)
            (vec (rest (:path problem)))
            (:path problem))))
 
@@ -447,8 +447,6 @@ should satisfy
     (sort-by key-fn comp coll)
     (catch #?(:cljs :default
               :clj Exception) e coll)))
-
-;;;;;; public ;;;;;;
 
 (defn instrumentation-info [failure caller]
   ;; As of version 1.9.562, Clojurescript does
@@ -466,56 +464,60 @@ should satisfy
     (-> ed ::s/problems first :path first)
     nil))
 
-(defn printer [explain-data]
-  (print
-   (if-not explain-data
-     "Success!\n"
-     (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure]} explain-data
-           caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
-           form (if (not= :instrument failure)
-                  value
-                  (cond
-                    (contains? explain-data ::s/ret) ret
-                    (contains? explain-data ::s/fn) fn
-                    (contains? explain-data ::s/args) args))
-           _ (doseq [problem problems]
-               (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
-           leaf-problems (leaf-problems (map (comp (partial adjust-in form) (partial adjust-path failure))
-                                             problems))
-           _ (assert (every? :expound/in leaf-problems) leaf-problems)
-           ;; We attempt to sort the problems by path, but it's not feasible to sort in
-           ;; all cases, since paths could contain arbitrary user-defined data structures.
-           ;; If there is an error, we just give up on sorting.
-           grouped-problems (safe-sort-by first paths/compare-paths
-                                          (path+problem-type->problems leaf-problems))]
-       (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
-                                                (problem-group-str type (spec-name explain-data) form in1 problems)))]
-         (no-trailing-whitespace
-          (str
-           (instrumentation-info failure caller)
-           (format
-            ;; TODO - add a newline here to make specs look nice
-            "%s
+(defn printer-str [explain-data]
+  (if-not explain-data
+    "Success!\n"
+    (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure]} explain-data
+          caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
+          form (if (not= :instrument failure)
+                 value
+                 (cond
+                   (contains? explain-data ::s/ret) ret
+                   (contains? explain-data ::s/fn) fn
+                   (contains? explain-data ::s/args) args))
+          _ (doseq [problem problems]
+              (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
+          leaf-problems (leaf-problems (map (comp (partial adjust-in form) (partial adjust-path failure))
+                                            problems))
+          _ (assert (every? :expound/in leaf-problems) leaf-problems)
+          ;; We attempt to sort the problems by path, but it's not feasible to sort in
+          ;; all cases, since paths could contain arbitrary user-defined data structures.
+          ;; If there is an error, we just give up on sorting.
+          grouped-problems (safe-sort-by first paths/compare-paths
+                                         (path+problem-type->problems leaf-problems))]
+      (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
+                                               (problem-group-str type (spec-name explain-data) form in1 problems)))]
+        (no-trailing-whitespace
+         (str
+          (instrumentation-info failure caller)
+          (format
+           ;; TODO - add a newline here to make specs look nice
+           "%s
 
 %s
 Detected %s %s\n"
-            problems-str
-            (section-label)
-            (count grouped-problems)
-            (if (= 1 (count grouped-problems)) "error" "errors")))))))))
+           problems-str
+           (section-label)
+           (count grouped-problems)
+           (if (= 1 (count grouped-problems)) "error" "errors"))))))))
 
-(defn expound [spec form]
+;;;;;; public ;;;;;;
+
+(defn printer [explain-data]
+  (print (printer-str explain-data)))
+
+(defn expound-str
+  "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
+  [spec form]
   ;; expound was initially released with support
   ;; for CLJS 1.9.542 which did not include
   ;; the value in the explain data, so we patch it
   ;; in to avoid breaking back compat (at least for now)
   (let [explain-data (s/explain-data spec form)]
-    (printer (if explain-data
-               (assoc explain-data
-                      ::s/value form)
-               nil))))
+    (printer-str (if explain-data
+                   (assoc explain-data
+                          ::s/value form)
+                   nil))))
 
-(defn expound-str
-  "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
-  [spec form]
-  (with-out-str (expound spec form)))
+(defn expound [spec form]
+  (print (expound-str spec form)))
