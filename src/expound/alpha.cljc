@@ -292,7 +292,7 @@ should have additional elements. The next element is named `%s` and satisfies
 
 %s"
    (show-spec-name spec-name (indent (value-in-context spec-name val path)))
-   (pr-str (first (:path1 problem)))
+   (pr-str (first (:expound/path problem)))
    (indent (pr-pred (:pred problem)))))
 
 (defn extra-input [spec-name val path]
@@ -484,19 +484,19 @@ should satisfy
 (defn leaf-problems
   "Given a collection of problems, returns only those problems with data on the 'leaves' of the data"
   [problems]
-  (let [paths-to-data (into #{} (map :in1 problems))]
+  (let [paths-to-data (into #{} (map :expound/in problems))]
     (remove
      (fn [problem]
        (some
         (fn [path]
-          (prefix-path? (:in1 problem) path))
+          (prefix-path? (:expound/in problem) path))
         paths-to-data))
      problems)))
 
 (defn path+problem-type->problems
   "Returns problems grouped by path (i.e. the 'in' key) then and then problem-type"
   [problems]
-  (group-by (juxt :in1 problem-type) problems))
+  (group-by (juxt :expound/in problem-type) problems))
 
 (defn in-with-kps [form in in1]
   (let [[k & rst] in
@@ -532,11 +532,11 @@ should satisfy
       (recur (nth form k) rst (conj in1 k)))))
 
 (defn adjust-in [form problem]
-  (assoc problem :in1 (in-with-kps form (:in problem) [])))
+  (assoc problem :expound/in (in-with-kps form (:in problem) [])))
 
 (defn adjust-path [failure problem]
-  (assoc problem :path1
-         (if (= :instrument failure)
+  (assoc problem :expound/path
+                 (if (= :instrument failure)
            (vec (rest (:path problem)))
            (:path problem))))
 
@@ -605,7 +605,7 @@ should satisfy
                (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
            leaf-problems (leaf-problems (map (comp (partial adjust-in form) (partial adjust-path failure))
                                              problems))
-           _ (assert (every? :in1 leaf-problems) leaf-problems)
+           _ (assert (every? :expound/in leaf-problems) leaf-problems)
            ;; We attempt to sort the problems by path, but it's not feasible to sort in
            ;; all cases, since paths could contain arbitrary user-defined data structures.
            ;; If there is an error, we just give up on sorting.
