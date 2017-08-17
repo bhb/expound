@@ -14,6 +14,12 @@
 
 (s/def ::singleton (s/coll-of any? :count 1))
 
+(s/def :spec/spec keyword?)
+(s/def :spec/specs (s/coll-of :spec/spec))
+(s/def :spec.problem/via (s/coll-of :spec/spec :kind vector?))
+(s/def :spec/problem (s/keys :req-un [:spec.problem/via]))
+(s/def :spec/problems (s/coll-of :spec/problem))
+
 ;;;;;; private ;;;;;;
 
 (def header-size 35)
@@ -165,12 +171,6 @@
      spec
      (indent (pprint-str (s/form spec))))
     (pprint-str (s/form spec))))
-
-(s/def :spec/spec keyword?)
-(s/def :spec/specs (s/coll-of :spec/spec))
-(s/def :spec.problem/via (s/coll-of :spec/spec :kind vector?))
-(s/def :spec/problem (s/keys :req-un [:spec.problem/via]))
-(s/def :spec/problems (s/coll-of :spec/problem))
 
 (s/fdef specs
         :args (s/cat :problems :spec/problems)
@@ -427,7 +427,7 @@ should satisfy
      problems)))
 
 (defn path+problem-type->problems
-  "Returns problems grouped by path (i.e. the 'in' key) then and then problem-type"
+  "Returns problems grouped by the path to the value (i.e. the 'in' key) then and then problem-type"
   [problems]
   (group-by (juxt :expound/in problem-type) problems))
 
@@ -477,7 +477,8 @@ should satisfy
                    (contains? explain-data ::s/args) args))
           _ (doseq [problem problems]
               (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
-          leaf-problems (leaf-problems (map (comp (partial adjust-in form) (partial adjust-path failure))
+          leaf-problems (leaf-problems (map (comp (partial adjust-in form)
+                                                  (partial adjust-path failure))
                                             problems))
           _ (assert (every? :expound/in leaf-problems) leaf-problems)
           ;; We attempt to sort the problems by path, but it's not feasible to sort in
