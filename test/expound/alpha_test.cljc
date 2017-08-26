@@ -25,15 +25,17 @@
          args))
 
 (defn get-args [& args] args)
-(deftest highlighted-form
+(deftest highlighted-value
   (testing "atomic value"
     (is (= "\"Fred\"\n^^^^^^"
-           (expound/highlighted-form
+           (expound/highlighted-value
+            {}
             "Fred"
             []))))
   (testing "value in vector"
     (is (= "[... :b ...]\n     ^^"
-           (expound/highlighted-form
+           (expound/highlighted-value
+            {}
             [:a :b :c]
             [1]))))
   (testing "long, composite values are pretty-printed"
@@ -45,7 +47,8 @@
                 #?(:clj  "\n          ^^^^^^^^^^^^^^^"
                    :cljs "\n          ^^^^^^^^^^^^^^^^"))
            ;; ^- the above works in clojure - maybe not CLJS?
-           (expound/highlighted-form
+           (expound/highlighted-value
+            {}
             {:letters
              {:a "aaaaaaaa"
               :b "bbbbbbbb"
@@ -55,7 +58,14 @@
             [:letters]))))
   (testing "args to function"
     (is (= "(1 ... ...)\n ^"
-           (expound/highlighted-form
+           (expound/highlighted-value
+            {}
+            (get-args 1 2 3)
+            [0]))))
+  (testing "show all values"
+    (is (= "(1 2 3)\n ^"
+           (expound/highlighted-value
+            {:omit-valid-values? false}
             (get-args 1 2 3)
             [0])))))
 
@@ -1135,3 +1145,100 @@ Detected 1 error\n"
                                    (test-instrument-adder 1 0))
                                  (catch Exception e e))))))))
   (orch.st/unstrument `test-instrument-adder))
+
+(deftest test-instrument-with-custom-value-printer
+  (st/instrument `test-instrument-adder)
+  #?(:cljs
+     (is (=
+                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+<filename missing>:<line number missing>
+
+-- Spec failed --------------------
+
+Function arguments
+
+  (\"\" :x)
+   ^^
+
+should satisfy
+
+  int?
+
+
+
+-------------------------
+Detected 1 error\n"
+                (.-message (try
+                             (binding [s/*explain-out* (expound/build-printer {:value-in-context (partial expound/value-in-context {:omit-valid-values? false})})]
+                               (test-instrument-adder "" :x))
+                             (catch :default e e)))))
+     :clj
+     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+alpha_test.cljc:LINUM
+
+-- Spec failed --------------------
+
+Function arguments
+
+  (\"\" :x)
+   ^^
+
+should satisfy
+
+  int?
+
+
+
+-------------------------
+Detected 1 error\n"
+            (no-linum
+             (:cause
+               (Throwable->map (try
+                                 (binding [s/*explain-out* (expound/build-printer {:value-in-context (partial expound/value-in-context {:omit-valid-values? false})})]
+                                   (test-instrument-adder "" :x))
+                                 (catch Exception e e))))))))
+  (st/unstrument `test-instrument-adder))
+
+;; TODO - clojurescript tests
+(s/def :custom-printer/strings (s/coll-of string?))
+(deftest custom-printer
+  (testing "custom value printer"
+    (is (= (pf "-- Spec failed --------------------
+
+  <HIDDEN>
+
+should satisfy
+
+  string?
+
+-- Relevant specs -------
+
+:custom-printer/strings:
+  (pf.spec.alpha/coll-of pf.core/string?)
+
+-------------------------
+Detected 1 error
+")
+           (binding [s/*explain-out* (expound/build-printer {:value-in-context (fn [spec-name form path] "<HIDDEN>")})]
+             (s/explain-str :custom-printer/strings ["a" "b" :c])))))
+  (testing "modified version of the included value printer"
+    (testing "custom value printer"
+      (is (= (pf "-- Spec failed --------------------
+
+  [\"a\" \"b\" :c]
+           ^^
+
+should satisfy
+
+  string?
+
+-- Relevant specs -------
+
+:custom-printer/strings:
+  (pf.spec.alpha/coll-of pf.core/string?)
+
+-------------------------
+Detected 1 error
+")
+           (binding [s/*explain-out* (expound/build-printer {:value-in-context (partial expound/value-in-context {:omit-valid-values? false})})]
+             (s/explain-str :custom-printer/strings ["a" "b" :c])))))))
