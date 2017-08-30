@@ -116,6 +116,62 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 (s/explain :example.place/city 123)
 ```
 
+### Configuring the printer
+
+By default, `printer` will omit valid values and replace them with `...`
+
+```clojure
+(set! s/*explain-out* expound/printer)
+(s/explain :example/place {:city "Denver" :state :CO :country "USA"})
+
+;; -- Spec failed --------------------
+;;
+;;   {:city ..., :state :CO, :country ...}
+;;                      ^^^
+;;
+;; should satisfy
+;;
+;;   string?
+```
+
+You can configure Expound to show valid values:
+
+```clojure
+(set! s/*explain-out* (expound/custom-printer {:show-valid-values? true}))
+(s/explain :example/place {:city "Denver" :state :CO :country "USA"})
+
+;; -- Spec failed --------------------
+;;
+;; {:city "Denver", :state :CO, :country "USA"}
+;;                         ^^^
+;;
+;; should satisfy
+;;
+;;   string?
+```
+
+You can even provide your own function to display the invalid value. Your implementation must match the following spec:
+
+;;; TODO - ADD SPEC HERE
+
+```clojure
+(defn my-value-str [_spec-name form path value]
+  (str "In context: " (pr-str form) "\n"
+       "Invalid value: " (pr-str value)))
+
+(set! s/*explain-out* (expound/custom-printer {:value-str-fn my-value-str}))
+(s/explain :example/place {:city "Denver" :state :CO :country "USA"})
+
+;; -- Spec failed --------------------
+;;
+;;   In context: {:city "Denver", :state :CO, :country "USA"}
+;;   Invalid value: :CO
+;;
+;; should satisfy
+;;
+;;   string?
+```
+
 ### Using Orchestra
 
 Use [Orchestra](https://github.com/jeaye/orchestra) with Expound to get human-optimized error messages when checking your `:ret` and `:fn` specs.

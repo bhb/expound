@@ -16,6 +16,10 @@
 
 (def any-printable-wo-nan (gen/such-that (complement test-utils/contains-nan?) gen/any-printable))
 
+(comment
+  (require '[clojure.string :as string])
+  )
+
 (defn pf
   "Fixes platform-specific namespaces and also formats using printf syntax"
   [s & args]
@@ -65,7 +69,7 @@
   (testing "show all values"
     (is (= "(1 2 3)\n ^"
            (expound/highlighted-value
-            {:omit-valid-values? false}
+            {:show-valid-values? true}
             (get-args 1 2 3)
             [0])))))
 
@@ -404,6 +408,11 @@ Value has extra input
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :cat-spec/kw [:foo 1 :bar :baz])))))
+
+(comment
+  "-- Syntax error -------------------\n\nValue has extra input\n\n  [... ... :bar ...]\n           ^^^^\n\n-- Relevant specs -------\n\n:cat-spec/kw:\n  (clojure.spec.alpha/cat :k clojure.core/keyword? :v clojure.core/any?)\n\n-------------------------\nDetected 1 error\n"
+  "-- Syntax error -------------------\n\nValue has extra input\n\n  [:foo 1 :bar :baz]\n          ^^^^\n\n-- Relevant specs -------\n\n:cat-spec/kw:\n  (clojure.spec.alpha/cat :k clojure.core/keyword? :v clojure.core/any?)\n\n-------------------------\nDetected 1 error\n"
+  )
 
 (s/def :keys-spec/name string?)
 (s/def :keys-spec/age int?)
@@ -1169,7 +1178,7 @@ should satisfy
 -------------------------
 Detected 1 error\n"
                 (.-message (try
-                             (binding [s/*explain-out* (expound/build-printer {:value-in-context (partial expound/value-in-context {:omit-valid-values? false})})]
+                             (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
                                (test-instrument-adder "" :x))
                              (catch :default e e)))))
      :clj
@@ -1194,7 +1203,7 @@ Detected 1 error\n"
             (no-linum
              (:cause
                (Throwable->map (try
-                                 (binding [s/*explain-out* (expound/build-printer {:value-in-context (partial expound/value-in-context {:omit-valid-values? false})})]
+                                 (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
                                    (test-instrument-adder "" :x))
                                  (catch Exception e e))))))))
   (st/unstrument `test-instrument-adder))
@@ -1219,7 +1228,7 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-           (binding [s/*explain-out* (expound/build-printer {:value-in-context (fn [spec-name form path] "<HIDDEN>")})]
+           (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (fn [spec-name form path val] "<HIDDEN>")})]
              (s/explain-str :custom-printer/strings ["a" "b" :c])))))
   (testing "modified version of the included value printer"
     (testing "custom value printer"
@@ -1240,5 +1249,77 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-           (binding [s/*explain-out* (expound/build-printer {:value-in-context (partial expound/value-in-context {:omit-valid-values? false})})]
+           (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (partial expound/value-in-context {:show-valid-values? true})})]
              (s/explain-str :custom-printer/strings ["a" "b" :c])))))))
+
+
+(comment
+(require '[expound.alpha :as expound])
+(require '[clojure.spec.alpha :as s])
+
+(s/def :example.place/city string?)
+(s/def :example.place/state string?)
+(s/def :example/place (s/keys :req-un [:example.place/city :example.place/state]))
+
+(set! s/*explain-out* expound/printer)
+(s/explain :example/place {:city "Denver" :state :CO :country "USA"})
+
+;; -- Spec failed --------------------
+;;
+;;  {:city ..., :state :CO, :country ...}
+;;                     ^^^
+;;
+;;should satisfy
+;;
+;;  string?
+
+;;;;;;
+;; You can configure Expound to show valid values:
+;;;;;
+
+(set! s/*explain-out* (expound/custom-printer {:show-valid-values? true}))
+(s/explain :example/place {:city "Denver" :state :CO :country "USA"})
+
+;; -- Spec failed --------------------
+;;
+;; {:city "Denver", :state :CO, :country "USA"}
+;; ^^^
+;;
+;; should satisfy
+;;
+;;   string?
+
+;;;; or even provide your own implementation of `value-str-fn` a function which
+;; must match the following spec:
+
+;;; TODO - ADD SPEC HERE
+
+(defn my-value-str [_spec-name form path value]
+  (str "In context: " (pr-str form) "\n"
+       "Invalid value: " (pr-str value)))
+
+(set! s/*explain-out* (expound/custom-printer {:value-str-fn my-value-str}))
+(s/explain :example/place {:city "Denver" :state :CO :country "USA"})
+
+;; -- Spec failed --------------------
+;;
+;;   In context: {:city "Denver", :state :CO, :country "USA"}
+;;   Invalid value: :CO
+;;
+;; should satisfy
+;;
+;;   string?
+
+
+  )
+
+;; -- Spec failed --------------------
+
+;;   In context: {:city "Denver", :state :CO}
+
+;;   value: :CO
+
+;; should satisfy
+
+;;   string?
+

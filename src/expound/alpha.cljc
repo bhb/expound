@@ -26,7 +26,7 @@
 (def section-size 25)
 (def indent-level 2)
 
-(def ^:dynamic *value-in-context* ::not-set)
+(def ^:dynamic *value-str-fn* ::not-set)
 
 #?(:cljs
    (defn format [fmt & args]
@@ -79,14 +79,14 @@
 (defn summary-form
   "Given a form and a path to highlight, returns a data structure that marks
    the highlighted and irrelevant data"
-  [omit-irrelevant? form highlighted-path]
+  [show-valid-values? form highlighted-path]
   (paths/postwalk-with-path
    (fn [path x]
      (cond
        (= ::irrelevant x)
-       (if omit-irrelevant?
-         ::irrelevant
-         x)
+       (if show-valid-values?
+         x
+         ::irrelevant)
 
        (= ::relevant x)
        ::relevant
@@ -107,9 +107,9 @@
        x
 
        :else
-       (if omit-irrelevant?
-         ::irrelevant
-         x)))
+       (if show-valid-values?
+         x
+         ::irrelevant)))
    form))
 
 ;; FIXME - this function is not intuitive.
@@ -147,11 +147,11 @@
   "Given a form and a path into that form, returns a pretty printed
    string that highlights the value at the path."
   [opts form path]
-  (let [{:keys [omit-valid-values?] :or {omit-valid-values? true}} opts
+  (let [{:keys [show-valid-values?] :or {show-valid-values? false}} opts
         value-at-path (value-in form path)
         relevant (str "(" ::relevant "|(" ::kv-relevant "\\s+" ::kv-relevant "))")
         regex (re-pattern (str "(.*)" relevant ".*"))
-        s (binding [*print-namespace-maps* false] (pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form omit-valid-values? form path))))
+        s (binding [*print-namespace-maps* false] (pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form show-valid-values? form path))))
         [line prefix & _more] (re-find regex s)
         highlighted-line (-> line
                              (string/replace (re-pattern relevant) (indent 0 (count prefix) (pprint-str value-at-path)))
@@ -159,17 +159,17 @@
     ;;highlighted-line
     (no-trailing-whitespace (string/replace s line highlighted-line))))
 
+;; TODO - this is now part of the public API
 (defn value-in-context
   "Given a form and a path into that form, returns a string
    that helps the user understand where that path is located
    in the form"
-  [opts spec-name form path]
+  [opts spec-name form path value]
   (if (= :fn spec-name)
     (binding [*print-namespace-maps* false] (pr-str form))
-    (let [val (value-in form path)]
-      (if (= form val)
-        (binding [*print-namespace-maps* false] (pr-str val))
-        (highlighted-value opts form path)))))
+    (if (= form value)
+      (binding [*print-namespace-maps* false] (pr-str value))
+      (highlighted-value opts form path))))
 
 (defn spec-str [spec]
   (if (keyword? spec)
@@ -231,16 +231,16 @@
 should have additional elements. The next element is named `%s` and satisfies
 
 %s"
-   (show-spec-name spec-name (indent (*value-in-context* spec-name val path)))
+   (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
    (pr-str (first (:expound/path problem)))
    (indent (pr-pred (:pred problem)))))
 
 (defn extra-input [spec-name val path]
   (format
-   "Value has extra input
+    "Value has extra input
 
 %s"
-   (show-spec-name spec-name (indent (*value-in-context* spec-name val path)))))
+    (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))))
 
 (defn missing-key [form]
   #?(:cljs (let [[contains _arg key-keyword] form]
@@ -322,7 +322,7 @@ should have additional elements. The next element is named `%s` and satisfies
  Dispatch function:     `%s`
  Dispatch value:        `%s`
  "
-     (show-spec-name spec-name (indent (*value-in-context* spec-name val path)))
+     (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
      (pr-str mm)
      (pr-str retag)
      (pr-str (if retag (retag (value-in val path)) nil)))))
@@ -340,7 +340,7 @@ should contain keys: %s
 
 %s"
    (header-label "Spec failed")
-   (show-spec-name spec-name (indent (*value-in-context* spec-name val path)))
+   (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
    (string/join "," (map #(str "`" (missing-key (:pred %)) "`") problems))
    (relevant-specs problems)))
 
@@ -356,7 +356,7 @@ should be one of: %s
 
 %s"
    (header-label "Spec failed")
-   (show-spec-name spec-name (indent (*value-in-context* spec-name val path)))
+   (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
    (string/join "," (map #(str "`" % "`") (:pred (first problems))))
    (relevant-specs problems)))
 
@@ -391,7 +391,8 @@ should be one of: %s
 (s/def ::fn fn?)
 
 (defmethod problem-group-str :problem/unknown [_type spec-name val path problems]
-  (s/assert ::fn *value-in-context*)
+  ;; TODO - strong assertion 
+  (s/assert ::fn *value-str-fn*)
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (format
    "%s
@@ -404,7 +405,7 @@ should satisfy
 
 %s"
    (header-label "Spec failed")
-   (show-spec-name spec-name (indent (*value-in-context* spec-name val path)))
+   (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
    (preds (map :pred problems))
    (relevant-specs problems)))
 
@@ -475,11 +476,25 @@ should satisfy
     (-> ed ::s/problems first :path first)
     nil))
 
+(comment
+  (let [opts {}]
+    (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context
+                                                              {:show-valid-values? false}))]
+      *value-str-fn*
+
+      (value-in-context
+       {:show-valid-values? true} :foo ["hi" "bye"] [0] "hi")
+
+      #_(*value-str-fn* :foo ["hi" "bye"] [0] "hi")
+      ))
+  )
+
 (defn printer-str [opts explain-data]
   (if-not explain-data
     "Success!\n"
-    (binding [*value-in-context* (get opts :value-in-context (partial value-in-context
-                                                                      {:omit-valid-values? true}))]
+    (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context
+                                                              (merge {:show-valid-values? false}
+                                                                     opts)))]
         (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure]} explain-data
               caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
               form (if (not= :instrument failure)
@@ -517,14 +532,13 @@ Detected %s %s\n"
 
 ;;;;;; public ;;;;;;
 
-(defn build-printer [opts]
+(defn custom-printer [opts]
   (fn [explain-data]
     (print (printer-str opts explain-data))))
 
-
 ;; TODO - write docstrings
 (defn printer [explain-data]
-  ((build-printer {}) explain-data))
+  ((custom-printer {}) explain-data))
 
 (defn expound-str
   "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
