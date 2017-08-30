@@ -159,6 +159,15 @@
     ;;highlighted-line
     (no-trailing-whitespace (string/replace s line highlighted-line))))
 
+
+(s/fdef value-in-context
+        :args (s/cat
+               :opts map?
+               :spec-name (s/nilable #{:args :fn :ret})
+               :form any?
+               :path :expound/path
+               :value any?)
+        :ret string?)
 (defn value-in-context
   "Given a form and a path into that form, returns a string
    that helps the user understand where that path is located

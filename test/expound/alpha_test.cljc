@@ -17,6 +17,7 @@
 (def any-printable-wo-nan (gen/such-that (complement test-utils/contains-nan?) gen/any-printable))
 
 (comment
+  (print "Call to #'expound.alpha/value-in-context did not conform to spec:\ncore.clj:665\n\n-- Spec failed --------------------\n\nFunction arguments\n\n  ({:show-valid-values? true} :args (\"\" :x) [0] \"\")\n                              ^^^^^\n\nshould be one of: `:foo`\n\n\n\n-- Spec failed --------------------\n\nFunction arguments\n\n  ({:show-valid-values? true} :args (\"\" :x) [0] \"\")\n                              ^^^^^\n\nshould satisfy\n\n  nil?\n\n\n\n-------------------------\nDetected 2 errors\n")
   (require '[clojure.string :as string])
   )
 

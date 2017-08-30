@@ -150,11 +150,17 @@ You can configure Expound to show valid values:
 ;;   string?
 ```
 
-You can even provide your own function to display the invalid value. Your implementation must match the following spec:
-
-;;; TODO - ADD SPEC HERE
+You can even provide your own function to display the invalid value.
 
 ```clojure
+;; Your implementation should meet the following spec:
+(s/fdef my-value-str
+        :args (s/cat
+               :spec-name (s/nilable #{:args :fn :ret})
+               :form any?
+               :path :expound/path
+               :value any?)
+        :ret string?)
 (defn my-value-str [_spec-name form path value]
   (str "In context: " (pr-str form) "\n"
        "Invalid value: " (pr-str value)))
