@@ -394,12 +394,7 @@ should be one of: %s
        "Extra input" (extra-input spec-name val path))
      (relevant-specs problems))))
 
-;; TODO - remove
-(s/def ::fn fn?)
-
 (defmethod problem-group-str :problem/unknown [_type spec-name val path problems]
-  ;; TODO - strong assertion 
-  (s/assert ::fn *value-str-fn*)
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (format
    "%s
@@ -514,7 +509,6 @@ should satisfy
              (str
               (instrumentation-info failure caller)
               (format
-               ;; TODO - add a newline here to make specs look nice
                "%s
 
 %s
