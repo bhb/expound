@@ -26,7 +26,7 @@
 (def section-size 25)
 (def indent-level 2)
 
-(def ^:dynamic *value-str-fn* ::not-set)
+(def ^:dynamic *value-str-fn* (fn [_ _ _ _] "NOT IMPLEMENTED"))
 
 #?(:cljs
    (defn format [fmt & args]
@@ -159,7 +159,6 @@
     ;;highlighted-line
     (no-trailing-whitespace (string/replace s line highlighted-line))))
 
-;; TODO - this is now part of the public API
 (defn value-in-context
   "Given a form and a path into that form, returns a string
    that helps the user understand where that path is located
@@ -532,16 +531,19 @@ Detected %s %s\n"
 
 ;;;;;; public ;;;;;;
 
-(defn custom-printer [opts]
+(defn custom-printer
+  "Returns a printer, configured via opts"
+  [opts]
   (fn [explain-data]
     (print (printer-str opts explain-data))))
 
-;; TODO - write docstrings
-(defn printer [explain-data]
+(defn printer
+  "Prints explain-data in a human-readable format"
+  [explain-data]
   ((custom-printer {}) explain-data))
 
 (defn expound-str
-  "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
+  "Given a spec and a value, either returns success message or returns a human-readable explanation as a string."
   [spec form]
   ;; expound was initially released with support
   ;; for CLJS 1.9.542 which did not include
@@ -554,5 +556,7 @@ Detected %s %s\n"
                           ::s/value form)
                    nil))))
 
-(defn expound [spec form]
+(defn expound
+  "Given a spec and a value, either prints a success message or prints a human-readable explanation as a string."
+  [spec form]
   (print (expound-str spec form)))
