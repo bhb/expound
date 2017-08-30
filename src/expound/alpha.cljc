@@ -159,7 +159,6 @@
     ;;highlighted-line
     (no-trailing-whitespace (string/replace s line highlighted-line))))
 
-
 (s/fdef value-in-context
         :args (s/cat
                :opts map?
@@ -483,19 +482,6 @@ should satisfy
   (if (::s/failure ed)
     (-> ed ::s/problems first :path first)
     nil))
-
-(comment
-  (let [opts {}]
-    (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context
-                                                              {:show-valid-values? false}))]
-      *value-str-fn*
-
-      (value-in-context
-       {:show-valid-values? true} :foo ["hi" "bye"] [0] "hi")
-
-      #_(*value-str-fn* :foo ["hi" "bye"] [0] "hi")
-      ))
-  )
 
 (defn printer-str [opts explain-data]
   (if-not explain-data
