@@ -202,7 +202,9 @@
      :clj (string/replace s "clojure.core/" "")))
 
 (defn pprint-fn [f]
-  (let [s (second (re-find #"\#object\[([^ ]+) " (pr-str f)))]
+  (let [pattern #?(:clj #"([^@]+)@"
+                   :cljs #"function ([^\(]+)\(")
+        s (second (re-find pattern (str f)))]
     (-> #?(:clj
            (clojure.main/demunge s)
            :cljs
@@ -465,6 +467,18 @@ should satisfy
          (if (= :instrument failure)
            (vec (rest (:path problem)))
            (:path problem))))
+
+(comment
+  (clojure.main/demunge
+   (second
+    (re-find
+     #"([^@]+)@"
+     (str string?))))
+
+  (str safe-sort-by)
+  
+  (expound-str string? 1)
+  )
 
 (defn safe-sort-by
   "Same as sort-by, but if an error is raised, returns the original unsorted collection"
