@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+- Fixed [bug with using predicates as specs](https://github.com/bhb/expound/issues/20)
+
+
 ## [0.2.1] - 2017-08-16
 
 ### Fixed
