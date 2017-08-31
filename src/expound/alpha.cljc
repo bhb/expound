@@ -195,13 +195,35 @@
      :cljs (implements? cljs.core.INamed x)))
 
 (defn elide-core-ns [s]
-  #?(:cljs (string/replace s "cljs.core/" "")
+  #?(:cljs (-> s
+               (string/replace "cljs.core/" "")
+               (string/replace "cljs/core/" ""))
      :clj (string/replace s "clojure.core/" "")))
 
-(defn pr-pred [pred]
-  (if (or (symbol? pred) (named? pred))
+(defn pprint-fn [f]
+  (let [s (second (re-find #"\#object\[([^ ]+) " (pr-str f)))]
+    (-> #?(:clj
+           (clojure.main/demunge s)
+           :cljs
+           (demunge-str s))
+        (elide-core-ns)
+        (string/replace #"--\d+" ""))))
+
+(defn pr-pred* [pred]
+  (cond
+    (or (symbol? pred) (named? pred))
     (name pred)
+
+    (fn? pred)
+    (pprint-fn pred)
+
+    :else
     (elide-core-ns (binding [*print-namespace-maps* false] (pprint-str pred)))))
+
+(defn pr-pred [pred spec]
+  (if (= ::s/unknown pred)
+    (pr-pred* spec)
+    (pr-pred* pred)))
 
 (defn show-spec-name [spec-name value]
   (if spec-name
@@ -214,8 +236,11 @@
      value)
     value))
 
-(defn preds [preds]
-  (string/join "\n\nor\n\n" (map (comp indent pr-pred) preds)))
+(defn preds [problems]
+  (string/join "\n\nor\n\n" (map (fn [problem]
+                                   (indent
+                                    (pr-pred (:pred problem)
+                                             (:spec problem)))) problems)))
 
 (defn insufficient-input [spec-name val path problem]
   (format
@@ -226,7 +251,7 @@ should have additional elements. The next element is named `%s` and satisfies
 %s"
    (show-spec-name spec-name (indent (value-in-context spec-name val path)))
    (pr-str (first (:expound/path problem)))
-   (indent (pr-pred (:pred problem)))))
+   (indent (pr-pred (:pred problem) (:spec problem)))))
 
 (defn extra-input [spec-name val path]
   (format
@@ -394,7 +419,7 @@ should satisfy
 %s"
    (header-label "Spec failed")
    (show-spec-name spec-name (indent (value-in-context spec-name val path)))
-   (preds (map :pred problems))
+   (preds problems)
    (relevant-specs problems)))
 
 (defn problem-type [problem]
@@ -464,10 +489,13 @@ should satisfy
     (-> ed ::s/problems first :path first)
     nil))
 
+(defn add-spec [spec problem]
+  (assoc problem :spec spec))
+
 (defn printer-str [explain-data]
   (if-not explain-data
     "Success!\n"
-    (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure]} explain-data
+    (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure ::s/spec]} explain-data
           caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
           form (if (not= :instrument failure)
                  value
@@ -478,7 +506,8 @@ should satisfy
           _ (doseq [problem problems]
               (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
           leaf-problems (leaf-problems (map (comp (partial adjust-in form)
-                                                  (partial adjust-path failure))
+                                                  (partial adjust-path failure)
+                                                  (partial add-spec spec))
                                             problems))
           _ (assert (every? :expound/in leaf-problems) leaf-problems)
           ;; We attempt to sort the problems by path, but it's not feasible to sort in
