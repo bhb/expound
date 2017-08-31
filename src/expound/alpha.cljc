@@ -4,6 +4,7 @@
   (:require [expound.paths :as paths]
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
+            #?(:clj [clojure.main :as clojure.main])
             [clojure.walk :as walk]
             #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
