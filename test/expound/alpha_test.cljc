@@ -69,6 +69,28 @@
        (expound/expound-str string? 1)
        (with-out-str (expound/expound string? 1)))))
 
+(deftest pprint-fn
+  (is (= "string?"
+         (expound/pprint-fn (::s/spec (s/explain-data string? 1)))))
+  (is (=
+       "expound.alpha/expound"
+       (expound/pprint-fn expound/expound))))
+
+(deftest predicate-spec
+  (is (= (pf "-- Spec failed --------------------
+
+  1
+
+should satisfy
+
+  string?
+
+
+
+-------------------------
+Detected 1 error\n")
+         (expound/expound-str string? 1))))
+
 (s/def :simple-type-based-spec/str string?)
 
 (deftest simple-type-based-spec

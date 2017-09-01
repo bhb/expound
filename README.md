@@ -4,7 +4,7 @@ Expound formats `clojure.spec` error messages in a way that is optimized for hum
 
 Expound is in alpha while `clojure.spec` is in alpha.
 
-Expound is tested with Clojure 1.9.0-alpha17 and Clojurescript 1.9.562. Clojurescript 1.9.542 only supports using `expound` and `expound-str` functions directly.
+Expound is tested with Clojure 1.9.0-alpha19 and Clojurescript 1.9.908. Clojurescript 1.9.542 only supports using `expound` and `expound-str` functions directly.
 
 ## Usage
 

@@ -8,7 +8,7 @@ jobs:
     docker:
       # specify the version you desire here
       - image: circleci/clojure:lein-2.7.1
-      
+
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
@@ -20,7 +20,7 @@ jobs:
       LEIN_ROOT: "true"
       # Customize the JVM maximum heap limit
       JVM_OPTS: -Xmx3200m
-    
+
     steps:
       - checkout
 
@@ -39,7 +39,10 @@ jobs:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "project.clj" }}
-        
+
       # run tests!
-      - run: lein with-profile +test-common test
-      - run: lein with-profile test-web cljsbuild once test && bin/tests
+      - run: lein with-profile test-common,clj-1.9.0-alpha17 test
+      - run: lein with-profile test-common,clj-1.9.0-alpha18 test
+      - run: lein with-profile test-common,clj-1.9.0-alpha19 test
+      - run: lein clean && lein with-profile test-web,cljs-1.9.562 cljsbuild once test && bin/tests
+      - run: lein clean && lein with-profile test-web,cljs-1.9.908 cljsbuild once test && bin/tests
