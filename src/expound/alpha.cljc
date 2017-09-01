@@ -202,15 +202,24 @@
      :clj (string/replace s "clojure.core/" "")))
 
 (defn pprint-fn [f]
-  (let [pattern #?(:clj #"([^@]+)@"
-                   :cljs #"function ([^\(]+)\(")
-        s (second (re-find pattern (str f)))]
-    (-> #?(:clj
-           (clojure.main/demunge s)
-           :cljs
-           (demunge-str s))
-        (elide-core-ns)
-        (string/replace #"--\d+" ""))))
+  (-> #?(:clj
+         (let [[_ ns-n f-n] (re-matches #"(.*)\$(.*?)(__[0-9]+)?" (str f))]
+           (str
+            (clojure.main/demunge ns-n) "/"
+            (clojure.main/demunge f-n)))
+         :cljs
+         (let [fn-parts (string/split (second (re-find
+                                                #"function ([^\(]+)"
+                                                (str f)))
+                                      #"\$")
+               ns-n (string/join "." (butlast fn-parts))
+               fn-n  (last fn-parts)]
+           (str
+            (demunge-str ns-n) "/"
+            (demunge-str fn-n))))
+      (elide-core-ns)
+      (string/replace #"--\d+" "")
+      (string/replace #"@[a-zA-Z0-9]+" "")))
 
 (defn pr-pred* [pred]
   (cond
@@ -467,18 +476,6 @@ should satisfy
          (if (= :instrument failure)
            (vec (rest (:path problem)))
            (:path problem))))
-
-(comment
-  (clojure.main/demunge
-   (second
-    (re-find
-     #"([^@]+)@"
-     (str string?))))
-
-  (str safe-sort-by)
-  
-  (expound-str string? 1)
-  )
 
 (defn safe-sort-by
   "Same as sort-by, but if an error is raised, returns the original unsorted collection"

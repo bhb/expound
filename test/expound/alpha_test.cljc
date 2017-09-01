@@ -73,10 +73,7 @@
   (is (= "string?"
          (expound/pprint-fn (::s/spec (s/explain-data string? 1)))))
   (is (=
-       #?(:clj
-          "expound.alpha/expound"
-          :cljs
-          "expound/alpha/expound")
+       "expound.alpha/expound"
        (expound/pprint-fn expound/expound))))
 
 (deftest predicate-spec
