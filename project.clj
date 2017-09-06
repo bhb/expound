@@ -3,11 +3,8 @@
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.9.0-alpha17" :scope "provided"]
-                 ;; expound launched with this version
-                 ;; and only supported expound and expound-str
-                 ;;[org.clojure/clojurescript "1.9.542" :scope "provided"]
-                 [org.clojure/clojurescript "1.9.562" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.9.0-alpha19" :scope "provided"]
+                 [org.clojure/clojurescript "1.9.908" :scope "provided"]
                  [org.clojure/spec.alpha "0.1.123" :scope "provided"]]
 
   :plugins [[com.jakemccrary/lein-test-refresh "0.20.0"]
@@ -92,7 +89,12 @@
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.10"]
                                         [karma-reporter "1.0.1"]]}]
-             :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.1"]]}}
+             :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.1"]]}
+
+             :clj-1.9.0-alpha17 {:dependencies [[org.clojure/clojure "1.9.0-alpha17"]]}
+             :clj-1.9.0-alpha18 {:dependencies [[org.clojure/clojure "1.9.0-alpha18"]]}
+             :cljs-1.9.562 {:dependencies [[org.clojure/clojurescript "1.9.562"]]}
+             :cljs-1.9.908 {:dependencies  [[org.clojure/clojurescript "1.9.908"]]}}
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
                               ["with-profile" "test-web" "cljsbuild" "once" "test"]
