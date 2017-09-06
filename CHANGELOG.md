@@ -3,9 +3,11 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Added
+- Added configurable printers
+
 ### Fixed
 - Fixed [bug with using predicates as specs](https://github.com/bhb/expound/issues/20)
-
 
 ## [0.2.1] - 2017-08-16
 
@@ -18,7 +20,7 @@ All notable changes to this project will be documented in this file. This change
 - Append [newline to expound output](https://github.com/bhb/expound/issues/8)
 - Pretty print predicates
 - Omit `clojure.core` and `cljs.core` prefix when printing predicates
-- Add support for [Orchestra](https://github.com/jeaye/orchestra) instrumentation
+- Added support for [Orchestra](https://github.com/jeaye/orchestra) instrumentation
 
 ## [0.1.2] - 2017-07-22
 

@@ -1,0 +1,92 @@
+# ADR 001: Configurable value printers
+
+## Problem
+
+The default value printer omits irrelevant values. While this compacts large values and reduces noise, it can also obscure the location of data by omitting helpful context about the "siblings" of the bad data.
+
+## Context
+
+https://github.com/bhb/expound/issues/18
+
+More generally, there is some demand for completely different output that would be suitable for showing an outside user (say, a consumer of an API)
+
+https://clojurians-log.clojureverse.org/clojure-spec/2017-07-17.html#inst-2017-07-17T18:09:19.667294Z
+
+The current printer was built for finding problems in large data structures coming over the wire. However, in the case of instrumentation, values are often not as deeply nested or as large.
+
+## Possible solutions
+
+### Make default value printer smarter
+
+We could only omit data in certain circumstances, based on factors like the nesting level of bad data, and the length of sibling data.
+
+#### Tradeoffs
+* \+ No configuration necessary for users
+* \+ If done correctly, adds value for all users
+* \- Very hard to get right in all cases
+* \- No way to override heuristics
+* \- Complicated mental model for users
+* \- Printer may change seemingly "at random" if user makes minor change to data
+* \- Does not allow configuration of other aspects of `printer`
+
+### Use dynamic var
+
+A `*value-str*` could be set by clients. Expound could provide one or more implementations of this function.
+
+##### Tradeoffs
+* \+ Easy to implement. Build a new printer that does not omit values, call the new function stored in the dynamic var, add documentation to switch the printer.
+* \+ Extensible. Users can easily provide their own implementation
+* \+ Easy. Users don't have to understand entire Expound API to change this common configuration point.
+* \- `set!` only works if it has already been bound with `binding`, which will not be true of this dynamic var, so users cannot set this globally, only within a `binding`. [Explanation](https://github.com/bhb/expound/issues/19#issuecomment-324507107)
+* \- Does not allow more extensive configuration of other aspects of `printer`
+* \- Possible "long tail" of many dynamic vars for other configuration aspects
+
+#### Provide several different `printer` functions
+
+Expound currently only exposes a single `printer` function. We could expose a new function named `instrumentation-printer` which is better suited for instrumentation.
+
+##### Tradeoffs
+* \+ Relatively easy to implement. Build a new value printer, pass down the configuration variable.
+* \+ Easy - just pick a different printer
+* \+ There may be other changes we want to make for the instrumentation printer beyond just changing the value printer
+* \+ Users don't need to understand the Expound internals
+* \+ `*explain-printer*` works with `set!` as well as `binding` in dev-time contexts like REPL
+* \- All changes must be taken together, no "a la carte" configuration
+* \- Assumes that this value printer is only useful for instrumentation, when it may vary independently. And naming becomes hard if we just name it based on the feature: `no-omitted-values-printer?`. Or a function that builds a printer (after taking some configuration values)?
+
+#### Refactor to allow users to construct their own `printer` functions
+
+We could refactor Expound to include some `core` namespace that would allow users to build their own printers out of the parts.
+
+##### Tradeoffs
+* \+ Users can modify any part of the message
+* \+ Forces simplification and clarification of parts
+* \+ Avoids "long tail" of configuration
+* \+ Allows easier writing of a number of default printers for various cases
+* \+ Easy to set globally, since we are still using `*explain-out` dynamic var that is already bound.
+* \- "Simple but not easy" - if a user just wants to not omit values, they have to learn a whole API
+* \- Not future-proof. New printers effectively fork the default Expound printer, so they won't get new improvements to Expound printer by default
+* \- Bigger public API requires more careful maintainence
+* \- Time consuming to build new API that is well-factored and hopefully stable
+
+#### Add a new "printer builder" function
+
+Make `printer` (or a new function) take args and return a new printer.
+
+##### Tradeoffs
+* \+ Still uses global `*explain-out*` function
+* \+ Simple: common configuration options can be supported via named args
+* \+ Relatively easy to implement
+* \+ Users don't need to understand internals of Expound
+* \+ Upgrade path is smoother - always set a single dynamic var, but we give you simple way to configure default one
+* \+ Multiple configurable printers are possible, each with own options
+* \- Might have "long tail" of configuration for default printer
+
+## Decision
+
+Add a new "printer builder" function.
+
+## Status
+
+Accepted
+

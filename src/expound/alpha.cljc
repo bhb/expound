@@ -27,6 +27,8 @@
 (def section-size 25)
 (def indent-level 2)
 
+(def ^:dynamic *value-str-fn* (fn [_ _ _ _] "NOT IMPLEMENTED"))
+
 #?(:cljs
    (defn format [fmt & args]
      (apply goog.string/format fmt args))
@@ -78,12 +80,14 @@
 (defn summary-form
   "Given a form and a path to highlight, returns a data structure that marks
    the highlighted and irrelevant data"
-  [form highlighted-path]
+  [show-valid-values? form highlighted-path]
   (paths/postwalk-with-path
    (fn [path x]
      (cond
        (= ::irrelevant x)
-       ::irrelevant
+       (if show-valid-values?
+         x
+         ::irrelevant)
 
        (= ::relevant x)
        ::relevant
@@ -104,7 +108,9 @@
        x
 
        :else
-       ::irrelevant))
+       (if show-valid-values?
+         x
+         ::irrelevant)))
    form))
 
 ;; FIXME - this function is not intuitive.
@@ -138,14 +144,15 @@
 ;; - group problems
 ;; - print out data structure given problem
 ;; - categorize problem
-(defn highlighted-form
+(defn highlighted-value
   "Given a form and a path into that form, returns a pretty printed
    string that highlights the value at the path."
-  [form path]
-  (let [value-at-path (value-in form path)
+  [opts form path]
+  (let [{:keys [show-valid-values?] :or {show-valid-values? false}} opts
+        value-at-path (value-in form path)
         relevant (str "(" ::relevant "|(" ::kv-relevant "\\s+" ::kv-relevant "))")
         regex (re-pattern (str "(.*)" relevant ".*"))
-        s (binding [*print-namespace-maps* false] (pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form form path))))
+        s (binding [*print-namespace-maps* false] (pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form show-valid-values? form path))))
         [line prefix & _more] (re-find regex s)
         highlighted-line (-> line
                              (string/replace (re-pattern relevant) (indent 0 (count prefix) (pprint-str value-at-path)))
@@ -153,17 +160,24 @@
     ;;highlighted-line
     (no-trailing-whitespace (string/replace s line highlighted-line))))
 
+(s/fdef value-in-context
+        :args (s/cat
+               :opts map?
+               :spec-name (s/nilable #{:args :fn :ret})
+               :form any?
+               :path :expound/path
+               :value any?)
+        :ret string?)
 (defn value-in-context
   "Given a form and a path into that form, returns a string
    that helps the user understand where that path is located
    in the form"
-  [spec-name form path]
+  [opts spec-name form path value]
   (if (= :fn spec-name)
     (binding [*print-namespace-maps* false] (pr-str form))
-    (let [val (value-in form path)]
-      (if (= form val)
-        (binding [*print-namespace-maps* false] (pr-str val))
-        (highlighted-form form path)))))
+    (if (= form value)
+      (binding [*print-namespace-maps* false] (pr-str value))
+      (highlighted-value opts form path))))
 
 (defn spec-str [spec]
   (if (keyword? spec)
@@ -261,16 +275,16 @@
 should have additional elements. The next element is named `%s` and satisfies
 
 %s"
-   (show-spec-name spec-name (indent (value-in-context spec-name val path)))
+   (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
    (pr-str (first (:expound/path problem)))
    (indent (pr-pred (:pred problem) (:spec problem)))))
 
 (defn extra-input [spec-name val path]
   (format
-   "Value has extra input
+    "Value has extra input
 
 %s"
-   (show-spec-name spec-name (indent (value-in-context spec-name val path)))))
+    (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))))
 
 (defn missing-key [form]
   #?(:cljs (let [[contains _arg key-keyword] form]
@@ -352,7 +366,7 @@ should have additional elements. The next element is named `%s` and satisfies
  Dispatch function:     `%s`
  Dispatch value:        `%s`
  "
-     (show-spec-name spec-name (indent (value-in-context spec-name val path)))
+     (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
      (pr-str mm)
      (pr-str retag)
      (pr-str (if retag (retag (value-in val path)) nil)))))
@@ -370,7 +384,7 @@ should contain keys: %s
 
 %s"
    (header-label "Spec failed")
-   (show-spec-name spec-name (indent (value-in-context spec-name val path)))
+   (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
    (string/join "," (map #(str "`" (missing-key (:pred %)) "`") problems))
    (relevant-specs problems)))
 
@@ -386,7 +400,7 @@ should be one of: %s
 
 %s"
    (header-label "Spec failed")
-   (show-spec-name spec-name (indent (value-in-context spec-name val path)))
+   (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
    (string/join "," (map #(str "`" % "`") (:pred (first problems))))
    (relevant-specs problems)))
 
@@ -430,7 +444,7 @@ should satisfy
 
 %s"
    (header-label "Spec failed")
-   (show-spec-name spec-name (indent (value-in-context spec-name val path)))
+   (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
    (preds problems)
    (relevant-specs problems)))
 
@@ -504,62 +518,75 @@ should satisfy
 (defn add-spec [spec problem]
   (assoc problem :spec spec))
 
-(defn printer-str [explain-data]
+(defn printer-str [opts explain-data]
   (if-not explain-data
     "Success!\n"
-    (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure ::s/spec]} explain-data
-          caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
-          form (if (not= :instrument failure)
-                 value
-                 (cond
-                   (contains? explain-data ::s/ret) ret
-                   (contains? explain-data ::s/fn) fn
-                   (contains? explain-data ::s/args) args))
-          _ (doseq [problem problems]
-              (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
-          leaf-problems (leaf-problems (map (comp (partial adjust-in form)
-                                                  (partial adjust-path failure)
-                                                  (partial add-spec spec))
-                                            problems))
-          _ (assert (every? :expound/in leaf-problems) leaf-problems)
-          ;; We attempt to sort the problems by path, but it's not feasible to sort in
-          ;; all cases, since paths could contain arbitrary user-defined data structures.
-          ;; If there is an error, we just give up on sorting.
-          grouped-problems (safe-sort-by first paths/compare-paths
-                                         (path+problem-type->problems leaf-problems))]
-      (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
-                                               (problem-group-str type (spec-name explain-data) form in1 problems)))]
-        (no-trailing-whitespace
-         (str
-          (instrumentation-info failure caller)
-          (format
-           ;; TODO - add a newline here to make specs look nice
-           "%s
+    (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context
+                                                              (merge {:show-valid-values? false}
+                                                                     opts)))]
+        (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure ::s/spec]} explain-data
+              caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
+              form (if (not= :instrument failure)
+                     value
+                     (cond
+                       (contains? explain-data ::s/ret) ret
+                       (contains? explain-data ::s/fn) fn
+                       (contains? explain-data ::s/args) args))
+              _ (doseq [problem problems]
+                  (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
+              leaf-problems (leaf-problems (map (comp (partial adjust-in form)
+                                                      (partial adjust-path failure)
+                                                      (partial add-spec spec))
+                                                problems))
+              _ (assert (every? :expound/in leaf-problems) leaf-problems)
+              ;; We attempt to sort the problems by path, but it's not feasible to sort in
+              ;; all cases, since paths could contain arbitrary user-defined data structures.
+              ;; If there is an error, we just give up on sorting.
+              grouped-problems (safe-sort-by first paths/compare-paths
+                                             (path+problem-type->problems leaf-problems))]
+          (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
+                                                   (problem-group-str type (spec-name explain-data) form in1 problems)))]
+            (no-trailing-whitespace
+             (str
+              (instrumentation-info failure caller)
+              (format
+               "%s
 
 %s
 Detected %s %s\n"
-           problems-str
-           (section-label)
-           (count grouped-problems)
-           (if (= 1 (count grouped-problems)) "error" "errors"))))))))
+               problems-str
+               (section-label)
+               (count grouped-problems)
+               (if (= 1 (count grouped-problems)) "error" "errors")))))))))
 
 ;;;;;; public ;;;;;;
 
-(defn printer [explain-data]
-  (print (printer-str explain-data)))
+(defn custom-printer
+  "Returns a printer, configured via opts"
+  [opts]
+  (fn [explain-data]
+    (print (printer-str opts explain-data))))
+
+(defn printer
+  "Prints explain-data in a human-readable format"
+  [explain-data]
+  ((custom-printer {}) explain-data))
 
 (defn expound-str
-  "Given a spec and a value that fails to conform, returns a human-readable explanation as a string."
+  "Given a spec and a value, either returns success message or returns a human-readable explanation as a string."
   [spec form]
   ;; expound was initially released with support
   ;; for CLJS 1.9.542 which did not include
   ;; the value in the explain data, so we patch it
   ;; in to avoid breaking back compat (at least for now)
   (let [explain-data (s/explain-data spec form)]
-    (printer-str (if explain-data
+    (printer-str {}
+                 (if explain-data
                    (assoc explain-data
                           ::s/value form)
                    nil))))
 
-(defn expound [spec form]
+(defn expound
+  "Given a spec and a value, either prints a success message or prints a human-readable explanation as a string."
+  [spec form]
   (print (expound-str spec form)))
