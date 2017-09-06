@@ -2,6 +2,7 @@
   "Drop-in replacement for clojure.spec.alpha, with
   human-readable `explain` function"
   (:require [expound.paths :as paths]
+            [expound.problems :as problems]
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
             #?(:clj [clojure.main :as clojure.main])
@@ -465,32 +466,6 @@ should satisfy
     :else
     :problem/unknown))
 
-(defn leaf-problems
-  "Given a collection of problems, returns only those problems with data on the 'leaves' of the data"
-  [problems]
-  (let [paths-to-data (into #{} (map :expound/in problems))]
-    (remove
-     (fn [problem]
-       (some
-        (fn [path]
-          (paths/prefix-path? (:expound/in problem) path))
-        paths-to-data))
-     problems)))
-
-(defn path+problem-type->problems
-  "Returns problems grouped by the path to the value (i.e. the 'in' key) then and then problem-type"
-  [problems]
-  (group-by (juxt :expound/in problem-type) problems))
-
-(defn adjust-in [form problem]
-  (assoc problem :expound/in (paths/in-with-kps form (:in problem) [])))
-
-(defn adjust-path [failure problem]
-  (assoc problem :expound/path
-         (if (= :instrument failure)
-           (vec (rest (:path problem)))
-           (:path problem))))
-
 (defn safe-sort-by
   "Same as sort-by, but if an error is raised, returns the original unsorted collection"
   [key-fn comp coll]
@@ -515,49 +490,44 @@ should satisfy
     (-> ed ::s/problems first :path first)
     nil))
 
-(defn add-spec [spec problem]
-  (assoc problem :spec spec))
-
 (defn printer-str [opts explain-data]
   (if-not explain-data
     "Success!\n"
     (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context
                                                               (merge {:show-valid-values? false}
                                                                      opts)))]
-        (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure ::s/spec]} explain-data
-              caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
-              form (if (not= :instrument failure)
-                     value
-                     (cond
-                       (contains? explain-data ::s/ret) ret
-                       (contains? explain-data ::s/fn) fn
-                       (contains? explain-data ::s/args) args))
-              _ (doseq [problem problems]
-                  (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
-              leaf-problems (leaf-problems (map (comp (partial adjust-in form)
-                                                      (partial adjust-path failure)
-                                                      (partial add-spec spec))
-                                                problems))
-              _ (assert (every? :expound/in leaf-problems) leaf-problems)
-              ;; We attempt to sort the problems by path, but it's not feasible to sort in
-              ;; all cases, since paths could contain arbitrary user-defined data structures.
-              ;; If there is an error, we just give up on sorting.
-              grouped-problems (safe-sort-by first paths/compare-paths
-                                             (path+problem-type->problems leaf-problems))]
-          (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
-                                                   (problem-group-str type (spec-name explain-data) form in1 problems)))]
-            (no-trailing-whitespace
-             (str
-              (instrumentation-info failure caller)
-              (format
-               "%s
+      (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure ::s/spec]} explain-data
+            _ (doseq [problem problems]
+                (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
+            caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
+            form (if (not= :instrument failure)
+                   value
+                   (cond
+                     (contains? explain-data ::s/ret) ret
+                     (contains? explain-data ::s/fn) fn
+                     (contains? explain-data ::s/args) args))
+            grouped-problems (->> problems
+                                  (problems/annotate form failure spec)
+                                  (problems/leaf-only)
+                                  (group-by (juxt :expound/in problem-type))
+                                  ;; We attempt to sort the problems by path, but it's not feasible to sort in
+                                  ;; all cases, since paths could contain arbitrary user-defined data structures.
+                                  ;; If there is an error, we just give up on sorting.
+                                  (safe-sort-by first paths/compare-paths))]
+        
+        (no-trailing-whitespace
+         (str
+          (instrumentation-info failure caller)
+          (format
+           "%s
 
 %s
 Detected %s %s\n"
-               problems-str
-               (section-label)
-               (count grouped-problems)
-               (if (= 1 (count grouped-problems)) "error" "errors")))))))))
+           (string/join "\n\n" (for [[[in type] problems] grouped-problems]
+                                 (problem-group-str type (spec-name explain-data) form in problems)))
+           (section-label)
+           (count grouped-problems)
+           (if (= 1 (count grouped-problems)) "error" "errors"))))))))
 
 ;;;;;; public ;;;;;;
 

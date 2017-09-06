@@ -1,6 +1,7 @@
 (ns expound.test-runner
   (:require [jx.reporter.karma :refer-macros [run-tests run-all-tests]]
             [expound.alpha-test]
+            [expound.problems-test]
             [expound.test-utils]))
 
 (enable-console-print!)
