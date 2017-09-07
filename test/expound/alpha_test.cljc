@@ -1263,3 +1263,61 @@ Detected 1 error
 ")
            (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (partial expound/value-in-context {:show-valid-values? true})})]
              (s/explain-str :custom-printer/strings ["a" "b" :c])))))))
+
+
+;; ;; TODO - restore when bug is fixed, make sure generative test covers bug
+#_ (deftest spec-with-conformer
+        (is (= ""
+                         (expound/expound ::radiuses-raw "1200.50;100;500;unlimited;100")))
+      )
+
+
+;; TODO - delete once I'm sure we've fixed bug
+;; https://github.com/bhb/expound/issues/15
+(defn parse-radiuses
+        [text]
+  (map clojure.edn/read-string (string/split text #";")))
+
+(def rads-regex #"((\d(\.\d+)?)|unlimited)(;((\d+(\.\d+)?)|unlimited))*")
+(s/def ::radius (s/or :unlimited #(= "unlimited" %) :distance (s/and number? #(> % 0))))
+(s/def ::radiuses (s/coll-of ::radius))
+
+(s/def ::radiuses-raw
+  (s/and string?
+         #(re-matches rads-regex %)
+         (s/conformer parse-radiuses)
+         ::radiuses))
+
+;; TODO - restore when bug is fixed, make sure generative test covers bug
+#_(deftest spec-with-conformer
+       (is (= ""
+              (expound/expound ::radiuses-raw "1200.50;100;500;unlimited;100")))
+     )
+
+
+(s/def :spec-with-conformer/a-b-seq (s/cat :a #{\A} :b #{\B}))
+(s/def :spec-with-confomer/a-b-str (s/and
+                                    string?
+                                    (s/conformer seq)
+                                    :spec-with-conformer/a-b-seq))
+#_(deftest spec-with-conformer
+  (is (= ""
+         (expound/highlighted-form1
+          (expound/explain-datum
+           (s/explain-data :spec-with-confomer/a-b-str "ab")
+           ))
+         ))
+    
+      #_ (is (= ""
+                          (expound/highlighted-form1
+                                      (expound/explain-datum
+                                                   (s/explain-data :spec-with-confomer/a-b-str "")
+                                        ))
+                 ))
+    
+      #_ (is (= ""
+                          (expound/expound-str :spec-with-confomer/a-b-str "")))
+      #_ (is (= ""
+                          (expound/expound-str :spec-with-confomer/a-b-str "ab")))
+   #_ (is (= ""
+                          (expound/expound-str :spec-with-confomer/a-b-str "ac"))))

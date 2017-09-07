@@ -496,18 +496,17 @@ should satisfy
     (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context
                                                               (merge {:show-valid-values? false}
                                                                      opts)))]
-      (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure ::s/spec]} explain-data
+      (let [{:keys [::s/problems ::s/fn ::s/failure]} explain-data
             _ (doseq [problem problems]
                 (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
-            caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
-            form (if (not= :instrument failure)
-                   value
-                   (cond
-                     (contains? explain-data ::s/ret) ret
-                     (contains? explain-data ::s/fn) fn
-                     (contains? explain-data ::s/args) args))
-            grouped-problems (->> problems
-                                  (problems/annotate form failure spec)
+            explain-data' (problems/annotate explain-data)
+
+            
+            caller (:expound/caller explain-data')
+            form (:expound/form explain-data')
+            
+            grouped-problems (->> explain-data'                                  
+                                  :expound/problems
                                   (problems/leaf-only)
                                   (group-by (juxt :expound/in problem-type))
                                   ;; We attempt to sort the problems by path, but it's not feasible to sort in
