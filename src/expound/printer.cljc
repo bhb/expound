@@ -11,7 +11,6 @@
      (apply goog.string/format fmt args))
    :clj (def format clojure.core/format))
 
-(declare pprint-str) ; joker workaround
 (s/fdef pprint-str
         :args (s/cat :x any?)
         :ret string?)
@@ -20,7 +19,6 @@
   [x]
   (pprint/write x :stream nil))
 
-(declare no-trailing-whitespace) ; joker workaround
 (s/fdef no-trailing-whitespace
         :args (s/cat :s string?)
         :ret string?)
@@ -36,7 +34,6 @@
       (str s' "\n")
       s')))
 
-(declare indent) ; joker workaround
 (s/fdef indent
         :args (s/cat
                :first-line-indent-level (s/? nat-int?)

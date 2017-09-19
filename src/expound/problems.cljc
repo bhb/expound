@@ -5,7 +5,6 @@
             [clojure.string :as string]
             [expound.printer :as printer]))
 
-(declare summary-form) ; joker workaround
 (s/fdef summary-form
         :args (s/cat :show-valid-valids? boolean?
                      :form any?

@@ -28,7 +28,6 @@
 
 (def ^:dynamic *value-str-fn* (fn [_ _ _ _] "NOT IMPLEMENTED"))
 
-(declare value-in-context) ; Workaround for Joker error
 (s/fdef value-in-context
         :args (s/cat
                :opts map?
@@ -56,7 +55,6 @@
      (printer/indent (printer/pprint-str (s/form spec))))
     (printer/pprint-str (s/form spec))))
 
-(declare specs) ; Workaround for Joker
 (s/fdef specs
         :args (s/cat :problems :spec/problems)
         :ret :spec/specs)
