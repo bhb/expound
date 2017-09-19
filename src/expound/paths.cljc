@@ -84,17 +84,15 @@
       ;; detect a `:in` path that points at a key in a map-of spec
       (and (map? form)
            (= 0 idx)
-           ;; TODO - simplify
-           (or (not (associative? (get form k ::not-found)))
-               (not (contains? (get form k ::not-found) idx))))
+           (not (and (associative? (get form k ::not-found))
+                     (contains? (get form k ::not-found) idx))))
       (conj in' (->KeyPathSegment k))
 
       ;; detect a `:in` path that points at a value in a map-of spec
       (and (map? form)
            (= 1 idx)
-           ;; TODO - simplify
-           (or (not (associative? (get form k ::not-found)))
-               (not (contains? (get form k ::not-found) idx))))
+           (not (and (associative? (get form k ::not-found))
+                     (contains? (get form k ::not-found) idx))))
       (recur (get form k ::not-found) rst2 (conj in' k))
 
       ;; detech a `:in` path that points to a key/value pair in a coll-of spec
