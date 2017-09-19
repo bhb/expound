@@ -220,6 +220,7 @@ Use [Orchestra](https://github.com/jeaye/orchestra) with Expound to get human-op
 
 - [Inspectable](https://github.com/jpmonettas/inspectable) - Tools to explore specs and spec failures at the REPL
 - [Pretty-Spec](https://github.com/jpmonettas/pretty-spec) - Pretty printer for specs
+- [Phrase](https://github.com/alexanderkiel/phrase) - Use specs to create error messages for users
 
 ## Prior Art
 
