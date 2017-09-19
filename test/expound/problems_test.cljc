@@ -56,6 +56,11 @@
             [0])))))
 
 (s/def :highlighted-value/nested-map-of (s/map-of keyword? (s/map-of keyword? keyword?)))
+
+(s/def :highlighted-value/city string?)
+(s/def :highlighted-value/address (s/keys :req-un [:highlighted-value/city]))
+(s/def :highlighted-value/house (s/keys :req-un [:highlighted-value/address]))
+
 (deftest highlighted-value1
   (testing "special replacement chars are not used"
     (is (= "\"$ $$ $1 $& $` $'\"\n^^^^^^^^^^^^^^^^^^"
@@ -87,4 +92,27 @@
             (first
              (:expound/problems
                (problems/annotate
-                (s/explain-data :highlighted-value/nested-map-of {1 {:a :b}})))))))))
+                (s/explain-data :highlighted-value/nested-map-of {1 {:a :b}}))))))))
+
+  (testing "nested keys specs"
+    (is (= "{:address {:city 1}}\n                 ^"
+           (problems/highlighted-value1
+            {}
+            (first
+             (:expound/problems
+               (problems/annotate
+                (s/explain-data :highlighted-value/house {:address {:city 1}})))))))
+    (is (= "{:address {\"city\" \"Denver\"}}\n          ^^^^^^^^^^^^^^^^^"
+           (problems/highlighted-value1
+            {}
+            (first
+             (:expound/problems
+               (problems/annotate
+                (s/explain-data :highlighted-value/house {:address {"city" "Denver"}})))))))
+    (is (= "{\"address\" {:city \"Denver\"}}\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+           (problems/highlighted-value1
+            {}
+            (first
+             (:expound/problems
+               (problems/annotate
+                (s/explain-data :highlighted-value/house {"address" {:city "Denver"}})))))))))
