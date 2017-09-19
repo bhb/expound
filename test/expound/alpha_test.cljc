@@ -765,15 +765,16 @@ Detected 1 error\n")
       form gen/any-printable]
      (expound/expound-str spec form)))
 
-;; TODO - get these two tests running!
-#_(deftest generated-map-of-specs
+(deftest generated-map-of-specs
     (checking
      "'map-of' spec"
-     25
+     30
      [simple-spec1 simple-spec-gen
       simple-spec2 simple-spec-gen
-      every-args (s/gen :specs/every-args)
-      :let [spec (apply-map-of simple-spec1 simple-spec2 every-args)
+      simple-spec3 simple-spec-gen
+      every-args1 (s/gen :specs/every-args)
+      every-args2 (s/gen :specs/every-args)
+      :let [spec (apply-map-of simple-spec1 (apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)
             sp-form (s/form spec)]
       form any-printable-wo-nan]
      (expound/expound-str spec form)))

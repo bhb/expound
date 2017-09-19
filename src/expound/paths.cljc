@@ -72,40 +72,40 @@
   "True if path points to a key/value pair"
   [x]
   (boolean (and (vector? x)
-                 (some kvps? x))))
+                (some kvps? x))))
 
-(defn in-with-kps [form in in1]
+(defn in-with-kps [form in in']
   (let [[k & rst] in
         [idx & rst2] rst]
     (cond
       (empty? in)
-      in1
+      in'
 
       ;; detect a `:in` path that points at a key in a map-of spec
       (and (map? form)
            (= 0 idx)
-           (empty? rst2)
-           (or (not (associative? (get form k)))
-               (not (contains? (get form k) idx))))
-      (conj in1 (->KeyPathSegment k))
+           ;; TODO - simplify
+           (or (not (associative? (get form k ::not-found)))
+               (not (contains? (get form k ::not-found) idx))))
+      (conj in' (->KeyPathSegment k))
 
       ;; detect a `:in` path that points at a value in a map-of spec
       (and (map? form)
            (= 1 idx)
-           (empty? rst2)
-           (or (not (associative? (get form k)))
-               (not (contains? (get form k) idx))))
-      (recur (get form k) rst2 (conj in1 k))
+           ;; TODO - simplify
+           (or (not (associative? (get form k ::not-found)))
+               (not (contains? (get form k ::not-found) idx))))
+      (recur (get form k ::not-found) rst2 (conj in' k))
 
       ;; detech a `:in` path that points to a key/value pair in a coll-of spec
       (and (map? form) (int? k) (empty? rst))
-      (conj in1 (->KeyValuePathSegment k))
+      (conj in' (->KeyValuePathSegment k))
 
       (associative? form)
-      (recur (get form k) rst (conj in1 k))
+      (recur (get form k ::not-found) rst (conj in' k))
 
       (int? k)
-      (recur (nth form k) rst (conj in1 k)))))
+      (recur (nth form k ::not-found) rst (conj in' k)))))
 
 (defn compare-path-segment [x y]
   (cond

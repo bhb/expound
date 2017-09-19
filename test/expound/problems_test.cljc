@@ -55,21 +55,36 @@
             (get-args 1 2 3)
             [0])))))
 
-(s/def :spec-with-conformer/a-b-seq (s/cat :a #{\A} :b #{\B}))
-(s/def :spec-with-confomer/a-b-str (s/and
-                                    string?
-                                    (s/conformer seq)
-                                    :spec-with-conformer/a-b-seq))
-#_(deftest highlighted-value
-  (testing "spec with seq conformer"
-    (is (= :foobar
-           (problems/annotate
-            (s/explain-data :spec-with-conformer/a-b-seq "ac"))
-           #_(problems/highlighted-value1
+(s/def :highlighted-value/nested-map-of (s/map-of keyword? (s/map-of keyword? keyword?)))
+(deftest highlighted-value1
+  (testing "special replacement chars are not used"
+    (is (= "\"$ $$ $1 $& $` $'\"\n^^^^^^^^^^^^^^^^^^"
+           (problems/highlighted-value1
             {}
             (first
-             (problems/annotate
-              (s/explain-data :spec-with-conformer/a-b-seq "ac")))
-            )
-           )))
-  )
+             (:expound/problems
+               (problems/annotate
+                (s/explain-data keyword? "$ $$ $1 $& $` $'"))))))))
+
+  (testing "nested map-of specs"
+    (is (= "{:a {:b 1}}\n        ^"
+           (problems/highlighted-value1
+            {}
+            (first
+             (:expound/problems
+               (problems/annotate
+                (s/explain-data :highlighted-value/nested-map-of {:a {:b 1}})))))))
+    (is (= "{:a {\"a\" ...}}\n     ^^^"
+           (problems/highlighted-value1
+            {}
+            (first
+             (:expound/problems
+               (problems/annotate
+                (s/explain-data :highlighted-value/nested-map-of {:a {"a" :b}})))))))
+    (is (= "{1 ...}\n ^"
+           (problems/highlighted-value1
+            {}
+            (first
+             (:expound/problems
+               (problems/annotate
+                (s/explain-data :highlighted-value/nested-map-of {1 {:a :b}})))))))))

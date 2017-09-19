@@ -93,7 +93,8 @@
                  (contains? explain-data ::s/args) args))
         problems' (map (comp (partial adjust-in form)
                              (partial adjust-path failure)
-                             (partial add-spec spec))
+                             (partial add-spec spec)
+                             #(assoc % :expound/form form))
                        problems)]
     (assoc explain-data
            :expound/form form
@@ -120,6 +121,12 @@
       (int? k)
       (recur (nth form k) rst))))
 
+(defn escape-replacement [pattern s]
+  #?(:clj (if (string? pattern)
+            s
+            (string/re-quote-replacement s))
+     :cljs (string/replace s #"\$" "$$$$")))
+
 ;; FIXME - perhaps a more useful API would be an API on 'problems'?
 ;; - group problems
 ;; - print out data structure given problem
@@ -135,10 +142,12 @@
         s (binding [*print-namespace-maps* false] (printer/pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form show-valid-values? form path))))
         [line prefix & _more] (re-find regex s)
         highlighted-line (-> line
-                             (string/replace (re-pattern relevant) (printer/indent 0 (count prefix) (printer/pprint-str value-at-path)))
+                             (string/replace (re-pattern relevant) (escape-replacement
+                                                                    (re-pattern relevant)
+                                                                    (printer/indent 0 (count prefix) (printer/pprint-str value-at-path))))
                              (str "\n" (highlight-line prefix (printer/pprint-str value-at-path))))]
     ;;highlighted-line
-    (printer/no-trailing-whitespace (string/replace s line highlighted-line))))
+    (printer/no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))
 
 ;; TODO refactor to use use highlighted-value
 ;; TODO - move to problems namespace
