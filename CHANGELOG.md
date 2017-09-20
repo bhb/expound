@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [Unreleased]
+
+### Fixed
+- Fixed [bug with nested `map-of` or `key` specs](https://github.com/bhb/expound/issues/27)
+
 ## [0.3.0] - 2017-09-05
 
 ### Added
