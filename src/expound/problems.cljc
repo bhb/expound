@@ -125,19 +125,16 @@
             (string/re-quote-replacement s))
      :cljs (string/replace s #"\$" "$$$$")))
 
-;; FIXME - perhaps a more useful API would be an API on 'problems'?
-;; - group problems
-;; - print out data structure given problem
-;; - categorize problem
 (defn highlighted-value
-  "Given a form and a path into that form, returns a pretty printed
-   string that highlights the value at the path."
-  [opts form path]
-  (let [{:keys [show-valid-values?] :or {show-valid-values? false}} opts
-        value-at-path (value-in form path)
+  "Given a problem, returns a pretty printed
+   string that highlights the problem value"
+  [opts problem]
+  (let [{:keys [:expound/form :expound/in]} problem
+        {:keys [show-valid-values?] :or {show-valid-values? false}} opts
+        value-at-path (value-in form in)
         relevant (str "(" ::relevant "|(" ::kv-relevant "\\s+" ::kv-relevant "))")
         regex (re-pattern (str "(.*)" relevant ".*"))
-        s (binding [*print-namespace-maps* false] (printer/pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form show-valid-values? form path))))
+        s (binding [*print-namespace-maps* false] (printer/pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form show-valid-values? form in))))
         [line prefix & _more] (re-find regex s)
         highlighted-line (-> line
                              (string/replace (re-pattern relevant) (escape-replacement
@@ -146,9 +143,3 @@
                              (str "\n" (highlight-line prefix (printer/pprint-str value-at-path))))]
     ;;highlighted-line
     (printer/no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))
-
-;; FIXME - I want to move everything to use annontated problems
-;;         but it will be a breaking change for
-;;         https://github.com/bhb/expound#configuring-the-printer
-(defn highlighted-value1 [opts problem]
-  (highlighted-value opts (:expound/form problem) (:expound/in problem)))

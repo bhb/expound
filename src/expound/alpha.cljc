@@ -45,7 +45,15 @@
     (binding [*print-namespace-maps* false] (pr-str form))
     (if (= form value)
       (binding [*print-namespace-maps* false] (pr-str value))
-      (problems/highlighted-value opts form path))))
+      ;; It's silly to reconstruct a fake "problem"
+      ;; after I've deconstructed it, but I'm not yet ready
+      ;; to break the API for value-in-context BUT
+      ;; I do want to test that a problems-based API
+      ;; is useful.
+      ;; See https://github.com/bhb/expound#configuring-the-printer
+      (problems/highlighted-value opts
+                                  {:expound/form form
+                                    :expound/in path}))))
 
 (defn spec-str [spec]
   (if (keyword? spec)

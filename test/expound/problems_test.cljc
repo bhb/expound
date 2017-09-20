@@ -23,14 +23,14 @@
     (is (= "\"Fred\"\n^^^^^^"
            (problems/highlighted-value
             {}
-            "Fred"
-            []))))
+            {:expound/form "Fred"
+             :expound/in []}))))
   (testing "value in vector"
     (is (= "[... :b ...]\n     ^^"
            (problems/highlighted-value
             {}
-            [:a :b :c]
-            [1]))))
+            {:expound/form [:a :b :c]
+             :expound/in [1]}))))
   (testing "long, composite values are pretty-printed"
     (is (= (str "{:letters {:a \"aaaaaaaa\",
            :b \"bbbbbbbb\",
@@ -42,30 +42,30 @@
            ;; ^- the above works in clojure - maybe not CLJS?
            (problems/highlighted-value
             {}
-            {:letters
-             {:a "aaaaaaaa"
-              :b "bbbbbbbb"
-              :c "cccccccd"
-              :d "dddddddd"
-              :e "eeeeeeee"}}
-            [:letters]))))
+            {:expound/form
+             {:letters
+              {:a "aaaaaaaa"
+               :b "bbbbbbbb"
+               :c "cccccccd"
+               :d "dddddddd"
+               :e "eeeeeeee"}}
+             :expound/in [:letters]}))))
   (testing "args to function"
     (is (= "(1 ... ...)\n ^"
            (problems/highlighted-value
             {}
-            (get-args 1 2 3)
-            [0]))))
+            {:expound/form (get-args 1 2 3)
+             :expound/in [0]}))))
   (testing "show all values"
     (is (= "(1 2 3)\n ^"
            (problems/highlighted-value
             {:show-valid-values? true}
-            (get-args 1 2 3)
-            [0]))))
-
+            {:expound/form (get-args 1 2 3)
+             :expound/in [0]}))))
 
   (testing "special replacement chars are not used"
     (is (= "\"$ $$ $1 $& $` $'\"\n^^^^^^^^^^^^^^^^^^"
-           (problems/highlighted-value1
+           (problems/highlighted-value
             {}
             (first
              (:expound/problems
@@ -74,21 +74,21 @@
 
   (testing "nested map-of specs"
     (is (= "{:a {:b 1}}\n        ^"
-           (problems/highlighted-value1
+           (problems/highlighted-value
             {}
             (first
              (:expound/problems
                (problems/annotate
                 (s/explain-data :highlighted-value/nested-map-of {:a {:b 1}})))))))
     (is (= "{:a {\"a\" ...}}\n     ^^^"
-           (problems/highlighted-value1
+           (problems/highlighted-value
             {}
             (first
              (:expound/problems
                (problems/annotate
                 (s/explain-data :highlighted-value/nested-map-of {:a {"a" :b}})))))))
     (is (= "{1 ...}\n ^"
-           (problems/highlighted-value1
+           (problems/highlighted-value
             {}
             (first
              (:expound/problems
@@ -97,21 +97,21 @@
 
   (testing "nested keys specs"
     (is (= "{:address {:city 1}}\n                 ^"
-           (problems/highlighted-value1
+           (problems/highlighted-value
             {}
             (first
              (:expound/problems
                (problems/annotate
                 (s/explain-data :highlighted-value/house {:address {:city 1}})))))))
     (is (= "{:address {\"city\" \"Denver\"}}\n          ^^^^^^^^^^^^^^^^^"
-           (problems/highlighted-value1
+           (problems/highlighted-value
             {}
             (first
              (:expound/problems
                (problems/annotate
                 (s/explain-data :highlighted-value/house {:address {"city" "Denver"}})))))))
     (is (= "{\"address\" {:city \"Denver\"}}\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
-           (problems/highlighted-value1
+           (problems/highlighted-value
             {}
             (first
              (:expound/problems
