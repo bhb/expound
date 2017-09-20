@@ -11,6 +11,13 @@
 
 
 (defn get-args [& args] args)
+
+(s/def :highlighted-value/nested-map-of (s/map-of keyword? (s/map-of keyword? keyword?)))
+
+(s/def :highlighted-value/city string?)
+(s/def :highlighted-value/address (s/keys :req-un [:highlighted-value/city]))
+(s/def :highlighted-value/house (s/keys :req-un [:highlighted-value/address]))
+
 (deftest highlighted-value
   (testing "atomic value"
     (is (= "\"Fred\"\n^^^^^^"
@@ -53,15 +60,9 @@
            (problems/highlighted-value
             {:show-valid-values? true}
             (get-args 1 2 3)
-            [0])))))
+            [0]))))
 
-(s/def :highlighted-value/nested-map-of (s/map-of keyword? (s/map-of keyword? keyword?)))
 
-(s/def :highlighted-value/city string?)
-(s/def :highlighted-value/address (s/keys :req-un [:highlighted-value/city]))
-(s/def :highlighted-value/house (s/keys :req-un [:highlighted-value/address]))
-
-(deftest highlighted-value1
   (testing "special replacement chars are not used"
     (is (= "\"$ $$ $1 $& $` $'\"\n^^^^^^^^^^^^^^^^^^"
            (problems/highlighted-value1

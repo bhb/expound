@@ -80,7 +80,6 @@
         paths-to-data))
      problems)))
 
-;; TODO - is "annotate" the right verb here?
 (defn annotate [explain-data]
   (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure ::s/spec]} explain-data
         caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
@@ -148,7 +147,8 @@
     ;;highlighted-line
     (printer/no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))
 
-;; TODO refactor to use use highlighted-value
-;; TODO - move to problems namespace
+;; FIXME - I want to move everything to use annontated problems
+;;         but it will be a breaking change for
+;;         https://github.com/bhb/expound#configuring-the-printer
 (defn highlighted-value1 [opts problem]
   (highlighted-value opts (:expound/form problem) (:expound/in problem)))
