@@ -272,11 +272,12 @@ should contain keys: %s
 
 %s
 
-should be one of: %s
+should be%s: %s
 
 %s"
    (header-label "Spec failed")
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
+   (if (= 1 (count (:pred (first problems)))) "" " one of")
    (string/join "," (map #(str "`" % "`") (:pred (first problems))))
    (relevant-specs problems)))
 
@@ -376,11 +377,11 @@ should satisfy
                 (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
             explain-data' (problems/annotate explain-data)
 
-            
+
             caller (:expound/caller explain-data')
             form (:expound/form explain-data')
-            
-            grouped-problems (->> explain-data'                                  
+
+            grouped-problems (->> explain-data'
                                   :expound/problems
                                   (problems/leaf-only)
                                   (group-by (juxt :expound/in problem-type))
@@ -388,7 +389,7 @@ should satisfy
                                   ;; all cases, since paths could contain arbitrary user-defined data structures.
                                   ;; If there is an error, we just give up on sorting.
                                   (safe-sort-by first paths/compare-paths))]
-        
+
         (printer/no-trailing-whitespace
          (str
           (instrumentation-info failure caller)

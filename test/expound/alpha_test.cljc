@@ -85,6 +85,7 @@ Detected 1 error\n")
 
 (s/def :set-based-spec/tag #{:foo :bar})
 (s/def :set-based-spec/nilable-tag (s/nilable :set-based-spec/tag))
+(s/def :set-based-spec/set-of-one #{:foobar})
 
 (deftest set-based-spec
   (testing "prints valid options"
@@ -132,7 +133,23 @@ should satisfy
 
 -------------------------
 Detected 2 errors\n")
-           (expound/expound-str :set-based-spec/nilable-tag :baz)))))
+           (expound/expound-str :set-based-spec/nilable-tag :baz))))
+
+  (testing "single element spec"
+    (is (= (pf "-- Spec failed --------------------
+
+  :baz
+
+should be: `:foobar`
+
+-- Relevant specs -------
+
+:set-based-spec/set-of-one:
+  #{:foobar}
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :set-based-spec/set-of-one :baz)))))
 
 (s/def :nested-type-based-spec/str string?)
 (s/def :nested-type-based-spec/strs (s/coll-of :nested-type-based-spec/str))
