@@ -5,6 +5,7 @@
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as st]
             [expound.alpha :as expound]
+            [expound.printer :as printer]
             [expound.test-utils :as test-utils]
             [clojure.string :as string]
             #?(:clj [orchestra.spec.test :as orch.st]
@@ -19,55 +20,10 @@
 (defn pf
   "Fixes platform-specific namespaces and also formats using printf syntax"
   [s & args]
-  (apply expound/format
+  (apply printer/format
          #?(:cljs (string/replace s "pf." "cljs.")
             :clj (string/replace s "pf." "clojure."))
          args))
-
-(defn get-args [& args] args)
-(deftest highlighted-value
-  (testing "atomic value"
-    (is (= "\"Fred\"\n^^^^^^"
-           (expound/highlighted-value
-            {}
-            "Fred"
-            []))))
-  (testing "value in vector"
-    (is (= "[... :b ...]\n     ^^"
-           (expound/highlighted-value
-            {}
-            [:a :b :c]
-            [1]))))
-  (testing "long, composite values are pretty-printed"
-    (is (= (str "{:letters {:a \"aaaaaaaa\",
-           :b \"bbbbbbbb\",
-           :c \"cccccccd\",
-           :d \"dddddddd\",
-           :e \"eeeeeeee\"}}"
-                #?(:clj  "\n          ^^^^^^^^^^^^^^^"
-                   :cljs "\n          ^^^^^^^^^^^^^^^^"))
-           ;; ^- the above works in clojure - maybe not CLJS?
-           (expound/highlighted-value
-            {}
-            {:letters
-             {:a "aaaaaaaa"
-              :b "bbbbbbbb"
-              :c "cccccccd"
-              :d "dddddddd"
-              :e "eeeeeeee"}}
-            [:letters]))))
-  (testing "args to function"
-    (is (= "(1 ... ...)\n ^"
-           (expound/highlighted-value
-            {}
-            (get-args 1 2 3)
-            [0]))))
-  (testing "show all values"
-    (is (= "(1 2 3)\n ^"
-           (expound/highlighted-value
-            {:show-valid-values? true}
-            (get-args 1 2 3)
-            [0])))))
 
 ;; https://github.com/bhb/expound/issues/8
 (deftest expound-output-ends-in-newline
@@ -129,6 +85,7 @@ Detected 1 error\n")
 
 (s/def :set-based-spec/tag #{:foo :bar})
 (s/def :set-based-spec/nilable-tag (s/nilable :set-based-spec/tag))
+(s/def :set-based-spec/set-of-one #{:foobar})
 
 (deftest set-based-spec
   (testing "prints valid options"
@@ -176,7 +133,23 @@ should satisfy
 
 -------------------------
 Detected 2 errors\n")
-           (expound/expound-str :set-based-spec/nilable-tag :baz)))))
+           (expound/expound-str :set-based-spec/nilable-tag :baz))))
+
+  (testing "single element spec"
+    (is (= (pf "-- Spec failed --------------------
+
+  :baz
+
+should be: `:foobar`
+
+-- Relevant specs -------
+
+:set-based-spec/set-of-one:
+  #{:foobar}
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :set-based-spec/set-of-one :baz)))))
 
 (s/def :nested-type-based-spec/str string?)
 (s/def :nested-type-based-spec/strs (s/coll-of :nested-type-based-spec/str))
@@ -564,8 +537,9 @@ Detected 1 error\n")
   {:tag ...,
    :children
    [{:tag ...,
-     :children [{:tag ..., :props {:on-tap {}}}]}]}
-                                           ^^
+     :children
+     [{:tag ..., :props {:on-tap {}}}]}]}
+                                 ^^
 
 should satisfy
 
@@ -808,15 +782,16 @@ Detected 1 error\n")
       form gen/any-printable]
      (expound/expound-str spec form)))
 
-;; TODO - get these two tests running!
-#_(deftest generated-map-of-specs
+(deftest generated-map-of-specs
     (checking
      "'map-of' spec"
-     25
+     30
      [simple-spec1 simple-spec-gen
       simple-spec2 simple-spec-gen
-      every-args (s/gen :specs/every-args)
-      :let [spec (apply-map-of simple-spec1 simple-spec2 every-args)
+      simple-spec3 simple-spec-gen
+      every-args1 (s/gen :specs/every-args)
+      every-args2 (s/gen :specs/every-args)
+      :let [spec (apply-map-of simple-spec1 (apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)
             sp-form (s/form spec)]
       form any-printable-wo-nan]
      (expound/expound-str spec form)))

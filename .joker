@@ -1,0 +1,2 @@
+{:known-macros [clojure.spec.alpha/fdef]
+ :rules {:if-without-else true}}

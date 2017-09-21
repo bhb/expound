@@ -2,14 +2,14 @@
   "Drop-in replacement for clojure.spec.alpha, with
   human-readable `explain` function"
   (:require [expound.paths :as paths]
+            [expound.problems :as problems]
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
             #?(:clj [clojure.main :as clojure.main])
-            [clojure.walk :as walk]
             #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
-            [clojure.pprint :as pprint])
-  (:refer-clojure :exclude [format]))
+            [expound.printer :as printer])
+  )
 
 ;;;;;; specs   ;;;;;;
 
@@ -25,140 +25,8 @@
 
 (def header-size 35)
 (def section-size 25)
-(def indent-level 2)
 
 (def ^:dynamic *value-str-fn* (fn [_ _ _ _] "NOT IMPLEMENTED"))
-
-#?(:cljs
-   (defn format [fmt & args]
-     (apply goog.string/format fmt args))
-   :clj (def format clojure.core/format))
-
-(s/fdef pprint-str
-        :args (s/cat :x any?)
-        :ret string?)
-(defn pprint-str
-  "Returns the pretty-printed string"
-  [x]
-  (pprint/write x :stream nil))
-
-(s/fdef no-trailing-whitespace
-        :args (s/cat :s string?)
-        :ret string?)
-(defn no-trailing-whitespace
-  "Given an potentially multi-line string, returns that string with all
-  trailing whitespace removed."
-  [s]
-  (let [s' (->> s
-                string/split-lines
-                (map string/trimr)
-                (string/join "\n"))]
-    (if (= \newline (last s))
-      (str s' "\n")
-      s')))
-
-(s/fdef indent
-        :args (s/cat
-               :first-line-indent-level (s/? nat-int?)
-               :indent-level (s/? nat-int?)
-               :s string?)
-        :ret string?)
-(defn indent
-  "Given an potentially multi-line string, returns that string indented by
-   'indent-level' spaces. Optionally, can indent first line and other lines
-   different amounts."
-  ([s]
-   (indent indent-level s))
-  ([indent-level s]
-   (indent indent-level indent-level s))
-  ([first-line-indent rest-lines-indent s]
-   (let [[line & lines] (string/split-lines (str s))]
-     (string/join "\n"
-                  (into [(str (apply str (repeat first-line-indent " ")) line)]
-                        (map #(str (apply str (repeat rest-lines-indent " ")) %) lines))))))
-
-(defn summary-form
-  "Given a form and a path to highlight, returns a data structure that marks
-   the highlighted and irrelevant data"
-  [show-valid-values? form highlighted-path]
-  (paths/postwalk-with-path
-   (fn [path x]
-     (cond
-       (= ::irrelevant x)
-       (if show-valid-values?
-         x
-         ::irrelevant)
-
-       (= ::relevant x)
-       ::relevant
-
-       (and (paths/kvps-path? path) (= path highlighted-path))
-       [::kv-relevant ::kv-relevant]
-
-       (= path highlighted-path)
-       ::relevant
-
-       (paths/prefix-path? path highlighted-path)
-       x
-
-       (paths/kps-path? path)
-       x
-
-       (paths/kvps-path? path)
-       x
-
-       :else
-       (if show-valid-values?
-         x
-         ::irrelevant)))
-   form))
-
-;; FIXME - this function is not intuitive.
-(defn highlight-line
-  [prefix replacement]
-  (let [max-width (apply max (map #(count (str %)) (string/split-lines replacement)))]
-    (indent (count (str prefix))
-            (apply str (repeat max-width "^")))))
-
-(defn value-in
-  "Similar to get-in, but works with paths that reference map keys"
-  [form in]
-  (let [[k & rst] in]
-    (cond
-      (empty? in)
-      form
-
-      (and (map? form) (paths/kps? k))
-      (:key k)
-
-      (and (map? form) (paths/kvps? k))
-      (nth (seq form) (:idx k))
-
-      (associative? form)
-      (recur (get form k) rst)
-
-      (int? k)
-      (recur (nth form k) rst))))
-
-;; FIXME - perhaps a more useful API would be an API on 'problems'?
-;; - group problems
-;; - print out data structure given problem
-;; - categorize problem
-(defn highlighted-value
-  "Given a form and a path into that form, returns a pretty printed
-   string that highlights the value at the path."
-  [opts form path]
-  (let [{:keys [show-valid-values?] :or {show-valid-values? false}} opts
-        value-at-path (value-in form path)
-        relevant (str "(" ::relevant "|(" ::kv-relevant "\\s+" ::kv-relevant "))")
-        regex (re-pattern (str "(.*)" relevant ".*"))
-        s (binding [*print-namespace-maps* false] (pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form show-valid-values? form path))))
-        [line prefix & _more] (re-find regex s)
-        highlighted-line (-> line
-                             (string/replace (re-pattern relevant) (indent 0 (count prefix) (pprint-str value-at-path)))
-                             (str "\n" (highlight-line prefix (pprint-str value-at-path))))]
-    ;;highlighted-line
-    (no-trailing-whitespace (string/replace s line highlighted-line))))
 
 (s/fdef value-in-context
         :args (s/cat
@@ -177,15 +45,23 @@
     (binding [*print-namespace-maps* false] (pr-str form))
     (if (= form value)
       (binding [*print-namespace-maps* false] (pr-str value))
-      (highlighted-value opts form path))))
+      ;; It's silly to reconstruct a fake "problem"
+      ;; after I've deconstructed it, but I'm not yet ready
+      ;; to break the API for value-in-context BUT
+      ;; I do want to test that a problems-based API
+      ;; is useful.
+      ;; See https://github.com/bhb/expound#configuring-the-printer
+      (problems/highlighted-value opts
+                                  {:expound/form form
+                                    :expound/in path}))))
 
 (defn spec-str [spec]
   (if (keyword? spec)
-    (format
+    (printer/format
      "%s:\n%s"
      spec
-     (indent (pprint-str (s/form spec))))
-    (pprint-str (s/form spec))))
+     (printer/indent (printer/pprint-str (s/form spec))))
+    (printer/pprint-str (s/form spec))))
 
 (s/fdef specs
         :args (s/cat :problems :spec/problems)
@@ -244,7 +120,7 @@
     (pprint-fn pred)
 
     :else
-    (elide-core-ns (binding [*print-namespace-maps* false] (pprint-str pred)))))
+    (elide-core-ns (binding [*print-namespace-maps* false] (printer/pprint-str pred)))))
 
 (defn pr-pred [pred spec]
   (if (= ::s/unknown pred)
@@ -264,27 +140,27 @@
 
 (defn preds [problems]
   (string/join "\n\nor\n\n" (map (fn [problem]
-                                   (indent
+                                   (printer/indent
                                     (pr-pred (:pred problem)
                                              (:spec problem)))) problems)))
 
 (defn insufficient-input [spec-name val path problem]
-  (format
+  (printer/format
    "%s
 
 should have additional elements. The next element is named `%s` and satisfies
 
 %s"
-   (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (pr-str (first (:expound/path problem)))
-   (indent (pr-pred (:pred problem) (:spec problem)))))
+   (printer/indent (pr-pred (:pred problem) (:spec problem)))))
 
 (defn extra-input [spec-name val path]
-  (format
+  (printer/format
     "Value has extra input
 
 %s"
-    (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))))
+    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))))
 
 (defn missing-key [form]
   #?(:cljs (let [[contains _arg key-keyword] form]
@@ -315,7 +191,7 @@ should have additional elements. The next element is named `%s` and satisfies
   (let [sp-str (specs-str problems)]
     (if (string/blank? sp-str)
       ""
-      (format
+      (printer/format
        "%s
 
 %s"
@@ -357,7 +233,7 @@ should have additional elements. The next element is named `%s` and satisfies
 (defn no-method [spec-name val path problem]
   (let [sp (s/spec (last (:via problem)))
         {:keys [mm retag]} (multi-spec-parts sp)]
-    (format
+    (printer/format
      "Cannot find spec for
 
  %s
@@ -366,16 +242,16 @@ should have additional elements. The next element is named `%s` and satisfies
  Dispatch function:     `%s`
  Dispatch value:        `%s`
  "
-     (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
+     (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
      (pr-str mm)
      (pr-str retag)
-     (pr-str (if retag (retag (value-in val path)) nil)))))
+     (pr-str (if retag (retag (problems/value-in val path)) nil)))))
 
 (defmulti problem-group-str (fn [type spec-name _val _path _problems] type))
 
 (defmethod problem-group-str :problem/missing-key [_type spec-name val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
-  (format
+  (printer/format
    "%s
 
 %s
@@ -384,29 +260,30 @@ should contain keys: %s
 
 %s"
    (header-label "Spec failed")
-   (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (string/join "," (map #(str "`" (missing-key (:pred %)) "`") problems))
    (relevant-specs problems)))
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (s/assert ::singleton problems)
-  (format
+  (printer/format
    "%s
 
 %s
 
-should be one of: %s
+should be%s: %s
 
 %s"
    (header-label "Spec failed")
-   (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
+   (if (= 1 (count (:pred (first problems)))) "" " one of")
    (string/join "," (map #(str "`" % "`") (:pred (first problems))))
    (relevant-specs problems)))
 
 (defmethod problem-group-str :problem/missing-spec [_type spec-name val path problems]
   (s/assert ::singleton problems)
-  (format
+  (printer/format
    "%s
 
 %s
@@ -419,7 +296,7 @@ should be one of: %s
 (defmethod problem-group-str :problem/regex-failure [_type spec-name val path problems]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
-    (format
+    (printer/format
      "%s
 
 %s
@@ -433,7 +310,7 @@ should be one of: %s
 
 (defmethod problem-group-str :problem/unknown [_type spec-name val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
-  (format
+  (printer/format
    "%s
 
 %s
@@ -444,7 +321,7 @@ should satisfy
 
 %s"
    (header-label "Spec failed")
-   (show-spec-name spec-name (indent (*value-str-fn* spec-name val path (value-in val path))))
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (preds problems)
    (relevant-specs problems)))
 
@@ -465,32 +342,6 @@ should satisfy
     :else
     :problem/unknown))
 
-(defn leaf-problems
-  "Given a collection of problems, returns only those problems with data on the 'leaves' of the data"
-  [problems]
-  (let [paths-to-data (into #{} (map :expound/in problems))]
-    (remove
-     (fn [problem]
-       (some
-        (fn [path]
-          (paths/prefix-path? (:expound/in problem) path))
-        paths-to-data))
-     problems)))
-
-(defn path+problem-type->problems
-  "Returns problems grouped by the path to the value (i.e. the 'in' key) then and then problem-type"
-  [problems]
-  (group-by (juxt :expound/in problem-type) problems))
-
-(defn adjust-in [form problem]
-  (assoc problem :expound/in (paths/in-with-kps form (:in problem) [])))
-
-(defn adjust-path [failure problem]
-  (assoc problem :expound/path
-         (if (= :instrument failure)
-           (vec (rest (:path problem)))
-           (:path problem))))
-
 (defn safe-sort-by
   "Same as sort-by, but if an error is raised, returns the original unsorted collection"
   [key-fn comp coll]
@@ -504,7 +355,7 @@ should satisfy
   ;; not include failure or caller info, so
   ;; if these are null, print a placeholder
   (if (= :instrument failure)
-    (format "%s:%s
+    (printer/format "%s:%s
 \n"
             (:file caller "<filename missing>")
             (:line caller "<line number missing>"))
@@ -515,49 +366,43 @@ should satisfy
     (-> ed ::s/problems first :path first)
     nil))
 
-(defn add-spec [spec problem]
-  (assoc problem :spec spec))
-
 (defn printer-str [opts explain-data]
   (if-not explain-data
     "Success!\n"
     (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context
                                                               (merge {:show-valid-values? false}
                                                                      opts)))]
-        (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure ::s/spec]} explain-data
-              caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
-              form (if (not= :instrument failure)
-                     value
-                     (cond
-                       (contains? explain-data ::s/ret) ret
-                       (contains? explain-data ::s/fn) fn
-                       (contains? explain-data ::s/args) args))
-              _ (doseq [problem problems]
-                  (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
-              leaf-problems (leaf-problems (map (comp (partial adjust-in form)
-                                                      (partial adjust-path failure)
-                                                      (partial add-spec spec))
-                                                problems))
-              _ (assert (every? :expound/in leaf-problems) leaf-problems)
-              ;; We attempt to sort the problems by path, but it's not feasible to sort in
-              ;; all cases, since paths could contain arbitrary user-defined data structures.
-              ;; If there is an error, we just give up on sorting.
-              grouped-problems (safe-sort-by first paths/compare-paths
-                                             (path+problem-type->problems leaf-problems))]
-          (let [problems-str (string/join "\n\n" (for [[[in1 type] problems] grouped-problems]
-                                                   (problem-group-str type (spec-name explain-data) form in1 problems)))]
-            (no-trailing-whitespace
-             (str
-              (instrumentation-info failure caller)
-              (format
-               "%s
+      (let [{:keys [::s/problems ::s/fn ::s/failure]} explain-data
+            _ (doseq [problem problems]
+                (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
+            explain-data' (problems/annotate explain-data)
+
+
+            caller (:expound/caller explain-data')
+            form (:expound/form explain-data')
+
+            grouped-problems (->> explain-data'
+                                  :expound/problems
+                                  (problems/leaf-only)
+                                  (group-by (juxt :expound/in problem-type))
+                                  ;; We attempt to sort the problems by path, but it's not feasible to sort in
+                                  ;; all cases, since paths could contain arbitrary user-defined data structures.
+                                  ;; If there is an error, we just give up on sorting.
+                                  (safe-sort-by first paths/compare-paths))]
+
+        (printer/no-trailing-whitespace
+         (str
+          (instrumentation-info failure caller)
+          (printer/format
+           "%s
 
 %s
 Detected %s %s\n"
-               problems-str
-               (section-label)
-               (count grouped-problems)
-               (if (= 1 (count grouped-problems)) "error" "errors")))))))))
+           (string/join "\n\n" (for [[[in type] problems] grouped-problems]
+                                 (problem-group-str type (spec-name explain-data) form in problems)))
+           (section-label)
+           (count grouped-problems)
+           (if (= 1 (count grouped-problems)) "error" "errors"))))))))
 
 ;;;;;; public ;;;;;;
 

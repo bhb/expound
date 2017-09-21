@@ -1,42 +1,51 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [Unreleased]
+
+### Fixed
+- [Bug with nested `map-of` or `key` specs](https://github.com/bhb/expound/issues/27)
+
 ## [0.3.0] - 2017-09-05
 
 ### Added
-- Added configurable printers
+- Configurable printers
 
 ### Fixed
-- Fixed [bug with using predicates as specs](https://github.com/bhb/expound/issues/20)
+- [Bug with using predicates as specs](https://github.com/bhb/expound/issues/20)
 
 ## [0.2.1] - 2017-08-16
 
 ### Fixed
-- Fixed [bug with including extraneous compiled Javascript in JAR file](https://github.com/bhb/expound/issues/16)
+- [Bug with including extraneous compiled Javascript in JAR file](https://github.com/bhb/expound/issues/16)
 
 ## [0.2.0] - 2017-08-14
 
+### Added
+- Support for [Orchestra](https://github.com/jeaye/orchestra) instrumentation
+
 ### Changed
-- Append [newline to expound output](https://github.com/bhb/expound/issues/8)
-- Pretty print predicates
+- Pretty-print predicates
 - Omit `clojure.core` and `cljs.core` prefix when printing predicates
-- Added support for [Orchestra](https://github.com/jeaye/orchestra) instrumentation
+
+### Fixed
+- Append [newline to expound output](https://github.com/bhb/expound/issues/8)
 
 ## [0.1.2] - 2017-07-22
 
 ### Added
-- Added [support for instrumentation](https://github.com/bhb/expound/issues/4)
-- Added [support for Spec asserts](https://github.com/bhb/expound/issues/5)
+- [Support for instrumentation](https://github.com/bhb/expound/issues/4)
+- [Support for Spec asserts](https://github.com/bhb/expound/issues/5)
 
 ## [0.1.1] - 2017-07-17
 
 ### Fixed
-- Fixed [bug with loading goog.string/format](https://github.com/bhb/expound/issues/3)
+- [Bug with loading goog.string/format](https://github.com/bhb/expound/issues/3)
 
 ## 0.1.0 - 2017-07-12
 
 ### Added
-- Added `expound` and `expound-str` functions.
+- `expound` and `expound-str` functions.
 
 [Unreleased]: https://github.com/bhb/expound/compare/v0.3.0...HEAD
 [0.3.0]: https://github.com/bhb/expound/compare/v0.2.1...v0.3.0
