@@ -229,6 +229,12 @@ Use [Orchestra](https://github.com/jeaye/orchestra) with Expound to get human-op
 * [Clojure Error Message Catalog](https://github.com/yogthos/clojure-error-message-catalog)
 * [The Usability of beginner-oriented Clojure error messages](http://wiki.science.ru.nl/tfpie/images/6/6e/TFPIE16-slides-emachkasova.pdf)
 
+## Contributing
+
+Pull requests are welcome, although please open an issue first to discuss the proposed change. I'm also on [clojurians Slack](http://clojurians.net/) as @bbrinck if you have questions.
+
+If you are working on the code, please read the [Development Guide](doc/development.md)
+
 ## License
 
 Copyright © 2017 Ben Brinckerhoff
