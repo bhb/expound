@@ -73,7 +73,10 @@
                                   [figwheel-sidecar "0.5.10"]
                                   [com.cemerick/piggieback "0.2.1"]
                                   [orchestra "2017.07.04-1"]
-                                  [org.clojure/core.specs.alpha "0.1.24"]]
+                                  [org.clojure/core.specs.alpha "0.1.24"]
+                                  [com.stuartsierra/dependency "0.2.0"]
+                                  [io.aviso/pretty "0.1.34"]]
+                   :plugins [[io.aviso/pretty "0.1.34"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
                    ;; for CIDER
