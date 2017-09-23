@@ -97,6 +97,8 @@
 
              :clj-1.9.0-alpha17 {:dependencies [[org.clojure/clojure "1.9.0-alpha17"]]}
              :clj-1.9.0-alpha18 {:dependencies [[org.clojure/clojure "1.9.0-alpha18"]]}
+             :clj-1.9.0-alpha19 {:dependencies [[org.clojure/clojure "1.9.0-alpha19"]]}
+             :clj-1.9.0-beta1 {:dependencies [[org.clojure/clojure "1.9.0-beta1"]]}
              :cljs-1.9.562 {:dependencies [[org.clojure/clojurescript "1.9.562"]]}
              :cljs-1.9.908 {:dependencies  [[org.clojure/clojurescript "1.9.908"]]}}
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
