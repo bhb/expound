@@ -9,7 +9,6 @@
   test-utils/check-spec-assertions
   test-utils/instrument-all)
 
-
 (defn get-args [& args] args)
 
 (s/def :highlighted-value/nested-map-of (s/map-of keyword? (s/map-of keyword? keyword?)))
@@ -69,8 +68,8 @@
             {}
             (first
              (:expound/problems
-               (problems/annotate
-                (s/explain-data keyword? "$ $$ $1 $& $` $'"))))))))
+              (problems/annotate
+               (s/explain-data keyword? "$ $$ $1 $& $` $'"))))))))
 
   (testing "nested map-of specs"
     (is (= "{:a {:b 1}}\n        ^"
@@ -78,22 +77,22 @@
             {}
             (first
              (:expound/problems
-               (problems/annotate
-                (s/explain-data :highlighted-value/nested-map-of {:a {:b 1}})))))))
+              (problems/annotate
+               (s/explain-data :highlighted-value/nested-map-of {:a {:b 1}})))))))
     (is (= "{:a {\"a\" ...}}\n     ^^^"
            (problems/highlighted-value
             {}
             (first
              (:expound/problems
-               (problems/annotate
-                (s/explain-data :highlighted-value/nested-map-of {:a {"a" :b}})))))))
+              (problems/annotate
+               (s/explain-data :highlighted-value/nested-map-of {:a {"a" :b}})))))))
     (is (= "{1 ...}\n ^"
            (problems/highlighted-value
             {}
             (first
              (:expound/problems
-               (problems/annotate
-                (s/explain-data :highlighted-value/nested-map-of {1 {:a :b}}))))))))
+              (problems/annotate
+               (s/explain-data :highlighted-value/nested-map-of {1 {:a :b}}))))))))
 
   (testing "nested keys specs"
     (is (= "{:address {:city 1}}\n                 ^"
@@ -101,19 +100,19 @@
             {}
             (first
              (:expound/problems
-               (problems/annotate
-                (s/explain-data :highlighted-value/house {:address {:city 1}})))))))
+              (problems/annotate
+               (s/explain-data :highlighted-value/house {:address {:city 1}})))))))
     (is (= "{:address {\"city\" \"Denver\"}}\n          ^^^^^^^^^^^^^^^^^"
            (problems/highlighted-value
             {}
             (first
              (:expound/problems
-               (problems/annotate
-                (s/explain-data :highlighted-value/house {:address {"city" "Denver"}})))))))
+              (problems/annotate
+               (s/explain-data :highlighted-value/house {:address {"city" "Denver"}})))))))
     (is (= "{\"address\" {:city \"Denver\"}}\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
            (problems/highlighted-value
             {}
             (first
              (:expound/problems
-               (problems/annotate
-                (s/explain-data :highlighted-value/house {"address" {:city "Denver"}})))))))))
+              (problems/annotate
+               (s/explain-data :highlighted-value/house {"address" {:city "Denver"}})))))))))

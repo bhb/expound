@@ -5,45 +5,53 @@
             [clojure.string :as string]
             [expound.printer :as printer]))
 
+(defn blank-form [form]
+  (cond
+    (map? form)
+    (zipmap (keys form) (repeat ::irrelevant))
+
+    (vector? form)
+    (vec (repeat (count form) ::irrelevant))
+
+    (or (list? form)
+        (seq? form))
+    (apply list (repeat (count form) ::irrelevant))
+
+    :else
+    ::irrelevant))
+
 (s/fdef summary-form
         :args (s/cat :show-valid-valids? boolean?
                      :form any?
                      :highlighted-path :expound/path))
-(defn summary-form
-  "Given a form and a path to highlight, returns a data structure that marks
-   the highlighted and irrelevant data"
-  [show-valid-values? form highlighted-path]
-  (paths/postwalk-with-path
-   (fn [path x]
-     (cond
-       (= ::irrelevant x)
-       (if show-valid-values?
-         x
-         ::irrelevant)
+(defn summary-form [show-valid-values? form in]
+  (let [[k & rst] in
+        rst (or rst [])
+        displayed-form (if show-valid-values? form (blank-form form))]
+    (cond
+      (empty? in)
+      ::relevant
 
-       (= ::relevant x)
-       ::relevant
+      (and (map? form) (paths/kps? k))
+      #_(:key k)
+      (assoc
+       (dissoc displayed-form
+               (:key k))
+       (summary-form show-valid-values? (:key k) rst)
+       ::irrelevant)
 
-       (and (paths/kvps-path? path) (= path highlighted-path))
-       [::kv-relevant ::kv-relevant]
+      (and (map? form) (paths/kvps? k))
+      (recur show-valid-values? (nth (seq form) (:idx k)) rst)
 
-       (= path highlighted-path)
-       ::relevant
+      (associative? form)
+      (assoc displayed-form
+             k
+             (summary-form show-valid-values? (get form k) rst))
 
-       (paths/prefix-path? path highlighted-path)
-       x
-
-       (paths/kps-path? path)
-       x
-
-       (paths/kvps-path? path)
-       x
-
-       :else
-       (if show-valid-values?
-         x
-         ::irrelevant)))
-   form))
+      (int? k)
+      (apply list (-> displayed-form
+                      vec
+                      (assoc k (summary-form show-valid-values? (nth form k) rst)))))))
 
 ;; FIXME - this function is not intuitive.
 (defn highlight-line

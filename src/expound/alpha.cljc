@@ -8,8 +8,7 @@
             #?(:clj [clojure.main :as clojure.main])
             #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
-            [expound.printer :as printer])
-  )
+            [expound.printer :as printer]))
 
 ;;;;;; specs   ;;;;;;
 
@@ -53,7 +52,7 @@
       ;; See https://github.com/bhb/expound#configuring-the-printer
       (problems/highlighted-value opts
                                   {:expound/form form
-                                    :expound/in path}))))
+                                   :expound/in path}))))
 
 (defn spec-str [spec]
   (if (keyword? spec)
@@ -99,8 +98,8 @@
             (clojure.main/demunge f-n)))
          :cljs
          (let [fn-parts (string/split (second (re-find
-                                                #"function ([^\(]+)"
-                                                (str f)))
+                                               #"function ([^\(]+)"
+                                               (str f)))
                                       #"\$")
                ns-n (string/join "." (butlast fn-parts))
                fn-n  (last fn-parts)]
@@ -157,10 +156,10 @@ should have additional elements. The next element is named `%s` and satisfies
 
 (defn extra-input [spec-name val path]
   (printer/format
-    "Value has extra input
+   "Value has extra input
 
 %s"
-    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))))
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))))
 
 (defn missing-key [form]
   #?(:cljs (let [[contains _arg key-keyword] form]
@@ -357,8 +356,8 @@ should satisfy
   (if (= :instrument failure)
     (printer/format "%s:%s
 \n"
-            (:file caller "<filename missing>")
-            (:line caller "<line number missing>"))
+                    (:file caller "<filename missing>")
+                    (:line caller "<line number missing>"))
     ""))
 
 (defn spec-name [ed]
@@ -375,10 +374,7 @@ should satisfy
       (let [{:keys [::s/problems ::s/fn ::s/failure]} explain-data
             _ (doseq [problem problems]
                 (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
-            explain-data' (problems/annotate explain-data)
-
-
-            caller (:expound/caller explain-data')
+            explain-data' (problems/annotate explain-data) caller (:expound/caller explain-data')
             form (:expound/form explain-data')
 
             grouped-problems (->> explain-data'

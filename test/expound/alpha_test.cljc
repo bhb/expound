@@ -274,8 +274,7 @@ should satisfy
 -------------------------
 Detected 1 error\n"
                #?(:cljs "(fn [%] (pos? (count %)))"
-                  :clj "(fn [%] (pos? (count %)))")
-               )
+                  :clj "(fn [%] (pos? (count %)))"))
            (expound/expound-str :and-spec/name ""))))
 
   (testing "shows both failures in order"
@@ -319,8 +318,7 @@ should satisfy
 -------------------------
 Detected 2 errors\n"
              #?(:cljs "(fn [%] (pos? (count %)))"
-                :clj "(fn [%] (pos? (count %)))")
-             )
+                :clj "(fn [%] (pos? (count %)))"))
          (expound/expound-str :and-spec/names ["bob" "sally" "" 1])))))
 
 (s/def :coll-of-spec/big-int-coll (s/coll-of int? :min-count 10))
@@ -344,8 +342,7 @@ should satisfy
 -------------------------
 Detected 1 error\n"
              #?(:cljs "9007199254740991"
-                :clj "Integer/MAX_VALUE")
-             )
+                :clj "Integer/MAX_VALUE"))
          (expound/expound-str :coll-of-spec/big-int-coll [])))))
 
 (s/def :cat-spec/kw (s/cat :k keyword? :v any?))
@@ -420,9 +417,7 @@ should contain keys: `:keys-spec/name`,`:age`
 -------------------------
 Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
-                  :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"
-                  )
-               )
+                  :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
            (expound/expound-str :keys-spec/user {}))))
   (testing "invalid key"
     (is (= (pf "-- Spec failed --------------------
@@ -783,18 +778,18 @@ Detected 1 error\n")
      (expound/expound-str spec form)))
 
 (deftest generated-map-of-specs
-    (checking
-     "'map-of' spec"
-     30
-     [simple-spec1 simple-spec-gen
-      simple-spec2 simple-spec-gen
-      simple-spec3 simple-spec-gen
-      every-args1 (s/gen :specs/every-args)
-      every-args2 (s/gen :specs/every-args)
-      :let [spec (apply-map-of simple-spec1 (apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)
-            sp-form (s/form spec)]
-      form any-printable-wo-nan]
-     (expound/expound-str spec form)))
+  (checking
+   "'map-of' spec"
+   30
+   [simple-spec1 simple-spec-gen
+    simple-spec2 simple-spec-gen
+    simple-spec3 simple-spec-gen
+    every-args1 (s/gen :specs/every-args)
+    every-args2 (s/gen :specs/every-args)
+    :let [spec (apply-map-of simple-spec1 (apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)
+          sp-form (s/form spec)]
+    form any-printable-wo-nan]
+   (expound/expound-str spec form)))
 
 ;; TODO - keys
 ;; TODO - cat + alt, + ? *
@@ -875,7 +870,6 @@ Detected 1 error\n")
          (binding [s/*explain-out* expound/printer]
            (s/explain-str :test-assert/name :hello)))))
 
-
 (s/def :test-instrument/name string?)
 (s/fdef test-instrument-adder
         :args (s/cat :x int? :y int?)
@@ -933,10 +927,10 @@ should satisfy
 Detected 1 error\n"
             (no-linum
              (:cause
-               (Throwable->map (try
-                                 (binding [s/*explain-out* expound/printer]
-                                   (test-instrument-adder "" :x))
-                                 (catch Exception e e))))))))
+              (Throwable->map (try
+                                (binding [s/*explain-out* expound/printer]
+                                  (test-instrument-adder "" :x))
+                                (catch Exception e e))))))))
   (st/unstrument `test-instrument-adder))
 
 (deftest test-instrument-with-orchestra-args-spec-failure
@@ -985,10 +979,10 @@ should satisfy
 Detected 1 error\n"
             (no-linum
              (:cause
-               (Throwable->map (try
-                                 (binding [s/*explain-out* expound/printer]
-                                   (test-instrument-adder "" :x))
-                                 (catch Exception e e))))))))
+              (Throwable->map (try
+                                (binding [s/*explain-out* expound/printer]
+                                  (test-instrument-adder "" :x))
+                                (catch Exception e e))))))))
   (orch.st/unstrument `test-instrument-adder))
 
 (deftest test-instrument-with-orchestra-args-syntax-failure
@@ -1035,10 +1029,10 @@ should have additional elements. The next element is named `:y` and satisfies
 Detected 1 error\n"
             (no-linum
              (:cause
-               (Throwable->map (try
-                                 (binding [s/*explain-out* expound/printer]
-                                   (test-instrument-adder 1))
-                                 (catch Exception e e))))))))
+              (Throwable->map (try
+                                (binding [s/*explain-out* expound/printer]
+                                  (test-instrument-adder 1))
+                                (catch Exception e e))))))))
   (orch.st/unstrument `test-instrument-adder))
 
 (deftest test-instrument-with-orchestra-ret-failure
@@ -1085,10 +1079,10 @@ should satisfy
 Detected 1 error\n"
             (no-linum
              (:cause
-               (Throwable->map (try
-                                 (binding [s/*explain-out* expound/printer]
-                                   (test-instrument-adder -1 -2))
-                                 (catch Exception e e))))))))
+              (Throwable->map (try
+                                (binding [s/*explain-out* expound/printer]
+                                  (test-instrument-adder -1 -2))
+                                (catch Exception e e))))))))
   (orch.st/unstrument `test-instrument-adder))
 
 (deftest test-instrument-with-orchestra-fn-failure
@@ -1137,17 +1131,17 @@ should satisfy
 Detected 1 error\n"
             (no-linum
              (:cause
-               (Throwable->map (try
-                                 (binding [s/*explain-out* expound/printer]
-                                   (test-instrument-adder 1 0))
-                                 (catch Exception e e))))))))
+              (Throwable->map (try
+                                (binding [s/*explain-out* expound/printer]
+                                  (test-instrument-adder 1 0))
+                                (catch Exception e e))))))))
   (orch.st/unstrument `test-instrument-adder))
 
 (deftest test-instrument-with-custom-value-printer
   (st/instrument `test-instrument-adder)
   #?(:cljs
      (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+          "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1165,10 +1159,10 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-                (.-message (try
-                             (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
-                               (test-instrument-adder "" :x))
-                             (catch :default e e)))))
+          (.-message (try
+                       (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
+                         (test-instrument-adder "" :x))
+                       (catch :default e e)))))
      :clj
      (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
 alpha_test.cljc:LINUM
@@ -1190,10 +1184,10 @@ should satisfy
 Detected 1 error\n"
             (no-linum
              (:cause
-               (Throwable->map (try
-                                 (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
-                                   (test-instrument-adder "" :x))
-                                 (catch Exception e e))))))))
+              (Throwable->map (try
+                                (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
+                                  (test-instrument-adder "" :x))
+                                (catch Exception e e))))))))
   (st/unstrument `test-instrument-adder))
 
 (s/def :custom-printer/strings (s/coll-of string?))
@@ -1236,5 +1230,5 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-           (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (partial expound/value-in-context {:show-valid-values? true})})]
-             (s/explain-str :custom-printer/strings ["a" "b" :c])))))))
+             (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (partial expound/value-in-context {:show-valid-values? true})})]
+               (s/explain-str :custom-printer/strings ["a" "b" :c])))))))
