@@ -3,7 +3,7 @@
 
 ;;;;;; specs ;;;;;;
 
-(s/def :expound/path vector?)
+(s/def :expound/path sequential?)
 
 ;;;;;; types ;;;;;;
 
@@ -30,31 +30,6 @@
   (and (< (count partial-path) (count full-path))
        (= partial-path
           (subvec full-path 0 (count partial-path)))))
-
-(def mapv-indexed (comp vec map-indexed))
-
-(defn walk-with-path
-  "Recursively walks data structure. Passes both the path and current
-   value to 'inner' and 'outer' functions"
-  ([inner outer path form]
-   (cond
-     (list? form)   (outer path (apply list (map-indexed (fn [idx x] (inner (conj path idx) x)) form)))
-     (vector? form) (outer path (mapv-indexed (fn [idx x] (inner (conj path idx) x)) form))
-     (seq? form)    (outer path (doall (map-indexed (fn [idx x] (inner (conj path idx) x)) form)))
-     (record? form) (outer path form)
-     (map? form)    (outer path (reduce (fn [m [idx [k v]]]
-                                          (conj m
-                                                (outer
-                                                 (conj path (->KeyValuePathSegment idx))
-                                                 [(outer (conj path (->KeyPathSegment k)) k) (inner (conj path k) v)])))
-                                        {}
-                                        (map vector (range) (seq form))))
-     :else          (outer path form))))
-
-(defn postwalk-with-path
-  ([f form] (postwalk-with-path f [] form))
-  ([f path form]
-   (walk-with-path (partial postwalk-with-path f) f path form)))
 
 (s/fdef kps-path?
         :args (s/cat :x any?)
