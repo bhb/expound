@@ -74,7 +74,6 @@
                                   [com.cemerick/piggieback "0.2.1"]
                                   [orchestra "2017.07.04-1"]
                                   [org.clojure/core.specs.alpha "0.1.24"]
-                                  [com.stuartsierra/dependency "0.2.0"]
                                   [io.aviso/pretty "0.1.34"]]
                    :plugins [[io.aviso/pretty "0.1.34"]]
                    ;; need to add dev source path here to get user.clj loaded
@@ -87,7 +86,9 @@
                                                      :target-path]}
              :test-common {:dependencies [[org.clojure/test.check "0.9.0"]
                                           [com.gfredericks/test.chuck "0.2.7"]
-                                          [orchestra "2017.08.13"]]}
+                                          [orchestra "2017.08.13"]
+                                          [org.clojure/core.specs.alpha "0.1.24"]
+                                          [com.stuartsierra/dependency "0.2.0"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.10"]
