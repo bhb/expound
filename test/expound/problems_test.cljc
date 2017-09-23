@@ -116,3 +116,15 @@
              (:expound/problems
               (problems/annotate
                (s/explain-data :highlighted-value/house {"address" {:city "Denver"}})))))))))
+
+(deftest highlighted-value-on-alt
+  (is (= "[... 0]\n     ^"
+         (problems/highlighted-value
+          {}
+          (second
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (clojure.spec.alpha/alt :a int?
+                                      :b (clojure.spec.alpha/spec (clojure.spec.alpha/cat :c int?)))
+              {1 0}))))))))

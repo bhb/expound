@@ -61,7 +61,7 @@
                     (apply str (repeat max-width "^")))))
 
 (defn- adjust-in [form problem]
-  (assoc problem :expound/in (paths/in-with-kps form (:in problem) [])))
+  (assoc problem :expound/in (paths/in-with-kps form (:val problem) (:in problem) [])))
 
 (defn- adjust-path [failure problem]
   (assoc problem :expound/path
@@ -119,7 +119,7 @@
       (:key k)
 
       (and (map? form) (paths/kvps? k))
-      (nth (seq form) (:idx k))
+      (recur (nth (seq form) (:idx k)) rst)
 
       (associative? form)
       (recur (get form k) rst)
