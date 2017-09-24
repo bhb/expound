@@ -51,7 +51,7 @@
 
 (declare in-with-kps*)
 
-(defn in-with-kps-maps-are-seqs [form val in in']
+(defn in-with-kps-maps-as-seqs [form val in in']
   (let [[k & rst] in
         [idx & rst2] rst]
     (cond
@@ -68,28 +68,38 @@
 
       ;; detect a `:in` path that points to a key/value pair in a coll-of spec
       (and (map? form)
-           (int? k)
-           (< k (count (seq form)))
-           #_(= val (nth (seq form) k))
-           #_(empty? rst))
+           (nat-int? k)
+           (< k (count (seq form))))
       (in-with-kps* (nth (seq form) k) val rst (conj in' (->KeyValuePathSegment k)))
 
       (and (map? form)
-           (int? k)
+           (nat-int? k)
            (int? idx)
-           (or
-            (= val (nth (nth (seq form) k) idx))
-            (= val (list (nth (nth (seq form) k) idx))))
-           #_(empty? rst))
+           (< k (count (seq form)))
+           (< idx (count (nth (seq form) k))))
       (in-with-kps* (nth (nth (seq form) k) idx) val rst2 (conj in' (->KeyValuePathSegment k) idx))
 
-      (associative? form)
-      (in-with-kps* (get form k ::not-found) val rst (conj in' k))
+      :else
+      ::not-found)))
 
-      (int? k)
-      (in-with-kps* (nth form k ::not-found) val rst (conj in' k)))))
+(defn in-with-kps-ints-are-keys [form val in in']
+  (if (= form ::not-found)
+    form
+    (let [[k & rst] in]
+      (cond
+        (empty? in)
+        in'
 
-(defn in-with-kps-default [form val in in']
+        (associative? form)
+        (in-with-kps* (get form k ::not-found) val rst (conj in' k))
+
+        (int? k)
+        (in-with-kps* (nth form k ::not-found) val rst (conj in' k))
+
+        :else
+        ::not-found))))
+
+(defn in-with-kps-ints-are-key-value-indicators [form val in in']
   (if (= form ::not-found)
     form
     (let [[k & rst] in
@@ -101,66 +111,40 @@
         ;; detect a `:in` path that points at a key in a map-of spec
         (and (map? form)
              (= 0 idx)
-             (or
-              ;; TODO - this seemed attractive, but doesn't fork for nested map
-
-              (= val k)
-              (not (and (associative? (get form k ::not-found))
-                        (contains? (get form k ::not-found) idx)))))
+             (not (and (associative? (get form k ::not-found))
+                       (contains? (get form k ::not-found) idx))))
         (conj in' (->KeyPathSegment k))
 
         ;; detect a `:in` path that points at a value in a map-of spec
         (and (map? form)
              (= 1 idx)
-             ;; TODO - at some point, I wanted to check for the value
-             ;; here, but that can't actually work, since the value
-             ;; might be nested more deeply
-
-             (or
-              (= val (get form k ::not-found))
-              (not (and (associative? (get form k ::not-found))
-                        (contains? (get form k ::not-found) idx)))))
+             (not (and (associative? (get form k ::not-found))
+                       (contains? (get form k ::not-found) idx))))
         (in-with-kps* (get form k ::not-found) val rst2 (conj in' k))
 
-        ;; detect a `:in` path that points to a key/value pair in a coll-of spec
-        (and (map? form)
-             (int? k)
-             (< k (count (seq form)))
-             (= val (nth (seq form) k))
-             #_(empty? rst))
-        (in-with-kps* (nth (seq form) k) val rst (conj in' (->KeyValuePathSegment k)))
-
-        (and (map? form)
-             (int? k)
-             (int? idx)
-             (or
-              (= val (nth (nth (seq form) k) idx))
-              (= val (list (nth (nth (seq form) k) idx))))
-             #_(empty? rst))
-        (in-with-kps* (nth (nth (seq form) k) idx) val rst2 (conj in' (->KeyValuePathSegment k) idx))
-
-        (associative? form)
-        (in-with-kps* (get form k ::not-found) val rst (conj in' k))
-
-        (int? k)
-        (in-with-kps* (nth form k ::not-found) val rst (conj in' k))))))
+        :else
+        ::not-found))))
 
 (defn in-with-kps* [form val in in']
-  ;; TODO cache results to not do this twice
-  (if (not= ::not-found (in-with-kps-default form val in in'))
-    (in-with-kps-default form val in in')
-    (if (not= ::not-found (in-with-kps-maps-are-seqs form val in in'))
-      (in-with-kps-maps-are-seqs form val in in')
-      ::not-found)))
+  (let [br1 (in-with-kps-ints-are-key-value-indicators form val in in')]
+    (if (not= ::not-found br1)
+      br1
+      (let [br2 (in-with-kps-maps-as-seqs form val in in')]
+        (if (not= ::not-found br2)
+          br2
+          (let [br3 (in-with-kps-ints-are-keys form val in in')]
+            (if (not= ::not-found br3)
+              br3
+              ::not-found)))))))
 
 (defn in-with-kps [form val in in']
-  ;; TODO cache results to not do this twice
-  (if (= ::not-found (in-with-kps* form val in in'))
-    (throw (ex-info "Can't convert path" {:form form
-                                          :val val
-                                          :in in
-                                          :in' in'}))
-    (in-with-kps* form val in in')))
+  (let [res (in-with-kps* form val in in')]
+    (if (= ::not-found res)
+      (throw (ex-info "Can't convert path" {:form form
+                                            :val val
+                                            :in in
+                                            :in' in'}))
+      res)))
 
 (defn compare-path-segment [x y]
   (cond
