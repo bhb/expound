@@ -33,7 +33,6 @@
       ::relevant
 
       (and (map? form) (paths/kps? k))
-      #_(:key k)
       (assoc
        (dissoc displayed-form
                (:key k))

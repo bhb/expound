@@ -6,6 +6,7 @@
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [clojure.test.check.generators :as gen]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
+            [com.gfredericks.test.chuck.properties :as properties]
             [com.stuartsierra.dependency :as deps]
             [expound.alpha :as expound]
             [expound.printer :as printer]
@@ -1298,9 +1299,9 @@ Detected 1 error\n"
 
 #?(:clj
    (deftest clojure-spec-tests
-     #_(checking
-        "for any core spec and any data, explain-str returns a string"
-        100
-        [spec spec-gen
-         form gen/any-printable]
-        (expound/expound-str spec form))))
+     (checking
+      "for any core spec and any data, explain-str returns a string"
+      40
+      [spec spec-gen
+       form gen/any-printable]
+      (expound/expound-str spec form))))

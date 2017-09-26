@@ -58,12 +58,13 @@
       (= ::not-found form)
       ::not-found
 
-      (or
-       (= val form)
-       (= val (list form)))
-      in'
-
-      (empty? in)
+      ;; TODO - make this more restrictive on value
+      ;; since we have special clause for sequence matching
+      (and (empty? in)
+           (or (= form val)
+               (and (seq? val)
+                    (= form
+                       (first val)))))
       in'
 
       ;; detect a `:in` path that points to a key/value pair in a coll-of spec
@@ -82,18 +83,49 @@
       :else
       ::not-found)))
 
+(defn in-with-kps-fuzzy-match-for-regex-failures [form val in in']
+  (if (= form ::not-found)
+    form
+    (let [[k & rst] in]
+      (cond
+        ;; not enough input
+        (and (empty? in)
+             (seqable? form)
+             (= val '()))
+        in'
+
+        ;; too much input
+        (and (empty? in)
+             (and (seq? val)
+                  (= form
+                     (first val))))
+        in'
+
+        (and (nat-int? k) (sequential? form))
+        (in-with-kps* (nth form k ::not-found) val rst (conj in' k))
+
+        :else
+        ::not-found))))
+
 (defn in-with-kps-ints-are-keys [form val in in']
   (if (= form ::not-found)
     form
     (let [[k & rst] in]
       (cond
-        (empty? in)
+
+        ;; TODO - make this more restrictive on value
+        ;; since we have special clause for sequence matching
+        (and (empty? in)
+             (or (= form val)
+                 (and (seq? val)
+                      (= form
+                         (first val)))))
         in'
 
         (associative? form)
         (in-with-kps* (get form k ::not-found) val rst (conj in' k))
 
-        (int? k)
+        (and (int? k) (sequential? form))
         (in-with-kps* (nth form k ::not-found) val rst (conj in' k))
 
         :else
@@ -105,21 +137,21 @@
     (let [[k & rst] in
           [idx & rst2] rst]
       (cond
-        (empty? in)
+        (and (empty? in) (= form val))
         in'
 
         ;; detect a `:in` path that points at a key in a map-of spec
         (and (map? form)
              (= 0 idx)
-             (not (and (associative? (get form k ::not-found))
-                       (contains? (get form k ::not-found) idx))))
-        (conj in' (->KeyPathSegment k))
+             #_(not (and (associative? (get form k ::not-found))
+                         (contains? (get form k ::not-found) idx))))
+        (in-with-kps* k val rst2 (conj in' (->KeyPathSegment k)))
 
         ;; detect a `:in` path that points at a value in a map-of spec
         (and (map? form)
              (= 1 idx)
-             (not (and (associative? (get form k ::not-found))
-                       (contains? (get form k ::not-found) idx))))
+             #_(not (and (associative? (get form k ::not-found))
+                         (contains? (get form k ::not-found) idx))))
         (in-with-kps* (get form k ::not-found) val rst2 (conj in' k))
 
         :else
@@ -135,7 +167,10 @@
           (let [br3 (in-with-kps-ints-are-keys form val in in')]
             (if (not= ::not-found br3)
               br3
-              ::not-found)))))))
+              (let [br4 (in-with-kps-fuzzy-match-for-regex-failures form val in in')]
+                (if (not= ::not-found br4)
+                  br4
+                  ::not-found)))))))))
 
 (defn in-with-kps [form val in in']
   (let [res (in-with-kps* form val in in')]

@@ -265,7 +265,6 @@ should contain keys: %s
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
-  (s/assert ::singleton problems)
   (printer/format
    "%s
 
