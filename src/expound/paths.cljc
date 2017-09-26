@@ -131,16 +131,12 @@
 
         ;; detect a `:in` path that points at a key in a map-of spec
         (and (map? form)
-             (= 0 idx)
-             #_(not (and (associative? (get form k ::not-found))
-                         (contains? (get form k ::not-found) idx))))
+             (= 0 idx))
         (in-with-kps* k val rst2 (conj in' (->KeyPathSegment k)))
 
         ;; detect a `:in` path that points at a value in a map-of spec
         (and (map? form)
-             (= 1 idx)
-             #_(not (and (associative? (get form k ::not-found))
-                         (contains? (get form k ::not-found) idx))))
+             (= 1 idx))
         (in-with-kps* (get form k ::not-found) val rst2 (conj in' k))
 
         :else
