@@ -58,13 +58,8 @@
       (= ::not-found form)
       ::not-found
 
-      ;; TODO - make this more restrictive on value
-      ;; since we have special clause for sequence matching
       (and (empty? in)
-           (or (= form val)
-               (and (seq? val)
-                    (= form
-                       (first val)))))
+           (= form val))
       in'
 
       ;; detect a `:in` path that points to a key/value pair in a coll-of spec
@@ -112,14 +107,8 @@
     form
     (let [[k & rst] in]
       (cond
-
-        ;; TODO - make this more restrictive on value
-        ;; since we have special clause for sequence matching
         (and (empty? in)
-             (or (= form val)
-                 (and (seq? val)
-                      (= form
-                         (first val)))))
+             (= form val))
         in'
 
         (associative? form)
