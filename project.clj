@@ -88,7 +88,11 @@
                                           [com.gfredericks/test.chuck "0.2.7"]
                                           [orchestra "2017.08.13"]
                                           [org.clojure/core.specs.alpha "0.1.24"]
-                                          [com.stuartsierra/dependency "0.2.0"]]}
+                                          [com.stuartsierra/dependency "0.2.0"]
+                                          [ring/ring-core "1.6.1"] ; required to make ring-spec work, may cause issues with figwheel?
+                                          [ring/ring-spec "0.0.3"] ; to test specs
+                                          [org.onyxplatform/onyx-spec "0.11.0.2"] ; to test specs
+                                          ]}
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.10"]
