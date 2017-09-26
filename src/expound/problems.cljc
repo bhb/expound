@@ -13,6 +13,9 @@
     (vector? form)
     (vec (repeat (count form) ::irrelevant))
 
+    (set? form)
+    form
+
     (or (list? form)
         (seq? form))
     (apply list (repeat (count form) ::irrelevant))
@@ -47,10 +50,15 @@
              k
              (summary-form show-valid-values? (get form k) rst))
 
-      (int? k)
+      (and (int? k) (seq? form))
       (apply list (-> displayed-form
                       vec
-                      (assoc k (summary-form show-valid-values? (nth form k) rst)))))))
+                      (assoc k (summary-form show-valid-values? (nth form k) rst))))
+
+      (and (int? k) (seqable? form))
+      (into (empty form) (-> displayed-form
+                             vec
+                             (assoc k (summary-form show-valid-values? (nth (seq form) k) rst)))))))
 
 ;; FIXME - this function is not intuitive.
 (defn highlight-line
@@ -123,8 +131,8 @@
       (associative? form)
       (recur (get form k) rst)
 
-      (int? k)
-      (recur (nth form k) rst))))
+      (and (int? k) (seqable? form))
+      (recur (nth (seq form) k) rst))))
 
 (defn escape-replacement [pattern s]
   #?(:clj (if (string? pattern)

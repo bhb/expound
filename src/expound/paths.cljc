@@ -96,8 +96,8 @@
                      (first val))))
         in'
 
-        (and (nat-int? k) (sequential? form))
-        (in-with-kps* (nth form k ::not-found) val rst (conj in' k))
+        (and (nat-int? k) (seqable? form))
+        (in-with-kps* (nth (seq form) k ::not-found) val rst (conj in' k))
 
         :else
         ::not-found))))
@@ -114,8 +114,8 @@
         (associative? form)
         (in-with-kps* (get form k ::not-found) val rst (conj in' k))
 
-        (and (int? k) (sequential? form))
-        (in-with-kps* (nth form k ::not-found) val rst (conj in' k))
+        (and (int? k) (seqable? form))
+        (in-with-kps* (nth (seq form) k ::not-found) val rst (conj in' k))
 
         :else
         ::not-found))))

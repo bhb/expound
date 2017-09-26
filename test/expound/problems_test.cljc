@@ -128,3 +128,86 @@
               (clojure.spec.alpha/alt :a int?
                                       :b (clojure.spec.alpha/spec (clojure.spec.alpha/cat :c int?)))
               {1 0}))))))))
+
+(deftest highlighted-value-on-coll-of
+  ;; sets
+  (is (= "#{1 3 2 :a}\n        ^^"
+         (problems/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              #{1 :a 2 3})))))))
+  (is (= "#{:a}\n  ^^"
+         (problems/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              #{:a})))))))
+
+  ;; lists
+  (is (= "(... :a ... ...)\n     ^^"
+         (problems/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              '(1 :a 2 3))))))))
+  (is (= "(:a)\n ^^"
+         (problems/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              '(:a))))))))
+
+  ;; vectors
+  (is (= "[... :a ... ...]\n     ^^"
+         (problems/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              [1 :a 2 3])))))))
+
+  (is (= "[:a]\n ^^"
+         (problems/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              [:a])))))))
+
+    ;; maps
+  (is (= "[1 :a]\n^^^^^^"
+         (problems/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              {1 :a 2 3})))))))
+
+  (is (= "[:a 1]\n^^^^^^"
+         (problems/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              {:a 1}))))))))
