@@ -1,13 +1,20 @@
 (ns expound.alpha-test
-  (:require [clojure.test :as ct :refer [is testing deftest use-fixtures]]
-            [com.gfredericks.test.chuck.clojure-test :refer [checking]]
-            [clojure.test.check.generators :as gen]
+  (:require #?@(:clj
+                ;; just to include the specs
+                [[clojure.core.specs.alpha]
+                 [ring.core.spec]
+                 [onyx.spec]])
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as st]
+            [clojure.string :as string]
+            [clojure.test :as ct :refer [is testing deftest use-fixtures]]
+            [clojure.test.check.generators :as gen]
+            [com.gfredericks.test.chuck.clojure-test :refer [checking]]
+            [com.gfredericks.test.chuck.properties :as properties]
+            [com.stuartsierra.dependency :as deps]
             [expound.alpha :as expound]
             [expound.printer :as printer]
             [expound.test-utils :as test-utils]
-            [clojure.string :as string]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -1232,3 +1239,80 @@ Detected 1 error
 ")
              (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (partial expound/value-in-context {:show-valid-values? true})})]
                (s/explain-str :custom-printer/strings ["a" "b" :c])))))))
+
+(defn spec-dependencies [spec]
+  (->> spec
+       s/form
+       (tree-seq coll? seq)
+       (filter #(and (s/get-spec %) (not= spec %)))
+       distinct))
+
+(defn topo-sort [specs]
+  (deps/topo-sort
+   (reduce
+    (fn [gr spec]
+      (reduce
+       (fn [g d]
+           ;; If this creates a circular reference, then
+           ;; just skip it.
+         (if (deps/depends? g d spec)
+           g
+           (deps/depend g spec d)))
+       gr
+       (spec-dependencies spec)))
+    (deps/graph)
+    specs)))
+
+(s/def :alt-spec/int-or-str (s/alt :int int? :string string?))
+(deftest alt-spec
+  (is (=  (pf "-- Spec failed --------------------
+
+  [:hi]
+   ^^^
+
+should satisfy
+
+  int?
+
+or
+
+  string?
+
+-- Relevant specs -------
+
+:alt-spec/int-or-str:
+  %s
+
+-------------------------
+Detected 1 error\n"
+              #?(:clj "(clojure.spec.alpha/alt
+   :int
+   clojure.core/int?
+   :string
+   clojure.core/string?)"
+                 :cljs "(cljs.spec.alpha/alt :int cljs.core/int? :string cljs.core/string?)"))
+          (expound/expound-str :alt-spec/int-or-str [:hi]))))
+
+#?(:clj
+   (def spec-gen (gen/elements (->> (s/registry)
+                                    (map key)
+                                    topo-sort
+                                    (filter keyword?)))))
+
+#?(:clj
+   (deftest clojure-spec-tests
+     (checking
+      "for any core spec and any data, explain-str returns a string"
+      ;; At 50, it might find a bug in failures for the
+      ;; :ring/handler spec, but keep it plugged in, since it
+      ;; takes a long time to shrink
+      25
+      [spec spec-gen
+       form gen/any-printable]
+      (when-not (some
+                 #{"clojure.spec.alpha/fspec"}
+                 (->> spec
+                      s/form
+                      (tree-seq coll? identity)
+                      (map str)))
+        (expound/expound-str spec form)))))

@@ -49,36 +49,122 @@
   (boolean (and (vector? x)
                 (some kvps? x))))
 
-(defn in-with-kps [form in in']
+(declare in-with-kps*)
+
+(defn in-with-kps-maps-as-seqs [form val in in']
   (let [[k & rst] in
         [idx & rst2] rst]
     (cond
-      (empty? in)
+      (= ::not-found form)
+      ::not-found
+
+      (and (empty? in)
+           (= form val))
       in'
 
-      ;; detect a `:in` path that points at a key in a map-of spec
+      ;; detect a `:in` path that points to a key/value pair in a coll-of spec
       (and (map? form)
-           (= 0 idx)
-           (not (and (associative? (get form k ::not-found))
-                     (contains? (get form k ::not-found) idx))))
-      (conj in' (->KeyPathSegment k))
+           (nat-int? k)
+           (< k (count (seq form))))
+      (in-with-kps* (nth (seq form) k) val rst (conj in' (->KeyValuePathSegment k)))
 
-      ;; detect a `:in` path that points at a value in a map-of spec
       (and (map? form)
-           (= 1 idx)
-           (not (and (associative? (get form k ::not-found))
-                     (contains? (get form k ::not-found) idx))))
-      (recur (get form k ::not-found) rst2 (conj in' k))
+           (nat-int? k)
+           (int? idx)
+           (< k (count (seq form)))
+           (< idx (count (nth (seq form) k))))
+      (in-with-kps* (nth (nth (seq form) k) idx) val rst2 (conj in' (->KeyValuePathSegment k) idx))
 
-      ;; detech a `:in` path that points to a key/value pair in a coll-of spec
-      (and (map? form) (int? k) (empty? rst))
-      (conj in' (->KeyValuePathSegment k))
+      :else
+      ::not-found)))
 
-      (associative? form)
-      (recur (get form k ::not-found) rst (conj in' k))
+(defn in-with-kps-fuzzy-match-for-regex-failures [form val in in']
+  (if (= form ::not-found)
+    form
+    (let [[k & rst] in]
+      (cond
+        ;; not enough input
+        (and (empty? in)
+             (seqable? form)
+             (= val '()))
+        in'
 
-      (int? k)
-      (recur (nth form k ::not-found) rst (conj in' k)))))
+        ;; too much input
+        (and (empty? in)
+             (and (seq? val)
+                  (= form
+                     (first val))))
+        in'
+
+        (and (nat-int? k) (seqable? form))
+        (in-with-kps* (nth (seq form) k ::not-found) val rst (conj in' k))
+
+        :else
+        ::not-found))))
+
+(defn in-with-kps-ints-are-keys [form val in in']
+  (if (= form ::not-found)
+    form
+    (let [[k & rst] in]
+      (cond
+        (and (empty? in)
+             (= form val))
+        in'
+
+        (associative? form)
+        (in-with-kps* (get form k ::not-found) val rst (conj in' k))
+
+        (and (int? k) (seqable? form))
+        (in-with-kps* (nth (seq form) k ::not-found) val rst (conj in' k))
+
+        :else
+        ::not-found))))
+
+(defn in-with-kps-ints-are-key-value-indicators [form val in in']
+  (if (= form ::not-found)
+    form
+    (let [[k & rst] in
+          [idx & rst2] rst]
+      (cond
+        (and (empty? in) (= form val))
+        in'
+
+        ;; detect a `:in` path that points at a key in a map-of spec
+        (and (map? form)
+             (= 0 idx))
+        (in-with-kps* k val rst2 (conj in' (->KeyPathSegment k)))
+
+        ;; detect a `:in` path that points at a value in a map-of spec
+        (and (map? form)
+             (= 1 idx))
+        (in-with-kps* (get form k ::not-found) val rst2 (conj in' k))
+
+        :else
+        ::not-found))))
+
+(defn in-with-kps* [form val in in']
+  (let [br1 (in-with-kps-ints-are-key-value-indicators form val in in')]
+    (if (not= ::not-found br1)
+      br1
+      (let [br2 (in-with-kps-maps-as-seqs form val in in')]
+        (if (not= ::not-found br2)
+          br2
+          (let [br3 (in-with-kps-ints-are-keys form val in in')]
+            (if (not= ::not-found br3)
+              br3
+              (let [br4 (in-with-kps-fuzzy-match-for-regex-failures form val in in')]
+                (if (not= ::not-found br4)
+                  br4
+                  ::not-found)))))))))
+
+(defn in-with-kps [form val in in']
+  (let [res (in-with-kps* form val in in')]
+    (if (= ::not-found res)
+      (throw (ex-info "Can't convert path" {:form form
+                                            :val val
+                                            :in in
+                                            :in' in'}))
+      res)))
 
 (defn compare-path-segment [x y]
   (cond

@@ -1,2 +1,3 @@
 {:known-macros [clojure.spec.alpha/fdef]
- :rules {:if-without-else true}}
+ :rules {:if-without-else true}
+ :ignored-unused-namespaces [clojure.core.specs.alpha]}

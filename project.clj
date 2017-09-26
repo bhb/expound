@@ -74,7 +74,6 @@
                                   [com.cemerick/piggieback "0.2.1"]
                                   [orchestra "2017.07.04-1"]
                                   [org.clojure/core.specs.alpha "0.1.24"]
-                                  [com.stuartsierra/dependency "0.2.0"]
                                   [io.aviso/pretty "0.1.34"]]
                    :plugins [[io.aviso/pretty "0.1.34"]]
                    ;; need to add dev source path here to get user.clj loaded
@@ -87,7 +86,13 @@
                                                      :target-path]}
              :test-common {:dependencies [[org.clojure/test.check "0.9.0"]
                                           [com.gfredericks/test.chuck "0.2.7"]
-                                          [orchestra "2017.08.13"]]}
+                                          [orchestra "2017.08.13"]
+                                          [org.clojure/core.specs.alpha "0.1.24"]
+                                          [com.stuartsierra/dependency "0.2.0"]
+                                          [ring/ring-core "1.6.1"] ; required to make ring-spec work, may cause issues with figwheel?
+                                          [ring/ring-spec "0.0.3"] ; to test specs
+                                          [org.onyxplatform/onyx-spec "0.11.0.2"] ; to test specs
+                                          ]}
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.10"]
@@ -96,6 +101,8 @@
 
              :clj-1.9.0-alpha17 {:dependencies [[org.clojure/clojure "1.9.0-alpha17"]]}
              :clj-1.9.0-alpha18 {:dependencies [[org.clojure/clojure "1.9.0-alpha18"]]}
+             :clj-1.9.0-alpha19 {:dependencies [[org.clojure/clojure "1.9.0-alpha19"]]}
+             :clj-1.9.0-beta1 {:dependencies [[org.clojure/clojure "1.9.0-beta1"]]}
              :cljs-1.9.562 {:dependencies [[org.clojure/clojurescript "1.9.562"]]}
              :cljs-1.9.908 {:dependencies  [[org.clojure/clojurescript "1.9.908"]]}}
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]

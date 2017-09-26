@@ -13,6 +13,9 @@
     (vector? form)
     (vec (repeat (count form) ::irrelevant))
 
+    (set? form)
+    form
+
     (or (list? form)
         (seq? form))
     (apply list (repeat (count form) ::irrelevant))
@@ -33,7 +36,6 @@
       ::relevant
 
       (and (map? form) (paths/kps? k))
-      #_(:key k)
       (assoc
        (dissoc displayed-form
                (:key k))
@@ -48,10 +50,15 @@
              k
              (summary-form show-valid-values? (get form k) rst))
 
-      (int? k)
+      (and (int? k) (seq? form))
       (apply list (-> displayed-form
                       vec
-                      (assoc k (summary-form show-valid-values? (nth form k) rst)))))))
+                      (assoc k (summary-form show-valid-values? (nth form k) rst))))
+
+      (and (int? k) (seqable? form))
+      (into (empty form) (-> displayed-form
+                             vec
+                             (assoc k (summary-form show-valid-values? (nth (seq form) k) rst)))))))
 
 ;; FIXME - this function is not intuitive.
 (defn highlight-line
@@ -61,7 +68,7 @@
                     (apply str (repeat max-width "^")))))
 
 (defn- adjust-in [form problem]
-  (assoc problem :expound/in (paths/in-with-kps form (:in problem) [])))
+  (assoc problem :expound/in (paths/in-with-kps form (:val problem) (:in problem) [])))
 
 (defn- adjust-path [failure problem]
   (assoc problem :expound/path
@@ -119,13 +126,13 @@
       (:key k)
 
       (and (map? form) (paths/kvps? k))
-      (nth (seq form) (:idx k))
+      (recur (nth (seq form) (:idx k)) rst)
 
       (associative? form)
       (recur (get form k) rst)
 
-      (int? k)
-      (recur (nth form k) rst))))
+      (and (int? k) (seqable? form))
+      (recur (nth (seq form) k) rst))))
 
 (defn escape-replacement [pattern s]
   #?(:clj (if (string? pattern)
