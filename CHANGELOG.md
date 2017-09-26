@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. This change
 
 ### Fixed
 - [Bug with nested `map-of` or `key` specs](https://github.com/bhb/expound/issues/27)
+- [Bug with `(coll-of)` specs with set values](https://github.com/bhb/expound/issues/31)
 
 ## [0.3.0] - 2017-09-05
 
