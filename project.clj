@@ -86,7 +86,7 @@
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
              :test-common {:dependencies [[org.clojure/test.check "0.9.0"]
-                                          [com.gfredericks/test.chuck "0.2.7"]
+                                          [com.gfredericks/test.chuck "0.2.8"]
                                           [orchestra "2017.08.13"]
                                           [org.clojure/core.specs.alpha "0.1.24"]
                                           [com.stuartsierra/dependency "0.2.0"]
