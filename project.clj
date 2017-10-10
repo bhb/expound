@@ -69,7 +69,7 @@
              ;; to pipe all the output to the repl
              ;; :server-logfile false
              }
-  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.2"]
+  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.7"]
                                   [figwheel-sidecar "0.5.14"]
                                   [com.cemerick/piggieback "0.2.2"]
                                   [orchestra "2017.07.04-1"]
