@@ -72,7 +72,7 @@
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.7"]
                                   [figwheel-sidecar "0.5.14"]
                                   [com.cemerick/piggieback "0.2.2"]
-                                  [orchestra "2017.07.04-1"]
+                                  [orchestra "2017.08.13"]
                                   [org.clojure/core.specs.alpha "0.1.24"]
                                   [io.aviso/pretty "0.1.34"]
                                   [vvvvalvalval/scope-capture "0.1.0"]]
