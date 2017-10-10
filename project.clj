@@ -10,7 +10,7 @@
   :plugins [[com.jakemccrary/lein-test-refresh "0.20.0"]
             [lein-cljfmt "0.5.7"]
             [lein-cljsbuild "1.1.5" :exclusions [[org.clojure/clojure]]]
-            [lein-figwheel "0.5.10"]]
+            [lein-figwheel "0.5.14"]]
 
   :cljsbuild {:builds
               [{:id "test"
@@ -70,7 +70,7 @@
              ;; :server-logfile false
              }
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.2"]
-                                  [figwheel-sidecar "0.5.10"]
+                                  [figwheel-sidecar "0.5.14"]
                                   [com.cemerick/piggieback "0.2.1"]
                                   [orchestra "2017.07.04-1"]
                                   [org.clojure/core.specs.alpha "0.1.24"]
@@ -90,15 +90,15 @@
                                           [orchestra "2017.08.13"]
                                           [org.clojure/core.specs.alpha "0.1.24"]
                                           [com.stuartsierra/dependency "0.2.0"]
-                                          [ring/ring-core "1.6.1"] ; required to make ring-spec work, may cause issues with figwheel?
+                                          [ring/ring-core "1.6.2"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.3"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.11.0.2"] ; to test specs
                                           ]}
              :test-web [:test-common
                         {:source-paths ["test"]
-                         :dependencies [[figwheel-sidecar "0.5.10"]
+                         :dependencies [[figwheel-sidecar "0.5.14"]
                                         [karma-reporter "1.0.1"]]}]
-             :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.1"]]}
+             :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
 
              :clj-1.9.0-alpha17 {:dependencies [[org.clojure/clojure "1.9.0-alpha17"]]}
              :clj-1.9.0-alpha18 {:dependencies [[org.clojure/clojure "1.9.0-alpha18"]]}
