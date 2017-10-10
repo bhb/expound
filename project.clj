@@ -97,7 +97,7 @@
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.14"]
-                                        [karma-reporter "1.0.1"]]}]
+                                        [karma-reporter "2.1.2"]]}]
              :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
 
              :clj-1.9.0-alpha17 {:dependencies [[org.clojure/clojure "1.9.0-alpha17"]]}
