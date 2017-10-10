@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0-alpha19" :scope "provided"]
-                 [org.clojure/clojurescript "1.9.908" :scope "provided"]
+                 [org.clojure/clojurescript "1.9.946" :scope "provided"]
                  [org.clojure/spec.alpha "0.1.123" :scope "provided"]]
 
   :plugins [[com.jakemccrary/lein-test-refresh "0.20.0"]
@@ -105,7 +105,8 @@
              :clj-1.9.0-alpha19 {:dependencies [[org.clojure/clojure "1.9.0-alpha19"]]}
              :clj-1.9.0-beta1 {:dependencies [[org.clojure/clojure "1.9.0-beta1"]]}
              :cljs-1.9.562 {:dependencies [[org.clojure/clojurescript "1.9.562"]]}
-             :cljs-1.9.908 {:dependencies  [[org.clojure/clojurescript "1.9.908"]]}}
+             :cljs-1.9.908 {:dependencies  [[org.clojure/clojurescript "1.9.908"]]}
+             :cljs-1.9.946 {:dependencies  [[org.clojure/clojurescript "1.9.946"]]}}
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
                               ["with-profile" "test-web" "cljsbuild" "once" "test"]
