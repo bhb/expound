@@ -8,7 +8,7 @@
                  [org.clojure/spec.alpha "0.1.123" :scope "provided"]]
 
   :plugins [[com.jakemccrary/lein-test-refresh "0.20.0"]
-            [lein-cljfmt "0.5.6"]
+            [lein-cljfmt "0.5.7"]
             [lein-cljsbuild "1.1.5" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.10"]]
 
