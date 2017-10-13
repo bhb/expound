@@ -15,6 +15,7 @@
             [expound.alpha :as expound]
             [expound.printer :as printer]
             [expound.test-utils :as test-utils]
+            [clojure.walk :as walk]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -812,6 +813,7 @@ Detected 1 error\n")
      (is (= -1 (expound/compare-paths [(expound/->KeyPathSegment k)] [k])))
      (is (= 1 (expound/compare-paths [k] [(expound/->KeyPathSegment k)])))))
 
+;; TODO - confirm this is running as expected
 (s/def :test-assert/name string?)
 (deftest test-assert
   (testing "assertion passes"
@@ -1370,6 +1372,23 @@ Detected 1 error\n"
       :else
       (mutate-coll form))))
 
+(deftest test-assert2
+  (try
+    (binding [s/*explain-out* expound/printer]
+      (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) "Key must be integer"))
+    (catch Exception e
+      (is (string/includes?
+           (:cause (Throwable->map e))
+           "\"Key must be integer\"\n\nshould be one of: `Extra input`,`Insufficient input`,`no method`")))))
+
+(defn inline-specs [keyword]
+  (walk/postwalk
+   (fn [x]
+     (if (contains? (s/registry) x)
+       (s/form x)
+       x))
+   (s/form keyword)))
+
 #?(:clj
    (deftest real-spec-tests
      (checking
@@ -1377,13 +1396,13 @@ Detected 1 error\n"
       ;; At 50, it might find a bug in failures for the
       ;; :ring/handler spec, but keep it plugged in, since it
       ;; takes a long time to shrink
-      30
+      50
       [spec spec-gen
        form gen/any-printable]
       (when-not (some
                  #{"clojure.spec.alpha/fspec"}
                  (->> spec
-                      s/form
+                      inline-specs
                       (tree-seq coll? identity)
                       (map str)))
         (is (string? (expound/expound-str spec form)))))))
@@ -1391,7 +1410,7 @@ Detected 1 error\n"
 (deftest test-mutate
   (checking
    "mutation alters data structure"
-   30
+   50
    [form gen/any-printable
     mutate-path (gen/vector gen/pos-int 1 10)]
    (is (not= form
@@ -1407,13 +1426,13 @@ Detected 1 error\n"
    (deftest real-spec-tests-mutated-valid-value
      (checking
       "for any real-world spec and any mutated valid data, explain-str returns a string"
-      30
+      50
       [spec spec-gen
        mutate-path (gen/vector gen/pos-int)]
       (when-not (some
                  #{"clojure.spec.alpha/fspec"}
                  (->> spec
-                      s/form
+                      inline-specs
                       (tree-seq coll? identity)
                       (map str)))
         (when (contains? (s/registry) spec)
