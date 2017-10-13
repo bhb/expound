@@ -1253,8 +1253,8 @@ Detected 1 error
     (fn [gr spec]
       (reduce
        (fn [g d]
-           ;; If this creates a circular reference, then
-           ;; just skip it.
+         ;; If this creates a circular reference, then
+         ;; just skip it.
          (if (deps/depends? g d spec)
            g
            (deps/depend g spec d)))
@@ -1299,14 +1299,85 @@ Detected 1 error\n"
                                     topo-sort
                                     (filter keyword?)))))
 
+(defn mutate-coll [x]
+  (cond
+    (map? x)
+    (into [] x)
+
+    (vector? x)
+    (into #{} x)
+
+    (set? x)
+    (reverse (into '() x))
+
+    (list? x)
+    (into {} (map vec (partition 2 x)))
+
+    :else
+    x))
+
+(defn mutate-type [x]
+  (cond
+    (number? x)
+    (str x)
+
+    (string? x)
+    (keyword x)
+
+    (keyword? x)
+    (str x)
+
+    (boolean? x)
+    (str x)
+
+    (symbol? x)
+    (str x)
+
+    (char? x)
+    (int x)
+
+    (uuid? x)
+    (str x)
+
+    :else
+    x))
+
+(defn mutate [form path]
+  (let [[head & rst] path]
+    (cond
+      (empty? path)
+      (if (coll? form)
+        (mutate-coll form)
+        (mutate-type form))
+
+      (map? form)
+      (if (empty? form)
+        (mutate-coll form)
+        (let [k (nth (keys form) (mod head (count (keys form))))]
+          (assoc form k
+                 (mutate (get form k) rst))))
+
+      (vector? form)
+      (if (empty? form)
+        (mutate-coll form)
+        (let [idx (mod head (count form))]
+          (assoc form idx
+                 (mutate (nth form idx) rst))))
+
+      (not (coll? form))
+      (mutate-type form)
+
+      :else
+      (mutate-coll form))))
+
 #?(:clj
-   (deftest clojure-spec-tests
+   (deftest real-spec-tests
      (checking
-      "for any core spec and any data, explain-str returns a string"
+      "for any real-world spec and any data, explain-str returns a string"
       ;; At 50, it might find a bug in failures for the
       ;; :ring/handler spec, but keep it plugged in, since it
       ;; takes a long time to shrink
-      25
+      50
       [spec spec-gen
        form gen/any-printable]
       (when-not (some
@@ -1315,4 +1386,44 @@ Detected 1 error\n"
                       s/form
                       (tree-seq coll? identity)
                       (map str)))
-        (expound/expound-str spec form)))))
+        (is (string? (expound/expound-str spec form)))))))
+
+(deftest test-mutate
+  (checking
+   "mutation alters data structure"
+   50
+   [form gen/any-printable
+    mutate-path (gen/vector gen/pos-int 1 10)]
+   (is (not= form
+             (mutate form mutate-path)))))
+
+;; Missing onyx specs
+(s/def :trigger/materialize any?)
+(s/def :trigger/pre-evictor any?)
+(s/def :trigger/post-evictor any?)
+(s/def :flow/short-circuit any?)
+
+#?(:clj
+   (deftest real-spec-tests-mutated-valid-value
+     (checking
+      "for any real-world spec and any mutated valid data, explain-str returns a string"
+      ;;300 ; TODO - shrink this
+      100
+      [spec spec-gen
+       mutate-path (gen/vector gen/pos-int)]
+      (when-not (some
+                 #{"clojure.spec.alpha/fspec"}
+                 (->> spec
+                      s/form
+                      (tree-seq coll? identity)
+                      (map str)))
+        (when (contains? (s/registry) spec)
+          (try
+            (let [valid-form (first (s/exercise spec 1))
+                  invalid-form (mutate valid-form mutate-path)]
+              (is (string? (expound/expound-str spec invalid-form))))
+            (catch clojure.lang.ExceptionInfo e
+              (when (not= :no-gen (::s/failure (ex-data e)))
+                (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
+                  (throw e))))))))))
+
