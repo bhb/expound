@@ -1377,7 +1377,7 @@ Detected 1 error\n"
       ;; At 50, it might find a bug in failures for the
       ;; :ring/handler spec, but keep it plugged in, since it
       ;; takes a long time to shrink
-      50
+      30
       [spec spec-gen
        form gen/any-printable]
       (when-not (some
@@ -1391,7 +1391,7 @@ Detected 1 error\n"
 (deftest test-mutate
   (checking
    "mutation alters data structure"
-   50
+   30
    [form gen/any-printable
     mutate-path (gen/vector gen/pos-int 1 10)]
    (is (not= form
@@ -1407,8 +1407,7 @@ Detected 1 error\n"
    (deftest real-spec-tests-mutated-valid-value
      (checking
       "for any real-world spec and any mutated valid data, explain-str returns a string"
-      ;;300 ; TODO - shrink this
-      100
+      30
       [spec spec-gen
        mutate-path (gen/vector gen/pos-int)]
       (when-not (some
