@@ -813,7 +813,6 @@ Detected 1 error\n")
      (is (= -1 (expound/compare-paths [(expound/->KeyPathSegment k)] [k])))
      (is (= 1 (expound/compare-paths [k] [(expound/->KeyPathSegment k)])))))
 
-;; TODO - confirm this is running as expected
 (s/def :test-assert/name string?)
 (deftest test-assert
   (testing "assertion passes"
