@@ -1373,13 +1373,11 @@ Detected 1 error\n"
       (mutate-coll form))))
 
 (deftest test-assert2
-  (try
-    (binding [s/*explain-out* expound/printer]
-      (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) "Key must be integer"))
-    (catch Exception e
-      (is (string/includes?
-           (:cause (Throwable->map e))
-           "\"Key must be integer\"\n\nshould be one of: `Extra input`,`Insufficient input`,`no method`")))))
+  (is (thrown-with-msg?
+       #?(:cljs :default :clj Exception)
+       #"\"Key must be integer\"\n\nshould be one of: `Extra input`,`Insufficient input`,`no method`"
+       (binding [s/*explain-out* expound/printer]
+         (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) "Key must be integer")))))
 
 (defn inline-specs [keyword]
   (walk/postwalk
