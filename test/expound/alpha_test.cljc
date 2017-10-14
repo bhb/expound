@@ -750,40 +750,40 @@ Detected 1 error\n")
    [simple-spec simple-spec-gen
     :let [sp-form (s/form simple-spec)]
     form gen/any-printable]
-   (expound/expound-str simple-spec form)))
+   (is (string? (expound/expound-str simple-spec form)))))
 
-#_(deftest generated-coll-of-specs
-    (checking
-     "'coll-of' spec"
-     30
-     [simple-spec simple-spec-gen
-      every-args (s/gen :specs/every-args)
-      :let [spec (apply-coll-of simple-spec every-args)]
-      :let [sp-form (s/form spec)]
-      form gen/any-printable]
-     (expound/expound-str spec form)))
+(deftest generated-coll-of-specs
+  (checking
+   "'coll-of' spec"
+   30
+   [simple-spec simple-spec-gen
+    every-args (s/gen :specs/every-args)
+    :let [spec (apply-coll-of simple-spec every-args)]
+    :let [sp-form (s/form spec)]
+    form gen/any-printable]
+   (is (string? (expound/expound-str spec form)))))
 
-#_(deftest generated-and-specs
-    (checking
-     "'and' spec"
-     30
-     [simple-spec1 simple-spec-gen
-      simple-spec2 simple-spec-gen
-      :let [spec (s/and simple-spec1 simple-spec2)]
-      :let [sp-form (s/form spec)]
-      form gen/any-printable]
-     (expound/expound-str spec form)))
+(deftest generated-and-specs
+  (checking
+   "'and' spec"
+   30
+   [simple-spec1 simple-spec-gen
+    simple-spec2 simple-spec-gen
+    :let [spec (s/and simple-spec1 simple-spec2)]
+    :let [sp-form (s/form spec)]
+    form gen/any-printable]
+   (is (string? (expound/expound-str spec form)))))
 
-#_(deftest generated-or-specs
-    (checking
-     "'or' spec"
-     30
-     [simple-spec1 simple-spec-gen
-      simple-spec2 simple-spec-gen
-      :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
-      :let [sp-form (s/form spec)]
-      form gen/any-printable]
-     (expound/expound-str spec form)))
+(deftest generated-or-specs
+  (checking
+   "'or' spec"
+   30
+   [simple-spec1 simple-spec-gen
+    simple-spec2 simple-spec-gen
+    :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
+    :let [sp-form (s/form spec)]
+    form gen/any-printable]
+   (is (string? (expound/expound-str spec form)))))
 
 (deftest generated-map-of-specs
   (checking
