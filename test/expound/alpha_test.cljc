@@ -804,15 +804,6 @@ Detected 1 error\n")
 ;; TODO - nilable
 ;; TODO - test coll-of that is a set . can i should a bad element of a set?
 
-#_(deftest compare-paths-test
-    (checking
-     "path to a key comes before a path to a value"
-     10
-     [m (gen/map gen/simple-type-printable gen/simple-type-printable)
-      k gen/simple-type-printable]
-     (is (= -1 (expound/compare-paths [(expound/->KeyPathSegment k)] [k])))
-     (is (= 1 (expound/compare-paths [k] [(expound/->KeyPathSegment k)])))))
-
 (s/def :test-assert/name string?)
 (deftest test-assert
   (testing "assertion passes"
