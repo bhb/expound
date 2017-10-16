@@ -30,7 +30,7 @@
 (s/fdef value-in-context
         :args (s/cat
                :opts map?
-               :spec-name (s/nilable #{:args :fn :ret})
+               :spec-name (s/nilable #{:args :fn :ret ::s/pred})
                :form any?
                :path :expound/path
                :value any?)
@@ -130,10 +130,10 @@
   (if spec-name
     (str
      (case spec-name
-       :args "Function arguments"
-       :ret "Return value"
-       :fn "Function arguments and return value")
-     "\n\n"
+       ::s/pred "" ; Used in s/assert
+       :args "Function arguments\n\n"
+       :ret "Return value\n\n"
+       :fn "Function arguments and return value\n\n")
      value)
     value))
 

@@ -15,6 +15,7 @@
             [expound.alpha :as expound]
             [expound.printer :as printer]
             [expound.test-utils :as test-utils]
+            [clojure.walk :as walk]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -749,40 +750,40 @@ Detected 1 error\n")
    [simple-spec simple-spec-gen
     :let [sp-form (s/form simple-spec)]
     form gen/any-printable]
-   (expound/expound-str simple-spec form)))
+   (is (string? (expound/expound-str simple-spec form)))))
 
-#_(deftest generated-coll-of-specs
-    (checking
-     "'coll-of' spec"
-     30
-     [simple-spec simple-spec-gen
-      every-args (s/gen :specs/every-args)
-      :let [spec (apply-coll-of simple-spec every-args)]
-      :let [sp-form (s/form spec)]
-      form gen/any-printable]
-     (expound/expound-str spec form)))
+(deftest generated-coll-of-specs
+  (checking
+   "'coll-of' spec"
+   30
+   [simple-spec simple-spec-gen
+    every-args (s/gen :specs/every-args)
+    :let [spec (apply-coll-of simple-spec every-args)]
+    :let [sp-form (s/form spec)]
+    form gen/any-printable]
+   (is (string? (expound/expound-str spec form)))))
 
-#_(deftest generated-and-specs
-    (checking
-     "'and' spec"
-     30
-     [simple-spec1 simple-spec-gen
-      simple-spec2 simple-spec-gen
-      :let [spec (s/and simple-spec1 simple-spec2)]
-      :let [sp-form (s/form spec)]
-      form gen/any-printable]
-     (expound/expound-str spec form)))
+(deftest generated-and-specs
+  (checking
+   "'and' spec"
+   30
+   [simple-spec1 simple-spec-gen
+    simple-spec2 simple-spec-gen
+    :let [spec (s/and simple-spec1 simple-spec2)]
+    :let [sp-form (s/form spec)]
+    form gen/any-printable]
+   (is (string? (expound/expound-str spec form)))))
 
-#_(deftest generated-or-specs
-    (checking
-     "'or' spec"
-     30
-     [simple-spec1 simple-spec-gen
-      simple-spec2 simple-spec-gen
-      :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
-      :let [sp-form (s/form spec)]
-      form gen/any-printable]
-     (expound/expound-str spec form)))
+(deftest generated-or-specs
+  (checking
+   "'or' spec"
+   30
+   [simple-spec1 simple-spec-gen
+    simple-spec2 simple-spec-gen
+    :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
+    :let [sp-form (s/form spec)]
+    form gen/any-printable]
+   (is (string? (expound/expound-str spec form)))))
 
 (deftest generated-map-of-specs
   (checking
@@ -802,15 +803,6 @@ Detected 1 error\n")
 ;; TODO - cat + alt, + ? *
 ;; TODO - nilable
 ;; TODO - test coll-of that is a set . can i should a bad element of a set?
-
-#_(deftest compare-paths-test
-    (checking
-     "path to a key comes before a path to a value"
-     10
-     [m (gen/map gen/simple-type-printable gen/simple-type-printable)
-      k gen/simple-type-printable]
-     (is (= -1 (expound/compare-paths [(expound/->KeyPathSegment k)] [k])))
-     (is (= 1 (expound/compare-paths [k] [(expound/->KeyPathSegment k)])))))
 
 (s/def :test-assert/name string?)
 (deftest test-assert
@@ -1253,8 +1245,8 @@ Detected 1 error
     (fn [gr spec]
       (reduce
        (fn [g d]
-           ;; If this creates a circular reference, then
-           ;; just skip it.
+         ;; If this creates a circular reference, then
+         ;; just skip it.
          (if (deps/depends? g d spec)
            g
            (deps/depend g spec d)))
@@ -1299,20 +1291,145 @@ Detected 1 error\n"
                                     topo-sort
                                     (filter keyword?)))))
 
+(defn mutate-coll [x]
+  (cond
+    (map? x)
+    (into [] x)
+
+    (vector? x)
+    (into #{} x)
+
+    (set? x)
+    (reverse (into '() x))
+
+    (list? x)
+    (into {} (map vec (partition 2 x)))
+
+    :else
+    x))
+
+(defn mutate-type [x]
+  (cond
+    (number? x)
+    (str x)
+
+    (string? x)
+    (keyword x)
+
+    (keyword? x)
+    (str x)
+
+    (boolean? x)
+    (str x)
+
+    (symbol? x)
+    (str x)
+
+    (char? x)
+    (int x)
+
+    (uuid? x)
+    (str x)
+
+    :else
+    x))
+
+(defn mutate [form path]
+  (let [[head & rst] path]
+    (cond
+      (empty? path)
+      (if (coll? form)
+        (mutate-coll form)
+        (mutate-type form))
+
+      (map? form)
+      (if (empty? form)
+        (mutate-coll form)
+        (let [k (nth (keys form) (mod head (count (keys form))))]
+          (assoc form k
+                 (mutate (get form k) rst))))
+
+      (vector? form)
+      (if (empty? form)
+        (mutate-coll form)
+        (let [idx (mod head (count form))]
+          (assoc form idx
+                 (mutate (nth form idx) rst))))
+
+      (not (coll? form))
+      (mutate-type form)
+
+      :else
+      (mutate-coll form))))
+
+(deftest test-assert2
+  (is (thrown-with-msg?
+       #?(:cljs :default :clj Exception)
+       #"\"Key must be integer\"\n\nshould be one of: `Extra input`,`Insufficient input`,`no method`"
+       (binding [s/*explain-out* expound/printer]
+         (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) "Key must be integer")))))
+
+(defn inline-specs [keyword]
+  (walk/postwalk
+   (fn [x]
+     (if (contains? (s/registry) x)
+       (s/form x)
+       x))
+   (s/form keyword)))
+
 #?(:clj
-   (deftest clojure-spec-tests
+   (deftest real-spec-tests
      (checking
-      "for any core spec and any data, explain-str returns a string"
+      "for any real-world spec and any data, explain-str returns a string"
       ;; At 50, it might find a bug in failures for the
       ;; :ring/handler spec, but keep it plugged in, since it
       ;; takes a long time to shrink
-      25
+      50
       [spec spec-gen
        form gen/any-printable]
       (when-not (some
                  #{"clojure.spec.alpha/fspec"}
                  (->> spec
-                      s/form
+                      inline-specs
                       (tree-seq coll? identity)
                       (map str)))
-        (expound/expound-str spec form)))))
+        (is (string? (expound/expound-str spec form)))))))
+
+(deftest test-mutate
+  (checking
+   "mutation alters data structure"
+   50
+   [form gen/any-printable
+    mutate-path (gen/vector gen/pos-int 1 10)]
+   (is (not= form
+             (mutate form mutate-path)))))
+
+;; Missing onyx specs
+(s/def :trigger/materialize any?)
+(s/def :trigger/pre-evictor any?)
+(s/def :trigger/post-evictor any?)
+(s/def :flow/short-circuit any?)
+
+#?(:clj
+   (deftest real-spec-tests-mutated-valid-value
+     (checking
+      "for any real-world spec and any mutated valid data, explain-str returns a string"
+      50
+      [spec spec-gen
+       mutate-path (gen/vector gen/pos-int)]
+      (when-not (some
+                 #{"clojure.spec.alpha/fspec"}
+                 (->> spec
+                      inline-specs
+                      (tree-seq coll? identity)
+                      (map str)))
+        (when (contains? (s/registry) spec)
+          (try
+            (let [valid-form (first (s/exercise spec 1))
+                  invalid-form (mutate valid-form mutate-path)]
+              (is (string? (expound/expound-str spec invalid-form))))
+            (catch clojure.lang.ExceptionInfo e
+              (when (not= :no-gen (::s/failure (ex-data e)))
+                (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
+                  (throw e))))))))))
+
