@@ -1433,3 +1433,70 @@ Detected 1 error\n"
                 (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
                   (throw e))))))))))
 
+;; Using conformers for transformation should not crash by default, or at least give useful error message.
+;; Examples from:
+
+;;
+
+(defn numberify [s]
+  (cond
+    (number? s) s
+    (re-matches #"^\d+$" s) #?(:cljs (js/parseInt s 10)
+                               :clj (Integer. s))
+    :default ::s/invalid))
+
+(s/def :conformers-test/number (s/conformer numberify))
+
+(defn conform-by
+  [tl-key payload-key]
+  (s/conformer (fn [m]
+                 (let [id (get m tl-key)]
+                   (if (and id (map? (get m payload-key)))
+                     (assoc-in m [payload-key tl-key] id)
+                     ::s/invalid)))))
+
+(s/def :conformers-test.query/id qualified-keyword?)
+
+(defmulti query-params :conformers-test.query/id)
+(s/def :conformers-test.query/params (s/multi-spec query-params :conformers-test.query/id))
+(s/def :user/id string?)
+
+(defmethod query-params :conformers-test/lookup-user [_]
+  (s/keys :req [:user/id]))
+
+(s/def :conformers-test/query
+  (s/and
+   (conform-by :conformers-test.query/id :conformers-test.query/params)
+   (s/keys :req [:conformers-test.query/id
+                 :conformers-test.query/params])))
+
+(s/def :conformers-test/string-AB-seq (s/cat :a #{\A} :b #{\B}))
+
+(s/def :conformers-test/string-AB
+  (s/and
+   ; conform as sequence (seq function)
+   (s/conformer seq)
+   ; re-use previous sequence spec
+   :conformers-test/string-AB-seq))
+
+(comment)
+
+(deftest conformers-test
+  ;; Example from http://cjohansen.no/a-unified-specification/
+  (testing "conform string to int"
+    (is (string?
+         (expound/expound-str :conformers-test/number "123a"))))
+  ;; Example from https://github.com/bhb/expound/issues/15#issuecomment-326838879
+  (testing "conform maps"
+    (is (string? (expound/expound-str :conformers-test/query {})))
+    (is (thrown-with-msg?
+         #?(:cljs :default :clj Exception)
+         #".*Cannot convert path.*conformers.*"
+         (expound/expound-str :conformers-test/query {:conformers-test.query/id :conformers-test/lookup-user
+                                                      :conformers-test.query/params {}}))))
+  ;; Minified example based on https://github.com/bhb/expound/issues/15
+  (testing "conform string to seq"
+    (is (thrown-with-msg?
+         #?(:cljs :default :clj Exception)
+         #".*Cannot find path segment in form.*conformers.*"
+         (expound/expound-str :conformers-test/string-AB "AC")))))
