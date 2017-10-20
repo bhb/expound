@@ -1434,10 +1434,6 @@ Detected 1 error\n"
                   (throw e))))))))))
 
 ;; Using conformers for transformation should not crash by default, or at least give useful error message.
-;; Examples from:
-
-;;
-
 (defn numberify [s]
   (cond
     (number? s) s
@@ -1478,8 +1474,6 @@ Detected 1 error\n"
    (s/conformer seq)
    ; re-use previous sequence spec
    :conformers-test/string-AB-seq))
-
-(comment)
 
 (deftest conformers-test
   ;; Example from http://cjohansen.no/a-unified-specification/
