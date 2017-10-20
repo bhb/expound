@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [Unreleased]
+
+#### Fixed
+- Bug where duplicate predicates were printed twice
+
 ## [0.3.1] - 2017-09-26
 
 ### Fixed

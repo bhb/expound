@@ -1433,3 +1433,30 @@ Detected 1 error\n"
                 (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
                   (throw e))))))))))
 
+(s/def :duplicate-preds/str-or-str (s/or
+                                    ;; Use anonymous functions to assure
+                                    ;; non-equality
+                                    :str1 #(string? %)
+                                    :str2 #(string? %)))
+(deftest duplicate-preds
+  (testing "duplicate preds only appear once"
+    (is (= (pf "-- Spec failed --------------------
+
+  1
+
+should satisfy
+
+  (fn [%%] (string? %%))
+
+-- Relevant specs -------
+
+:duplicate-preds/str-or-str:
+  (pf.spec.alpha/or
+   :str1
+   (pf.core/fn [%%] (pf.core/string? %%))
+   :str2
+   (pf.core/fn [%%] (pf.core/string? %%)))
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :duplicate-preds/str-or-str 1)))))
