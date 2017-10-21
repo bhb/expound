@@ -138,10 +138,10 @@
     value))
 
 (defn preds [problems]
-  (string/join "\n\nor\n\n" (map (fn [problem]
-                                   (printer/indent
-                                    (pr-pred (:pred problem)
-                                             (:spec problem)))) problems)))
+  (string/join "\n\nor\n\n" (distinct (map (fn [problem]
+                                             (printer/indent
+                                              (pr-pred (:pred problem)
+                                                       (:spec problem)))) problems))))
 
 (defn insufficient-input [spec-name val path problem]
   (printer/format
