@@ -55,10 +55,20 @@
                       vec
                       (assoc k (summary-form show-valid-values? (nth form k) rst))))
 
-      (and (int? k) (seqable? form))
-      (into (empty form) (-> displayed-form
-                             vec
-                             (assoc k (summary-form show-valid-values? (nth (seq form) k) rst)))))))
+      (and (int? k) (set? form))
+      (into #{} (-> displayed-form
+                    vec
+                    (assoc k (summary-form show-valid-values? (nth (seq form) k) rst))))
+
+      (and (int? k) (list? form))
+      (into '() (-> displayed-form
+                    vec
+                    (assoc k (summary-form show-valid-values? (nth (seq form) k) rst))))
+
+      :else
+      (throw (ex-info "Cannot find path segment in form. This can be caused by using conformers to tranform values, which is not supported in Expound"
+                      {:form form
+                       :in in})))))
 
 ;; FIXME - this function is not intuitive.
 (defn highlight-line

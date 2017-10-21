@@ -215,6 +215,11 @@ Use [Orchestra](https://github.com/jeaye/orchestra) with Expound to get human-op
 ;; -------------------------
 ;; Detected 1 error
 ```
+## Conformers
+
+Expound will not give helpful errors (and in some cases, will throw an exception) if you use conformers to transform values. Although using conformers in this way is fairly common, my understanding is that this is not an [intended use case](https://dev.clojure.org/jira/browse/CLJ-2116).
+
+If you want to use Expound with conformers, you'll need to write a custom printer. See "Configuring the printer" above.
 
 ## Related work
 
