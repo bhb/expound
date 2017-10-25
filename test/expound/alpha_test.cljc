@@ -43,13 +43,6 @@
        (expound/expound-str string? 1)
        (with-out-str (expound/expound string? 1)))))
 
-(deftest pprint-fn
-  (is (= "string?"
-         (expound/pprint-fn (::s/spec (s/explain-data string? 1)))))
-  (is (=
-       "expound.alpha/expound"
-       (expound/pprint-fn expound/expound))))
-
 (deftest predicate-spec
   (is (= (pf "-- Spec failed --------------------
 
@@ -1377,24 +1370,6 @@ Detected 1 error\n"
        x))
    (s/form keyword)))
 
-#?(:clj
-   (deftest real-spec-tests
-     (checking
-      "for any real-world spec and any data, explain-str returns a string"
-      ;; At 50, it might find a bug in failures for the
-      ;; :ring/handler spec, but keep it plugged in, since it
-      ;; takes a long time to shrink
-      50
-      [spec spec-gen
-       form gen/any-printable]
-      (when-not (some
-                 #{"clojure.spec.alpha/fspec"}
-                 (->> spec
-                      inline-specs
-                      (tree-seq coll? identity)
-                      (map str)))
-        (is (string? (expound/expound-str spec form)))))))
-
 (deftest test-mutate
   (checking
    "mutation alters data structure"
@@ -1409,29 +1384,6 @@ Detected 1 error\n"
 (s/def :trigger/pre-evictor any?)
 (s/def :trigger/post-evictor any?)
 (s/def :flow/short-circuit any?)
-
-#?(:clj
-   (deftest real-spec-tests-mutated-valid-value
-     (checking
-      "for any real-world spec and any mutated valid data, explain-str returns a string"
-      50
-      [spec spec-gen
-       mutate-path (gen/vector gen/pos-int)]
-      (when-not (some
-                 #{"clojure.spec.alpha/fspec"}
-                 (->> spec
-                      inline-specs
-                      (tree-seq coll? identity)
-                      (map str)))
-        (when (contains? (s/registry) spec)
-          (try
-            (let [valid-form (first (s/exercise spec 1))
-                  invalid-form (mutate valid-form mutate-path)]
-              (is (string? (expound/expound-str spec invalid-form))))
-            (catch clojure.lang.ExceptionInfo e
-              (when (not= :no-gen (::s/failure (ex-data e)))
-                (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
-                  (throw e))))))))))
 
 ;; Using conformers for transformation should not crash by default, or at least give useful error message.
 (defn numberify [s]
@@ -1523,3 +1475,62 @@ should satisfy
 Detected 1 error\n")
            (expound/expound-str :duplicate-preds/str-or-str 1)))))
 
+(s/def :fspec-test/div (s/fspec
+                        :args (s/cat :x int? :y pos-int?)))
+
+(defn my-div [x y]
+  (assert (not (zero? (/ x y)))))
+
+;; TODO - could I reconstruct the function call??
+(deftest fspec-test
+  (testing "args that throw exception"
+    (is (= (pf "-- Exception thrown ---------------
+
+  expound.alpha-test/my-div
+
+threw exception: 'Assert failed: (not (zero? (/ x y)))'
+
+with args:
+
+  0, 1
+
+-- Relevant specs -------
+
+:fspec-test/div:
+  (pf.spec.alpha/fspec
+   :args
+   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
+   :ret
+   pf.core/any?
+   :fn
+   nil)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :fspec-test/div my-div)))
+
+    (is (= (pf "-- Exception thrown ---------------
+
+  [expound.alpha-test/my-div]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+threw exception: 'Assert failed: (not (zero? (/ x y)))'
+
+with args:
+
+  0, 1
+
+-- Relevant specs -------
+
+:fspec-test/div:
+  (pf.spec.alpha/fspec
+   :args
+   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
+   :ret
+   pf.core/any?
+   :fn
+   nil)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str (s/coll-of :fspec-test/div) [my-div])))))

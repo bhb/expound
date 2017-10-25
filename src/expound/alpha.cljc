@@ -5,7 +5,6 @@
             [expound.problems :as problems]
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
-            #?(:clj [clojure.main :as clojure.main])
             #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
             [expound.printer :as printer]))
@@ -43,7 +42,7 @@
   (if (= :fn spec-name)
     (binding [*print-namespace-maps* false] (pr-str form))
     (if (= form value)
-      (binding [*print-namespace-maps* false] (pr-str value))
+      (binding [*print-namespace-maps* false] (printer/pprint-str value))
       ;; It's silly to reconstruct a fake "problem"
       ;; after I've deconstructed it, but I'm not yet ready
       ;; to break the API for value-in-context BUT
@@ -84,42 +83,16 @@
   #?(:clj (instance? clojure.lang.Named x)
      :cljs (implements? cljs.core.INamed x)))
 
-(defn elide-core-ns [s]
-  #?(:cljs (-> s
-               (string/replace "cljs.core/" "")
-               (string/replace "cljs/core/" ""))
-     :clj (string/replace s "clojure.core/" "")))
-
-(defn pprint-fn [f]
-  (-> #?(:clj
-         (let [[_ ns-n f-n] (re-matches #"(.*)\$(.*?)(__[0-9]+)?" (str f))]
-           (str
-            (clojure.main/demunge ns-n) "/"
-            (clojure.main/demunge f-n)))
-         :cljs
-         (let [fn-parts (string/split (second (re-find
-                                               #"function ([^\(]+)"
-                                               (str f)))
-                                      #"\$")
-               ns-n (string/join "." (butlast fn-parts))
-               fn-n  (last fn-parts)]
-           (str
-            (demunge-str ns-n) "/"
-            (demunge-str fn-n))))
-      (elide-core-ns)
-      (string/replace #"--\d+" "")
-      (string/replace #"@[a-zA-Z0-9]+" "")))
-
 (defn pr-pred* [pred]
   (cond
     (or (symbol? pred) (named? pred))
     (name pred)
 
     (fn? pred)
-    (pprint-fn pred)
+    (printer/pprint-fn pred)
 
     :else
-    (elide-core-ns (binding [*print-namespace-maps* false] (printer/pprint-str pred)))))
+    (printer/elide-core-ns (binding [*print-namespace-maps* false] (printer/pprint-str pred)))))
 
 (defn pr-pred [pred spec]
   (if (= ::s/unknown pred)
@@ -206,6 +179,9 @@ should have additional elements. The next element is named `%s` and satisfies
 
 (defn not-in-set? [problem]
   (set? (:pred problem)))
+
+(defn fspec-failure? [problem]
+  (= '(apply fn) (:pred problem)))
 
 (defn missing-key? [problem]
   #?(:cljs
@@ -306,6 +282,27 @@ should be%s: %s
        "Extra input" (extra-input spec-name val path))
      (relevant-specs problems))))
 
+(defmethod problem-group-str :problem/fspec-failure [_type spec-name val path problems]
+  (s/assert ::singleton problems)
+  (let [problem (first problems)]
+    (printer/format
+     "%s
+
+%s
+
+threw exception: '%s'
+
+with args:
+
+%s
+
+%s"
+     (header-label "Exception thrown")
+     (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+     (:reason problem)
+     (printer/indent (string/join ", " (:val problem)))
+     (relevant-specs problems))))
+
 (defmethod problem-group-str :problem/unknown [_type spec-name val path problems]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (printer/format
@@ -336,6 +333,9 @@ should satisfy
 
     (regex-failure? problem)
     :problem/regex-failure
+
+    (fspec-failure? problem)
+    :problem/fspec-failure
 
     :else
     :problem/unknown))
@@ -371,8 +371,6 @@ should satisfy
                                                               (merge {:show-valid-values? false}
                                                                      opts)))]
       (let [{:keys [::s/problems ::s/fn ::s/failure]} explain-data
-            _ (doseq [problem problems]
-                (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) (:reason problem)))
             explain-data' (problems/annotate explain-data) caller (:expound/caller explain-data')
             form (:expound/form explain-data')
 

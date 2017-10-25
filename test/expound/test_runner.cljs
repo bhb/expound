@@ -2,6 +2,7 @@
   (:require [jx.reporter.karma :refer-macros [run-tests run-all-tests]]
             [expound.alpha-test]
             [expound.paths-test]
+            [expound.printer-test]
             [expound.problems-test]
             [expound.test-utils]))
 

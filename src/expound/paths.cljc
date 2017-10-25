@@ -51,6 +51,12 @@
 
 (declare in-with-kps*)
 
+(defn fn-equal [x y]
+  (and (fn? x)
+       (fn? y)
+       (= (pr-str x)
+          (pr-str y))))
+
 (defn in-with-kps-maps-as-seqs [form val in in']
   (let [[k & rst] in
         [idx & rst2] rst]
@@ -59,7 +65,9 @@
       ::not-found
 
       (and (empty? in)
-           (= form val))
+           (or
+            (= form val)
+            (fn-equal form val)))
       in'
 
       ;; detect a `:in` path that points to a key/value pair in a coll-of spec
@@ -108,7 +116,9 @@
     (let [[k & rst] in]
       (cond
         (and (empty? in)
-             (= form val))
+             (or
+              (= form val)
+              (fn-equal form val)))
         in'
 
         (associative? form)
@@ -126,7 +136,10 @@
     (let [[k & rst] in
           [idx & rst2] rst]
       (cond
-        (and (empty? in) (= form val))
+        (and (empty? in)
+             (or
+              (= form val)
+              (fn-equal form val)))
         in'
 
         ;; detect a `:in` path that points at a key in a map-of spec
@@ -143,19 +156,21 @@
         ::not-found))))
 
 (defn in-with-kps* [form val in in']
-  (let [br1 (in-with-kps-ints-are-key-value-indicators form val in in')]
-    (if (not= ::not-found br1)
-      br1
-      (let [br2 (in-with-kps-maps-as-seqs form val in in')]
-        (if (not= ::not-found br2)
-          br2
-          (let [br3 (in-with-kps-ints-are-keys form val in in')]
-            (if (not= ::not-found br3)
-              br3
-              (let [br4 (in-with-kps-fuzzy-match-for-regex-failures form val in in')]
-                (if (not= ::not-found br4)
-                  br4
-                  ::not-found)))))))))
+  (if (fn? form)
+    in'
+    (let [br1 (in-with-kps-ints-are-key-value-indicators form val in in')]
+      (if (not= ::not-found br1)
+        br1
+        (let [br2 (in-with-kps-maps-as-seqs form val in in')]
+          (if (not= ::not-found br2)
+            br2
+            (let [br3 (in-with-kps-ints-are-keys form val in in')]
+              (if (not= ::not-found br3)
+                br3
+                (let [br4 (in-with-kps-fuzzy-match-for-regex-failures form val in in')]
+                  (if (not= ::not-found br4)
+                    br4
+                    ::not-found))))))))))
 
 (defn in-with-kps [form val in in']
   (let [res (in-with-kps* form val in in')]

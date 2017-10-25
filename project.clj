@@ -75,7 +75,8 @@
                                   [orchestra "2017.08.13"]
                                   [org.clojure/core.specs.alpha "0.1.24"]
                                   [io.aviso/pretty "0.1.34"]
-                                  [vvvvalvalval/scope-capture "0.1.0"]]
+                                  [vvvvalvalval/scope-capture "0.1.3"]
+                                  [org.clojure/test.check "0.9.0"]]
                    :plugins [[io.aviso/pretty "0.1.34"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
@@ -93,6 +94,7 @@
                                           [ring/ring-core "1.6.2"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.3"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.11.0.2"] ; to test specs
+                                          [vvvvalvalval/scope-capture "0.1.3"]
                                           ]}
              :test-web [:test-common
                         {:source-paths ["test"]
