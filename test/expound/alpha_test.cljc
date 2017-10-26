@@ -1482,7 +1482,7 @@ Detected 1 error\n")
   (assert (not (zero? (/ x y)))))
 
 ;; TODO - could I reconstruct the function call??
-(deftest fspec-test
+(deftest fspec-exception-test
   (testing "args that throw exception"
     (is (= (pf "-- Exception thrown ---------------
 
@@ -1534,3 +1534,71 @@ with args:
 -------------------------
 Detected 1 error\n")
            (expound/expound-str (s/coll-of :fspec-test/div) [my-div])))))
+
+(s/def :fspec-test/my-int pos-int?)
+(s/def :fspec-test/plus (s/fspec
+                         :args (s/cat :x int? :y pos-int?)
+                         :ret :fspec-test/my-int))
+(defn my-plus [x y]
+  (+ x y))
+
+(deftest fspec-ret-test
+  (testing "invalid ret"
+    (is (= (pf "-- Spec failed --------------------
+
+  expound.alpha-test/my-plus
+
+returned an invalid value
+
+  0
+
+should satisfy
+
+  pf.core/pos-int?
+
+-- Relevant specs -------
+
+:fspec-test/my-int:
+  pf.core/pos-int?
+:fspec-test/plus:
+  (pf.spec.alpha/fspec
+   :args
+   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
+   :ret
+   :fspec-test/my-int
+   :fn
+   nil)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :fspec-test/plus my-plus)))
+
+    (is (= (pf "-- Spec failed --------------------
+
+  [expound.alpha-test/my-plus]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+returned an invalid value
+
+  0
+
+should satisfy
+
+  pf.core/pos-int?
+
+-- Relevant specs -------
+
+:fspec-test/my-int:
+  pf.core/pos-int?
+:fspec-test/plus:
+  (pf.spec.alpha/fspec
+   :args
+   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
+   :ret
+   :fspec-test/my-int
+   :fn
+   nil)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str (s/coll-of :fspec-test/plus) [my-plus])))))

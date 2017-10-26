@@ -180,8 +180,17 @@ should have additional elements. The next element is named `%s` and satisfies
 (defn not-in-set? [problem]
   (set? (:pred problem)))
 
+;; TODO - rename
 (defn fspec-failure? [problem]
   (= '(apply fn) (:pred problem)))
+
+(defn fspec-ret-failure? [problem]
+  (and
+   (= :ret (first (:path problem)))
+   (first (:via problem))
+   (seq? (s/form (first (:via problem))))
+   (= (symbol (str (namespace ::s/fspec) "/fspec"))
+      (first (s/form (first (:via problem)))))))
 
 (defn missing-key? [problem]
   #?(:cljs
@@ -297,10 +306,33 @@ with args:
 %s
 
 %s"
-     (header-label "Exception thrown")
+     (header-label "Exception thrown") ;; TODO - better name for this?
      (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
      (:reason problem)
      (printer/indent (string/join ", " (:val problem)))
+     (relevant-specs problems))))
+
+(defmethod problem-group-str :problem/fspec-ret-failure [_type spec-name val path problems]
+  (s/assert ::singleton problems)
+  (let [problem (first problems)]
+    (printer/format
+     "%s
+
+%s
+
+returned an invalid value
+
+%s
+
+should satisfy 
+
+%s
+
+%s"
+     (header-label "Spec failed")
+     (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+     (printer/indent (:val problem))
+     (printer/indent (:pred problem))
      (relevant-specs problems))))
 
 (defmethod problem-group-str :problem/unknown [_type spec-name val path problems]
@@ -334,8 +366,12 @@ should satisfy
     (regex-failure? problem)
     :problem/regex-failure
 
+    ;; TODO - rename
     (fspec-failure? problem)
     :problem/fspec-failure
+
+    (fspec-ret-failure? problem)
+    :problem/fspec-ret-failure
 
     :else
     :problem/unknown))

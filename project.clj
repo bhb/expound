@@ -17,7 +17,7 @@
                 :source-paths ["src" "test"]
                 ;;:notify-command ["./bin/tests"]
                 :figwheel true
-                :compiler { ;; If you change output-to or output-dir,
+                :compiler {;; If you change output-to or output-dir,
                            ;; you must update karma.conf.js to match
                            :asset-path "test-web/out"
                            :output-to "resources/public/test-web/test.js"
@@ -68,7 +68,7 @@
 
              ;; to pipe all the output to the repl
              ;; :server-logfile false
-             }
+}
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.7"]
                                   [figwheel-sidecar "0.5.14"]
                                   [com.cemerick/piggieback "0.2.2"]
@@ -94,8 +94,7 @@
                                           [ring/ring-core "1.6.2"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.3"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.11.0.2"] ; to test specs
-                                          [vvvvalvalval/scope-capture "0.1.3"]
-                                          ]}
+                                          [vvvvalvalval/scope-capture "0.1.3"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.14"]
