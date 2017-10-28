@@ -1380,13 +1380,7 @@ Detected 1 error\n"
       50
       [spec spec-gen
        form gen/any-printable]
-      (when-not (some
-                 #{"clojure.spec.alpha/fspec"}
-                 (->> spec
-                      inline-specs
-                      (tree-seq coll? identity)
-                      (map str)))
-        (is (string? (expound/expound-str spec form)))))))
+      (is (string? (expound/expound-str spec form))))))
 
 (deftest test-mutate
   (checking
@@ -1410,21 +1404,15 @@ Detected 1 error\n"
       50
       [spec spec-gen
        mutate-path (gen/vector gen/pos-int)]
-      (when-not (some
-                 #{"clojure.spec.alpha/fspec"}
-                 (->> spec
-                      inline-specs
-                      (tree-seq coll? identity)
-                      (map str)))
-        (when (contains? (s/registry) spec)
-          (try
-            (let [valid-form (first (s/exercise spec 1))
-                  invalid-form (mutate valid-form mutate-path)]
-              (is (string? (expound/expound-str spec invalid-form))))
-            (catch clojure.lang.ExceptionInfo e
-              (when (not= :no-gen (::s/failure (ex-data e)))
-                (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
-                  (throw e))))))))))
+      (when (contains? (s/registry) spec)
+        (try
+          (let [valid-form (first (s/exercise spec 1))
+                invalid-form (mutate valid-form mutate-path)]
+            (is (string? (expound/expound-str spec invalid-form))))
+          (catch clojure.lang.ExceptionInfo e
+            (when (not= :no-gen (::s/failure (ex-data e)))
+              (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
+                (throw e)))))))))
 
 ;; Using conformers for transformation should not crash by default, or at least give useful error message.
 (defn numberify [s]
