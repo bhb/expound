@@ -25,11 +25,10 @@
   (s/check-asserts false))
 
 (defn instrument-all [test-fn]
-  ;;(set! s/*explain-out* expound/printer)
-  ;;(st/instrument)
+  (set! s/*explain-out* expound/printer)
+  (st/instrument)
   (test-fn)
-  ;;(st/unstrument)
-)
+  (st/unstrument))
 
 (defn nan? [x]
   #?(:clj false
