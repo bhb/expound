@@ -175,7 +175,7 @@
 (defn in-with-kps [form val in in']
   (let [res (in-with-kps* form val in in')]
     (if (= ::not-found res)
-      (throw (ex-info "Cannot convert path. This can be caused by using conformers to tranform values, which is not supported in Expound"
+      (throw (ex-info "Cannot convert path. This can be caused by using conformers to transform values, which is not supported in Expound"
                       {:form form
                        :val val
                        :in in

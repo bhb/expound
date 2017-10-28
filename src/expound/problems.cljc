@@ -66,7 +66,7 @@
                     (assoc k (summary-form show-valid-values? (nth (seq form) k) rst))))
 
       :else
-      (throw (ex-info "Cannot find path segment in form. This can be caused by using conformers to tranform values, which is not supported in Expound"
+      (throw (ex-info "Cannot find path segment in form. This can be caused by using conformers to transform values, which is not supported in Expound"
                       {:form form
                        :in in})))))
 
