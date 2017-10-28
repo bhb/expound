@@ -192,6 +192,15 @@ should have additional elements. The next element is named `%s` and satisfies
    (= (symbol (str (namespace ::s/fspec) "/fspec"))
       (first (s/form (first (:via problem)))))))
 
+;; TODO - rename
+(defn fspec-fn-failure? [problem]
+  (and
+   (= :fn (first (:path problem)))
+   (first (:via problem))
+   (seq? (s/form (first (:via problem))))
+   (= (symbol (str (namespace ::s/fspec) "/fspec"))
+      (first (s/form (first (:via problem)))))))
+
 (defn missing-key? [problem]
   #?(:cljs
      (let [pred (:pred problem)]
@@ -231,9 +240,9 @@ should have additional elements. The next element is named `%s` and satisfies
      (pr-str retag)
      (pr-str (if retag (retag (problems/value-in val path)) nil)))))
 
-(defmulti problem-group-str (fn [type spec-name _val _path _problems] type))
+(defmulti problem-group-str (fn [type spec-name _val _path _problems _opts] type))
 
-(defmethod problem-group-str :problem/missing-key [_type spec-name val path problems]
+(defmethod problem-group-str :problem/missing-key [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (printer/format
    "%s
@@ -246,9 +255,9 @@ should contain keys: %s
    (header-label "Spec failed")
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (string/join "," (map #(str "`" (missing-key (:pred %)) "`") problems))
-   (relevant-specs problems)))
+   (if (:print-specs? opts) (relevant-specs problems) "")))
 
-(defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems]
+(defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (printer/format
    "%s
@@ -262,9 +271,9 @@ should be%s: %s
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (if (= 1 (count (:pred (first problems)))) "" " one of")
    (string/join "," (map #(str "`" % "`") (:pred (first problems))))
-   (relevant-specs problems)))
+   (if (:print-specs? opts) (relevant-specs problems) "")))
 
-(defmethod problem-group-str :problem/missing-spec [_type spec-name val path problems]
+(defmethod problem-group-str :problem/missing-spec [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (printer/format
    "%s
@@ -274,9 +283,9 @@ should be%s: %s
 %s"
    (header-label "Missing spec")
    (no-method spec-name val path (first problems))
-   (relevant-specs problems)))
+   (if (:print-specs? opts) (relevant-specs problems) "")))
 
-(defmethod problem-group-str :problem/regex-failure [_type spec-name val path problems]
+(defmethod problem-group-str :problem/regex-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -289,9 +298,9 @@ should be%s: %s
      (case (:reason problem)
        "Insufficient input" (insufficient-input spec-name val path problem)
        "Extra input" (extra-input spec-name val path))
-     (relevant-specs problems))))
+     (if (:print-specs? opts) (relevant-specs problems) ""))))
 
-(defmethod problem-group-str :problem/fspec-failure [_type spec-name val path problems]
+(defmethod problem-group-str :problem/fspec-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -310,9 +319,10 @@ with args:
      (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
      (:reason problem)
      (printer/indent (string/join ", " (:val problem)))
-     (relevant-specs problems))))
+     (if (:print-specs? opts) (relevant-specs problems) ""))))
 
-(defmethod problem-group-str :problem/fspec-ret-failure [_type spec-name val path problems]
+;; HERE
+(defmethod problem-group-str :problem/fspec-ret-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -324,7 +334,7 @@ returned an invalid value
 
 %s
 
-should satisfy 
+should satisfy
 
 %s
 
@@ -332,10 +342,33 @@ should satisfy
      (header-label "Spec failed")
      (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
      (printer/indent (:val problem))
-     (printer/indent (:pred problem))
-     (relevant-specs problems))))
+     (printer/indent (pr-pred (:pred problem) (:spec problem)))
+     (if (:print-specs? opts) (relevant-specs problems) ""))))
 
-(defmethod problem-group-str :problem/unknown [_type spec-name val path problems]
+(defmethod problem-group-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
+  (s/assert ::singleton problems)
+  (let [problem (first problems)]
+    (printer/format
+     "%s
+
+%s
+
+failed spec. Function arguments and return value
+
+%s
+
+should satisfy
+
+%s
+
+%s"
+     (header-label "Spec failed")
+     (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+     (printer/indent (:val problem))
+     (printer/indent (pr-pred (:pred problem) (:spec problem)))
+     (if (:print-specs? opts) (relevant-specs problems) ""))))
+
+(defmethod problem-group-str :problem/unknown [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (printer/format
    "%s
@@ -350,7 +383,7 @@ should satisfy
    (header-label "Spec failed")
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (preds problems)
-   (relevant-specs problems)))
+   (if (:print-specs? opts) (relevant-specs problems) "")))
 
 (defn problem-type [problem]
   (cond
@@ -372,6 +405,9 @@ should satisfy
 
     (fspec-ret-failure? problem)
     :problem/fspec-ret-failure
+
+    (fspec-fn-failure? problem)
+    :problem/fspec-fn-failure
 
     :else
     :problem/unknown))
@@ -401,37 +437,38 @@ should satisfy
     nil))
 
 (defn printer-str [opts explain-data]
-  (if-not explain-data
-    "Success!\n"
-    (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context
-                                                              (merge {:show-valid-values? false}
-                                                                     opts)))]
-      (let [{:keys [::s/problems ::s/fn ::s/failure]} explain-data
-            explain-data' (problems/annotate explain-data) caller (:expound/caller explain-data')
-            form (:expound/form explain-data')
+  (let [opts' (merge {:show-valid-values? false
+                      :print-specs? true}
+                     opts)]
+    (if-not explain-data
+      "Success!\n"
+      (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))]
+        (let [{:keys [::s/problems ::s/fn ::s/failure]} explain-data
+              explain-data' (problems/annotate explain-data) caller (:expound/caller explain-data')
+              form (:expound/form explain-data')
 
-            grouped-problems (->> explain-data'
-                                  :expound/problems
-                                  (problems/leaf-only)
-                                  (group-by (juxt :expound/in problem-type))
-                                  ;; We attempt to sort the problems by path, but it's not feasible to sort in
-                                  ;; all cases, since paths could contain arbitrary user-defined data structures.
-                                  ;; If there is an error, we just give up on sorting.
-                                  (safe-sort-by first paths/compare-paths))]
+              grouped-problems (->> explain-data'
+                                    :expound/problems
+                                    (problems/leaf-only)
+                                    (group-by (juxt :expound/in problem-type))
+                                    ;; We attempt to sort the problems by path, but it's not feasible to sort in
+                                    ;; all cases, since paths could contain arbitrary user-defined data structures.
+                                    ;; If there is an error, we just give up on sorting.
+                                    (safe-sort-by first paths/compare-paths))]
 
-        (printer/no-trailing-whitespace
-         (str
-          (instrumentation-info failure caller)
-          (printer/format
-           "%s
+          (printer/no-trailing-whitespace
+           (str
+            (instrumentation-info failure caller)
+            (printer/format
+             "%s
 
 %s
 Detected %s %s\n"
-           (string/join "\n\n" (for [[[in type] problems] grouped-problems]
-                                 (problem-group-str type (spec-name explain-data) form in problems)))
-           (section-label)
-           (count grouped-problems)
-           (if (= 1 (count grouped-problems)) "error" "errors"))))))))
+             (string/join "\n\n" (for [[[in type] problems] grouped-problems]
+                                   (problem-group-str type (spec-name explain-data) form in problems opts')))
+             (section-label)
+             (count grouped-problems)
+             (if (= 1 (count grouped-problems)) "error" "errors")))))))))
 
 ;;;;;; public ;;;;;;
 
