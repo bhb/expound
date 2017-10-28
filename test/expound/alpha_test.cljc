@@ -1374,9 +1374,9 @@ Detected 1 error\n"
    (deftest real-spec-tests
      (checking
       "for any real-world spec and any data, explain-str returns a string"
-                      ;; At 50, it might find a bug in failures for the
-                      ;; :ring/handler spec, but keep it plugged in, since it
-                      ;; takes a long time to shrink
+      ;; At 50, it might find a bug in failures for the
+      ;; :ring/handler spec, but keep it plugged in, since it
+      ;; takes a long time to shrink
       50
       [spec spec-gen
        form gen/any-printable]
