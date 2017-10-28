@@ -178,6 +178,43 @@ You can even provide your own function to display the invalid value.
 ;;   string?
 ```
 
+### Manual clojure.test/report override
+
+Clojure test allows you to declare a custom multi-method for its `clojure.test/report` function. This is particularly useful in ClojureScript, where a test runner can take care of the boilerplate code:
+
+```clojure
+(ns pkg.test-runner
+  (:require [cljs.spec.alpha :as s]
+            [cljs.test :as test :refer-macros [run-tests]]
+            [expound.alpha :as expound]
+            ;; require your namespaces here
+            [pkg.namespace-test]))
+
+(enable-console-print!)
+
+(set! s/*explain-out* expound/printer)
+
+;; We try to preserve the clojure.test output format
+(defmethod test/report [:cljs.test/default :error] [m]
+  (test/inc-report-counter! :error)
+  (println "\nERROR in" (test/testing-vars-str m))
+  (when (seq (:testing-contexts (test/get-current-env)))
+    (println (test/testing-contexts-str)))
+  (when-let [message (:message m)] (println message))
+  (let [actual (:actual m)
+        ex-data (ex-data actual)]
+    (if (:cljs.spec.alpha/failure ex-data)
+      (do (println "expected:" (pr-str (:expected m)))
+          (print "  actual:\n")
+          (print (.-message actual)))
+      (test/print-comparison m))))
+
+;; run tests, (stest/instrument) either here or in the individual test files.
+(run-tests 'pkg.namespace-test)
+```
+
+The above has been tested in `lumo` so it is self-host ClojureScript compatible.
+
 ### Using Orchestra
 
 Use [Orchestra](https://github.com/jeaye/orchestra) with Expound to get human-optimized error messages when checking your `:ret` and `:fn` specs.
