@@ -1377,7 +1377,7 @@ Detected 1 error\n"
       ;; At 50, it might find a bug in failures for the
       ;; :ring/handler spec, but keep it plugged in, since it
       ;; takes a long time to shrink
-      50
+      30
       [spec spec-gen
        form gen/any-printable]
       ;; Can't reliably test fspecs until
@@ -1412,7 +1412,7 @@ Detected 1 error\n"
    (deftest real-spec-tests-mutated-valid-value
      (checking
       "for any real-world spec and any mutated valid data, explain-str returns a string"
-      50
+      30
       [spec spec-gen
        mutate-path (gen/vector gen/pos-int)]
       (when-not (some
@@ -1527,10 +1527,9 @@ Detected 1 error\n")
 (defn my-div [x y]
   (assert (not (zero? (/ x y)))))
 
-;; TODO - could I reconstruct the function call??
 (deftest fspec-exception-test
   (testing "args that throw exception"
-    (is (= (pf "-- Exception thrown ---------------
+    (is (= (pf "-- Exception ----------------------
 
   expound.alpha-test/my-div
 
@@ -1555,7 +1554,7 @@ with args:
 Detected 1 error\n")
            (expound/expound-str :fspec-test/div my-div)))
 
-    (is (= (pf "-- Exception thrown ---------------
+    (is (= (pf "-- Exception ----------------------
 
   [expound.alpha-test/my-div]
    ^^^^^^^^^^^^^^^^^^^^^^^^^

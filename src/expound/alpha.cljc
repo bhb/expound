@@ -180,8 +180,7 @@ should have additional elements. The next element is named `%s` and satisfies
 (defn not-in-set? [problem]
   (set? (:pred problem)))
 
-;; TODO - rename
-(defn fspec-failure? [problem]
+(defn fspec-exception-failure? [problem]
   (= '(apply fn) (:pred problem)))
 
 (defn fspec-ret-failure? [problem]
@@ -192,7 +191,6 @@ should have additional elements. The next element is named `%s` and satisfies
    (= (symbol (str (namespace ::s/fspec) "/fspec"))
       (first (s/form (first (:via problem)))))))
 
-;; TODO - rename
 (defn fspec-fn-failure? [problem]
   (and
    (= :fn (first (:path problem)))
@@ -300,7 +298,7 @@ should be%s: %s
        "Extra input" (extra-input spec-name val path))
      (if (:print-specs? opts) (relevant-specs problems) ""))))
 
-(defmethod problem-group-str :problem/fspec-failure [_type spec-name val path problems opts]
+(defmethod problem-group-str :problem/fspec-exception-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -315,7 +313,7 @@ with args:
 %s
 
 %s"
-     (header-label "Exception thrown") ;; TODO - better name for this?
+     (header-label "Exception")
      (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
      (:reason problem)
      (printer/indent (string/join ", " (:val problem)))
@@ -399,9 +397,8 @@ should satisfy
     (regex-failure? problem)
     :problem/regex-failure
 
-    ;; TODO - rename
-    (fspec-failure? problem)
-    :problem/fspec-failure
+    (fspec-exception-failure? problem)
+    :problem/fspec-exception-failure
 
     (fspec-ret-failure? problem)
     :problem/fspec-ret-failure
