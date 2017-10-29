@@ -1380,6 +1380,11 @@ Detected 1 error\n"
       50
       [spec spec-gen
        form gen/any-printable]
+      ;; Can't reliably test fspecs until
+      ;; https://dev.clojure.org/jira/browse/CLJ-2258 is fixed
+      ;; because the algorithm to fix up the 'in' paths depends
+      ;; on the non-conforming value existing somewhere within
+      ;; the top-level form
       (when-not (some
                  #{"clojure.spec.alpha/fspec"}
                  (->> spec
