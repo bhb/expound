@@ -319,7 +319,6 @@ with args:
      (printer/indent (string/join ", " (:val problem)))
      (if (:print-specs? opts) (relevant-specs problems) ""))))
 
-;; HERE
 (defmethod problem-group-str :problem/fspec-ret-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
