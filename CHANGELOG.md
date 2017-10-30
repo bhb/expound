@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file. This change
 
 ## [0.3.2] - 2017-10-29
 
-#### Fixed
+### Fixed
 - Bug where duplicate predicates were printed twice
 - [Bug with `fspec` specs](https://github.com/bhb/expound/issues/25)
 
