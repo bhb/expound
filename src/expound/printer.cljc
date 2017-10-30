@@ -1,10 +1,39 @@
 (ns expound.printer
   (:require [clojure.string :as string]
             [clojure.spec.alpha :as s]
-            [clojure.pprint :as pprint])
+            [clojure.pprint :as pprint]
+            #?(:clj [clojure.main :as clojure.main]))
   (:refer-clojure :exclude [format]))
 
 (def indent-level 2)
+
+;;;; public
+
+(defn elide-core-ns [s]
+  #?(:cljs (-> s
+               (string/replace "cljs.core/" "")
+               (string/replace "cljs/core/" ""))
+     :clj (string/replace s "clojure.core/" "")))
+
+(defn pprint-fn [f]
+  (-> #?(:clj
+         (let [[_ ns-n f-n] (re-matches #"(.*)\$(.*?)(__[0-9]+)?" (str f))]
+           (str
+            (clojure.main/demunge ns-n) "/"
+            (clojure.main/demunge f-n)))
+         :cljs
+         (let [fn-parts (string/split (second (re-find
+                                               #"function ([^\(]+)"
+                                               (str f)))
+                                      #"\$")
+               ns-n (string/join "." (butlast fn-parts))
+               fn-n  (last fn-parts)]
+           (str
+            (demunge-str ns-n) "/"
+            (demunge-str fn-n))))
+      (elide-core-ns)
+      (string/replace #"--\d+" "")
+      (string/replace #"@[a-zA-Z0-9]+" "")))
 
 #?(:cljs
    (defn format [fmt & args]
@@ -17,7 +46,9 @@
 (defn pprint-str
   "Returns the pretty-printed string"
   [x]
-  (pprint/write x :stream nil))
+  (if (fn? x)
+    (pprint-fn x)
+    (pprint/write x :stream nil)))
 
 (s/fdef no-trailing-whitespace
         :args (s/cat :s string?)
@@ -53,4 +84,4 @@
      (string/join "\n"
                   (into [(str (apply str (repeat first-line-indent " ")) line)]
                         (map #(str (apply str (repeat rest-lines-indent " ")) %) lines))))))
--
+

@@ -43,13 +43,6 @@
        (expound/expound-str string? 1)
        (with-out-str (expound/expound string? 1)))))
 
-(deftest pprint-fn
-  (is (= "string?"
-         (expound/pprint-fn (::s/spec (s/explain-data string? 1)))))
-  (is (=
-       "expound.alpha/expound"
-       (expound/pprint-fn expound/expound))))
-
 (deftest predicate-spec
   (is (= (pf "-- Spec failed --------------------
 
@@ -1384,9 +1377,14 @@ Detected 1 error\n"
       ;; At 50, it might find a bug in failures for the
       ;; :ring/handler spec, but keep it plugged in, since it
       ;; takes a long time to shrink
-      50
+      30
       [spec spec-gen
        form gen/any-printable]
+      ;; Can't reliably test fspecs until
+      ;; https://dev.clojure.org/jira/browse/CLJ-2258 is fixed
+      ;; because the algorithm to fix up the 'in' paths depends
+      ;; on the non-conforming value existing somewhere within
+      ;; the top-level form
       (when-not (some
                  #{"clojure.spec.alpha/fspec"}
                  (->> spec
@@ -1414,7 +1412,7 @@ Detected 1 error\n"
    (deftest real-spec-tests-mutated-valid-value
      (checking
       "for any real-world spec and any mutated valid data, explain-str returns a string"
-      50
+      30
       [spec spec-gen
        mutate-path (gen/vector gen/pos-int)]
       (when-not (some
@@ -1522,4 +1520,192 @@ should satisfy
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :duplicate-preds/str-or-str 1)))))
+
+(s/def :fspec-test/div (s/fspec
+                        :args (s/cat :x int? :y pos-int?)))
+
+(defn my-div [x y]
+  (assert (not (zero? (/ x y)))))
+
+(deftest fspec-exception-test
+  (testing "args that throw exception"
+    (is (= (pf "-- Exception ----------------------
+
+  expound.alpha-test/my-div
+
+threw exception: 'Assert failed: (not (zero? (/ x y)))'
+
+with args:
+
+  0, 1
+
+-- Relevant specs -------
+
+:fspec-test/div:
+  (pf.spec.alpha/fspec
+   :args
+   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
+   :ret
+   pf.core/any?
+   :fn
+   nil)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :fspec-test/div my-div)))
+
+    (is (= (pf "-- Exception ----------------------
+
+  [expound.alpha-test/my-div]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+threw exception: 'Assert failed: (not (zero? (/ x y)))'
+
+with args:
+
+  0, 1
+
+-- Relevant specs -------
+
+:fspec-test/div:
+  (pf.spec.alpha/fspec
+   :args
+   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
+   :ret
+   pf.core/any?
+   :fn
+   nil)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str (s/coll-of :fspec-test/div) [my-div])))))
+
+(s/def :fspec-ret-test/my-int pos-int?)
+(s/def :fspec-ret-test/plus (s/fspec
+                             :args (s/cat :x int? :y pos-int?)
+                             :ret :fspec-ret-test/my-int))
+(defn my-plus [x y]
+  (+ x y))
+
+(deftest fspec-ret-test
+  (testing "invalid ret"
+    (is (= (pf "-- Spec failed --------------------
+
+  expound.alpha-test/my-plus
+
+returned an invalid value
+
+  0
+
+should satisfy
+
+  pos-int?
+
+-- Relevant specs -------
+
+:fspec-ret-test/my-int:
+  pf.core/pos-int?
+:fspec-ret-test/plus:
+  (pf.spec.alpha/fspec
+   :args
+   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
+   :ret
+   :fspec-ret-test/my-int
+   :fn
+   nil)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :fspec-ret-test/plus my-plus)))
+
+    (is (= (pf "-- Spec failed --------------------
+
+  [expound.alpha-test/my-plus]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+returned an invalid value
+
+  0
+
+should satisfy
+
+  pos-int?
+
+-- Relevant specs -------
+
+:fspec-ret-test/my-int:
+  pf.core/pos-int?
+:fspec-ret-test/plus:
+  (pf.spec.alpha/fspec
+   :args
+   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
+   :ret
+   :fspec-ret-test/my-int
+   :fn
+   nil)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus])))))
+
+(s/def :fspec-fn-test/minus (s/fspec
+                             :args (s/cat :x int? :y int?)
+                             :fn (s/and
+                                  #(< (:ret %) (-> % :args :x))
+                                  #(< (:ret %) (-> % :args :y)))))
+
+(defn my-minus [x y]
+  (- x y))
+
+(deftest fspec-fn-test
+  (testing "invalid ret"
+    (is (= (pf "-- Spec failed --------------------
+
+  expound.alpha-test/my-minus
+
+failed spec. Function arguments and return value
+
+  {:args {:x 0, :y 0}, :ret 0}
+
+should satisfy
+
+  %s
+
+
+
+-------------------------
+Detected 1 error\n"
+
+               #?(:clj
+                  "(fn
+   [%]
+   (< (:ret %) (-> % :args :x)))"
+                  :cljs "(fn [%] (< (:ret %) (-> % :args :x)))"))
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str :fspec-fn-test/minus my-minus))))
+
+    (is (= (pf "-- Spec failed --------------------
+
+  [expound.alpha-test/my-minus]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+failed spec. Function arguments and return value
+
+  {:args {:x 0, :y 0}, :ret 0}
+
+should satisfy
+
+  %s
+
+
+
+-------------------------
+Detected 1 error\n"
+               #?(:clj
+                  "(fn
+   [%]
+   (< (:ret %) (-> % :args :x)))"
+                  :cljs "(fn [%] (< (:ret %) (-> % :args :x)))"))
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str (s/coll-of :fspec-fn-test/minus) [my-minus]))))))
 
