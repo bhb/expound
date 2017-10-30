@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.3.2] - 2017-10-29
+
 #### Fixed
 - Bug where duplicate predicates were printed twice
 - [Bug with `fspec` specs](https://github.com/bhb/expound/issues/25)
@@ -54,7 +56,8 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/bhb/expound/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/bhb/expound/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/bhb/expound/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/bhb/expound/compare/v0.2.0...v0.2.1
