@@ -333,7 +333,7 @@ should satisfy
 %s
 
 %s"
-     (header-label "Spec failed")
+     (header-label "Function spec failed")
      (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
      (printer/indent (pr-str (:val problem)))
      (printer/indent (pr-pred (:pred problem) (:spec problem)))
@@ -356,7 +356,7 @@ should satisfy
 %s
 
 %s"
-     (header-label "Spec failed")
+     (header-label "Function spec failed")
      (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
      (printer/indent (pr-str (:val problem)))
      (printer/indent (pr-pred (:pred problem) (:spec problem)))

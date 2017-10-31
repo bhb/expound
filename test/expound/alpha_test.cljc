@@ -1593,7 +1593,7 @@ Detected 1 error\n")
 
 (deftest fspec-ret-test
   (testing "invalid ret"
-    (is (= (pf "-- Spec failed --------------------
+    (is (= (pf "-- Function spec failed -----------
 
   expound.alpha-test/my-plus
 
@@ -1622,7 +1622,7 @@ should satisfy
 Detected 1 error\n")
            (expound/expound-str :fspec-ret-test/plus my-plus)))
 
-    (is (= (pf "-- Spec failed --------------------
+    (is (= (pf "-- Function spec failed -----------
 
   [expound.alpha-test/my-plus]
    ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1663,7 +1663,7 @@ Detected 1 error\n")
 
 (deftest fspec-fn-test
   (testing "invalid ret"
-    (is (= (pf "-- Spec failed --------------------
+    (is (= (pf "-- Function spec failed -----------
 
   expound.alpha-test/my-minus
 
@@ -1688,7 +1688,7 @@ Detected 1 error\n"
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
              (s/explain-str :fspec-fn-test/minus my-minus))))
 
-    (is (= (pf "-- Spec failed --------------------
+    (is (= (pf "-- Function spec failed -----------
 
   [expound.alpha-test/my-minus]
    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1715,7 +1715,7 @@ Detected 1 error\n"
 
 (deftest ifn-fspec-test
   (testing "keyword ifn / ret failure"
-    (is (= "-- Spec failed --------------------
+    (is (= "-- Function spec failed -----------
 
   [:foo]
    ^^^^
@@ -1736,7 +1736,7 @@ Detected 1 error\n"
              (s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
                             [:foo])))))
   (testing "set ifn / ret failure"
-    (is (= "-- Spec failed --------------------
+    (is (= "-- Function spec failed -----------
 
   [#{}]
    ^^^
