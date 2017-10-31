@@ -78,7 +78,18 @@
                     (apply str (repeat max-width "^")))))
 
 (defn- adjust-in [form problem]
-  (assoc problem :expound/in (paths/in-with-kps form (:val problem) (:in problem) [])))
+  ;; Remove try/catch when
+  ;; https://dev.clojure.org/jira/browse/CLJ-2192 or
+  ;; https://dev.clojure.org/jira/browse/CLJ-2258 are fixed
+  (try
+    (assoc problem :expound/in (paths/in-with-kps form (:val problem) (:in problem) []))
+    (catch #?(:cljs :default
+              :clj Exception) e
+      (if (or
+           (= '(apply fn) (:pred problem))
+           (#{:ret} (first (:path problem))))
+        (assoc problem :expound/in (:in problem))
+        (throw e)))))
 
 (defn- adjust-path [failure problem]
   (assoc problem :expound/path

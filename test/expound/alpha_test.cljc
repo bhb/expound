@@ -1533,7 +1533,9 @@ Detected 1 error\n")
 
   expound.alpha-test/my-div
 
-threw exception: 'Assert failed: (not (zero? (/ x y)))'
+threw exception
+
+  \"Assert failed: (not (zero? (/ x y)))\"
 
 with args:
 
@@ -1559,7 +1561,9 @@ Detected 1 error\n")
   [expound.alpha-test/my-div]
    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-threw exception: 'Assert failed: (not (zero? (/ x y)))'
+threw exception
+
+  \"Assert failed: (not (zero? (/ x y)))\"
 
 with args:
 
@@ -1709,3 +1713,68 @@ Detected 1 error\n"
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
              (s/explain-str (s/coll-of :fspec-fn-test/minus) [my-minus]))))))
 
+(deftest ifn-fspec-test
+  (testing "keyword ifn / ret failure"
+    (is (= "-- Spec failed --------------------
+
+  [:foo]
+   ^^^^
+
+returned an invalid value
+
+  nil
+
+should satisfy
+
+  int?
+
+
+
+-------------------------
+Detected 1 error\n"
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
+                            [:foo])))))
+  (testing "set ifn / ret failure"
+    (is (= "-- Spec failed --------------------
+
+  [#{}]
+   ^^^
+
+returned an invalid value
+
+  nil
+
+should satisfy
+
+  int?
+
+
+
+-------------------------
+Detected 1 error\n"
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
+                            [#{}])))))
+  #?(:clj
+     (testing "vector ifn / exception failure"
+       (is (= "-- Exception ----------------------
+
+  [[]]
+   ^^
+
+threw exception
+
+  nil
+
+with args:
+
+  0
+
+
+
+-------------------------
+Detected 1 error\n"
+              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+                (s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
+                               [[]])))))))
