@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+- [Bug with non-function values that can be treated as functions](https://github.com/bhb/expound/issues/41)
+
 ## [0.3.2] - 2017-10-29
 
 ### Fixed

@@ -174,32 +174,27 @@ should have additional elements. The next element is named `%s` and satisfies
   (let [[_multi-spec mm retag]  (s/form spec)]
     {:mm mm :retag retag}))
 
-(defn missing-spec? [problem]
+(defn missing-spec? [_failure problem]
   (= "no method" (:reason problem)))
 
-(defn not-in-set? [problem]
+(defn not-in-set? [_failure problem]
   (set? (:pred problem)))
 
-(defn fspec-exception-failure? [problem]
-  (= '(apply fn) (:pred problem)))
+(defn fspec-exception-failure? [failure problem]
+  (and (not= :instrument failure)
+       (= '(apply fn) (:pred problem))))
 
-(defn fspec-ret-failure? [problem]
+(defn fspec-ret-failure? [failure problem]
   (and
-   (= :ret (first (:path problem)))
-   (first (:via problem))
-   (seq? (s/form (first (:via problem))))
-   (= (symbol (str (namespace ::s/fspec) "/fspec"))
-      (first (s/form (first (:via problem)))))))
+   (not= :instrument failure)
+   (= :ret (first (:path problem)))))
 
-(defn fspec-fn-failure? [problem]
+(defn fspec-fn-failure? [failure problem]
   (and
-   (= :fn (first (:path problem)))
-   (first (:via problem))
-   (seq? (s/form (first (:via problem))))
-   (= (symbol (str (namespace ::s/fspec) "/fspec"))
-      (first (s/form (first (:via problem)))))))
+   (not= :instrument failure)
+   (= :fn (first (:path problem)))))
 
-(defn missing-key? [problem]
+(defn missing-key? [_failure problem]
   #?(:cljs
      (let [pred (:pred problem)]
        (and (list? pred)
@@ -218,7 +213,7 @@ should have additional elements. The next element is named `%s` and satisfies
                (= 'clojure.core/fn fn)
                (= 'clojure.core/contains? contains)))))))
 
-(defn regex-failure? [problem]
+(defn regex-failure? [_problem problem]
   (contains? #{"Insufficient input" "Extra input"} (:reason problem)))
 
 (defn no-method [spec-name val path problem]
@@ -306,7 +301,9 @@ should be%s: %s
 
 %s
 
-threw exception: '%s'
+threw exception 
+
+%s
 
 with args:
 
@@ -315,7 +312,7 @@ with args:
 %s"
      (header-label "Exception")
      (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
-     (:reason problem)
+     (printer/indent (pr-str (:reason problem)))
      (printer/indent (string/join ", " (:val problem)))
      (if (:print-specs? opts) (relevant-specs problems) ""))))
 
@@ -336,7 +333,7 @@ should satisfy
 %s
 
 %s"
-     (header-label "Spec failed")
+     (header-label "Function spec failed")
      (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
      (printer/indent (pr-str (:val problem)))
      (printer/indent (pr-pred (:pred problem) (:spec problem)))
@@ -359,7 +356,7 @@ should satisfy
 %s
 
 %s"
-     (header-label "Spec failed")
+     (header-label "Function spec failed")
      (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
      (printer/indent (pr-str (:val problem)))
      (printer/indent (pr-pred (:pred problem) (:spec problem)))
@@ -382,27 +379,27 @@ should satisfy
    (preds problems)
    (if (:print-specs? opts) (relevant-specs problems) "")))
 
-(defn problem-type [problem]
+(defn problem-type [failure problem]
   (cond
-    (not-in-set? problem)
+    (not-in-set? failure problem)
     :problem/not-in-set
 
-    (missing-key? problem)
+    (missing-key? failure problem)
     :problem/missing-key
 
-    (missing-spec? problem)
+    (missing-spec? failure problem)
     :problem/missing-spec
 
-    (regex-failure? problem)
+    (regex-failure? failure problem)
     :problem/regex-failure
 
-    (fspec-exception-failure? problem)
+    (fspec-exception-failure? failure problem)
     :problem/fspec-exception-failure
 
-    (fspec-ret-failure? problem)
+    (fspec-ret-failure? failure problem)
     :problem/fspec-ret-failure
 
-    (fspec-fn-failure? problem)
+    (fspec-fn-failure? failure problem)
     :problem/fspec-fn-failure
 
     :else
@@ -446,7 +443,7 @@ should satisfy
               grouped-problems (->> explain-data'
                                     :expound/problems
                                     (problems/leaf-only)
-                                    (group-by (juxt :expound/in problem-type))
+                                    (group-by (juxt :expound/in (partial problem-type (::s/failure explain-data))))
                                     ;; We attempt to sort the problems by path, but it's not feasible to sort in
                                     ;; all cases, since paths could contain arbitrary user-defined data structures.
                                     ;; If there is an error, we just give up on sorting.
