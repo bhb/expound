@@ -819,7 +819,7 @@ should satisfy
 -- Relevant specs -------
 
 :test-assert/name:
-  clojure.core/string?
+  cljs.core/string?
 
 -------------------------
 Detected 1 error\n"
