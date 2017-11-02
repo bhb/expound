@@ -102,6 +102,12 @@
 
 (defn add-caller [explain-data])
 
+;; via is slightly different when using s/assert
+(defn fix-via [spec problem]
+  (if (= spec (first (:via problem)))
+    (assoc problem :expound/via (:via problem))
+    (assoc problem :expound/via (into [spec] (:via problem)))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn leaf-only
@@ -128,6 +134,7 @@
         problems' (map (comp (partial adjust-in form)
                              (partial adjust-path failure)
                              (partial add-spec spec)
+                             (partial fix-via spec)
                              #(assoc % :expound/form form))
                        problems)]
     (assoc explain-data
@@ -179,3 +186,4 @@
                              (str "\n" (highlight-line prefix (printer/pprint-str value-at-path))))]
     ;;highlighted-line
     (printer/no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))
+

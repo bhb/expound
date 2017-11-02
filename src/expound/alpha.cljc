@@ -61,6 +61,13 @@
      (printer/indent (printer/pprint-str (s/form spec))))
     (printer/pprint-str (s/form spec))))
 
+;; via is different when using asserts
+(defn spec+via [problem]
+  (let [{:keys [via spec]} problem]
+    (if (keyword? spec)
+      (into [spec] via)
+      via)))
+
 (s/fdef specs
         :args (s/cat :problems :spec/problems)
         :ret :spec/specs)
@@ -68,7 +75,7 @@
   "Given a collection of problems, returns the specs for those problems, with duplicates removed"
   [problems]
   (->> problems
-       (map :via)
+       (map spec+via)
        flatten
        distinct))
 
@@ -217,7 +224,7 @@ should have additional elements. The next element is named `%s` and satisfies
   (contains? #{"Insufficient input" "Extra input"} (:reason problem)))
 
 (defn no-method [spec-name val path problem]
-  (let [sp (s/spec (last (:via problem)))
+  (let [sp (s/spec (last (:expound/via problem)))
         {:keys [mm retag]} (multi-spec-parts sp)]
     (printer/format
      "Cannot find spec for
@@ -425,7 +432,7 @@ should satisfy
     ""))
 
 (defn spec-name [ed]
-  (if (::s/failure ed)
+  (if (#{:instrument} (::s/failure ed))
     (-> ed ::s/problems first :path first)
     nil))
 

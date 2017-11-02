@@ -816,7 +816,10 @@ should satisfy
 
   string?
 
+-- Relevant specs -------
 
+:test-assert/name:
+  clojure.core/string?
 
 -------------------------
 Detected 1 error\n"
@@ -835,7 +838,10 @@ should satisfy
 
   string?
 
+-- Relevant specs -------
 
+:test-assert/name:
+  clojure.core/string?
 
 -------------------------
 Detected 1 error\n"
@@ -1392,6 +1398,35 @@ Detected 1 error\n"
                       (tree-seq coll? identity)
                       (map str)))
         (is (string? (expound/expound-str spec form)))))))
+
+#?(:clj
+   (deftest assert-on-real-spec-tests
+     (checking
+      "for any real-world spec and any data, assert returns an error that matches explain-str"
+      50
+      [spec spec-gen
+       form gen/any-printable]
+      ;; Can't reliably test fspecs until
+      ;; https://dev.clojure.org/jira/browse/CLJ-2258 is fixed
+      ;; because the algorithm to fix up the 'in' paths depends
+      ;; on the non-conforming value existing somewhere within
+      ;; the top-level form
+      (when-not (some
+                 #{"clojure.spec.alpha/fspec"}
+                 (->> spec
+                      inline-specs
+                      (tree-seq coll? identity)
+                      (map str)))
+        (when-not (s/valid? spec form)
+          (let [expected-err-msg (str "Spec assertion failed\n"
+                                      (binding [s/*explain-out* (expound/custom-printer {:print-specs? true})]
+                                        (s/explain-str spec form)))]
+            (is (thrown-with-msg?
+                 #?(:cljs :default :clj Exception)
+                 (re-pattern (java.util.regex.Pattern/quote expected-err-msg))
+                 (binding [s/*explain-out* expound/printer]
+                   (s/assert spec form)))
+                (str "Expected: " expected-err-msg))))))))
 
 (deftest test-mutate
   (checking
