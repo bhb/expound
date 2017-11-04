@@ -23,5 +23,9 @@ module.exports = function(config) {
     autoWatch: false,
     logLevel: config.LOG_INFO,
     concurrency: 1,
+    // Workarounds for timeout
+    browserNoActivityTimeout: 20000,
+    transports: ['polling'],
+    browserDisconnectTolerance: 5
   })
 };
