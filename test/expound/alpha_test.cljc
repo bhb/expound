@@ -1562,6 +1562,16 @@ Detected 1 error\n")
 (defn my-div [x y]
   (assert (not (zero? (/ x y)))))
 
+(defn  until-unsuccessful [f]
+  (let [nil-or-failure #(if (= "Success!\n" %)
+                          nil
+                          %)]
+    (or (nil-or-failure (f))
+        (nil-or-failure (f))
+        (nil-or-failure (f))
+        (nil-or-failure (f))
+        (nil-or-failure (f)))))
+
 (deftest fspec-exception-test
   (testing "args that throw exception"
     (is (= (pf "-- Exception ----------------------
@@ -1589,7 +1599,9 @@ with args:
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :fspec-test/div my-div)))
+
+           ;;
+           (until-unsuccessful #(expound/expound-str :fspec-test/div my-div))))
 
     (is (= (pf "-- Exception ----------------------
 
@@ -1617,7 +1629,7 @@ with args:
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str (s/coll-of :fspec-test/div) [my-div])))))
+           (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-test/div) [my-div]))))))
 
 (s/def :fspec-ret-test/my-int pos-int?)
 (s/def :fspec-ret-test/plus (s/fspec
@@ -1655,7 +1667,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :fspec-ret-test/plus my-plus)))
+           (until-unsuccessful #(expound/expound-str :fspec-ret-test/plus my-plus))))
 
     (is (= (pf "-- Function spec failed -----------
 
@@ -1685,7 +1697,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus])))))
+           (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus]))))))
 
 (s/def :fspec-fn-test/minus (s/fspec
                              :args (s/cat :x int? :y int?)
@@ -1721,7 +1733,7 @@ Detected 1 error\n"
    (< (:ret %) (-> % :args :x)))"
                   :cljs "(fn [%] (< (:ret %) (-> % :args :x)))"))
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str :fspec-fn-test/minus my-minus))))
+             (until-unsuccessful #(s/explain-str :fspec-fn-test/minus my-minus)))))
 
     (is (= (pf "-- Function spec failed -----------
 
@@ -1746,7 +1758,7 @@ Detected 1 error\n"
    (< (:ret %) (-> % :args :x)))"
                   :cljs "(fn [%] (< (:ret %) (-> % :args :x)))"))
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str (s/coll-of :fspec-fn-test/minus) [my-minus]))))))
+             (until-unsuccessful #(s/explain-str (s/coll-of :fspec-fn-test/minus) [my-minus])))))))
 
 (deftest ifn-fspec-test
   (testing "keyword ifn / ret failure"
@@ -1768,10 +1780,10 @@ should satisfy
 -------------------------
 Detected 1 error\n"
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
-                            [:foo])))))
-  (testing "set ifn / ret failure"
-    (is (= "-- Function spec failed -----------
+             (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
+                                                 [:foo])))))
+    (testing "set ifn / ret failure"
+      (is (= "-- Function spec failed -----------
 
   [#{}]
    ^^^
@@ -1788,9 +1800,9 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
-                            [#{}])))))
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
+                                                   [#{}])))))))
   #?(:clj
      (testing "vector ifn / exception failure"
        (is (= "-- Exception ----------------------
@@ -1811,5 +1823,5 @@ with args:
 -------------------------
 Detected 1 error\n"
               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-                (s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
-                               [[]])))))))
+                (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
+                                                    [[]]))))))))
