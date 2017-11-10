@@ -97,7 +97,7 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 (binding [s/*explain-out* expound/printer]
   (s/assert :example.place/city 1))
 
-;; Or set it globally
+;; Or set it for the current thread.
 (set! s/*explain-out* expound/printer)
 (s/assert :example.place/city 1)
 
@@ -115,6 +115,11 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 ;; You can use `explain` without converting to expound
 (s/explain :example.place/city 123)
 ```
+
+If you are enabling Expound in a non-REPL environment, remember that `set!` will only change `s/*explain-out*` in the *current thread*. If your program spawns additional threads (e.g. a web server), you can set `s/*explain-out*` for all threads with `(alter-var-root #'s/*explain-out* (constantly expound/printer))`. This won't work (and is not necessary) in CLJS.
+
+[Using `set!` will also not work within an uberjar](https://github.com/bhb/expound/issues/19).
+
 
 ### Configuring the printer
 
