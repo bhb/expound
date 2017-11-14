@@ -1,5 +1,6 @@
 (ns expound.paths
-  (:require [clojure.spec.alpha :as s]))
+  (:require [clojure.spec.alpha :as s]
+            [expound.util :as util]))
 
 ;;;;;; specs ;;;;;;
 
@@ -57,6 +58,16 @@
        (= (pr-str x)
           (pr-str y))))
 
+(defn both-nan? [x y]
+  (and (util/nan? x)
+       (util/nan? y)))
+
+(defn equalish? [x y]
+  (or
+   (= x y)
+   (fn-equal x y)
+   (both-nan? x y)))
+
 (defn in-with-kps-maps-as-seqs [form val in in']
   (let [[k & rst] in
         [idx & rst2] rst]
@@ -65,9 +76,7 @@
       ::not-found
 
       (and (empty? in)
-           (or
-            (= form val)
-            (fn-equal form val)))
+           (equalish? form val))
       in'
 
       ;; detect a `:in` path that points to a key/value pair in a coll-of spec
@@ -116,9 +125,7 @@
     (let [[k & rst] in]
       (cond
         (and (empty? in)
-             (or
-              (= form val)
-              (fn-equal form val)))
+             (equalish? form val))
         in'
 
         (associative? form)
@@ -137,9 +144,7 @@
           [idx & rst2] rst]
       (cond
         (and (empty? in)
-             (or
-              (= form val)
-              (fn-equal form val)))
+             (equalish? form val))
         in'
 
         ;; detect a `:in` path that points at a key in a map-of spec

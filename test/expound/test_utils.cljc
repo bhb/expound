@@ -8,7 +8,8 @@
                :clj [orchestra.spec.test :as st])
             [expound.alpha :as expound]
             [clojure.test :as ct]
-            [com.gfredericks.test.chuck.clojure-test :as chuck]))
+            [com.gfredericks.test.chuck.clojure-test :as chuck]
+            [expound.util :as util]))
 
 ;; test.chuck defines a reporter for the shrunk results, but only for the
 ;; default reporter (:cljs.test/default). Since karma uses its own reporter,
@@ -30,9 +31,5 @@
   (test-fn)
   (st/unstrument))
 
-(defn nan? [x]
-  #?(:clj false
-     :cljs (and (number? x) (js/isNaN x))))
-
 (defn contains-nan? [x]
-  (boolean (some nan? (tree-seq coll? identity x))))
+  (boolean (some util/nan? (tree-seq coll? identity x))))
