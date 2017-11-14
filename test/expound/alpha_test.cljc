@@ -1826,16 +1826,20 @@ Detected 1 error\n"
                 (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
                                                     [[]]))))))))
 
-#?(:cljs
-   (deftest form-containing-nan
-     (checking
-      "for any value including nans, returns a string"
-      30
-      [form (gen/frequency
-             [[1 (gen/elements
-                  [js/NaN
-                   '(js/NaN)
-                   [js/NaN]
-                   {js/NaN js/NaN}])]
-              [5 gen/any-printable]])]
-      (is (string? (expound/expound-str (constantly false) form))))))
+(deftest form-containing-incomparables
+  (checking
+   "for any value including NaN, or Infinity, expound returns a string"
+   30
+   [form (gen/frequency
+          [[1 (gen/elements
+               [##NaN
+                ##Inf
+                ##-Inf
+                '(##NaN ##Inf ##-Inf)
+                [##NaN ##Inf ##-Inf]
+                {##NaN ##NaN
+                 ##Inf ##Inf
+                 ##-Inf ##-Inf}])]
+           [5 gen/any-printable]])]
+   (prn {:form form })
+   (is (string? (expound/expound-str (constantly false) form)))))

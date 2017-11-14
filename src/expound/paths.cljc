@@ -1,5 +1,6 @@
 (ns expound.paths
-  (:require [clojure.spec.alpha :as s]))
+  (:require [clojure.spec.alpha :as s]
+            [expound.util :as util]))
 
 ;;;;;; specs ;;;;;;
 
@@ -57,19 +58,15 @@
        (= (pr-str x)
           (pr-str y))))
 
-(defn nan? [x]
-  #?(:clj false
-     :cljs (and (number? x) (js/isNaN x))))
-
-(defn nan-equal? [x y]
-  (and (nan? x)
-       (nan? y)))
+(defn both-nan? [x y]
+  (and (util/nan? x)
+       (util/nan? y)))
 
 (defn equalish? [x y]
   (or
    (= x y)
    (fn-equal x y)
-   (nan-equal? x y)))
+   (both-nan? x y)))
 
 (defn in-with-kps-maps-as-seqs [form val in in']
   (let [[k & rst] in
