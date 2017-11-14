@@ -18,19 +18,23 @@
 (defn pprint-fn [f]
   (-> #?(:clj
          (let [[_ ns-n f-n] (re-matches #"(.*)\$(.*?)(__[0-9]+)?" (str f))]
-           (str
-            (clojure.main/demunge ns-n) "/"
-            (clojure.main/demunge f-n)))
+           (if (re-matches #"^fn__\d+\@.*$" f-n)
+             "(anonymous function)"
+             (str
+              (clojure.main/demunge ns-n) "/"
+              (clojure.main/demunge f-n))))
          :cljs
          (let [fn-parts (string/split (second (re-find
-                                               #"function ([^\(]+)"
-                                               (str f)))
+                                               #"object\[([^\(]+)\]"
+                                               (pr-str f)))
                                       #"\$")
                ns-n (string/join "." (butlast fn-parts))
                fn-n  (last fn-parts)]
-           (str
-            (demunge-str ns-n) "/"
-            (demunge-str fn-n))))
+           (if (empty? ns-n)
+             "(anonymous function)"
+             (str
+              (demunge-str ns-n) "/"
+              (demunge-str fn-n)))))
       (elide-core-ns)
       (string/replace #"--\d+" "")
       (string/replace #"@[a-zA-Z0-9]+" "")))

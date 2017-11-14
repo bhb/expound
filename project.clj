@@ -87,6 +87,7 @@
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
              :test-common {:dependencies [[org.clojure/test.check "0.9.0"]
+                                          [org.clojure/tools.namespace "0.2.11"] ; solves https://github.com/jakemcc/lein-test-refresh/issues/39
                                           [com.gfredericks/test.chuck "0.2.8"]
                                           [orchestra "2017.08.13"]
                                           [org.clojure/core.specs.alpha "0.1.24"]
