@@ -57,6 +57,20 @@
        (= (pr-str x)
           (pr-str y))))
 
+(defn nan? [x]
+  #?(:clj false
+     :cljs (and (number? x) (js/isNaN x))))
+
+(defn nan-equal? [x y]
+  (and (nan? x)
+       (nan? y)))
+
+(defn equalish? [x y]
+  (or
+   (= x y)
+   (fn-equal x y)
+   (nan-equal? x y)))
+
 (defn in-with-kps-maps-as-seqs [form val in in']
   (let [[k & rst] in
         [idx & rst2] rst]
@@ -65,9 +79,7 @@
       ::not-found
 
       (and (empty? in)
-           (or
-            (= form val)
-            (fn-equal form val)))
+           (equalish? form val))
       in'
 
       ;; detect a `:in` path that points to a key/value pair in a coll-of spec
@@ -116,9 +128,7 @@
     (let [[k & rst] in]
       (cond
         (and (empty? in)
-             (or
-              (= form val)
-              (fn-equal form val)))
+             (equalish? form val))
         in'
 
         (associative? form)
@@ -137,9 +147,7 @@
           [idx & rst2] rst]
       (cond
         (and (empty? in)
-             (or
-              (= form val)
-              (fn-equal form val)))
+             (equalish? form val))
         in'
 
         ;; detect a `:in` path that points at a key in a map-of spec

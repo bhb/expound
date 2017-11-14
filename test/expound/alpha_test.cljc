@@ -1825,3 +1825,17 @@ Detected 1 error\n"
               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
                 (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
                                                     [[]]))))))))
+
+#?(:cljs
+   (deftest form-containing-nan
+     (checking
+      "for any value including nans, returns a string"
+      30
+      [form (gen/frequency
+             [[1 (gen/elements
+                  [js/NaN
+                   '(js/NaN)
+                   [js/NaN]
+                   {js/NaN js/NaN}])]
+              [5 gen/any-printable]])]
+      (is (string? (expound/expound-str (constantly false) form))))))
