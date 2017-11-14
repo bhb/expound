@@ -1826,20 +1826,38 @@ Detected 1 error\n"
                 (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
                                                     [[]]))))))))
 
-(deftest form-containing-incomparables
-  (checking
-   "for any value including NaN, or Infinity, expound returns a string"
-   30
-   [form (gen/frequency
-          [[1 (gen/elements
-               [##NaN
-                ##Inf
-                ##-Inf
-                '(##NaN ##Inf ##-Inf)
-                [##NaN ##Inf ##-Inf]
-                {##NaN ##NaN
-                 ##Inf ##Inf
-                 ##-Inf ##-Inf}])]
-           [5 gen/any-printable]])]
-   (prn {:form form })
-   (is (string? (expound/expound-str (constantly false) form)))))
+#?(:clj
+   (deftest form-containing-incomparables
+     (checking
+      "for any value including NaN, or Infinity, expound returns a string"
+      30
+      [form (gen/frequency
+             [[1 (gen/elements
+                  [Double/NaN
+                   Double/POSITIVE_INFINITY
+                   Double/NEGATIVE_INFINITY
+                   '(Double/NaN Double/POSITIVE_INFINITY Double/NEGATIVE_INFINITY)
+                   [Double/NaN Double/POSITIVE_INFINITY Double/NEGATIVE_INFINITY]
+                   {Double/NaN Double/NaN
+                    Double/POSITIVE_INFINITY Double/POSITIVE_INFINITY
+                    Double/NEGATIVE_INFINITY Double/NEGATIVE_INFINITY}])]
+              [5 gen/any-printable]])]
+      (is (string? (expound/expound-str (constantly false) form))))))
+
+#?(:cljs
+   (deftest form-containing-incomparables
+     (checking
+      "for any value including NaN, or Infinity, expound returns a string"
+      30
+      [form (gen/frequency
+             [[1 (gen/elements
+                  [js/NaN
+                   js/Infinity
+                   js/-Infinity
+                   '(js/NaN js/Infinity js/-Infinity)
+                   [js/NaN js/Infinity js/-Infinity]
+                   {js/NaN js/NaN
+                    js/Infinity js/Infinity
+                    js/-Infinity js/-Infinity}])]
+              [5 gen/any-printable]])]
+      (is (string? (expound/expound-str (constantly false) form))))))
