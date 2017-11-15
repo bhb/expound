@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0-beta3" :scope "provided"]
                  [org.clojure/clojurescript "1.9.946" :scope "provided"]
-                 [org.clojure/spec.alpha "0.1.134" :scope "provided"]]
+                 [org.clojure/spec.alpha "0.1.143" :scope "provided"]]
 
   :plugins [[com.jakemccrary/lein-test-refresh "0.21.1"]
             [lein-cljfmt "0.5.7"]
@@ -72,10 +72,10 @@
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.7"]
                                   [figwheel-sidecar "0.5.14"]
                                   [com.cemerick/piggieback "0.2.2"]
-                                  [orchestra "2017.08.13"]
+                                  [orchestra "2017.11.12-1"]
                                   [org.clojure/core.specs.alpha "0.1.24"]
                                   [io.aviso/pretty "0.1.34"]
-                                  [vvvvalvalval/scope-capture "0.1.3"]
+                                  [vvvvalvalval/scope-capture "0.1.4"]
                                   [org.clojure/test.check "0.9.0"]]
                    :plugins [[io.aviso/pretty "0.1.34"]]
                    ;; need to add dev source path here to get user.clj loaded
@@ -89,13 +89,13 @@
              :test-common {:dependencies [[org.clojure/test.check "0.9.0"]
                                           [org.clojure/tools.namespace "0.2.11"] ; solves https://github.com/jakemcc/lein-test-refresh/issues/39
                                           [com.gfredericks/test.chuck "0.2.8"]
-                                          [orchestra "2017.08.13"]
+                                          [orchestra "2017.11.12-1"]
                                           [org.clojure/core.specs.alpha "0.1.24"]
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.2"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.3"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.11.1.0"] ; to test specs
-                                          [vvvvalvalval/scope-capture "0.1.3"]]}
+                                          [vvvvalvalval/scope-capture "0.1.4"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.14"]
