@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+
+- [Bug with explaining failures with NaN values](https://github.com/bhb/expound/issues/48)
+
 ## [0.3.3] - 2017-11-02
 
 ### Fixed
