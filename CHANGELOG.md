@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file. This change
 ### Fixed
 
 - [Bug with explaining failures with NaN values](https://github.com/bhb/expound/issues/48)
+- [Bug with printing specs which are anonymous functions](https://github.com/bhb/expound/issues/50)
 
 ## [0.3.3] - 2017-11-02
 
