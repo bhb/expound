@@ -26,7 +26,7 @@
               (clojure.main/demunge f-n))))
          :cljs
          (let [fn-parts (string/split (second (re-find
-                                               #"object\[([^\(]+)\]"
+                                               #"object\[([^\( \]]+).*(\n|\])?"
                                                (pr-str f)))
                                       #"\$")
                ns-n (string/join "." (butlast fn-parts))
