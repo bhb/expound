@@ -10,10 +10,10 @@
          (printer/pprint-fn (::s/spec (s/explain-data string? 1)))))
   (is (= "expound.alpha/expound"
          (printer/pprint-fn expound/expound)))
-  (is (= "(anonymous function)"
+  (is (= "<anonymous function>"
          (printer/pprint-fn #(inc %))))
-  (is (= "(anonymous function)"
+  (is (= "<anonymous function>"
          (printer/pprint-fn (constantly true))))
-  (is (= "(anonymous function)"
+  (is (= "<anonymous function>"
          (printer/pprint-fn (comp vec str)))))
 

@@ -6,6 +6,7 @@
   (:refer-clojure :exclude [format]))
 
 (def indent-level 2)
+(def anon-fn-str "<anonymous function>")
 
 ;;;; public
 
@@ -19,7 +20,7 @@
   (-> #?(:clj
          (let [[_ ns-n f-n] (re-matches #"(.*)\$(.*?)(__[0-9]+)?" (str f))]
            (if (re-matches #"^fn__\d+\@.*$" f-n)
-             "(anonymous function)"
+             anon-fn-str
              (str
               (clojure.main/demunge ns-n) "/"
               (clojure.main/demunge f-n))))
@@ -31,7 +32,7 @@
                ns-n (string/join "." (butlast fn-parts))
                fn-n  (last fn-parts)]
            (if (empty? ns-n)
-             "(anonymous function)"
+             anon-fn-str
              (str
               (demunge-str ns-n) "/"
               (demunge-str fn-n)))))
