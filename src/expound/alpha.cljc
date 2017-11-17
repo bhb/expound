@@ -5,6 +5,7 @@
             [expound.problems :as problems]
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
+            [clojure.set :as set]
             #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
             [expound.printer :as printer]))
@@ -259,19 +260,20 @@ should contain keys: %s
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
-  (printer/format
-   "%s
+  (let [combined-set (apply set/union (map :pred problems))]
+    (printer/format
+     "%s
 
 %s
 
 should be%s: %s
 
 %s"
-   (header-label "Spec failed")
-   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (if (= 1 (count (:pred (first problems)))) "" " one of")
-   (string/join "," (map #(str "`" % "`") (:pred (first problems))))
-   (if (:print-specs? opts) (relevant-specs problems) "")))
+     (header-label "Spec failed")
+     (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
+     (if (= 1 (count combined-set)) "" " one of")
+     (string/join "," (map #(str "`" % "`") combined-set))
+     (if (:print-specs? opts) (relevant-specs problems) ""))))
 
 (defmethod problem-group-str :problem/missing-spec [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
@@ -436,6 +438,16 @@ should satisfy
     (-> ed ::s/problems first :path first)
     nil))
 
+(defn sorted-and-grouped-problems [explain-data]
+  (->> explain-data
+       :expound/problems
+       (problems/leaf-only)
+       (group-by (juxt :expound/in (partial problem-type (::s/failure explain-data))))
+       ;; We attempt to sort the problems by path, but it's not feasible to sort in
+       ;; all cases, since paths could contain arbitrary user-defined data structures.
+       ;; If there is an error, we just give up on sorting.
+       (safe-sort-by first paths/compare-paths)))
+
 (defn printer-str [opts explain-data]
   (let [opts' (merge {:show-valid-values? false
                       :print-specs? true}
@@ -443,18 +455,11 @@ should satisfy
     (if-not explain-data
       "Success!\n"
       (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))]
-        (let [{:keys [::s/problems ::s/fn ::s/failure]} explain-data
-              explain-data' (problems/annotate explain-data) caller (:expound/caller explain-data')
+        (let [{:keys [::s/fn ::s/failure]} explain-data
+              explain-data' (problems/annotate explain-data)
+              caller (:expound/caller explain-data')
               form (:expound/form explain-data')
-
-              grouped-problems (->> explain-data'
-                                    :expound/problems
-                                    (problems/leaf-only)
-                                    (group-by (juxt :expound/in (partial problem-type (::s/failure explain-data))))
-                                    ;; We attempt to sort the problems by path, but it's not feasible to sort in
-                                    ;; all cases, since paths could contain arbitrary user-defined data structures.
-                                    ;; If there is an error, we just give up on sorting.
-                                    (safe-sort-by first paths/compare-paths))]
+              problems (sorted-and-grouped-problems explain-data')]
 
           (printer/no-trailing-whitespace
            (str
@@ -464,11 +469,11 @@ should satisfy
 
 %s
 Detected %s %s\n"
-             (string/join "\n\n" (for [[[in type] problems] grouped-problems]
+             (string/join "\n\n" (for [[[in type] problems] problems]
                                    (problem-group-str type (spec-name explain-data) form in problems opts')))
              (section-label)
-             (count grouped-problems)
-             (if (= 1 (count grouped-problems)) "error" "errors")))))))))
+             (count problems)
+             (if (= 1 (count problems)) "error" "errors")))))))))
 
 ;;;;;; public ;;;;;;
 
