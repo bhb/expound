@@ -88,6 +88,10 @@ Detected 1 error\n")
 (s/def :set-based-spec/nilable-tag (s/nilable :set-based-spec/tag))
 (s/def :set-based-spec/set-of-one #{:foobar})
 
+(s/def :set-based-spec/one-or-two (s/or
+                                   :one (s/cat :a #{:one})
+                                   :two (s/cat :b #{:two})))
+
 (deftest set-based-spec
   (testing "prints valid options"
     (is (= "-- Spec failed --------------------
@@ -104,6 +108,28 @@ should be one of: `:bar`,`:foo`
 -------------------------
 Detected 1 error\n"
            (expound/expound-str :set-based-spec/tag :baz))))
+
+  (testing "prints combined options for various specs"
+    (is (= "-- Spec failed --------------------
+
+  [:three]
+   ^^^^^^
+
+should be one of: `:one`,`:two`
+
+-- Relevant specs -------
+
+:set-based-spec/one-or-two:
+  (clojure.spec.alpha/or
+   :one
+   (clojure.spec.alpha/cat :a #{:one})
+   :two
+   (clojure.spec.alpha/cat :b #{:two}))
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str :set-based-spec/one-or-two [:three]))))
+
   ;; FIXME - we should fix nilable and or specs better so they are clearly grouped
   (testing "nilable version"
     (is (= (pf "-- Spec failed --------------------
