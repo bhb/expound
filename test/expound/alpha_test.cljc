@@ -110,7 +110,7 @@ Detected 1 error\n"
            (expound/expound-str :set-based-spec/tag :baz))))
 
   (testing "prints combined options for various specs"
-    (is (= "-- Spec failed --------------------
+    (is (= (pf "-- Spec failed --------------------
 
   [:three]
    ^^^^^^
@@ -120,14 +120,14 @@ should be one of: `:one`,`:two`
 -- Relevant specs -------
 
 :set-based-spec/one-or-two:
-  (clojure.spec.alpha/or
+  (pf.spec.alpha/or
    :one
-   (clojure.spec.alpha/cat :a #{:one})
+   (pf.spec.alpha/cat :a #{:one})
    :two
-   (clojure.spec.alpha/cat :b #{:two}))
+   (pf.spec.alpha/cat :b #{:two}))
 
 -------------------------
-Detected 1 error\n"
+Detected 1 error\n")
            (expound/expound-str :set-based-spec/one-or-two [:three]))))
 
   ;; FIXME - we should fix nilable and or specs better so they are clearly grouped
