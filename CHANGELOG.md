@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
-## [Unreleased]
+## [0.3.4] - 2017-11-19
 
 ### Fixed
 
@@ -69,7 +69,8 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.3.3...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.3.4...HEAD
+[0.3.4]: https://github.com/bhb/expound/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/bhb/expound/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/bhb/expound/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/bhb/expound/compare/v0.3.0...v0.3.1
