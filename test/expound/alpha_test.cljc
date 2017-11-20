@@ -1887,3 +1887,79 @@ Detected 1 error\n"
                     js/-Infinity js/-Infinity}])]
               [5 gen/any-printable]])]
       (is (string? (expound/expound-str (constantly false) form))))))
+
+(defmulti pet :pet/type)
+(defmethod pet :dog [_]
+  (s/keys))
+(defmethod pet :cat [_]
+  (s/keys))
+
+(defmulti animal :animal/type)
+(defmethod animal :dog [_]
+  (s/keys))
+(defmethod animal :cat [_]
+  (s/keys))
+
+(s/def :multispec-in-compound-spec/pet1 (s/and
+                                         map?
+                                         (s/multi-spec pet :pet/type)))
+
+(s/def :multispec-in-compound-spec/pet2 (s/or
+                                         :map1 (s/multi-spec pet :pet/type)
+                                         :map2 (s/multi-spec animal :animal/type)))
+
+(deftest multispec-in-compound-spec
+  (testing "multispec combined with s/and"
+    (is (= (pf "-- Missing spec -------------------
+
+Cannot find spec for
+
+   {:pet/type :fish}
+
+ Spec multimethod:      `expound.alpha-test/pet`
+ Dispatch function:     `:pet/type`
+ Dispatch value:        `:fish`
+
+
+-- Relevant specs -------
+
+:multispec-in-compound-spec/pet1:
+  (pf.spec.alpha/and
+   pf.core/map?
+   (pf.spec.alpha/multi-spec expound.alpha-test/pet :pet/type))
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :multispec-in-compound-spec/pet1 {:pet/type :fish}))))
+  (testing "multispec combined with s/or"
+    (is (= (pf "-- Missing spec -------------------
+
+Cannot find spec for
+
+   {:pet/type :fish}
+
+ Spec multimethod:      `expound.alpha-test/pet`
+ Dispatch function:     `:pet/type`
+ Dispatch value:        `:fish`
+
+Cannot find spec for
+
+   {:pet/type :fish}
+
+ Spec multimethod:      `expound.alpha-test/animal`
+ Dispatch function:     `:animal/type`
+ Dispatch value:        `nil`
+
+
+-- Relevant specs -------
+
+:multispec-in-compound-spec/pet2:
+  (pf.spec.alpha/or
+   :map1
+   (pf.spec.alpha/multi-spec expound.alpha-test/pet :pet/type)
+   :map2
+   (pf.spec.alpha/multi-spec expound.alpha-test/animal :animal/type))
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
