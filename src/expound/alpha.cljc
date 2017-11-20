@@ -178,8 +178,8 @@ should have additional elements. The next element is named `%s` and satisfies
        (section-label "Relevant specs")
        sp-str))))
 
-(defn multi-spec-parts [spec]
-  (let [[_multi-spec mm retag]  (s/form spec)]
+(defn multi-spec-parts [spec-form]
+  (let [[_multi-spec mm retag] spec-form]
     {:mm mm :retag retag}))
 
 (defn missing-spec? [_failure problem]
@@ -224,9 +224,19 @@ should have additional elements. The next element is named `%s` and satisfies
 (defn regex-failure? [_problem problem]
   (contains? #{"Insufficient input" "Extra input"} (:reason problem)))
 
+(defn multi-spec [pred spec]
+  (->> (s/form spec)
+       (tree-seq coll? seq)
+       (filter #(and (sequential? %)
+                     (<= 2 (count %))
+                     (= ::s/multi-spec (keyword (first %)))
+                     (= pred (second %))))
+       first))
+
 (defn no-method [spec-name val path problem]
   (let [sp (s/spec (last (:expound/via problem)))
-        {:keys [mm retag]} (multi-spec-parts sp)]
+        {:keys [mm retag]} (multi-spec-parts
+                            (multi-spec (:pred problem) sp))]
     (printer/format
      "Cannot find spec for
 
@@ -276,7 +286,6 @@ should be%s: %s
      (if (:print-specs? opts) (relevant-specs problems) ""))))
 
 (defmethod problem-group-str :problem/missing-spec [_type spec-name val path problems opts]
-  (s/assert ::singleton problems)
   (printer/format
    "%s
 
@@ -284,7 +293,9 @@ should be%s: %s
 
 %s"
    (header-label "Missing spec")
-   (no-method spec-name val path (first problems))
+   (->> problems
+        (map #(no-method spec-name val path %))
+        (string/join "\n"))
    (if (:print-specs? opts) (relevant-specs problems) "")))
 
 (defmethod problem-group-str :problem/regex-failure [_type spec-name val path problems opts]
