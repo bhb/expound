@@ -31,9 +31,7 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
-      - run: bin/install-chrome
       - run: lein with-profile +test-common,+test-web,+dev deps
-      - run: sudo bin/install-node && npm install
 
       - save_cache:
           paths:
@@ -67,6 +65,8 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
+      - run: bin/install-chrome
+      - run: sudo bin/install-node && npm install
       - run: lein check
       - run: lein with-profile test-common test
       - run: lein clean && lein with-profile test-web,cljs-1.9.946 cljsbuild once test && bin/tests
@@ -97,6 +97,8 @@ jobs:
           - v1-dependencies-{{ checksum "project.clj" }}
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
+      - run: bin/install-chrome
+      - run: sudo bin/install-node && npm install
       - run: lein clean && lein with-profile test-web,clj-1.9.0-alpha19,cljs-1.9.562 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,clj-1.9.0-alpha19,cljs-1.9.908 cljsbuild once test && bin/tests
 
@@ -126,6 +128,8 @@ jobs:
           - v1-dependencies-{{ checksum "project.clj" }}
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
+      - run: bin/install-chrome
+      - run: sudo bin/install-node && npm install
       - run: lein with-profile test-common,clj-1.9.0-alpha17 test
       - run: lein with-profile test-common,clj-1.9.0-alpha18 test
       - run: lein with-profile test-common,clj-1.9.0-alpha19 test
