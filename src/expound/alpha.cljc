@@ -8,8 +8,7 @@
             [clojure.set :as set]
             #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
-            [expound.printer :as printer]
-            [clojure.walk :as walk]))
+            [expound.printer :as printer]))
 
 ;;;;;; specs   ;;;;;;
 
@@ -240,6 +239,20 @@ should have additional elements. The next element is named `%s` and satisfies
 
 (defmulti problem-group-str (fn [type spec-name _val _path _problems _opts] type))
 
+(defn explain-missing-keys [problems]
+  ;; TODO - this won't work for 'or/and' keys
+  (let [missing-keys (map #(printer/missing-key (:pred %)) problems)]
+    (printer/format
+     "should contain %s: %s
+
+%s"
+     (if (= 1 (count missing-keys))
+       "key"
+       "keys")
+     (printer/print-missing-keys problems)
+     (printer/print-spec-keys problems) ;; TODO - when we can't print out table, just return nil here
+)))
+
 (defmethod problem-group-str :problem/missing-key [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (printer/format
@@ -247,15 +260,12 @@ should have additional elements. The next element is named `%s` and satisfies
 
 %s
 
-should contain keys: %s
-
 %s
 
 %s"
    (header-label "Spec failed")
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (printer/print-missing-keys problems)
-   (printer/print-spec-keys problems) ;; TODO - when we can't print out table, just return nil here
+   (explain-missing-keys problems)
    (if (:print-specs? opts) (relevant-specs problems) "")))
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]

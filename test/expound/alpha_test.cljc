@@ -541,7 +541,7 @@ Detected 1 error\n")
 
   {:multi-spec/el-type :text}
 
-should contain keys: `:multi-spec/value`
+should contain key: `:multi-spec/value`
 
 
 |               key |    spec |
@@ -642,7 +642,7 @@ Detected 1 error\n"
 
   {\"foo\" \"hi\"}
 
-should contain keys: `:cat-wrapped-in-or-spec/type`
+should contain key: `:cat-wrapped-in-or-spec/type`
 
 
 |                          key |     spec |
