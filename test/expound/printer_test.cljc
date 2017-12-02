@@ -3,7 +3,12 @@
             [clojure.string :as string]
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [expound.alpha :as expound]
-            [expound.printer :as printer]))
+            [expound.printer :as printer]
+            [expound.test-utils :as test-utils]))
+
+(use-fixtures :once
+  test-utils/check-spec-assertions
+  test-utils/instrument-all)
 
 (deftest pprint-fn
   (is (= "string?"
@@ -17,3 +22,75 @@
   (is (= "<anonymous function>"
          (printer/pprint-fn (comp vec str)))))
 
+(s/def :print-spec-keys/field1 string?)
+(s/def :print-spec-keys/field2 (s/coll-of :print-spec-keys/field1))
+(s/def :print-spec-keys/field3 int?)
+(s/def :print-spec-keys/key-spec (s/keys
+                                  :req [:print-spec-keys/field1]
+                                  :req-un [:print-spec-keys/field2]))
+(s/def :print-spec-keys/key-spec2 (s/keys
+                                   :req-un [(and
+                                             :print-spec-keys/field1
+                                             (or
+                                              :print-spec-keys/field2
+                                              :print-spec-keys/field3))]))
+
+(defn copy-key [m k1 k2]
+  (assoc m k2 (get m k1)))
+
+(deftest print-spec-keys
+  (is (= "
+|                     key |              spec |
+|-------------------------+-------------------|
+|                 :field2 | (coll-of string?) |
+| :print-spec-keys/field1 |           string? |\n"
+         (printer/print-spec-keys
+          (map #(copy-key % :via :expound/via)
+               (::s/problems
+                (s/explain-data
+                 :print-spec-keys/key-spec
+                 {}))))))
+  (is (= "`:field2`,`:print-spec-keys/field1`"
+         (printer/print-spec-keys
+          (map #(copy-key % :via :expound/via)
+               (::s/problems
+                (s/explain-data
+                 (s/keys
+                  :req [:print-spec-keys/field1]
+                  :req-un [:print-spec-keys/field2])
+                 {}))))))
+
+  (is (= "
+|                     key |    spec |
+|-------------------------+---------|
+| :print-spec-keys/field1 | string? |\n"
+         (printer/print-spec-keys
+          (map #(copy-key % :via :expound/via)
+               (::s/problems
+                (s/explain-data
+                 (s/keys
+                  :req [:print-spec-keys/field1]
+                  :req-un [:print-spec-keys/field2])
+                 {:field2 [""]}))))))
+
+  (is (= "
+|                     key |              spec |
+|-------------------------+-------------------|
+| :print-spec-keys/field1 |           string? |
+| :print-spec-keys/field2 | (coll-of string?) |\n"
+         (printer/print-spec-keys
+          (map #(copy-key % :via :expound/via)
+               (::s/problems
+                (s/explain-data
+                 (s/keys
+                  :req [:print-spec-keys/field1
+                        :print-spec-keys/field2])
+                 {}))))))
+  ;; FIXME - we don't yet handle and/or operators correctly
+  ;; the function 'missing-key' assumes a flat list of keywords
+  #_(is (= "<????>"
+           (printer/print-spec-keys
+            (::s/problems
+             (s/explain-data
+              :print-spec-keys/key-spec2
+              {}))))))

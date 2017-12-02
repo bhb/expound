@@ -17,4 +17,3 @@
     k gen/simple-type-printable]
    (is (= -1 (paths/compare-paths [(paths/->KeyPathSegment k)] [k])))
    (is (= 1 (paths/compare-paths [k] [(paths/->KeyPathSegment k)])))))
-

@@ -8,7 +8,8 @@
             [clojure.set :as set]
             #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
-            [expound.printer :as printer]))
+            [expound.printer :as printer]
+            [clojure.walk :as walk]))
 
 ;;;;;; specs   ;;;;;;
 
@@ -142,20 +143,6 @@ should have additional elements. The next element is named `%s` and satisfies
 %s"
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))))
 
-(defn missing-key [form]
-  #?(:cljs (let [[contains _arg key-keyword] form]
-             (if (contains? #{'cljs.core/contains? 'contains?} contains)
-               key-keyword
-               (let [[fn _ [contains _arg key-keyword] & rst] form]
-                 (s/assert #{'cljs.core/contains? 'contains?} contains)
-                 key-keyword)))
-     ;; FIXME - this duplicates the structure of how
-     ;; spec builds the 'contains?' function. Extract this into spec
-     ;; and use conform instead of this ad-hoc validation.
-     :clj (let [[_fn _ [contains _arg key-keyword] & _rst] form]
-            (s/assert #{'clojure.core/contains?} contains)
-            key-keyword)))
-
 (defn label
   ([size]
    (apply str (repeat size "-")))
@@ -262,10 +249,13 @@ should have additional elements. The next element is named `%s` and satisfies
 
 should contain keys: %s
 
+%s
+
 %s"
    (header-label "Spec failed")
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (string/join "," (map #(str "`" (missing-key (:pred %)) "`") problems))
+   (string/join "," (map #(str "`" (printer/missing-key (:pred %)) "`") problems)) ;; TODO - use helper function in printer for this
+   (printer/print-spec-keys problems) ;; TODO - when we can't print out table, just return nil here
    (if (:print-specs? opts) (relevant-specs problems) "")))
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]

@@ -2,11 +2,96 @@
   (:require [clojure.string :as string]
             [clojure.spec.alpha :as s]
             [clojure.pprint :as pprint]
+            [clojure.walk :as walk]
             #?(:clj [clojure.main :as clojure.main]))
   (:refer-clojure :exclude [format]))
 
 (def indent-level 2)
 (def anon-fn-str "<anonymous function>")
+
+(s/def :spec/spec-conjunction
+  (s/cat
+   :op #{'or 'and}
+   :specs (s/+ :spec/kw-or-conjunction)))
+(s/def :spec/kw-or-conjunction
+  (s/or
+   :kw qualified-keyword?
+   :conj :spec/spec-conjunction))
+(s/def :spec/key-spec
+  (s/cat :keys #{'clojure.spec.alpha/keys
+                 'cljs.spec.alpha/keys}
+         :clauses (s/*
+                   (s/cat :qualifier #{:req-un :req :opt-un :opt}
+                          :specs (s/coll-of :spec/kw-or-conjunction)))))
+
+;;;; private
+
+;; TODO - if just one key is missing, stop pluralizing "contain keys"
+;; TODO - if the key is a fully-qualified spec, then
+;; just look up the spec and return!
+(defn key->spec [keys problems]
+  (assert (apply = (map :expound/via problems)))
+  (doseq [p problems]
+    (assert (some? (:expound/via p))))
+  (let [via (:expound/via (first problems))
+        form (some-> via last s/form)]
+    ;;(s/assert (s/nilable :spec/key-spec) form)
+    (let [conformed (->> form
+                         (s/conform :spec/key-spec))
+          ;; The spec might containing spec might not be
+          ;; a simple 'keys' call, in which case we give up
+          specs (if (and form
+                         (not= ::s/invalid conformed))
+                  (->> (:clauses conformed)
+                       (map :specs)
+                       (tree-seq coll? seq)
+                       (filter
+                        (fn [x]
+                          (and (vector? x) (= :kw (first x)))))
+                       (map second)
+                       set)
+                  keys)]
+      (reduce
+       (fn [m k]
+         (assoc m
+                k
+                (first
+                 (filter
+                  #(=
+                    (name k)
+                    (name %))
+                  specs))))
+       {}
+       keys))))
+
+(defn expand-spec [spec]
+  (let [!seen-specs (atom #{})]
+    (walk/prewalk
+     (fn [x]
+       (if-not (qualified-keyword? x)
+         x
+         (if-let [sp (s/get-spec x)]
+           (if-not (contains? @!seen-specs x)
+             (do
+               (swap! !seen-specs conj x)
+               (s/form sp))
+             x)
+           x)))
+     (s/form spec))))
+
+(defn missing-key [form]
+  #?(:cljs (let [[contains _arg key-keyword] form]
+             (if (contains? #{'cljs.core/contains? 'contains?} contains)
+               key-keyword
+               (let [[fn _ [contains _arg key-keyword] & rst] form]
+                 (s/assert #{'cljs.core/contains? 'contains?} contains)
+                 key-keyword)))
+     ;; FIXME - this duplicates the structure of how
+     ;; spec builds the 'contains?' function. Extract this into spec
+     ;; and use conform instead of this ad-hoc validation.
+     :clj (let [[_fn _ [contains _arg key-keyword] & _rst] form]
+            (s/assert #{'clojure.core/contains?} contains)
+            key-keyword)))
 
 ;;;; public
 
@@ -15,6 +100,12 @@
                (string/replace "cljs.core/" "")
                (string/replace "cljs/core/" ""))
      :clj (string/replace s "clojure.core/" "")))
+
+(defn elide-spec-ns [s]
+  #?(:cljs (-> s
+               (string/replace "cljs.spec.alpha/" "")
+               (string/replace "cljs/spec/alpha" ""))
+     :clj (string/replace s "clojure.spec.alpha/" "")))
 
 (defn pprint-fn [f]
   (-> #?(:clj
@@ -54,6 +145,30 @@
   (if (fn? x)
     (pprint-fn x)
     (pprint/write x :stream nil)))
+
+(defn simple-spec-or-name [spec-name]
+  (let [spec-str (elide-spec-ns (elide-core-ns (pr-str (expand-spec spec-name))))]
+    (if (or
+         ;; TODO - extract to named constant
+         (< 100 (count spec-str))
+         (string/includes? spec-str "\n"))
+      spec-name
+      spec-str)))
+
+(defn print-spec-keys [problems]
+  (let [keys
+        (map #(missing-key (:pred %)) problems)]
+    (if (and (empty? (:expound/via (first problems)))
+             (some simple-keyword? keys))
+      ;; The containing spec is not present in the problems
+      ;; and at least one key is not namespaced, so we can't figure out
+      ;; the spec they intended.
+      (string/join "," (sort (map #(str "`" (missing-key (:pred %)) "`") problems)))
+      (->> (key->spec keys problems)
+           (map (fn [[k v]] {"key" k "spec" (simple-spec-or-name v)}))
+           (sort-by #(get % "key"))
+           (pprint/print-table ["key" "spec"])
+           with-out-str))))
 
 (s/fdef no-trailing-whitespace
         :args (s/cat :s string?)

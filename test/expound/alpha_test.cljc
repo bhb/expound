@@ -428,6 +428,8 @@ Detected 1 error\n")
 (s/def :keys-spec/age int?)
 (s/def :keys-spec/user (s/keys :req [:keys-spec/name]
                                :req-un [:keys-spec/age]))
+
+;; TODO - too many newlines around table
 (deftest keys-spec
   (testing "missing keys"
     (is (= (pf "-- Spec failed --------------------
@@ -435,6 +437,13 @@ Detected 1 error\n")
   {}
 
 should contain keys: `:keys-spec/name`,`:age`
+
+
+|             key |    spec |
+|-----------------+---------|
+|            :age |    int? |
+| :keys-spec/name | string? |
+
 
 -- Relevant specs -------
 
@@ -534,6 +543,12 @@ Detected 1 error\n")
 
 should contain keys: `:multi-spec/value`
 
+
+|               key |    spec |
+|-------------------+---------|
+| :multi-spec/value | string? |
+
+
 -- Relevant specs -------
 
 :multi-spec/el:
@@ -629,6 +644,12 @@ Detected 1 error\n"
 
 should contain keys: `:cat-wrapped-in-or-spec/type`
 
+
+|                          key |     spec |
+|------------------------------+----------|
+| :cat-wrapped-in-or-spec/type | #{:text} |
+
+
 -- Relevant specs -------
 
 :cat-wrapped-in-or-spec/kv-or-string:
@@ -711,7 +732,7 @@ Detected 1 error\n")
 ;; but Clojure (not Clojurescript) won't allow
 ;; this. As a workaround, I'll just use vectors instead
 ;; of vectors and lists.
-;; TODO - force a specific type of into/kind one for each test
+;; FIXME - force a specific type of into/kind one for each test
 ;; (one for vectors, one for lists, etc)
 (s/def :specs.coll-of/into #{[] #{}})
 (s/def :specs.coll-of/kind #{vector? list? set?})
@@ -818,10 +839,10 @@ Detected 1 error\n")
     form any-printable-wo-nan]
    (expound/expound-str spec form)))
 
-;; TODO - keys
-;; TODO - cat + alt, + ? *
-;; TODO - nilable
-;; TODO - test coll-of that is a set . can i should a bad element of a set?
+;; FIXME - keys
+;; FIXME - cat + alt, + ? *
+;; FIXME - nilable
+;; FIXME - test coll-of that is a set . can i should a bad element of a set?
 
 (s/def :test-assert/name string?)
 (deftest test-assert
