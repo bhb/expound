@@ -1489,6 +1489,8 @@ Detected 1 error\n"
 (s/def :trigger/pre-evictor any?)
 (s/def :trigger/post-evictor any?)
 (s/def :flow/short-circuit any?)
+(s/def :onyx.core/params?
+  (s/coll-of any? :kind vector?))
 
 #?(:clj
    (deftest real-spec-tests-mutated-valid-value
