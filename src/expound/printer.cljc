@@ -26,41 +26,39 @@
 
 ;;;; private
 
-;; TODO - if just one key is missing, stop pluralizing "contain keys"
-;; TODO - if the key is a fully-qualified spec, then
-;; just look up the spec and return!
 (defn key->spec [keys problems]
   (assert (apply = (map :expound/via problems)))
   (doseq [p problems]
     (assert (some? (:expound/via p))))
   (let [via (:expound/via (first problems))
         form (some-> via last s/form)]
+    ;; TODO - restore?
     ;;(s/assert (s/nilable :spec/key-spec) form)
-    (let [conformed (->> form
-                         (s/conform :spec/key-spec))
-          ;; The spec might containing spec might not be
-          ;; a simple 'keys' call, in which case we give up
-          specs (if (and form
-                         (not= ::s/invalid conformed))
-                  (->> (:clauses conformed)
-                       (map :specs)
-                       (tree-seq coll? seq)
-                       (filter
-                        (fn [x]
-                          (and (vector? x) (= :kw (first x)))))
-                       (map second)
-                       set)
-                  keys)]
+    (let [specs (if (every? qualified-keyword? keys)
+                  keys
+                  (let [conformed (s/conform :spec/key-spec form)]
+                    ;; The spec might containing spec might not be
+                    ;; a simple 'keys' call, in which case we give up
+                    (if (and form
+                             (not= ::s/invalid conformed))
+                      (->> (:clauses conformed)
+                           (map :specs)
+                           (tree-seq coll? seq)
+                           (filter
+                            (fn [x]
+                              (and (vector? x) (= :kw (first x)))))
+                           (map second)
+                           set)
+                      keys)))]
       (reduce
        (fn [m k]
          (assoc m
                 k
-                (first
-                 (filter
-                  #(=
-                    (name k)
-                    (name %))
-                  specs))))
+                (if (qualified-keyword? k)
+                  k
+                  (->> specs
+                       (filter #(= (name k) (name %)))
+                       first))))
        {}
        keys))))
 
