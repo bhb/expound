@@ -5,10 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0-RC1" :scope "provided"]
                  [org.clojure/clojurescript "1.9.946" :scope "provided"]
-                 [org.clojure/spec.alpha "0.1.143" :scope "provided"]
-                 ;; TODO - remove!!!
-                 [org.onyxplatform/onyx-spec "0.11.1.0"] ; to test specs
-                 ]
+                 [org.clojure/spec.alpha "0.1.143" :scope "provided"]]
 
   :plugins [[com.jakemccrary/lein-test-refresh "0.21.1"]
             [lein-cljfmt "0.5.7"]
@@ -97,7 +94,7 @@
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.2"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.3"] ; to test specs
-                                          [org.onyxplatform/onyx-spec "0.11.1.0"] ; to test specs
+                                          [org.onyxplatform/onyx-spec "0.12.0.0-rc1"] ; to test specs
                                           [vvvvalvalval/scope-capture "0.1.4"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
