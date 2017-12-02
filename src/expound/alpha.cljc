@@ -254,7 +254,7 @@ should contain keys: %s
 %s"
    (header-label "Spec failed")
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (string/join "," (map #(str "`" (printer/missing-key (:pred %)) "`") problems)) ;; TODO - use helper function in printer for this
+   (printer/print-missing-keys problems)
    (printer/print-spec-keys problems) ;; TODO - when we can't print out table, just return nil here
    (if (:print-specs? opts) (relevant-specs problems) "")))
 

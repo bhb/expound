@@ -436,7 +436,7 @@ Detected 1 error\n")
 
   {}
 
-should contain keys: `:keys-spec/name`,`:age`
+should contain keys: `:age`, `:keys-spec/name`
 
 
 |             key |    spec |

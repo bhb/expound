@@ -46,11 +46,11 @@
 | :print-spec-keys/field1 |           string? |\n"
          (printer/print-spec-keys
           (map #(copy-key % :via :expound/via)
-               (::s/problems
+                (::s/problems
                 (s/explain-data
                  :print-spec-keys/key-spec
                  {}))))))
-  (is (= "`:field2`,`:print-spec-keys/field1`"
+  (is (= "`:field2`, `:print-spec-keys/field1`"
          (printer/print-spec-keys
           (map #(copy-key % :via :expound/via)
                (::s/problems
