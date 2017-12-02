@@ -167,7 +167,8 @@
            (map (fn [[k v]] {"key" k "spec" (simple-spec-or-name v)}))
            (sort-by #(get % "key"))
            (pprint/print-table ["key" "spec"])
-           with-out-str))))
+           with-out-str
+           string/trim))))
 
 (defn print-missing-keys [problems]
   (string/join ", " (sort (map #(str "`" (missing-key (:pred %)) "`") problems))))

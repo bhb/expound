@@ -437,7 +437,7 @@ Detected 1 error\n")
 (s/def :keys-spec/user (s/keys :req [:keys-spec/name]
                                :req-un [:keys-spec/age]))
 
-;; TODO - too many newlines around table
+;; TODO - no needs to print out keys twice
 (deftest keys-spec
   (testing "missing keys"
     (is (= (pf "-- Spec failed --------------------
@@ -446,12 +446,10 @@ Detected 1 error\n")
 
 should contain keys: `:age`, `:keys-spec/name`
 
-
 |             key |    spec |
 |-----------------+---------|
 |            :age |    int? |
 | :keys-spec/name | string? |
-
 
 -- Relevant specs -------
 
@@ -551,11 +549,9 @@ Detected 1 error\n")
 
 should contain key: `:multi-spec/value`
 
-
 |               key |    spec |
 |-------------------+---------|
 | :multi-spec/value | string? |
-
 
 -- Relevant specs -------
 
@@ -652,11 +648,9 @@ Detected 1 error\n"
 
 should contain key: `:cat-wrapped-in-or-spec/type`
 
-
 |                          key |     spec |
 |------------------------------+----------|
 | :cat-wrapped-in-or-spec/type | #{:text} |
-
 
 -- Relevant specs -------
 
