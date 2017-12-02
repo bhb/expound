@@ -75,7 +75,7 @@
                (s/form sp))
              x)
            x)))
-     (s/form spec))))
+     spec)))
 
 (defn missing-key [form]
   #?(:cljs (let [[contains _arg key-keyword] form]
