@@ -7,6 +7,7 @@
   (:refer-clojure :exclude [format]))
 
 (def indent-level 2)
+(def max-spec-str-width 100)
 (def anon-fn-str "<anonymous function>")
 
 (s/def :spec/spec-conjunction
@@ -147,8 +148,7 @@
 (defn simple-spec-or-name [spec-name]
   (let [spec-str (elide-spec-ns (elide-core-ns (pr-str (expand-spec spec-name))))]
     (if (or
-         ;; TODO - extract to named constant
-         (< 100 (count spec-str))
+         (< max-spec-str-width (count spec-str))
          (string/includes? spec-str "\n"))
       spec-name
       spec-str)))
