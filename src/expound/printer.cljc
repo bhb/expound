@@ -76,7 +76,9 @@
                (s/form sp))
              x)
            x)))
-     spec)))
+     (if (s/get-spec spec)
+       (s/form spec)
+       spec))))
 
 (defn missing-key [form]
   #?(:cljs (let [[contains _arg key-keyword] form]
@@ -154,8 +156,7 @@
       spec-str)))
 
 (defn print-spec-keys [problems]
-  (let [keys
-        (map #(missing-key (:pred %)) problems)]
+  (let [keys (map #(missing-key (:pred %)) problems)]
     (if (and (empty? (:expound/via (first problems)))
              (some simple-keyword? keys))
       ;; The containing spec is not present in the problems

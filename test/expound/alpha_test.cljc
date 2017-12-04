@@ -461,6 +461,26 @@ Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
            (expound/expound-str :keys-spec/user {}))))
+  (testing "inline spec with req-un"
+    (is (= (pf "-- Spec failed --------------------
+
+  {}
+
+should contain keys: `:age`, `:name`
+
+|   key |    spec |
+|-------+---------|
+|  :age |    int? |
+| :name | string? |
+
+
+
+-------------------------
+Detected 1 error\n"
+               #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
+                  :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
+           (expound/expound-str (s/keys :req-un [:keys-spec/name :keys-spec/age]) {}))))
+
   (testing "invalid key"
     (is (= (pf "-- Spec failed --------------------
 
