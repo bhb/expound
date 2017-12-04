@@ -50,7 +50,7 @@
               (s/explain-data
                :print-spec-keys/key-spec
                {}))))))
-  (is (= "`:field2`, `:print-spec-keys/field1`"
+  (is (= nil
          (printer/print-spec-keys
           (map #(copy-key % :via :expound/via)
                (::s/problems

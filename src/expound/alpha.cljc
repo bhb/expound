@@ -242,16 +242,15 @@ should have additional elements. The next element is named `%s` and satisfies
 (defn explain-missing-keys [problems]
   ;; TODO - this won't work for 'or/and' keys
   (let [missing-keys (map #(printer/missing-key (:pred %)) problems)]
-    (printer/format
-     "should contain %s: %s
-
-%s"
-     (if (= 1 (count missing-keys))
-       "key"
-       "keys")
-     (printer/print-missing-keys problems)
-     (printer/print-spec-keys problems) ;; TODO - when we can't print out table, just return nil here
-)))
+    (str (printer/format
+          "should contain %s: %s"
+          (if (= 1 (count missing-keys))
+            "key"
+            "keys")
+          (printer/print-missing-keys problems))
+         (if-let [table (printer/print-spec-keys problems)]
+           (str "\n\n" table)
+           nil))))
 
 (defmethod problem-group-str :problem/missing-key [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))

@@ -162,8 +162,7 @@
       ;; The containing spec is not present in the problems
       ;; and at least one key is not namespaced, so we can't figure out
       ;; the spec they intended.
-      ;; TODO - combine this with print-missing-keys
-      (string/join ", " (sort (map #(str "`" (missing-key (:pred %)) "`") problems)))
+      nil
       (->> (key->spec keys problems)
            (map (fn [[k v]] {"key" k "spec" (simple-spec-or-name v)}))
            (sort-by #(get % "key"))
