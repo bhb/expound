@@ -86,11 +86,14 @@
                 :req [:print-spec-keys/field1
                       :print-spec-keys/field2])
                {}))))))
-  ;; FIXME - we don't yet handle and/or operators correctly
-  ;; the function 'missing-key' assumes a flat list of keywords
-  #_(is (= "<????>"
-           (printer/print-spec-keys
-            (::s/problems
-             (s/explain-data
-              :print-spec-keys/key-spec2
-              {}))))))
+  (is (= "|     key |              spec |
+|---------+-------------------|
+| :field1 |           string? |
+| :field2 | (coll-of string?) |
+| :field3 |              int? |"
+         (printer/print-spec-keys
+          (map #(copy-key % :via :expound/via)
+               (::s/problems
+                (s/explain-data
+                 :print-spec-keys/key-spec2
+                 {})))))))

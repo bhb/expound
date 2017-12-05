@@ -80,19 +80,51 @@
        (s/form spec)
        spec))))
 
+;; TODO - move specs to top
+(s/def
+    ;; TODO - rename
+  ::key-pred
+  (s/or
+   :simple (s/cat
+            :contains #{`contains? 'contains?}
+            :arg #{'%}
+            :kw keyword?)
+   :compound (s/cat
+              :op #{`or `and}
+              :clauses (s/+ ::key-pred))))
+
+(defn summarize-key-clause [[branch match]]
+  (case branch
+    :simple
+    (:kw match)
+
+    :compound
+    (apply list
+           (symbol (name (:op match)))
+           (map summarize-key-clause (:clauses match)))))
+
 (defn missing-key [form]
-  #?(:cljs (let [[contains _arg key-keyword] form]
-             (if (contains? #{'cljs.core/contains? 'contains?} contains)
-               key-keyword
-               (let [[fn _ [contains _arg key-keyword] & rst] form]
-                 (s/assert #{'cljs.core/contains? 'contains?} contains)
-                 key-keyword)))
+  (let [[branch match] (s/conform ::key-pred (nth form 2))]
+    (case branch
+      :simple
+      (:kw match)
+
+      :compound
+      (summarize-key-clause [branch match]))))
+
+#_(defn missing-key [form]
+    #?(:cljs (let [[contains _arg key-keyword] form]
+               (if (contains? #{'cljs.core/contains? 'contains?} contains)
+                 key-keyword
+                 (let [[fn _ [contains _arg key-keyword] & rst] form]
+                   (s/assert #{'cljs.core/contains? 'contains?} contains)
+                   key-keyword)))
      ;; FIXME - this duplicates the structure of how
      ;; spec builds the 'contains?' function. Extract this into spec
      ;; and use conform instead of this ad-hoc validation.
-     :clj (let [[_fn _ [contains _arg key-keyword] & _rst] form]
-            (s/assert #{'clojure.core/contains?} contains)
-            key-keyword)))
+       :clj (let [[_fn _ [contains _arg key-keyword] & _rst] form]
+              (s/assert #{'clojure.core/contains?} contains)
+              key-keyword)))
 
 ;;;; public
 
@@ -155,14 +187,21 @@
       spec-name
       spec-str)))
 
+;; TODO - move to private functions
+(defn keywords [form]
+  (->> form
+       (tree-seq coll? seq)
+       (filter keyword?)))
+
 (defn print-spec-keys [problems]
-  (let [keys (map #(missing-key (:pred %)) problems)]
+  (let [keys (keywords (map #(missing-key (:pred %)) problems))]
     (if (and (empty? (:expound/via (first problems)))
              (some simple-keyword? keys))
       ;; The containing spec is not present in the problems
       ;; and at least one key is not namespaced, so we can't figure out
       ;; the spec they intended.
       nil
+
       (->> (key->spec keys problems)
            (map (fn [[k v]] {"key" k "spec" (simple-spec-or-name v)}))
            (sort-by #(get % "key"))
@@ -171,7 +210,32 @@
            string/trim))))
 
 (defn print-missing-keys [problems]
-  (string/join ", " (sort (map #(str "`" (missing-key (:pred %)) "`") problems))))
+  (let [keys-clauses (map (comp missing-key :pred) problems)]
+    (if (every? keyword? keys-clauses)
+      (string/join ", " (sort (map #(str "`" % "`") keys-clauses)))
+      (str "\n\n"
+           (pprint-str (apply list
+                              'and
+                              keys-clauses))))))
+
+;; TODO - remove 
+(defn copy-key [m k1 k2]
+  (assoc m k2 (get m k1)))
+
+;; TODO - move to private code
+#_(defn missing-key [form]
+    #?(:cljs (let [[contains _arg key-keyword] form]
+               (if (contains? #{'cljs.core/contains? 'contains?} contains)
+                 key-keyword
+                 (let [[fn _ [contains _arg key-keyword] & rst] form]
+                   (s/assert #{'cljs.core/contains? 'contains?} contains)
+                   key-keyword)))
+     ;; FIXME - this duplicates the structure of how
+     ;; spec builds the 'contains?' function. Extract this into spec
+     ;; and use conform instead of this ad-hoc validation.
+       :clj (let [[_fn _ [contains _arg key-keyword] & _rst] form]
+              (s/assert #{'clojure.core/contains?} contains)
+              key-keyword)))
 
 (s/fdef no-trailing-whitespace
         :args (s/cat :s string?)

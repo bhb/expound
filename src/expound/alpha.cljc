@@ -189,23 +189,12 @@ should have additional elements. The next element is named `%s` and satisfies
    (= :fn (first (:path problem)))))
 
 (defn missing-key? [_failure problem]
-  #?(:cljs
-     (let [pred (:pred problem)]
-       (and (list? pred)
-            (map? (:val problem))
-            (or (= 'contains? (first pred))
-                (let [[fn _ [contains _] & rst] pred]
-                  (and
-                   (= 'cljs.core/fn fn)
-                   (= 'cljs.core/contains? contains))))))
-     :clj
-     (let [pred (:pred problem)]
-       (and (seq? pred)
-            (map? (:val problem))
-            (let [[fn _ [contains _] & _rst] pred]
-              (and
-               (= 'clojure.core/fn fn)
-               (= 'clojure.core/contains? contains)))))))
+  (let [pred (:pred problem)]
+    (and (seq? pred)
+         (< 2 (count pred))
+         (s/valid?
+          ::printer/key-pred
+          (nth pred 2)))))
 
 (defn regex-failure? [_problem problem]
   (contains? #{"Insufficient input" "Extra input"} (:reason problem)))

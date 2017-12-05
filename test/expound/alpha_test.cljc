@@ -437,6 +437,18 @@ Detected 1 error\n")
 (s/def :keys-spec/user (s/keys :req [:keys-spec/name]
                                :req-un [:keys-spec/age]))
 
+(s/def :key-spec/state string?)
+(s/def :key-spec/city string?)
+(s/def :key-spec/zip pos-int?)
+
+(s/def :keys-spec/user2 (s/keys :req [(and :keys-spec/name
+                                           :keys-spec/age)]
+                                :req-un [(or
+                                          :key-spec/zip
+                                          (and
+                                           :key-spec/state
+                                           :key-spec/city))]))
+
 ;; TODO - no needs to print out keys twice
 (deftest keys-spec
   (testing "missing keys"
@@ -461,6 +473,36 @@ Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
            (expound/expound-str :keys-spec/user {}))))
+  (testing "missing compound keys"
+    (is (= (pf "-- Spec failed --------------------
+
+  {}
+
+should contain keys:
+
+(and (and :keys-spec/name :keys-spec/age) (or :zip (and :state :city)))
+
+|             key |     spec |
+|-----------------+----------|
+|           :city |  string? |
+|          :state |  string? |
+|            :zip | pos-int? |
+|  :keys-spec/age |     int? |
+| :keys-spec/name |  string? |
+
+-- Relevant specs -------
+
+:keys-spec/user2:
+  (pf.spec.alpha/keys
+   :req
+   [(and :keys-spec/name :keys-spec/age)]
+   :req-un
+   [(or :key-spec/zip (and :key-spec/state :key-spec/city))])
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :keys-spec/user2 {}))))
+
   (testing "inline spec with req-un"
     (is (= (pf "-- Spec failed --------------------
 
@@ -2000,3 +2042,4 @@ Cannot find spec for
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
+
