@@ -233,7 +233,8 @@ should have additional elements. The next element is named `%s` and satisfies
   (let [missing-keys (map #(printer/missing-key (:pred %)) problems)]
     (str (printer/format
           "should contain %s: %s"
-          (if (= 1 (count missing-keys))
+          (if (and (= 1 (count missing-keys))
+                   (every? keyword missing-keys))
             "key"
             "keys")
           (printer/print-missing-keys problems))

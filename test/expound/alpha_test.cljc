@@ -449,6 +449,12 @@ Detected 1 error\n")
                                            :key-spec/state
                                            :key-spec/city))]))
 
+(s/def :keys-spec/user3 (s/keys :req-un [(or
+                                          :key-spec/zip
+                                          (and
+                                           :key-spec/state
+                                           :key-spec/city))]))
+
 ;; TODO - no needs to print out keys twice
 (deftest keys-spec
   (testing "missing keys"
@@ -501,7 +507,31 @@ should contain keys:
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :keys-spec/user2 {}))))
+           (expound/expound-str :keys-spec/user2 {})))
+    (is (= (pf "-- Spec failed --------------------
+
+  {}
+
+should contain keys:
+
+(or :zip (and :state :city))
+
+|    key |     spec |
+|--------+----------|
+|  :city |  string? |
+| :state |  string? |
+|   :zip | pos-int? |
+
+-- Relevant specs -------
+
+:keys-spec/user3:
+  (pf.spec.alpha/keys
+   :req-un
+   [(or :key-spec/zip (and :key-spec/state :key-spec/city))])
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :keys-spec/user3 {}))))
 
   (testing "inline spec with req-un"
     (is (= (pf "-- Spec failed --------------------

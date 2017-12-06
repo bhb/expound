@@ -27,6 +27,9 @@
 
 ;;;; private
 
+(defn singleton? [xs]
+  (= 1 (count xs)))
+
 (defn key->spec [keys problems]
   (assert (apply = (map :expound/via problems)))
   (doseq [p problems]
@@ -214,9 +217,12 @@
     (if (every? keyword? keys-clauses)
       (string/join ", " (sort (map #(str "`" % "`") keys-clauses)))
       (str "\n\n"
-           (pprint-str (apply list
-                              'and
-                              keys-clauses))))))
+           (pprint-str
+            (if (singleton? keys-clauses)
+              (first keys-clauses)
+              (apply list
+                     'and
+                     keys-clauses)))))))
 
 ;; TODO - remove 
 (defn copy-key [m k1 k2]
