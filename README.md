@@ -266,6 +266,7 @@ If you want to use Expound with conformers, you'll need to write a custom printe
 - [Inspectable](https://github.com/jpmonettas/inspectable) - Tools to explore specs and spec failures at the REPL
 - [Pretty-Spec](https://github.com/jpmonettas/pretty-spec) - Pretty printer for specs
 - [Phrase](https://github.com/alexanderkiel/phrase) - Use specs to create error messages for users
+- [Pinpointer](https://github.com/athos/Pinpointer) - spec error reporter based on a precise error analysis
 
 ## Prior Art
 
