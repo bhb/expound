@@ -193,7 +193,7 @@ should have additional elements. The next element is named `%s` and satisfies
     (and (seq? pred)
          (< 2 (count pred))
          (s/valid?
-          ::printer/key-pred
+          :spec/contains-key-pred
           (nth pred 2)))))
 
 (defn regex-failure? [_problem problem]
