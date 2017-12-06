@@ -142,20 +142,6 @@ should have additional elements. The next element is named `%s` and satisfies
 %s"
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))))
 
-(defn missing-key [form]
-  #?(:cljs (let [[contains _arg key-keyword] form]
-             (if (contains? #{'cljs.core/contains? 'contains?} contains)
-               key-keyword
-               (let [[fn _ [contains _arg key-keyword] & rst] form]
-                 (s/assert #{'cljs.core/contains? 'contains?} contains)
-                 key-keyword)))
-     ;; FIXME - this duplicates the structure of how
-     ;; spec builds the 'contains?' function. Extract this into spec
-     ;; and use conform instead of this ad-hoc validation.
-     :clj (let [[_fn _ [contains _arg key-keyword] & _rst] form]
-            (s/assert #{'clojure.core/contains?} contains)
-            key-keyword)))
-
 (defn label
   ([size]
    (apply str (repeat size "-")))
@@ -203,23 +189,12 @@ should have additional elements. The next element is named `%s` and satisfies
    (= :fn (first (:path problem)))))
 
 (defn missing-key? [_failure problem]
-  #?(:cljs
-     (let [pred (:pred problem)]
-       (and (list? pred)
-            (map? (:val problem))
-            (or (= 'contains? (first pred))
-                (let [[fn _ [contains _] & rst] pred]
-                  (and
-                   (= 'cljs.core/fn fn)
-                   (= 'cljs.core/contains? contains))))))
-     :clj
-     (let [pred (:pred problem)]
-       (and (seq? pred)
-            (map? (:val problem))
-            (let [[fn _ [contains _] & _rst] pred]
-              (and
-               (= 'clojure.core/fn fn)
-               (= 'clojure.core/contains? contains)))))))
+  (let [pred (:pred problem)]
+    (and (seq? pred)
+         (< 2 (count pred))
+         (s/valid?
+          :spec/contains-key-pred
+          (nth pred 2)))))
 
 (defn regex-failure? [_problem problem]
   (contains? #{"Insufficient input" "Extra input"} (:reason problem)))
@@ -253,6 +228,19 @@ should have additional elements. The next element is named `%s` and satisfies
 
 (defmulti problem-group-str (fn [type spec-name _val _path _problems _opts] type))
 
+(defn explain-missing-keys [problems]
+  (let [missing-keys (map #(printer/missing-key (:pred %)) problems)]
+    (str (printer/format
+          "should contain %s: %s"
+          (if (and (= 1 (count missing-keys))
+                   (every? keyword missing-keys))
+            "key"
+            "keys")
+          (printer/print-missing-keys problems))
+         (if-let [table (printer/print-spec-keys problems)]
+           (str "\n\n" table)
+           nil))))
+
 (defmethod problem-group-str :problem/missing-key [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (printer/format
@@ -260,12 +248,12 @@ should have additional elements. The next element is named `%s` and satisfies
 
 %s
 
-should contain keys: %s
+%s
 
 %s"
    (header-label "Spec failed")
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (string/join "," (map #(str "`" (missing-key (:pred %)) "`") problems))
+   (explain-missing-keys problems)
    (if (:print-specs? opts) (relevant-specs problems) "")))
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]
