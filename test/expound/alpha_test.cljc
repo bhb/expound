@@ -455,7 +455,6 @@ Detected 1 error\n")
                                            :key-spec/state
                                            :key-spec/city))]))
 
-;; TODO - no needs to print out keys twice
 (deftest keys-spec
   (testing "missing keys"
     (is (= (pf "-- Spec failed --------------------

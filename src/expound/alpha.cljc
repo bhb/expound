@@ -229,7 +229,6 @@ should have additional elements. The next element is named `%s` and satisfies
 (defmulti problem-group-str (fn [type spec-name _val _path _problems _opts] type))
 
 (defn explain-missing-keys [problems]
-  ;; TODO - this won't work for 'or/and' keys
   (let [missing-keys (map #(printer/missing-key (:pred %)) problems)]
     (str (printer/format
           "should contain %s: %s"
