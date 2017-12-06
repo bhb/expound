@@ -23,6 +23,14 @@
   test-utils/check-spec-assertions
   test-utils/instrument-all)
 
+;; Missing onyx specs
+(s/def :trigger/materialize any?)
+(s/def :trigger/pre-evictor any?)
+(s/def :trigger/post-evictor any?)
+(s/def :flow/short-circuit any?)
+(s/def :onyx.core/params?
+  (s/coll-of any? :kind vector?))
+
 (def any-printable-wo-nan (gen/such-that (complement test-utils/contains-nan?) gen/any-printable))
 
 (defn pf
@@ -428,13 +436,37 @@ Detected 1 error\n")
 (s/def :keys-spec/age int?)
 (s/def :keys-spec/user (s/keys :req [:keys-spec/name]
                                :req-un [:keys-spec/age]))
+
+(s/def :key-spec/state string?)
+(s/def :key-spec/city string?)
+(s/def :key-spec/zip pos-int?)
+
+(s/def :keys-spec/user2 (s/keys :req [(and :keys-spec/name
+                                           :keys-spec/age)]
+                                :req-un [(or
+                                          :key-spec/zip
+                                          (and
+                                           :key-spec/state
+                                           :key-spec/city))]))
+
+(s/def :keys-spec/user3 (s/keys :req-un [(or
+                                          :key-spec/zip
+                                          (and
+                                           :key-spec/state
+                                           :key-spec/city))]))
+
 (deftest keys-spec
   (testing "missing keys"
     (is (= (pf "-- Spec failed --------------------
 
   {}
 
-should contain keys: `:keys-spec/name`,`:age`
+should contain keys: `:age`, `:keys-spec/name`
+
+|             key |    spec |
+|-----------------+---------|
+|            :age |    int? |
+| :keys-spec/name | string? |
 
 -- Relevant specs -------
 
@@ -446,6 +478,80 @@ Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
            (expound/expound-str :keys-spec/user {}))))
+  (testing "missing compound keys"
+    (is (= (pf "-- Spec failed --------------------
+
+  {}
+
+should contain keys:
+
+(and (and :keys-spec/name :keys-spec/age) (or :zip (and :state :city)))
+
+|             key |     spec |
+|-----------------+----------|
+|           :city |  string? |
+|          :state |  string? |
+|            :zip | pos-int? |
+|  :keys-spec/age |     int? |
+| :keys-spec/name |  string? |
+
+-- Relevant specs -------
+
+:keys-spec/user2:
+  (pf.spec.alpha/keys
+   :req
+   [(and :keys-spec/name :keys-spec/age)]
+   :req-un
+   [(or :key-spec/zip (and :key-spec/state :key-spec/city))])
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :keys-spec/user2 {})))
+    (is (= (pf "-- Spec failed --------------------
+
+  {}
+
+should contain keys:
+
+(or :zip (and :state :city))
+
+|    key |     spec |
+|--------+----------|
+|  :city |  string? |
+| :state |  string? |
+|   :zip | pos-int? |
+
+-- Relevant specs -------
+
+:keys-spec/user3:
+  (pf.spec.alpha/keys
+   :req-un
+   [(or :key-spec/zip (and :key-spec/state :key-spec/city))])
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :keys-spec/user3 {}))))
+
+  (testing "inline spec with req-un"
+    (is (= (pf "-- Spec failed --------------------
+
+  {}
+
+should contain keys: `:age`, `:name`
+
+|   key |    spec |
+|-------+---------|
+|  :age |    int? |
+| :name | string? |
+
+
+
+-------------------------
+Detected 1 error\n"
+               #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
+                  :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
+           (expound/expound-str (s/keys :req-un [:keys-spec/name :keys-spec/age]) {}))))
+
   (testing "invalid key"
     (is (= (pf "-- Spec failed --------------------
 
@@ -532,7 +638,11 @@ Detected 1 error\n")
 
   {:multi-spec/el-type :text}
 
-should contain keys: `:multi-spec/value`
+should contain key: `:multi-spec/value`
+
+|               key |    spec |
+|-------------------+---------|
+| :multi-spec/value | string? |
 
 -- Relevant specs -------
 
@@ -627,7 +737,11 @@ Detected 1 error\n"
 
   {\"foo\" \"hi\"}
 
-should contain keys: `:cat-wrapped-in-or-spec/type`
+should contain key: `:cat-wrapped-in-or-spec/type`
+
+|                          key |     spec |
+|------------------------------+----------|
+| :cat-wrapped-in-or-spec/type | #{:text} |
 
 -- Relevant specs -------
 
@@ -711,7 +825,7 @@ Detected 1 error\n")
 ;; but Clojure (not Clojurescript) won't allow
 ;; this. As a workaround, I'll just use vectors instead
 ;; of vectors and lists.
-;; TODO - force a specific type of into/kind one for each test
+;; FIXME - force a specific type of into/kind one for each test
 ;; (one for vectors, one for lists, etc)
 (s/def :specs.coll-of/into #{[] #{}})
 (s/def :specs.coll-of/kind #{vector? list? set?})
@@ -818,10 +932,10 @@ Detected 1 error\n")
     form any-printable-wo-nan]
    (expound/expound-str spec form)))
 
-;; TODO - keys
-;; TODO - cat + alt, + ? *
-;; TODO - nilable
-;; TODO - test coll-of that is a set . can i should a bad element of a set?
+;; FIXME - keys
+;; FIXME - cat + alt, + ? *
+;; FIXME - nilable
+;; FIXME - test coll-of that is a set . can i should a bad element of a set?
 
 (s/def :test-assert/name string?)
 (deftest test-assert
@@ -1463,12 +1577,6 @@ Detected 1 error\n"
    (is (not= form
              (mutate form mutate-path)))))
 
-;; Missing onyx specs
-(s/def :trigger/materialize any?)
-(s/def :trigger/pre-evictor any?)
-(s/def :trigger/post-evictor any?)
-(s/def :flow/short-circuit any?)
-
 #?(:clj
    (deftest real-spec-tests-mutated-valid-value
      (checking
@@ -1963,3 +2071,4 @@ Cannot find spec for
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
+

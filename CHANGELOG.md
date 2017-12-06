@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Added
+- Table of keywords and specs for missing keys
+
+### Changed
+- Better error message for compound key clauses like `:req-un [(or ::foo ::bar)]`
+
 ## [0.3.4] - 2017-11-19
 
 ### Fixed
