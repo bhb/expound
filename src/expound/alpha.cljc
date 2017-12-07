@@ -124,12 +124,17 @@
                                               (pr-pred (:pred problem)
                                                        (:spec problem)))) problems))))
 
+;; HERE
+;; TODO - 'and satisfies' should be 'should satisfy'
 (defn insufficient-input [spec-name val path problem]
   (printer/format
-   "should have additional elements. The next element is named `%s` and satisfies
+   "should have additional elements. The next element %ssatisfies
 
 %s"
-   (pr-str (first (:expound/path problem)))
+   (if-some [el-name (first (:expound/path problem))]
+     (str "is named `" (pr-str el-name) "` and ")
+     ""
+     )
    (printer/indent (pr-pred (:pred problem) (:spec problem)))))
 
 (defn extra-input [spec-name val path]
@@ -420,6 +425,12 @@ should satisfy
 
 (defn problem-type [failure problem]
   (cond
+    (insufficient-input? failure problem)
+    :problem/insufficient-input
+
+    (extra-input? failure problem)
+    :problem/extra-input
+    
     (not-in-set? failure problem)
     :problem/not-in-set
 
@@ -428,13 +439,6 @@ should satisfy
 
     (missing-spec? failure problem)
     :problem/missing-spec
-
-    ;; TODO - move to top of list
-    (insufficient-input? failure problem)
-    :problem/insufficient-input
-
-    (extra-input? failure problem)
-    :problem/extra-input
 
     (fspec-exception-failure? failure problem)
     :problem/fspec-exception-failure
@@ -540,3 +544,93 @@ Detected %s %s\n"
   "Given a spec and a value, either prints a success message or prints a human-readable explanation as a string."
   [spec form]
   (print (expound-str spec form)))
+
+(comment
+  (s/explain-data
+   :clojure.core.specs.alpha/quotable-import-list
+   ['() []]
+   )
+
+  (count `({:path [:class :spec], :pred clojure.core/simple-symbol?, :val (), :via [:clojure.core.specs.alpha/quotable-import-list :clojure.core.specs.alpha/quotable-import-list], :in [0]}
+           {:path [:class :quoted-spec :quote], :reason "Insufficient input", :pred #{(quote quote)}, :val (), :via [:clojure.core.specs.alpha/quotable-import-list :clojure.core.specs.alpha/quotable-import-list], :in [0]}
+           {:path [:package-list :spec :package], :reason "Insufficient input", :pred clojure.core/simple-symbol?, :val (), :via [:clojure.core.specs.alpha/quotable-import-list :clojure.core.specs.alpha/quotable-import-list :clojure.core.specs.alpha/package-list], :in [0]}
+           {:path [:package-list :quoted-spec :quote], :reason "Insufficient input", :pred #{(quote quote)}, :val (), :via [:clojure.core.specs.alpha/quotable-import-list :clojure.core.specs.alpha/quotable-import-list], :in [0]}))
+  
+  ;;#:clojure.spec.alpha{:problems ({:path [:class :spec], :pred clojure.core/simple-symbol?, :val (), :via [:clojure.core.specs.alpha/quotable-import-list :clojure.core.specs.alpha/quotable-import-list], :in [0]} {:path [:class :quoted-spec :quote], :reason "Insufficient input", :pred #{(quote quote)}, :val (), :via [:clojure.core.specs.alpha/quotable-import-list :clojure.core.specs.alpha/quotable-import-list], :in [0]} {:path [:package-list :spec :package], :reason "Insufficient input", :pred clojure.core/simple-symbol?, :val (), :via [:clojure.core.specs.alpha/quotable-import-list :clojure.core.specs.alpha/quotable-import-list :clojure.core.specs.alpha/package-list], :in [0]} {:path [:package-list :quoted-spec :quote], :reason "Insufficient input", :pred #{(quote quote)}, :val (), :via [:clojure.core.specs.alpha/quotable-import-list :clojure.core.specs.alpha/quotable-import-list], :in [0]}), :spec :clojure.core.specs.alpha/quotable-import-list, :value [() []]}
+  
+  (expound
+   :clojure.core.specs.alpha/quotable-import-list
+   ['() []]
+   )
+  
+  (s/def
+    ::foobar
+    (s/cat
+     :type #{:user :employee}
+     :attrs (s/map-of keyword?
+                      any?)))
+
+  (::s/problems (s/explain-data ::foobar []))
+
+  (s/explain ::foobar [])
+  (expound ::foobar [])
+
+
+  (s/def :cat-spec/alt (s/+ (s/alt :s string?
+                                   :i int?)))
+
+  (s/explain :cat-spec/alt ['() []])
+
+  (expound :cat-spec/alt ['() []])
+
+  (s/check-asserts true)
+  (expound :cat-spec/alt [])
+
+  (expound-str
+   :clojure.core.specs.alpha/quotable-import-list
+   ['() []])
+
+  (expound-str
+   (s/+ string?)
+   []
+   )
+
+  (defmacro ^:private quotable
+  "Returns a spec that accepts both the spec and a (quote ...) form of the spec"
+  [spec]
+  `(s/or :spec ~spec :quoted-spec (s/cat :quote #{'quote} :spec ~spec)))
+
+  (expound-str
+   (clojure.spec.alpha/* (s/or
+                          :spec
+                          (clojure.spec.alpha/cat :package clojure.core/simple-symbol? :classes (clojure.spec.alpha/* clojure.core/simple-symbol?))
+                          :quoted-spec
+                          (s/cat :quote #{'quote}
+                                 :spec
+                                 (clojure.spec.alpha/cat :package clojure.core/simple-symbol? :classes (clojure.spec.alpha/* clojure.core/simple-symbol?)))))
+   ['() []])
+
+  ;; HERE - this fails
+  (expound-str
+   (s/or
+    :cat1 (s/cat :str string?)
+    :cat2 (s/cat :int int?))
+   ;;['() []]
+   []
+   )
+
+  (s/explain-data
+   (s/or
+    :cat1 (s/cat :str string?)
+    :cat2 (s/cat :int int?))
+   []
+   )
+
+  (s/def :cat-spec/alt (s/+ (s/alt :s string?
+                                   :i int?)))
+
+  (expound-str :cat-spec/alt [])
+
+  (s/explain-data :cat-spec/alt [])
+  
+  )

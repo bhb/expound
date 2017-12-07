@@ -381,6 +381,9 @@ Detected 1 error\n"
          (expound/expound-str :coll-of-spec/big-int-coll [])))))
 
 (s/def :cat-spec/kw (s/cat :k keyword? :v any?))
+(s/def :cat-spec/set (s/cat :type #{:foo :bar} :str string?))
+(s/def :cat-spec/alt (s/+ (s/alt :s string?
+                                 :i int?)))
 (deftest cat-spec
   (testing "too few elements"
     (is (= (pf "-- Syntax error -------------------
@@ -401,6 +404,22 @@ Detected 1 error\n")
            (expound/expound-str :cat-spec/kw [])))
     (is (= (pf "-- Syntax error -------------------
 
+  []
+
+should have additional elements. The next element is named `:type` and satisfies
+
+  #{:bar :foo}
+
+-- Relevant specs -------
+
+:cat-spec/set:
+  (pf.spec.alpha/cat :type #{:bar :foo} :str pf.core/string?)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :cat-spec/set [])))
+    (is (= (pf "-- Syntax error -------------------
+
   [:foo]
 
 should have additional elements. The next element is named `:v` and satisfies
@@ -414,7 +433,24 @@ should have additional elements. The next element is named `:v` and satisfies
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :cat-spec/kw [:foo]))))
+           (expound/expound-str :cat-spec/kw [:foo])))
+    (is (= (pf "-- Syntax error -------------------
+
+  []
+
+should have additional elements. The next element satisfies
+
+  (clojure.spec.alpha/cat :type #{:bar :foo} :str clojure.core/string?)
+
+-- Relevant specs -------
+
+:cat-spec/set:
+  (pf.spec.alpha/cat :type #{:bar :foo} :str pf.core/string?)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :cat-spec/alt [])))
+    )
   (testing "too many elements"
     (is (= (pf "-- Syntax error -------------------
 
@@ -1579,9 +1615,10 @@ Detected 1 error\n"
 
 #?(:clj
    (deftest real-spec-tests-mutated-valid-value
-     (checking
+     ;; TODO - restore
+     #_(checking
       "for any real-world spec and any mutated valid data, explain-str returns a string"
-      30
+      200
       [spec spec-gen
        mutate-path (gen/vector gen/pos-int)]
       (when-not (some
@@ -1594,6 +1631,7 @@ Detected 1 error\n"
           (try
             (let [valid-form (first (s/exercise spec 1))
                   invalid-form (mutate valid-form mutate-path)]
+              (prn [:invalid-form invalid-form])
               (is (string? (expound/expound-str spec invalid-form))))
             (catch clojure.lang.ExceptionInfo e
               (when (not= :no-gen (::s/failure (ex-data e)))
@@ -2072,3 +2110,12 @@ Cannot find spec for
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
 
+;; HERE - this fails assertion .. why?
+#_(deftest remove-me
+  (is (= ""
+         (expound/expound-str
+          :clojure.core.specs.alpha/quotable-import-list
+          ['() []])
+         ))
+  
+  )
