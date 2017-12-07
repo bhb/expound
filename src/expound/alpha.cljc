@@ -196,8 +196,11 @@ should have additional elements. The next element is named `%s` and satisfies
           :spec/contains-key-pred
           (nth pred 2)))))
 
-(defn regex-failure? [_problem problem]
-  (contains? #{"Insufficient input" "Extra input"} (:reason problem)))
+(defn insufficient-input? [_problem problem]
+  (contains? #{"Insufficient input"} (:reason problem)))
+
+(defn extra-input? [_problem problem]
+  (contains? #{"Extra input"} (:reason problem)))
 
 (defn multi-spec [pred spec]
   (->> (s/form spec)
@@ -290,7 +293,7 @@ should have additional elements. The next element is named `%s` and satisfies
    (header-label "Missing spec")
    (expected-str _type spec-name val path problems opts)))
 
-(defmethod problem-group-str :problem/regex-failure [_type spec-name val path problems opts]
+(defmethod problem-group-str :problem/insufficient-input [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -298,9 +301,18 @@ should have additional elements. The next element is named `%s` and satisfies
 
 %s"
      (header-label "Syntax error")
-     (case (:reason problem)
-       "Insufficient input" (insufficient-input spec-name val path problem)
-       "Extra input" (extra-input spec-name val path)))))
+     (insufficient-input spec-name val path problem))))
+
+(defmethod problem-group-str :problem/extra-input [_type spec-name val path problems opts]
+  (s/assert ::singleton problems)
+  (let [problem (first problems)]
+    (printer/format
+     "%s
+
+%s"
+     (header-label "Syntax error")
+     (extra-input spec-name val path))))
+
 
 (defmethod problem-group-str :problem/fspec-exception-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
@@ -393,8 +405,12 @@ should satisfy
     (missing-spec? failure problem)
     :problem/missing-spec
 
-    (regex-failure? failure problem)
-    :problem/regex-failure
+    ;; TODO - move to top of list
+    (insufficient-input? failure problem)
+    :problem/insufficient-input
+
+    (extra-input? failure problem)
+    :problem/extra-input
 
     (fspec-exception-failure? failure problem)
     :problem/fspec-exception-failure
