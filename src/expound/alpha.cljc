@@ -403,6 +403,15 @@ should satisfy
    (expected-str _type spec-name val path problems opts)
    ))
 
+(defmethod expected-str :problem/unknown [_type spec-name val path problems opts]
+  (printer/format
+   "should satisfy
+
+%s"
+   (preds problems)
+   )
+  )
+
 (defmethod problem-group-str :problem/unknown [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (printer/format
@@ -410,12 +419,11 @@ should satisfy
 
 %s
 
-should satisfy
-
 %s"
    (header-label "Spec failed")
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (preds problems)))
+   (expected-str _type spec-name val path problems opts)
+   ))
 
 (defn problem-group-str1 [type spec-name val path problems opts]
   (str
