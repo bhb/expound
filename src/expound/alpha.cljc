@@ -274,9 +274,8 @@
 
 (defmethod expected-str :problem/missing-spec [_type spec-name val path problems opts]
   (->> problems
-        (map #(no-method spec-name val path %))
-        (string/join "\n"))
-  )
+       (map #(no-method spec-name val path %))
+       (string/join "\n")))
 
 (defmethod problem-group-str :problem/missing-spec [_type spec-name val path problems opts]
   (printer/format
@@ -300,14 +299,12 @@
 %s"
    (header-label "Syntax error")
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (expected-str _type spec-name val path problems opts)
-   ))
+   (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/extra-input [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
-    (extra-input spec-name val path)
-    ))
+    (extra-input spec-name val path)))
 
 (defmethod problem-group-str :problem/extra-input [_type spec-name val path problems opts]
   (printer/format
@@ -318,8 +315,7 @@
 %s"
    (header-label "Syntax error")
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (expected-str _type spec-name val path problems opts)
-   ))
+   (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/fspec-exception-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
@@ -358,9 +354,7 @@ should satisfy
 
 %s"
      (printer/indent (pr-str (:val problem)))
-     (printer/indent (pr-pred (:pred problem) (:spec problem)))
-     ))
-  )
+     (printer/indent (pr-pred (:pred problem) (:spec problem))))))
 
 (defmethod problem-group-str :problem/fspec-ret-failure [_type spec-name val path problems opts]
   (printer/format
@@ -385,10 +379,7 @@ should satisfy
 
 %s"
      (printer/indent (pr-str (:val problem)))
-     (printer/indent (pr-pred (:pred problem) (:spec problem)))
-     )
-    )
-  )
+     (printer/indent (pr-pred (:pred problem) (:spec problem))))))
 
 (defmethod problem-group-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
@@ -400,17 +391,14 @@ should satisfy
 %s"
    (header-label "Function spec failed")
    (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
-   (expected-str _type spec-name val path problems opts)
-   ))
+   (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/unknown [_type spec-name val path problems opts]
   (printer/format
    "should satisfy
 
 %s"
-   (preds problems)
-   )
-  )
+   (preds problems)))
 
 (defmethod problem-group-str :problem/unknown [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
@@ -422,8 +410,7 @@ should satisfy
 %s"
    (header-label "Spec failed")
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (expected-str _type spec-name val path problems opts)
-   ))
+   (expected-str _type spec-name val path problems opts)))
 
 (defn problem-group-str1 [type spec-name val path problems opts]
   (str
