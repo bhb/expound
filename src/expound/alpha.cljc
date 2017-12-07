@@ -227,6 +227,7 @@ should have additional elements. The next element is named `%s` and satisfies
      (pr-str (if retag (retag (problems/value-in val path)) nil)))))
 
 (defmulti problem-group-str (fn [type spec-name _val _path _problems _opts] type))
+(defmulti expected-str (fn [type  spec-name _val _path _problems _opts] type))
 
 (defn explain-missing-keys [problems]
   (let [missing-keys (map #(printer/missing-key (:pred %)) problems)]
@@ -241,6 +242,9 @@ should have additional elements. The next element is named `%s` and satisfies
            (str "\n\n" table)
            nil))))
 
+(defmethod expected-str :problem/missing-key [_type spec-name val path problems opts]
+  (explain-missing-keys problems))
+
 (defmethod problem-group-str :problem/missing-key [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
   (printer/format
@@ -251,21 +255,32 @@ should have additional elements. The next element is named `%s` and satisfies
 %s"
    (header-label "Spec failed")
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (explain-missing-keys problems)))
+   (expected-str _type spec-name val path problems opts)))
+
+(defmethod expected-str :problem/not-in-set [_type spec-name val path problems opts]
+  (let [combined-set (apply set/union (map :pred problems))]
+    (printer/format
+     "should be%s: %s"
+     (if (= 1 (count combined-set)) "" " one of")
+     (string/join "," (map #(str "`" % "`") combined-set)))))
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
-  (let [combined-set (apply set/union (map :pred problems))]
-    (printer/format
-     "%s
+  (printer/format
+   "%s
 
 %s
 
-should be%s: %s"
-     (header-label "Spec failed")
-     (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-     (if (= 1 (count combined-set)) "" " one of")
-     (string/join "," (map #(str "`" % "`") combined-set)))))
+%s"
+   (header-label "Spec failed")
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
+   (expected-str _type spec-name val path problems opts)))
+
+(defmethod expected-str :problem/missing-spec [_type spec-name val path problems opts]
+  (->> problems
+        (map #(no-method spec-name val path %))
+        (string/join "\n"))
+  )
 
 (defmethod problem-group-str :problem/missing-spec [_type spec-name val path problems opts]
   (printer/format
@@ -273,9 +288,7 @@ should be%s: %s"
 
 %s"
    (header-label "Missing spec")
-   (->> problems
-        (map #(no-method spec-name val path %))
-        (string/join "\n"))))
+   (expected-str _type spec-name val path problems opts)))
 
 (defmethod problem-group-str :problem/regex-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
