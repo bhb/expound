@@ -286,92 +286,122 @@
    (header-label "Missing spec")
    (expected-str _type spec-name val path problems opts)))
 
-(defmethod problem-group-str :problem/insufficient-input [_type spec-name val path problems opts]
+(defmethod expected-str :problem/insufficient-input [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
-    (printer/format
-     "%s
+    (insufficient-input spec-name val path problem)))
+
+(defmethod problem-group-str :problem/insufficient-input [_type spec-name val path problems opts]
+  (printer/format
+   "%s
 
 %s
 
 %s"
-     (header-label "Syntax error")
-     (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-     (insufficient-input spec-name val path problem))))
+   (header-label "Syntax error")
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
+   (expected-str _type spec-name val path problems opts)
+   ))
+
+(defmethod expected-str :problem/extra-input [_type spec-name val path problems opts]
+  (s/assert ::singleton problems)
+  (let [problem (first problems)]
+    (extra-input spec-name val path)
+    ))
 
 (defmethod problem-group-str :problem/extra-input [_type spec-name val path problems opts]
-  (s/assert ::singleton problems)
-  (let [problem (first problems)]
-    (printer/format
-     "%s
+  (printer/format
+   "%s
 
 %s
 
 %s"
-     (header-label "Syntax error")
-     (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-     (extra-input spec-name val path))))
+   (header-label "Syntax error")
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
+   (expected-str _type spec-name val path problems opts)
+   ))
 
-
-(defmethod problem-group-str :problem/fspec-exception-failure [_type spec-name val path problems opts]
+(defmethod expected-str :problem/fspec-exception-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
-     "%s
-
-%s
-
-threw exception 
+     "threw exception 
 
 %s
 
 with args:
 
 %s"
-     (header-label "Exception")
-     (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
      (printer/indent (pr-str (:reason problem)))
      (printer/indent (string/join ", " (:val problem))))))
 
-(defmethod problem-group-str :problem/fspec-ret-failure [_type spec-name val path problems opts]
-  (s/assert ::singleton problems)
-  (let [problem (first problems)]
-    (printer/format
-     "%s
+(defmethod problem-group-str :problem/fspec-exception-failure [_type spec-name val path problems opts]
+  (printer/format
+   "%s
 
 %s
 
-returned an invalid value
+%s"
+   (header-label "Exception")
+   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+   (expected-str _type spec-name val path problems opts)))
+
+(defmethod expected-str :problem/fspec-ret-failure [_type spec-name val path problems opts]
+  (s/assert ::singleton problems)
+  (let [problem (first problems)]
+    (printer/format
+     "returned an invalid value
 
 %s
 
 should satisfy
 
 %s"
-     (header-label "Function spec failed")
-     (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
      (printer/indent (pr-str (:val problem)))
-     (printer/indent (pr-pred (:pred problem) (:spec problem))))))
+     (printer/indent (pr-pred (:pred problem) (:spec problem)))
+     ))
+  )
+
+(defmethod problem-group-str :problem/fspec-ret-failure [_type spec-name val path problems opts]
+  (printer/format
+   "%s
+
+%s
+
+%s"
+   (header-label "Function spec failed")
+   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+   (expected-str _type spec-name val path problems opts)))
+
+(defmethod expected-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
+  (s/assert ::singleton problems)
+  (let [problem (first problems)]
+    (printer/format
+     "failed spec. Function arguments and return value
+
+%s
+
+should satisfy
+
+%s"
+     (printer/indent (pr-str (:val problem)))
+     (printer/indent (pr-pred (:pred problem) (:spec problem)))
+     )
+    )
+  )
 
 (defmethod problem-group-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
-  (let [problem (first problems)]
-    (printer/format
-     "%s
+  (printer/format
+   "%s
 
 %s
-
-failed spec. Function arguments and return value
-
-%s
-
-should satisfy
 
 %s"
-     (header-label "Function spec failed")
-     (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
-     (printer/indent (pr-str (:val problem)))
-     (printer/indent (pr-pred (:pred problem) (:spec problem))))))
+   (header-label "Function spec failed")
+   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+   (expected-str _type spec-name val path problems opts)
+   ))
 
 (defmethod problem-group-str :problem/unknown [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
