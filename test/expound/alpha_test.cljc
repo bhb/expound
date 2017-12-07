@@ -418,10 +418,10 @@ Detected 1 error\n")
   (testing "too many elements"
     (is (= (pf "-- Syntax error -------------------
 
-Value has extra input
-
   [... ... :bar ...]
            ^^^^
+
+has extra input
 
 -- Relevant specs -------
 

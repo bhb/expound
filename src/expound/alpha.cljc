@@ -126,21 +126,14 @@
 
 (defn insufficient-input [spec-name val path problem]
   (printer/format
-   "%s
-
-should have additional elements. The next element is named `%s` and satisfies
+   "should have additional elements. The next element is named `%s` and satisfies
 
 %s"
-   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (pr-str (first (:expound/path problem)))
    (printer/indent (pr-pred (:pred problem) (:spec problem)))))
 
 (defn extra-input [spec-name val path]
-  (printer/format
-   "Value has extra input
-
-%s"
-   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))))
+  "has extra input")
 
 (defn label
   ([size]
@@ -299,8 +292,11 @@ should have additional elements. The next element is named `%s` and satisfies
     (printer/format
      "%s
 
+%s
+
 %s"
      (header-label "Syntax error")
+     (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
      (insufficient-input spec-name val path problem))))
 
 (defmethod problem-group-str :problem/extra-input [_type spec-name val path problems opts]
@@ -309,8 +305,11 @@ should have additional elements. The next element is named `%s` and satisfies
     (printer/format
      "%s
 
+%s
+
 %s"
      (header-label "Syntax error")
+     (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
      (extra-input spec-name val path))))
 
 
