@@ -382,15 +382,14 @@ Detected 1 error\n"
 
 (s/def :cat-spec/kw (s/cat :k keyword? :v any?))
 (s/def :cat-spec/set (s/cat :type #{:foo :bar} :str string?))
-(s/def :cat-spec/alt (s/+ (s/alt :s string?
-                                 :i int?)))
+(s/def :cat-spec/alt (s/+ (s/alt :s string? :i int?)))
 (deftest cat-spec
   (testing "too few elements"
     (is (= (pf "-- Syntax error -------------------
 
   []
 
-should have additional elements. The next element is named `:k` and satisfies
+should have additional elements. The next element \":k\" should satisfy
 
   keyword?
 
@@ -406,9 +405,7 @@ Detected 1 error\n")
 
   []
 
-should have additional elements. The next element is named `:type` and satisfies
-
-  #{:bar :foo}
+should have additional elements. The next element \":type\" should be one of: `:bar`,`:foo`
 
 -- Relevant specs -------
 
@@ -422,7 +419,7 @@ Detected 1 error\n")
 
   [:foo]
 
-should have additional elements. The next element is named `:v` and satisfies
+should have additional elements. The next element \":v\" should satisfy
 
   any?
 
@@ -438,19 +435,19 @@ Detected 1 error\n")
 
   []
 
-should have additional elements. The next element satisfies
+should have additional elements. The next element should satisfy
 
-  (clojure.spec.alpha/cat :type #{:bar :foo} :str clojure.core/string?)
+  (pf.spec.alpha/alt :s string? :i int?)
 
 -- Relevant specs -------
 
-:cat-spec/set:
-  (pf.spec.alpha/cat :type #{:bar :foo} :str pf.core/string?)
+:cat-spec/alt:
+  (pf.spec.alpha/+
+   (pf.spec.alpha/alt :s pf.core/string? :i pf.core/int?))
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :cat-spec/alt [])))
-    )
+           (expound/expound-str :cat-spec/alt []))))
   (testing "too many elements"
     (is (= (pf "-- Syntax error -------------------
 
@@ -1171,7 +1168,7 @@ Function arguments
 
   (1)
 
-should have additional elements. The next element is named `:y` and satisfies
+should have additional elements. The next element \":y\" should satisfy
 
   int?
 
@@ -1193,7 +1190,7 @@ Function arguments
 
   (1)
 
-should have additional elements. The next element is named `:y` and satisfies
+should have additional elements. The next element \":y\" should satisfy
 
   int?
 
@@ -1617,26 +1614,26 @@ Detected 1 error\n"
    (deftest real-spec-tests-mutated-valid-value
      ;; TODO - restore
      #_(checking
-      "for any real-world spec and any mutated valid data, explain-str returns a string"
-      200
-      [spec spec-gen
-       mutate-path (gen/vector gen/pos-int)]
-      (when-not (some
-                 #{"clojure.spec.alpha/fspec"}
-                 (->> spec
-                      inline-specs
-                      (tree-seq coll? identity)
-                      (map str)))
-        (when (contains? (s/registry) spec)
-          (try
-            (let [valid-form (first (s/exercise spec 1))
-                  invalid-form (mutate valid-form mutate-path)]
-              (prn [:invalid-form invalid-form])
-              (is (string? (expound/expound-str spec invalid-form))))
-            (catch clojure.lang.ExceptionInfo e
-              (when (not= :no-gen (::s/failure (ex-data e)))
-                (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
-                  (throw e))))))))))
+        "for any real-world spec and any mutated valid data, explain-str returns a string"
+        200
+        [spec spec-gen
+         mutate-path (gen/vector gen/pos-int)]
+        (when-not (some
+                   #{"clojure.spec.alpha/fspec"}
+                   (->> spec
+                        inline-specs
+                        (tree-seq coll? identity)
+                        (map str)))
+          (when (contains? (s/registry) spec)
+            (try
+              (let [valid-form (first (s/exercise spec 1))
+                    invalid-form (mutate valid-form mutate-path)]
+                (prn [:invalid-form invalid-form])
+                (is (string? (expound/expound-str spec invalid-form))))
+              (catch clojure.lang.ExceptionInfo e
+                (when (not= :no-gen (::s/failure (ex-data e)))
+                  (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
+                    (throw e))))))))))
 
 ;; Using conformers for transformation should not crash by default, or at least give useful error message.
 (defn numberify [s]
@@ -2112,10 +2109,7 @@ Detected 1 error\n")
 
 ;; HERE - this fails assertion .. why?
 #_(deftest remove-me
-  (is (= ""
-         (expound/expound-str
-          :clojure.core.specs.alpha/quotable-import-list
-          ['() []])
-         ))
-  
-  )
+    (is (= ""
+           (expound/expound-str
+            :clojure.core.specs.alpha/quotable-import-list
+            ['() []]))))
