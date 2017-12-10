@@ -287,24 +287,26 @@
      (if-some [el-name (first (:expound/path problem))]
        (str " \"" (pr-str el-name) "\"")
        "")
-     (let [pred (:pred problem)]
-       (if (s/get-spec pred)
-         (let [sp pred
-               explain-data (s/explain-data sp :expound/value-that-should-never-match)
+     (let [pred (:pred problem)
+           last-via (last (:expound/via problem))
+           sp (cond
+                (s/get-spec pred) pred
+                (s/get-spec last-via) last-via)
+           non-matching-value [:expound/value-that-should-never-match]]
+       (cond
+         (and (not (symbol? pred))
+              sp)
+         (let [explain-data (s/explain-data sp  non-matching-value)
                new-problems (sorted-and-grouped-problems (problems/annotate explain-data))]
            (apply str
                   (for [[[in type] problems'] new-problems]
-                    #_{:type type
-                     ;;:spec-name (spec-name explain-data)
-                       :in in
-                       :problems problems
-                       :opts opts}
+                    (expected-str type :expound/no-spec-name non-matching-value in problems' opts))))
 
-                    (expected-str type :expound/no-spec-name :expound/value-that-should-never-match in problems' opts))))
+         :else
          (let [ptype (problem-type nil (dissoc problem :reason))
                new-problems (map #(dissoc % :reason) problems)]
            (apply str
-                  (expected-str ptype :expound/no-spec-name :expound/value-that-should-never-match [] new-problems opts))))))))
+                  (expected-str ptype :expound/no-spec-name non-matching-value [] new-problems opts))))))))
 
 (defmethod problem-group-str :problem/insufficient-input [_type spec-name val path problems opts]
   (printer/format

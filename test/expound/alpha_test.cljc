@@ -383,6 +383,7 @@ Detected 1 error\n"
 (s/def :cat-spec/kw (s/cat :k keyword? :v any?))
 (s/def :cat-spec/set (s/cat :type #{:foo :bar} :str string?))
 (s/def :cat-spec/alt (s/+ (s/alt :s string? :i int?)))
+(s/def :cat-spec/any (s/cat :x (s/+ any?))) ;; Not a useful spec, but worth testing
 (deftest cat-spec
   (testing "too few elements"
     (is (= (pf "-- Syntax error -------------------
@@ -437,7 +438,11 @@ Detected 1 error\n")
 
 should have additional elements. The next element should satisfy
 
-  (pf.spec.alpha/alt :s string? :i int?)
+  string?
+
+or
+
+  int?
 
 -- Relevant specs -------
 
@@ -447,7 +452,23 @@ should have additional elements. The next element should satisfy
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :cat-spec/alt []))))
+           (expound/expound-str :cat-spec/alt [])))
+    (is (= (pf "-- Syntax error -------------------
+
+  []
+
+should have additional elements. The next element \":x\" should satisfy
+
+  any?
+
+-- Relevant specs -------
+
+:cat-spec/any:
+  (pf.spec.alpha/cat :x (pf.spec.alpha/+ pf.core/any?))
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :cat-spec/any []))))
   (testing "too many elements"
     (is (= (pf "-- Syntax error -------------------
 
