@@ -275,9 +275,52 @@
    (header-label "Missing spec")
    (expected-str _type spec-name val path problems opts)))
 
-;; TODO - reorder to avoid this
-(declare sorted-and-grouped-problems)
-(declare problem-type)
+(defn safe-sort-by
+  "Same as sort-by, but if an error is raised, returns the original unsorted collection"
+  [key-fn comp coll]
+  (try
+    (sort-by key-fn comp coll)
+    (catch #?(:cljs :default
+              :clj Exception) e coll)))
+
+(defn problem-type [failure problem]
+  (cond
+    (insufficient-input? failure problem)
+    :problem/insufficient-input
+
+    (extra-input? failure problem)
+    :problem/extra-input
+
+    (not-in-set? failure problem)
+    :problem/not-in-set
+
+    (missing-key? failure problem)
+    :problem/missing-key
+
+    (missing-spec? failure problem)
+    :problem/missing-spec
+
+    (fspec-exception-failure? failure problem)
+    :problem/fspec-exception-failure
+
+    (fspec-ret-failure? failure problem)
+    :problem/fspec-ret-failure
+
+    (fspec-fn-failure? failure problem)
+    :problem/fspec-fn-failure
+
+    :else
+    :problem/unknown))
+
+(defn sorted-and-grouped-problems [explain-data]
+  (->> explain-data
+       :expound/problems
+       (problems/leaf-only)
+       (group-by (juxt :expound/in (partial problem-type (::s/failure explain-data))))
+       ;; We attempt to sort the problems by path, but it's not feasible to sort in
+       ;; all cases, since paths could contain arbitrary user-defined data structures.
+       ;; If there is an error, we just give up on sorting.
+       (safe-sort-by first paths/compare-paths)))
 
 (defmethod expected-str :problem/insufficient-input [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
@@ -294,20 +337,16 @@
                 (and
                  (s/get-spec last-via)
                  (= pred (s/form (s/get-spec last-via)))) last-via)
-           non-matching-value #_:expound/value-that-should-never-match
-
-           [:expound/value-that-should-never-match]]
-       ;; TODO - convert back to if/then
-       (cond
-         (and (not (symbol? pred))
-              sp)
+           non-matching-value [:expound/value-that-should-never-match]]
+       (if
+        (and (not (symbol? pred))
+             sp)
          (let [explain-data (s/explain-data sp  non-matching-value)
                new-problems (sorted-and-grouped-problems (problems/annotate explain-data))]
            (apply str
                   (for [[[in type] problems'] new-problems]
                     (expected-str type :expound/no-spec-name non-matching-value in problems' opts))))
 
-         :else
          (let [ptype (problem-type nil (dissoc problem :reason))
                new-problems (map #(dissoc % :reason) problems)]
            (apply str
@@ -441,43 +480,6 @@ should satisfy
    "\n\n"
    (if (:print-specs? opts) (relevant-specs problems) "")))
 
-(defn problem-type [failure problem]
-  (cond
-    (insufficient-input? failure problem)
-    :problem/insufficient-input
-
-    (extra-input? failure problem)
-    :problem/extra-input
-
-    (not-in-set? failure problem)
-    :problem/not-in-set
-
-    (missing-key? failure problem)
-    :problem/missing-key
-
-    (missing-spec? failure problem)
-    :problem/missing-spec
-
-    (fspec-exception-failure? failure problem)
-    :problem/fspec-exception-failure
-
-    (fspec-ret-failure? failure problem)
-    :problem/fspec-ret-failure
-
-    (fspec-fn-failure? failure problem)
-    :problem/fspec-fn-failure
-
-    :else
-    :problem/unknown))
-
-(defn safe-sort-by
-  "Same as sort-by, but if an error is raised, returns the original unsorted collection"
-  [key-fn comp coll]
-  (try
-    (sort-by key-fn comp coll)
-    (catch #?(:cljs :default
-              :clj Exception) e coll)))
-
 (defn instrumentation-info [failure caller]
   ;; As of version 1.9.562, Clojurescript does
   ;; not include failure or caller info, so
@@ -493,16 +495,6 @@ should satisfy
   (if (#{:instrument} (::s/failure ed))
     (-> ed ::s/problems first :path first)
     nil))
-
-(defn sorted-and-grouped-problems [explain-data]
-  (->> explain-data
-       :expound/problems
-       (problems/leaf-only)
-       (group-by (juxt :expound/in (partial problem-type (::s/failure explain-data))))
-       ;; We attempt to sort the problems by path, but it's not feasible to sort in
-       ;; all cases, since paths could contain arbitrary user-defined data structures.
-       ;; If there is an error, we just give up on sorting.
-       (safe-sort-by first paths/compare-paths)))
 
 (defn printer-str [opts explain-data]
   (let [opts' (merge {:show-valid-values? false
