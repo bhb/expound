@@ -382,7 +382,9 @@ Detected 1 error\n"
 
 (s/def :cat-spec/kw (s/cat :k keyword? :v any?))
 (s/def :cat-spec/set (s/cat :type #{:foo :bar} :str string?))
-(s/def :cat-spec/alt (s/+ (s/alt :s string? :i int?)))
+(s/def :cat-spec/alt* (s/alt :s string? :i int?))
+(s/def :cat-spec/alt (s/+ :cat-spec/alt*))
+(s/def :cat-spec/alt-inline (s/+ (s/alt :s string? :i int?)))
 (s/def :cat-spec/any (s/cat :x (s/+ any?))) ;; Not a useful spec, but worth testing
 (deftest cat-spec
   (testing "too few elements"
@@ -446,13 +448,31 @@ or
 
 -- Relevant specs -------
 
+:cat-spec/alt*:
+  (pf.spec.alpha/alt :s pf.core/string? :i pf.core/int?)
 :cat-spec/alt:
+  (pf.spec.alpha/+ :cat-spec/alt*)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :cat-spec/alt [])))
+    (is (= (pf "-- Syntax error -------------------
+
+  []
+
+should have additional elements. The next element should satisfy
+
+  (pf.spec.alpha/alt :s string? :i int?)
+
+-- Relevant specs -------
+
+:cat-spec/alt-inline:
   (pf.spec.alpha/+
    (pf.spec.alpha/alt :s pf.core/string? :i pf.core/int?))
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :cat-spec/alt [])))
+           (expound/expound-str :cat-spec/alt-inline [])))
     (is (= (pf "-- Syntax error -------------------
 
   []

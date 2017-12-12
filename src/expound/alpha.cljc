@@ -291,8 +291,13 @@
            last-via (last (:expound/via problem))
            sp (cond
                 (s/get-spec pred) pred
-                (s/get-spec last-via) last-via)
-           non-matching-value [:expound/value-that-should-never-match]]
+                (and
+                 (s/get-spec last-via)
+                 (= pred (s/form (s/get-spec last-via)))) last-via)
+           non-matching-value #_:expound/value-that-should-never-match
+
+           [:expound/value-that-should-never-match]]
+       ;; TODO - convert back to if/then
        (cond
          (and (not (symbol? pred))
               sp)
