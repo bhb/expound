@@ -19,6 +19,8 @@
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
+(def num-tests 30)
+
 (use-fixtures :once
   test-utils/check-spec-assertions
   test-utils/instrument-all)
@@ -949,7 +951,7 @@ Detected 1 error\n")
 (deftest generated-simple-spec
   (checking
    "simple spec"
-   30
+   num-tests
    [simple-spec simple-spec-gen
     :let [sp-form (s/form simple-spec)]
     form gen/any-printable]
@@ -958,7 +960,7 @@ Detected 1 error\n")
 (deftest generated-coll-of-specs
   (checking
    "'coll-of' spec"
-   30
+   num-tests
    [simple-spec simple-spec-gen
     every-args (s/gen :specs/every-args)
     :let [spec (apply-coll-of simple-spec every-args)]
@@ -969,7 +971,7 @@ Detected 1 error\n")
 (deftest generated-and-specs
   (checking
    "'and' spec"
-   30
+   num-tests
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
     :let [spec (s/and simple-spec1 simple-spec2)]
@@ -980,7 +982,7 @@ Detected 1 error\n")
 (deftest generated-or-specs
   (checking
    "'or' spec"
-   30
+   num-tests
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
     :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
@@ -991,7 +993,7 @@ Detected 1 error\n")
 (deftest generated-map-of-specs
   (checking
    "'map-of' spec"
-   30
+   num-tests
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
     simple-spec3 simple-spec-gen
@@ -1593,7 +1595,7 @@ Detected 1 error\n"
       ;; At 50, it might find a bug in failures for the
       ;; :ring/handler spec, but keep it plugged in, since it
       ;; takes a long time to shrink
-      30
+      num-tests
       [spec spec-gen
        form gen/any-printable]
       ;; Can't reliably test fspecs until
@@ -1641,7 +1643,7 @@ Detected 1 error\n"
 (deftest test-mutate
   (checking
    "mutation alters data structure"
-   50
+   num-tests
    [form gen/any-printable
     mutate-path (gen/vector gen/pos-int 1 10)]
    (is (not= form
@@ -1649,28 +1651,26 @@ Detected 1 error\n"
 
 #?(:clj
    (deftest real-spec-tests-mutated-valid-value
-     ;; TODO - restore
-     #_(checking
-        "for any real-world spec and any mutated valid data, explain-str returns a string"
-        200
-        [spec spec-gen
-         mutate-path (gen/vector gen/pos-int)]
-        (when-not (some
-                   #{"clojure.spec.alpha/fspec"}
-                   (->> spec
-                        inline-specs
-                        (tree-seq coll? identity)
-                        (map str)))
-          (when (contains? (s/registry) spec)
-            (try
-              (let [valid-form (first (s/exercise spec 1))
-                    invalid-form (mutate valid-form mutate-path)]
-                (prn [:invalid-form invalid-form])
-                (is (string? (expound/expound-str spec invalid-form))))
-              (catch clojure.lang.ExceptionInfo e
-                (when (not= :no-gen (::s/failure (ex-data e)))
-                  (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
-                    (throw e))))))))))
+     (checking
+      "for any real-world spec and any mutated valid data, explain-str returns a string"
+      num-tests
+      [spec spec-gen
+       mutate-path (gen/vector gen/pos-int)]
+      (when-not (some
+                 #{"clojure.spec.alpha/fspec"}
+                 (->> spec
+                      inline-specs
+                      (tree-seq coll? identity)
+                      (map str)))
+        (when (contains? (s/registry) spec)
+          (try
+            (let [valid-form (first (s/exercise spec 1))
+                  invalid-form (mutate valid-form mutate-path)]
+              (is (string? (expound/expound-str spec invalid-form))))
+            (catch clojure.lang.ExceptionInfo e
+              (when (not= :no-gen (::s/failure (ex-data e)))
+                (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
+                  (throw e))))))))))
 
 ;; Using conformers for transformation should not crash by default, or at least give useful error message.
 (defn numberify [s]
@@ -2036,7 +2036,7 @@ Detected 1 error\n"
    (deftest form-containing-incomparables
      (checking
       "for any value including NaN, or Infinity, expound returns a string"
-      30
+      num-tests
       [form (gen/frequency
              [[1 (gen/elements
                   [Double/NaN
@@ -2054,7 +2054,7 @@ Detected 1 error\n"
    (deftest form-containing-incomparables
      (checking
       "for any value including NaN, or Infinity, expound returns a string"
-      30
+      num-tests
       [form (gen/frequency
              [[1 (gen/elements
                   [js/NaN

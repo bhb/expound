@@ -319,15 +319,13 @@
        ;; We attempt to sort the problems by path, but it's not feasible to sort in
        ;; all cases, since paths could contain arbitrary user-defined data structures.
        ;; If there is an error, we just give up on sorting.
-       (safe-sort-by first paths/compare-paths))
-  )
+       (safe-sort-by first paths/compare-paths)))
 
 (defn sorted-and-grouped-problems [explain-data]
   (->> explain-data
        :expound/problems
        (problems/leaf-only)
-       (group-and-sort-problems (::s/failure explain-data))
-       ))
+       (group-and-sort-problems (::s/failure explain-data))))
 
 (defmethod expected-str :problem/insufficient-input [_type spec-name val path problems opts]
   (let [problem (first problems)]
