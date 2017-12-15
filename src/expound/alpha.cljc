@@ -178,10 +178,10 @@
           :spec/contains-key-pred
           (nth pred 2)))))
 
-(defn insufficient-input? [_problem problem]
+(defn insufficient-input? [_failure problem]
   (contains? #{"Insufficient input"} (:reason problem)))
 
-(defn extra-input? [_problem problem]
+(defn extra-input? [_failure problem]
   (contains? #{"Extra input"} (:reason problem)))
 
 (defn multi-spec [pred spec]
@@ -312,45 +312,36 @@
     :else
     :problem/unknown))
 
+;; TODO - rename, dupe of below
+(defn group-and-sort-problems [failure problems]
+  (->> problems
+       (group-by (juxt :expound/in (partial problem-type failure)))
+       ;; We attempt to sort the problems by path, but it's not feasible to sort in
+       ;; all cases, since paths could contain arbitrary user-defined data structures.
+       ;; If there is an error, we just give up on sorting.
+       (safe-sort-by first paths/compare-paths))
+  )
+
 (defn sorted-and-grouped-problems [explain-data]
   (->> explain-data
        :expound/problems
        (problems/leaf-only)
-       (group-by (juxt :expound/in (partial problem-type (::s/failure explain-data))))
-       ;; We attempt to sort the problems by path, but it's not feasible to sort in
-       ;; all cases, since paths could contain arbitrary user-defined data structures.
-       ;; If there is an error, we just give up on sorting.
-       (safe-sort-by first paths/compare-paths)))
+       (group-and-sort-problems (::s/failure explain-data))
+       ))
 
 (defmethod expected-str :problem/insufficient-input [_type spec-name val path problems opts]
-  (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
      "should have additional elements. The next element%s %s"
      (if-some [el-name (first (:expound/path problem))]
        (str " \"" (pr-str el-name) "\"")
        "")
-     (let [pred (:pred problem)
-           last-via (last (:expound/via problem))
-           sp (cond
-                (s/get-spec pred) pred
-                (and
-                 (s/get-spec last-via)
-                 (= pred (s/form (s/get-spec last-via)))) last-via)
-           non-matching-value [:expound/value-that-should-never-match]]
-       (if
-        (and (not (symbol? pred))
-             sp)
-         (let [explain-data (s/explain-data sp  non-matching-value)
-               new-problems (sorted-and-grouped-problems (problems/annotate explain-data))]
-           (apply str
-                  (for [[[in type] problems'] new-problems]
-                    (expected-str type :expound/no-spec-name non-matching-value in problems' opts))))
-
-         (let [ptype (problem-type nil (dissoc problem :reason))
-               new-problems (map #(dissoc % :reason) problems)]
-           (apply str
-                  (expected-str ptype :expound/no-spec-name non-matching-value [] new-problems opts))))))))
+     (let [failure nil
+           non-matching-value [:expound/value-that-should-never-match]
+           new-problems (group-and-sort-problems failure (map #(dissoc % :reason) problems))]
+       (string/join "\n\nor "
+                    (for [[[in type] problems'] new-problems]
+                      (expected-str type :expound/no-spec-name non-matching-value in problems' opts)))))))
 
 (defmethod problem-group-str :problem/insufficient-input [_type spec-name val path problems opts]
   (printer/format

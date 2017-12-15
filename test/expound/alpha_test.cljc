@@ -440,11 +440,7 @@ Detected 1 error\n")
 
 should have additional elements. The next element should satisfy
 
-  string?
-
-or
-
-  int?
+  (pf.spec.alpha/alt :s string? :i int?)
 
 -- Relevant specs -------
 
@@ -2147,10 +2143,3 @@ Cannot find spec for
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
-
-;; HERE - this fails assertion .. why?
-#_(deftest remove-me
-    (is (= ""
-           (expound/expound-str
-            :clojure.core.specs.alpha/quotable-import-list
-            ['() []]))))
