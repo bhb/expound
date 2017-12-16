@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.4.0] - 2017-12-16
+
 ### Fixed
 - [Bug with including development HTML page in JAR](https://github.com/bhb/expound/issues/60)
 
@@ -81,7 +83,8 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.3.4...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/bhb/expound/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/bhb/expound/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/bhb/expound/compare/v0.3.2...v0.3.3
 [0.3.2]: https://github.com/bhb/expound/compare/v0.3.1...v0.3.2
