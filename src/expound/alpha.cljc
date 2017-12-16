@@ -312,20 +312,13 @@
     :else
     :problem/unknown))
 
-;; TODO - rename, dupe of below
-(defn group-and-sort-problems [failure problems]
+(defn grouped-and-sorted-problems [failure problems]
   (->> problems
        (group-by (juxt :expound/in (partial problem-type failure)))
        ;; We attempt to sort the problems by path, but it's not feasible to sort in
        ;; all cases, since paths could contain arbitrary user-defined data structures.
        ;; If there is an error, we just give up on sorting.
        (safe-sort-by first paths/compare-paths)))
-
-(defn sorted-and-grouped-problems [explain-data]
-  (->> explain-data
-       :expound/problems
-       (problems/leaf-only)
-       (group-and-sort-problems (::s/failure explain-data))))
 
 (defmethod expected-str :problem/insufficient-input [_type spec-name val path problems opts]
   (let [problem (first problems)]
@@ -336,7 +329,7 @@
        "")
      (let [failure nil
            non-matching-value [:expound/value-that-should-never-match]
-           new-problems (group-and-sort-problems failure (map #(dissoc % :reason) problems))]
+           new-problems (grouped-and-sorted-problems failure (map #(dissoc % :reason) problems))]
        (string/join "\n\nor "
                     (for [[[in type] problems'] new-problems]
                       (expected-str type :expound/no-spec-name non-matching-value in problems' opts)))))))
@@ -496,7 +489,10 @@ should satisfy
               explain-data' (problems/annotate explain-data)
               caller (:expound/caller explain-data')
               form (:expound/form explain-data')
-              problems (sorted-and-grouped-problems explain-data')]
+              problems (->> explain-data'
+                            :expound/problems
+                            (problems/leaf-only)
+                            (grouped-and-sorted-problems (::s/failure explain-data)))]
 
           (printer/no-trailing-whitespace
            (str
