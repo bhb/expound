@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+- [Bug with including development HTML page in JAR](https://github.com/bhb/expound/issues/60)
+
 ### Added
 - Table of keywords and specs for missing keys
 
