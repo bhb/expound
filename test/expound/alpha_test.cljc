@@ -1072,15 +1072,14 @@ should satisfy
 
 -- Relevant specs -------
 
-:test-assert/name:
+:test-explain-str/name:
   pf.core/string?
 
 -------------------------
 Detected 1 error\n")
          (binding [s/*explain-out* expound/printer]
-           (s/explain-str :test-assert/name :hello)))))
+           (s/explain-str :test-explain-str/name :hello)))))
 
-(s/def :test-instrument/name string?)
 (s/fdef test-instrument-adder
         :args (s/cat :x int? :y int?)
         :fn #(> (:ret %) (-> % :args :x))

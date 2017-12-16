@@ -13,7 +13,6 @@
 ;;;;;; specs   ;;;;;;
 
 (s/def ::singleton (s/coll-of any? :count 1))
-
 (s/def :spec/spec keyword?)
 (s/def :spec/specs (s/coll-of :spec/spec))
 (s/def :spec.problem/via (s/coll-of :spec/spec :kind vector?))

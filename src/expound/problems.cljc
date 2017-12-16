@@ -100,8 +100,6 @@
 (defn- add-spec [spec problem]
   (assoc problem :spec spec))
 
-(defn add-caller [explain-data])
-
 ;; via is slightly different when using s/assert
 (defn fix-via [spec problem]
   (if (= spec (first (:via problem)))
