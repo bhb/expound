@@ -242,7 +242,6 @@
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (expected-str _type spec-name val path problems opts)))
 
-;; TODO - clean up unused params
 (defmethod expected-str :problem/not-in-set [_type _spec-name _val _path problems _opts]
   (let [combined-set (apply set/union (map :pred problems))]
     (printer/format
