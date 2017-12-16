@@ -19,6 +19,8 @@
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
+(def num-tests 30)
+
 (use-fixtures :once
   test-utils/check-spec-assertions
   test-utils/instrument-all)
@@ -381,13 +383,18 @@ Detected 1 error\n"
          (expound/expound-str :coll-of-spec/big-int-coll [])))))
 
 (s/def :cat-spec/kw (s/cat :k keyword? :v any?))
+(s/def :cat-spec/set (s/cat :type #{:foo :bar} :str string?))
+(s/def :cat-spec/alt* (s/alt :s string? :i int?))
+(s/def :cat-spec/alt (s/+ :cat-spec/alt*))
+(s/def :cat-spec/alt-inline (s/+ (s/alt :s string? :i int?)))
+(s/def :cat-spec/any (s/cat :x (s/+ any?))) ;; Not a useful spec, but worth testing
 (deftest cat-spec
   (testing "too few elements"
     (is (= (pf "-- Syntax error -------------------
 
   []
 
-should have additional elements. The next element is named `:k` and satisfies
+should have additional elements. The next element \":k\" should satisfy
 
   keyword?
 
@@ -401,9 +408,23 @@ Detected 1 error\n")
            (expound/expound-str :cat-spec/kw [])))
     (is (= (pf "-- Syntax error -------------------
 
+  []
+
+should have additional elements. The next element \":type\" should be one of: `:bar`,`:foo`
+
+-- Relevant specs -------
+
+:cat-spec/set:
+  (pf.spec.alpha/cat :type #{:bar :foo} :str pf.core/string?)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :cat-spec/set [])))
+    (is (= (pf "-- Syntax error -------------------
+
   [:foo]
 
-should have additional elements. The next element is named `:v` and satisfies
+should have additional elements. The next element \":v\" should satisfy
 
   any?
 
@@ -414,14 +435,65 @@ should have additional elements. The next element is named `:v` and satisfies
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :cat-spec/kw [:foo]))))
+           (expound/expound-str :cat-spec/kw [:foo])))
+    (is (= (pf "-- Syntax error -------------------
+
+  []
+
+should have additional elements. The next element should satisfy
+
+  (pf.spec.alpha/alt :s string? :i int?)
+
+-- Relevant specs -------
+
+:cat-spec/alt*:
+  (pf.spec.alpha/alt :s pf.core/string? :i pf.core/int?)
+:cat-spec/alt:
+  (pf.spec.alpha/+ :cat-spec/alt*)
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :cat-spec/alt [])))
+    (is (= (pf "-- Syntax error -------------------
+
+  []
+
+should have additional elements. The next element should satisfy
+
+  (pf.spec.alpha/alt :s string? :i int?)
+
+-- Relevant specs -------
+
+:cat-spec/alt-inline:
+  (pf.spec.alpha/+
+   (pf.spec.alpha/alt :s pf.core/string? :i pf.core/int?))
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :cat-spec/alt-inline [])))
+    (is (= (pf "-- Syntax error -------------------
+
+  []
+
+should have additional elements. The next element \":x\" should satisfy
+
+  any?
+
+-- Relevant specs -------
+
+:cat-spec/any:
+  (pf.spec.alpha/cat :x (pf.spec.alpha/+ pf.core/any?))
+
+-------------------------
+Detected 1 error\n")
+           (expound/expound-str :cat-spec/any []))))
   (testing "too many elements"
     (is (= (pf "-- Syntax error -------------------
 
-Value has extra input
-
   [... ... :bar ...]
            ^^^^
+
+has extra input
 
 -- Relevant specs -------
 
@@ -879,7 +951,7 @@ Detected 1 error\n")
 (deftest generated-simple-spec
   (checking
    "simple spec"
-   30
+   num-tests
    [simple-spec simple-spec-gen
     :let [sp-form (s/form simple-spec)]
     form gen/any-printable]
@@ -888,7 +960,7 @@ Detected 1 error\n")
 (deftest generated-coll-of-specs
   (checking
    "'coll-of' spec"
-   30
+   num-tests
    [simple-spec simple-spec-gen
     every-args (s/gen :specs/every-args)
     :let [spec (apply-coll-of simple-spec every-args)]
@@ -899,7 +971,7 @@ Detected 1 error\n")
 (deftest generated-and-specs
   (checking
    "'and' spec"
-   30
+   num-tests
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
     :let [spec (s/and simple-spec1 simple-spec2)]
@@ -910,7 +982,7 @@ Detected 1 error\n")
 (deftest generated-or-specs
   (checking
    "'or' spec"
-   30
+   num-tests
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
     :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
@@ -921,7 +993,7 @@ Detected 1 error\n")
 (deftest generated-map-of-specs
   (checking
    "'map-of' spec"
-   30
+   num-tests
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
     simple-spec3 simple-spec-gen
@@ -1135,7 +1207,7 @@ Function arguments
 
   (1)
 
-should have additional elements. The next element is named `:y` and satisfies
+should have additional elements. The next element \":y\" should satisfy
 
   int?
 
@@ -1157,7 +1229,7 @@ Function arguments
 
   (1)
 
-should have additional elements. The next element is named `:y` and satisfies
+should have additional elements. The next element \":y\" should satisfy
 
   int?
 
@@ -1523,7 +1595,7 @@ Detected 1 error\n"
       ;; At 50, it might find a bug in failures for the
       ;; :ring/handler spec, but keep it plugged in, since it
       ;; takes a long time to shrink
-      30
+      num-tests
       [spec spec-gen
        form gen/any-printable]
       ;; Can't reliably test fspecs until
@@ -1571,7 +1643,7 @@ Detected 1 error\n"
 (deftest test-mutate
   (checking
    "mutation alters data structure"
-   50
+   num-tests
    [form gen/any-printable
     mutate-path (gen/vector gen/pos-int 1 10)]
    (is (not= form
@@ -1581,7 +1653,7 @@ Detected 1 error\n"
    (deftest real-spec-tests-mutated-valid-value
      (checking
       "for any real-world spec and any mutated valid data, explain-str returns a string"
-      30
+      num-tests
       [spec spec-gen
        mutate-path (gen/vector gen/pos-int)]
       (when-not (some
@@ -1964,7 +2036,7 @@ Detected 1 error\n"
    (deftest form-containing-incomparables
      (checking
       "for any value including NaN, or Infinity, expound returns a string"
-      30
+      num-tests
       [form (gen/frequency
              [[1 (gen/elements
                   [Double/NaN
@@ -1982,7 +2054,7 @@ Detected 1 error\n"
    (deftest form-containing-incomparables
      (checking
       "for any value including NaN, or Infinity, expound returns a string"
-      30
+      num-tests
       [form (gen/frequency
              [[1 (gen/elements
                   [js/NaN
@@ -2071,4 +2143,3 @@ Cannot find spec for
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
-

@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file. This change
 
 ### Changed
 - Better error message for compound key clauses like `:req-un [(or ::foo ::bar)]`
+- Better error message for failures in `cat` specs
 
 ## [0.3.4] - 2017-11-19
 
