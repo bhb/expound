@@ -7,6 +7,7 @@
                  [org.clojure/clojurescript "1.9.946" :scope "provided"]
                  [org.clojure/spec.alpha "0.1.143" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
+  :jar-exclusions [#"^public/.*"]
   :plugins [[com.jakemccrary/lein-test-refresh "0.21.1"]
             [lein-cljfmt "0.5.7"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
