@@ -26,7 +26,15 @@
                            :main "expound.test-runner"
                            :optimizations :none
                            :verbose true
-                           :compiler-stats true}}]}
+                           :compiler-stats true}}
+               {:id "web"
+                :source-paths ["src"]
+                :figwheel false
+                :compiler {:output-to "resources/public/js/expound.js"
+                           :optimizations :simple
+                           :verbose true
+                           :compiler-stats true}}
+               ]}
   :figwheel {;; :http-server-root "public" ;; default and assumes "resources"
              :server-port 3446 ;; default is 3449
 
