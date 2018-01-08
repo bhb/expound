@@ -7,7 +7,7 @@
                  [org.clojure/clojurescript "1.9.946" :scope "provided"]
                  [org.clojure/spec.alpha "0.1.143" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
-  :jar-exclusions [#"^public/.*"]
+  :jar-exclusions [#"^public/.*" "docs"]
   :plugins [[com.jakemccrary/lein-test-refresh "0.21.1"]
             [lein-cljfmt "0.5.7"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
@@ -30,7 +30,7 @@
                {:id "web"
                 :source-paths ["src"]
                 :figwheel false
-                :compiler {:output-to "resources/public/js/expound.js"
+                :compiler {:output-to "doc/js/expound.js"
                            :optimizations :simple
                            :verbose true
                            :compiler-stats true}}
@@ -78,7 +78,8 @@
              ;; to pipe all the output to the repl
              ;; :server-logfile false
 }
-  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.7"]
+  :profiles {:web {:dependencies [[org.clojure/spec.alpha "0.1.143"]]}
+             :dev {:dependencies [[binaryage/devtools "0.9.7"]
                                   [figwheel-sidecar "0.5.14"]
                                   [com.cemerick/piggieback "0.2.2"]
                                   [orchestra "2017.11.12-1"]

@@ -1,1 +1,32 @@
-<h1>Hello</h1>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Try klipse</title>
+    <link rel="stylesheet" type="text/css" href="https://storage.googleapis.com/app.klipse.tech/css/codemirror.css">
+  </head>
+
+  <body>
+    <pre class="language-klipse">
+      (ns try-expound
+      (:require [clojure.spec.alpha :as s]
+                 [expound.alpha :as expound]))
+      (expound/expound-str string? 1)
+      
+    </pre>
+    <script>
+      window.klipse_settings = {
+      selector: '.language-klipse', // css selector for the html elements you want to klipsify
+      eval_idle_msec: 300,
+      codemirror_options_in: {
+      autoCloseBrackets: true,
+      lineNumbers: true,
+      lineWrapping: true,
+      theme: 'amy'
+             }
+        };
+    </script>
+    <script src="doc/js/klipse_plugin.js"></script>
+    <script src="doc/js/expound.js"></script>
+  </body>
+</html>
