@@ -70,6 +70,7 @@ jobs:
       - run: lein check
       - run: lein with-profile test-common test
       - run: lein clean && lein with-profile test-web,cljs-1.9.946 cljsbuild once test && bin/tests
+      - run: lein jar && diff -u <(jar tf target/*.jar | sort) <(cat expected-jar-contents.txt | sort)
 
   test_cljs_old:
     docker:
@@ -128,12 +129,7 @@ jobs:
           - v1-dependencies-{{ checksum "project.clj" }}
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
-      - run: lein with-profile test-common,clj-1.9.0-alpha17 test
-      - run: lein with-profile test-common,clj-1.9.0-alpha18 test
       - run: lein with-profile test-common,clj-1.9.0-alpha19 test
-      - run: lein with-profile test-common,clj-1.9.0-beta1 test
-      - run: lein with-profile test-common,clj-1.9.0-beta2 test
-      - run: lein with-profile test-common,clj-1.9.0-beta3 test
 
 workflows:
   version: 2
