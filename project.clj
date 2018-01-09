@@ -3,7 +3,7 @@
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.9.0-RC1" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
                  [org.clojure/clojurescript "1.9.946" :scope "provided"]
                  [org.clojure/spec.alpha "0.1.143" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
@@ -102,13 +102,8 @@
                          :dependencies [[figwheel-sidecar "0.5.14"]
                                         [karma-reporter "2.1.2"]]}]
              :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
-
-             :clj-1.9.0-alpha17 {:dependencies [[org.clojure/clojure "1.9.0-alpha17"]]}
-             :clj-1.9.0-alpha18 {:dependencies [[org.clojure/clojure "1.9.0-alpha18"]]}
              :clj-1.9.0-alpha19 {:dependencies [[org.clojure/clojure "1.9.0-alpha19"]]}
-             :clj-1.9.0-beta1 {:dependencies [[org.clojure/clojure "1.9.0-beta1"]]}
-             :clj-1.9.0-beta2 {:dependencies [[org.clojure/clojure "1.9.0-beta2"]]}
-             :clj-1.9.0-beta3 {:dependencies [[org.clojure/clojure "1.9.0-beta3"]]}
+             :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :cljs-1.9.562 {:dependencies [[org.clojure/clojurescript "1.9.562"]]}
              :cljs-1.9.908 {:dependencies  [[org.clojure/clojurescript "1.9.908"]]}
              :cljs-1.9.946 {:dependencies  [[org.clojure/clojurescript "1.9.946"]]}}
