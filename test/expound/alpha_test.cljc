@@ -27,11 +27,6 @@
 
 ;; Missing onyx specs
 (s/def :trigger/materialize any?)
-(s/def :trigger/pre-evictor any?)
-(s/def :trigger/post-evictor any?)
-(s/def :flow/short-circuit any?)
-(s/def :onyx.core/params?
-  (s/coll-of any? :kind vector?))
 
 (def any-printable-wo-nan (gen/such-that (complement test-utils/contains-nan?) gen/any-printable))
 

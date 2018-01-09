@@ -8,7 +8,7 @@
                  [org.clojure/spec.alpha "0.1.143" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
-  :plugins [[com.jakemccrary/lein-test-refresh "0.21.1"]
+  :plugins [[com.jakemccrary/lein-test-refresh "0.22.0"]
             [lein-cljfmt "0.5.7"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.14"]]
@@ -70,7 +70,7 @@
              ;; to pipe all the output to the repl
              ;; :server-logfile false
 }
-  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.7"]
+  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.8"]
                                   [figwheel-sidecar "0.5.14"]
                                   [com.cemerick/piggieback "0.2.2"]
                                   [orchestra "2017.11.12-1"]
@@ -95,7 +95,7 @@
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.2"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.3"] ; to test specs
-                                          [org.onyxplatform/onyx-spec "0.12.0.0-rc1"] ; to test specs
+                                          [org.onyxplatform/onyx-spec "0.12.2.0"] ; to test specs
                                           [vvvvalvalval/scope-capture "0.1.4"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
