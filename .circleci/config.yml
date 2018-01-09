@@ -70,7 +70,7 @@ jobs:
       - run: lein check
       - run: lein with-profile test-common test
       - run: lein clean && lein with-profile test-web,cljs-1.9.946 cljsbuild once test && bin/tests
-      - run: lein jar && diff <(jar tf target/*.jar) expected-jar-contents.txt
+      - run: lein jar && diff -u <(jar tf target/*.jar | sort) <(cat expected-jar-contents.txt | sort)
 
   test_cljs_old:
     docker:
