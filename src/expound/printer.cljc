@@ -4,6 +4,7 @@
             [clojure.pprint :as pprint]
             [clojure.walk :as walk]
             [clojure.set :as set]
+            [expound.util :as util]
             #?(:clj [clojure.main :as clojure.main]))
   (:refer-clojure :exclude [format]))
 
@@ -63,7 +64,7 @@
 
 (defn key->spec [keys problems]
   (doseq [p problems]
-    (assert (some? (:expound/via p))))
+    (assert (some? (:expound/via p)) util/assert-message))
   (let [vias (map :expound/via problems)]
     (let [specs (if (every? qualified-keyword? keys)
                   keys
