@@ -27,6 +27,7 @@
 
 ;; Missing onyx specs
 (s/def :trigger/materialize any?)
+(s/def :flow/short-circuit any?)
 
 (def any-printable-wo-nan (gen/such-that (complement test-utils/contains-nan?) gen/any-printable))
 
@@ -103,7 +104,7 @@ Detected 1 error\n")
 
   :baz
 
-should be one of: `:bar`,`:foo`
+should be one of: :bar, :foo
 
 -- Relevant specs -------
 
@@ -120,7 +121,7 @@ Detected 1 error\n"
   [:three]
    ^^^^^^
 
-should be one of: `:one`,`:two`
+should be one of: :one, :two
 
 -- Relevant specs -------
 
@@ -141,7 +142,7 @@ Detected 1 error\n")
 
   :baz
 
-should be one of: `:bar`,`:foo`
+should be one of: :bar, :foo
 
 -- Relevant specs -------
 
@@ -172,7 +173,7 @@ Detected 2 errors\n")
 
   :baz
 
-should be: `:foobar`
+should be: :foobar
 
 -- Relevant specs -------
 
@@ -311,7 +312,7 @@ Detected 1 error
 
   50
 
-should be one of: `1`,`a`,`2`,`b`
+should be one of: \"a\", \"b\", 1, 2
 
 
 
@@ -323,7 +324,7 @@ Detected 1 error
            :letters #{"a" "b"}
            :ints #{1 2})
           50)))
-  (is (= "-- Spec failed --------------------
+  (is (= (pf "-- Spec failed --------------------
 
   {}
 
@@ -337,11 +338,11 @@ should contain keys: `:or-spec/int`, `:or-spec/str`
 -- Relevant specs -------
 
 :or-spec/m-with-int:
-  (clojure.spec.alpha/keys :req [:or-spec/int])
+  (pf.spec.alpha/keys :req [:or-spec/int])
 :or-spec/m-with-str:
-  (clojure.spec.alpha/keys :req [:or-spec/str])
+  (pf.spec.alpha/keys :req [:or-spec/str])
 :or-spec/m-with-str-or-int:
-  (clojure.spec.alpha/or
+  (pf.spec.alpha/or
    :m-with-str
    :or-spec/m-with-str
    :m-with-int
@@ -349,7 +350,7 @@ should contain keys: `:or-spec/int`, `:or-spec/str`
 
 -------------------------
 Detected 1 error
-"
+")
          (expound/expound-str :or-spec/m-with-str-or-int {})))
   (testing "de-dupes keys"
     (is (= "-- Spec failed --------------------
@@ -491,7 +492,7 @@ Detected 1 error\n")
 
   []
 
-should have additional elements. The next element \":type\" should be one of: `:bar`,`:foo`
+should have additional elements. The next element \":type\" should be one of: :bar, :foo
 
 -- Relevant specs -------
 
@@ -1662,7 +1663,7 @@ Detected 1 error\n"
 (deftest test-assert2
   (is (thrown-with-msg?
        #?(:cljs :default :clj Exception)
-       #"\"Key must be integer\"\n\nshould be one of: `Extra input`,`Insufficient input`,`no method`"
+       #"\"Key must be integer\"\n\nshould be one of: \"Extra input\", \"Insufficient input\", \"no method"
        (binding [s/*explain-out* expound/printer]
          (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) "Key must be integer")))))
 

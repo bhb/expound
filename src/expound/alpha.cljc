@@ -247,7 +247,7 @@
     (printer/format
      "should be%s: %s"
      (if (= 1 (count combined-set)) "" " one of")
-     (string/join "," (map #(str "`" % "`") combined-set)))))
+     (string/join ", " (sort (map #(str "" (pr-str %) "") combined-set))))))
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
