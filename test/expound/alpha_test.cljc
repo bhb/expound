@@ -350,7 +350,25 @@ should contain keys: `:or-spec/int`, `:or-spec/str`
 -------------------------
 Detected 1 error
 "
-         (expound/expound-str :or-spec/m-with-str-or-int {}))))
+         (expound/expound-str :or-spec/m-with-str-or-int {})))
+  (testing "de-dupes keys"
+    (is (= "-- Spec failed --------------------
+
+  {}
+
+should contain keys: `:or-spec/str`
+
+|          key |    spec |
+|--------------+---------|
+| :or-spec/str | string? |
+
+
+
+-------------------------
+Detected 1 error
+"
+           (expound/expound-str (s/or :m-with-str1 (s/keys :req [:or-spec/str])
+                                      :m-with-int2 (s/keys :req [:or-spec/str])) {})))))
 
 (s/def :and-spec/name (s/and string? #(pos? (count %))))
 (s/def :and-spec/names (s/coll-of :and-spec/name))

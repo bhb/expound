@@ -196,7 +196,7 @@
            string/trim))))
 
 (defn print-missing-keys [problems]
-  (let [keys-clauses (map (comp missing-key :pred) problems)]
+  (let [keys-clauses (distinct (map (comp missing-key :pred) problems))]
     (if (every? keyword? keys-clauses)
       (string/join ", " (sort (map #(str "`" % "`") keys-clauses)))
       (str "\n\n"
