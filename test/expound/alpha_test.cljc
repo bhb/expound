@@ -237,6 +237,13 @@ Detected 1 error\n")
 (s/def :or-spec/str-or-int (s/or :int int? :str string?))
 (s/def :or-spec/vals (s/coll-of :or-spec/str-or-int))
 
+(s/def :or-spec/str string?)
+(s/def :or-spec/int int?)
+(s/def :or-spec/m-with-str (s/keys :req [:or-specs/str]))
+(s/def :or-spec/m-with-int (s/keys :req [:or-specs/str]))
+(s/def :or-spec/m-with-str-or-int (s/or :m-with-str :or-spec/m-with-str
+                                        :m-with-int :or-spec/m-with-int))
+
 (deftest or-spec
   (testing "simple value"
     (is (= (pf "-- Spec failed --------------------
@@ -282,7 +289,67 @@ or
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :or-spec/vals [0 "hi" :kw "bye"])))))
+           (expound/expound-str :or-spec/vals [0 "hi" :kw "bye"]))))
+  (is (= "-- Spec failed --------------------
+
+  50
+
+should satisfy
+
+  coll?
+
+
+
+-------------------------
+Detected 1 error
+"
+         (expound/expound-str (s/or
+                               :strs (s/coll-of string?)
+                               :ints (s/coll-of int?))
+                              50)))
+  (is (= "-- Spec failed --------------------
+
+  50
+
+should be one of: `1`,`a`,`2`,`b`
+
+
+
+-------------------------
+Detected 1 error
+"
+         (expound/expound-str
+          (s/or
+           :letters #{"a" "b"}
+           :ints #{1 2})
+          50)))
+  (is (= "-- Spec failed --------------------
+
+  {}
+
+should contain keys: `:or-specs/str`, `:or-specs/str`
+
+|           key |          spec |
+|---------------+---------------|
+| :or-specs/str | :or-specs/str |
+
+-- Relevant specs -------
+
+:or-spec/m-with-int:
+  (clojure.spec.alpha/keys :req [:or-specs/str])
+:or-spec/m-with-str:
+  (clojure.spec.alpha/keys :req [:or-specs/str])
+:or-spec/m-with-str-or-int:
+  (clojure.spec.alpha/or
+   :m-with-str
+   :or-spec/m-with-str
+   :m-with-int
+   :or-spec/m-with-int)
+
+-------------------------
+Detected 1 error
+"
+         (expound/expound-str :or-spec/m-with-str-or-int {}))))
 
 (s/def :and-spec/name (s/and string? #(pos? (count %))))
 (s/def :and-spec/names (s/coll-of :and-spec/name))
@@ -929,6 +996,11 @@ Detected 1 error\n")
 (s/def :specs/pos-int pos-int?)
 (s/def :specs/neg-int neg-int?)
 (s/def :specs/zero #(and (number? %) (zero? %)))
+(s/def :specs/keys (s/keys
+                    :req-un [:specs/string]
+                    :req [:specs/map]
+                    :opt-un [:specs/vector]
+                    :opt [:specs/int]))
 
 (def simple-spec-gen (gen/one-of
                       [(gen/elements [:specs/string
@@ -940,7 +1012,8 @@ Detected 1 error\n")
                                       :specs/symbol
                                       :specs/pos-int
                                       :specs/neg-int
-                                      :specs/zero])
+                                      :specs/zero
+                                      :specs/keys])
                        (gen/set gen/simple-type-printable)]))
 
 (deftest generated-simple-spec
@@ -2137,3 +2210,4 @@ Cannot find spec for
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
+

@@ -500,8 +500,8 @@ should satisfy
 
 %s
 Detected %s %s\n"
-             (string/join "\n\n" (for [[[in type] problems] problems]
-                                   (problem-group-str1 type (spec-name explain-data) form in problems opts')))
+             (string/join "\n\n" (for [[[in type] probs] problems]
+                                   (problem-group-str1 type (spec-name explain-data) form in probs opts')))
              (section-label)
              (count problems)
              (if (= 1 (count problems)) "error" "errors")))))))))

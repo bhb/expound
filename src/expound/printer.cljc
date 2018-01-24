@@ -3,6 +3,7 @@
             [clojure.spec.alpha :as s]
             [clojure.pprint :as pprint]
             [clojure.walk :as walk]
+            [clojure.set :as set]
             #?(:clj [clojure.main :as clojure.main]))
   (:refer-clojure :exclude [format]))
 
@@ -43,28 +44,32 @@
 (defn singleton? [xs]
   (= 1 (count xs)))
 
+(defn specs-from-form [via]
+  (let [form (some-> via last s/form)
+        conformed (s/conform :spec/key-spec form)]
+    ;; The containing spec might not be
+    ;; a simple 'keys' call, in which case we give up
+    (if (and form
+             (not= ::s/invalid conformed))
+      (->> (:clauses conformed)
+           (map :specs)
+           (tree-seq coll? seq)
+           (filter
+            (fn [x]
+              (and (vector? x) (= :kw (first x)))))
+           (map second)
+           set)
+      [])))
+
 (defn key->spec [keys problems]
-  (assert (apply = (map :expound/via problems)))
   (doseq [p problems]
     (assert (some? (:expound/via p))))
-  (let [via (:expound/via (first problems))
-        form (some-> via last s/form)]
+  (let [vias (map :expound/via problems)]
     (let [specs (if (every? qualified-keyword? keys)
                   keys
-                  (let [conformed (s/conform :spec/key-spec form)]
-                    ;; The spec might containing spec might not be
-                    ;; a simple 'keys' call, in which case we give up
-                    (if (and form
-                             (not= ::s/invalid conformed))
-                      (->> (:clauses conformed)
-                           (map :specs)
-                           (tree-seq coll? seq)
-                           (filter
-                            (fn [x]
-                              (and (vector? x) (= :kw (first x)))))
-                           (map second)
-                           set)
-                      keys)))]
+                  (if-let [specs (apply set/union (map specs-from-form vias))]
+                    specs
+                    keys))]
       (reduce
        (fn [m k]
          (assoc m
