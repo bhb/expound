@@ -4,7 +4,7 @@
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [expound.alpha :as expound]
             [expound.printer :as printer]
-            [expound.test-utils :as test-utils]))
+            [expound.test-utils :as test-utils :refer [contains-nan?]]))
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -20,7 +20,12 @@
   (is (= "<anonymous function>"
          (printer/pprint-fn (constantly true))))
   (is (= "<anonymous function>"
-         (printer/pprint-fn (comp vec str)))))
+         (printer/pprint-fn (comp vec str))))
+  (is (= "expound.test-utils/instrument-all"
+         (printer/pprint-fn test-utils/instrument-all)))
+
+  (is (= "expound.test-utils/contains-nan?"
+         (printer/pprint-fn contains-nan?))))
 
 (s/def :print-spec-keys/field1 string?)
 (s/def :print-spec-keys/field2 (s/coll-of :print-spec-keys/field1))
