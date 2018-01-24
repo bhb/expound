@@ -239,8 +239,8 @@ Detected 1 error\n")
 
 (s/def :or-spec/str string?)
 (s/def :or-spec/int int?)
-(s/def :or-spec/m-with-str (s/keys :req [:or-specs/str]))
-(s/def :or-spec/m-with-int (s/keys :req [:or-specs/str]))
+(s/def :or-spec/m-with-str (s/keys :req [:or-spec/str]))
+(s/def :or-spec/m-with-int (s/keys :req [:or-spec/int]))
 (s/def :or-spec/m-with-str-or-int (s/or :m-with-str :or-spec/m-with-str
                                         :m-with-int :or-spec/m-with-int))
 
@@ -327,18 +327,19 @@ Detected 1 error
 
   {}
 
-should contain keys: `:or-specs/str`, `:or-specs/str`
+should contain keys: `:or-spec/int`, `:or-spec/str`
 
-|           key |          spec |
-|---------------+---------------|
-| :or-specs/str | :or-specs/str |
+|          key |    spec |
+|--------------+---------|
+| :or-spec/int |    int? |
+| :or-spec/str | string? |
 
 -- Relevant specs -------
 
 :or-spec/m-with-int:
-  (clojure.spec.alpha/keys :req [:or-specs/str])
+  (clojure.spec.alpha/keys :req [:or-spec/int])
 :or-spec/m-with-str:
-  (clojure.spec.alpha/keys :req [:or-specs/str])
+  (clojure.spec.alpha/keys :req [:or-spec/str])
 :or-spec/m-with-str-or-int:
   (clojure.spec.alpha/or
    :m-with-str
