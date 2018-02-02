@@ -16,6 +16,7 @@
             [expound.printer :as printer]
             [expound.test-utils :as test-utils]
             [clojure.walk :as walk]
+            [spec-tools.data-spec :as ds]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -997,7 +998,88 @@ Detected 1 error\n")
     :let [spec (apply-map-of simple-spec1 (apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)
           sp-form (s/form spec)]
     form any-printable-wo-nan]
-   (expound/expound-str spec form)))
+   (is (string? (expound/expound-str spec form)))))
+
+(s/def :expound.ds/spec-key (s/or :kw keyword?
+                                  :req (s/tuple
+                                        #{:expound.ds/req-key}
+                                        (s/map-of
+                                         #{:k}
+                                         keyword?
+                                         :count 1))
+                                  :opt (s/tuple
+                                        #{:expound.ds/opt-key}
+                                        (s/map-of
+                                         #{:k}
+                                         keyword?
+                                         :count 1))))
+
+(defn real-spec [form]
+  (walk/prewalk
+   (fn [x]
+     (if (vector? x)
+       (case (first x)
+         :expound.ds/opt-key
+         (ds/map->OptionalKey (second x))
+
+         :expound.ds/req-key
+         (ds/map->RequiredKey (second x))
+
+         :expound.ds/maybe-spec
+         (ds/maybe (second x))
+
+         x)
+       x))
+   form))
+
+(s/def :expound.ds/maybe-spec
+  (s/tuple
+   #{:expound.ds/maybe-spec}
+   :expound.ds/spec))
+
+(s/def :expound.ds/simple-specs
+  #{string?
+    vector?
+    int?
+    boolean?
+    keyword?
+    map?
+    symbol?
+    pos-int?
+    neg-int?
+    nat-int?})
+
+(s/def :expound.ds/vector-spec (s/coll-of
+                                :expound.ds/spec
+                                :count 1
+                                :kind vector?))
+
+(s/def :expound.ds/set-spec (s/coll-of
+                             :expound.ds/spec
+                             :count 1
+                             :kind set?))
+
+(s/def :expound.ds/map-spec
+  (s/map-of :expound.ds/spec-key
+            :expound.ds/spec))
+
+(s/def :expound.ds/spec
+  (s/or
+   :map :expound.ds/map-spec
+   :vector :expound.ds/vector-spec
+   :set :expound.ds/set-spec
+   :simple :expound.ds/simple-specs
+   :maybe :expound.ds/maybe-spec))
+
+(deftest generated-data-specs
+  (checking
+   "generated data specs"
+   num-tests
+   [data-spec (s/gen :expound.ds/spec)
+    form any-printable-wo-nan
+    prefix (s/gen qualified-keyword?)
+    :let [gen-spec (ds/spec prefix (real-spec data-spec))]]
+   (is (string? (expound/expound-str gen-spec form)))))
 
 ;; FIXME - keys
 ;; FIXME - cat + alt, + ? *
@@ -1644,27 +1726,30 @@ Detected 1 error\n"
              (mutate form mutate-path)))))
 
 #?(:clj
-   (deftest real-spec-tests-mutated-valid-value
-     (checking
-      "for any real-world spec and any mutated valid data, explain-str returns a string"
-      num-tests
-      [spec spec-gen
-       mutate-path (gen/vector gen/pos-int)]
-      (when-not (some
-                 #{"clojure.spec.alpha/fspec"}
-                 (->> spec
-                      inline-specs
-                      (tree-seq coll? identity)
-                      (map str)))
-        (when (contains? (s/registry) spec)
-          (try
-            (let [valid-form (first (s/exercise spec 1))
-                  invalid-form (mutate valid-form mutate-path)]
-              (is (string? (expound/expound-str spec invalid-form))))
-            (catch clojure.lang.ExceptionInfo e
-              (when (not= :no-gen (::s/failure (ex-data e)))
-                (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
-                  (throw e))))))))))
+   1
+   ;; FIXME - we need to use generate mutated value, instead
+   ;; of adding randomness to test
+   #_(deftest real-spec-tests-mutated-valid-value
+       (checking
+        "for any real-world spec and any mutated valid data, explain-str returns a string"
+        num-tests
+        [spec spec-gen
+         mutate-path (gen/vector gen/pos-int)]
+        (when-not (some
+                   #{"clojure.spec.alpha/fspec"}
+                   (->> spec
+                        inline-specs
+                        (tree-seq coll? identity)
+                        (map str)))
+          (when (contains? (s/registry) spec)
+            (try
+              (let [valid-form (first (s/exercise spec 1))
+                    invalid-form (mutate valid-form mutate-path)]
+                (is (string? (expound/expound-str spec invalid-form))))
+              (catch clojure.lang.ExceptionInfo e
+                (when (not= :no-gen (::s/failure (ex-data e)))
+                  (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
+                    (throw e))))))))))
 
 ;; Using conformers for transformation should not crash by default, or at least give useful error message.
 (defn numberify [s]
