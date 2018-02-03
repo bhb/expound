@@ -8,7 +8,8 @@
             [clojure.set :as set]
             #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
-            [expound.printer :as printer]))
+            [expound.printer :as printer]
+            [expound.util :as util]))
 
 ;;;;;; specs   ;;;;;;
 
@@ -230,7 +231,7 @@
   (explain-missing-keys problems))
 
 (defmethod problem-group-str :problem/missing-key [_type spec-name val path problems opts]
-  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
+  (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
   (printer/format
    "%s
 
@@ -246,10 +247,10 @@
     (printer/format
      "should be%s: %s"
      (if (= 1 (count combined-set)) "" " one of")
-     (string/join "," (map #(str "`" % "`") combined-set)))))
+     (string/join ", " (sort (map #(str "" (pr-str %) "") combined-set))))))
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]
-  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
+  (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
   (printer/format
    "%s
 
@@ -443,7 +444,7 @@ should satisfy
    (preds problems)))
 
 (defmethod problem-group-str :problem/unknown [_type spec-name val path problems opts]
-  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
+  (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
   (printer/format
    "%s
 
@@ -500,8 +501,8 @@ should satisfy
 
 %s
 Detected %s %s\n"
-             (string/join "\n\n" (for [[[in type] problems] problems]
-                                   (problem-group-str1 type (spec-name explain-data) form in problems opts')))
+             (string/join "\n\n" (for [[[in type] probs] problems]
+                                   (problem-group-str1 type (spec-name explain-data) form in probs opts')))
              (section-label)
              (count problems)
              (if (= 1 (count problems)) "error" "errors")))))))))

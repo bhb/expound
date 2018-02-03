@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+- [Bug with displaying errors for `s/or` specs](https://github.com/bhb/expound/issues/64)
+- Bug where "should be one of..." values didn't display correctly
+
 ## [0.4.0] - 2017-12-16
 
 ### Fixed

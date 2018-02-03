@@ -28,6 +28,7 @@
 
 ;; Missing onyx specs
 (s/def :trigger/materialize any?)
+(s/def :flow/short-circuit any?)
 
 (def any-printable-wo-nan (gen/such-that (complement test-utils/contains-nan?) gen/any-printable))
 
@@ -104,7 +105,7 @@ Detected 1 error\n")
 
   :baz
 
-should be one of: `:bar`,`:foo`
+should be one of: :bar, :foo
 
 -- Relevant specs -------
 
@@ -121,7 +122,7 @@ Detected 1 error\n"
   [:three]
    ^^^^^^
 
-should be one of: `:one`,`:two`
+should be one of: :one, :two
 
 -- Relevant specs -------
 
@@ -142,7 +143,7 @@ Detected 1 error\n")
 
   :baz
 
-should be one of: `:bar`,`:foo`
+should be one of: :bar, :foo
 
 -- Relevant specs -------
 
@@ -173,7 +174,7 @@ Detected 2 errors\n")
 
   :baz
 
-should be: `:foobar`
+should be: :foobar
 
 -- Relevant specs -------
 
@@ -238,6 +239,13 @@ Detected 1 error\n")
 (s/def :or-spec/str-or-int (s/or :int int? :str string?))
 (s/def :or-spec/vals (s/coll-of :or-spec/str-or-int))
 
+(s/def :or-spec/str string?)
+(s/def :or-spec/int int?)
+(s/def :or-spec/m-with-str (s/keys :req [:or-spec/str]))
+(s/def :or-spec/m-with-int (s/keys :req [:or-spec/int]))
+(s/def :or-spec/m-with-str-or-int (s/or :m-with-str :or-spec/m-with-str
+                                        :m-with-int :or-spec/m-with-int))
+
 (deftest or-spec
   (testing "simple value"
     (is (= (pf "-- Spec failed --------------------
@@ -283,7 +291,86 @@ or
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :or-spec/vals [0 "hi" :kw "bye"])))))
+           (expound/expound-str :or-spec/vals [0 "hi" :kw "bye"]))))
+  (is (= "-- Spec failed --------------------
+
+  50
+
+should satisfy
+
+  coll?
+
+
+
+-------------------------
+Detected 1 error
+"
+         (expound/expound-str (s/or
+                               :strs (s/coll-of string?)
+                               :ints (s/coll-of int?))
+                              50)))
+  (is (= "-- Spec failed --------------------
+
+  50
+
+should be one of: \"a\", \"b\", 1, 2
+
+
+
+-------------------------
+Detected 1 error
+"
+         (expound/expound-str
+          (s/or
+           :letters #{"a" "b"}
+           :ints #{1 2})
+          50)))
+  (is (= (pf "-- Spec failed --------------------
+
+  {}
+
+should contain keys: `:or-spec/int`, `:or-spec/str`
+
+|          key |    spec |
+|--------------+---------|
+| :or-spec/int |    int? |
+| :or-spec/str | string? |
+
+-- Relevant specs -------
+
+:or-spec/m-with-int:
+  (pf.spec.alpha/keys :req [:or-spec/int])
+:or-spec/m-with-str:
+  (pf.spec.alpha/keys :req [:or-spec/str])
+:or-spec/m-with-str-or-int:
+  (pf.spec.alpha/or
+   :m-with-str
+   :or-spec/m-with-str
+   :m-with-int
+   :or-spec/m-with-int)
+
+-------------------------
+Detected 1 error
+")
+         (expound/expound-str :or-spec/m-with-str-or-int {})))
+  (testing "de-dupes keys"
+    (is (= "-- Spec failed --------------------
+
+  {}
+
+should contain keys: `:or-spec/str`
+
+|          key |    spec |
+|--------------+---------|
+| :or-spec/str | string? |
+
+
+
+-------------------------
+Detected 1 error
+"
+           (expound/expound-str (s/or :m-with-str1 (s/keys :req [:or-spec/str])
+                                      :m-with-int2 (s/keys :req [:or-spec/str])) {})))))
 
 (s/def :and-spec/name (s/and string? #(pos? (count %))))
 (s/def :and-spec/names (s/coll-of :and-spec/name))
@@ -406,7 +493,7 @@ Detected 1 error\n")
 
   []
 
-should have additional elements. The next element \":type\" should be one of: `:bar`,`:foo`
+should have additional elements. The next element \":type\" should be one of: :bar, :foo
 
 -- Relevant specs -------
 
@@ -930,6 +1017,11 @@ Detected 1 error\n")
 (s/def :specs/pos-int pos-int?)
 (s/def :specs/neg-int neg-int?)
 (s/def :specs/zero #(and (number? %) (zero? %)))
+(s/def :specs/keys (s/keys
+                    :req-un [:specs/string]
+                    :req [:specs/map]
+                    :opt-un [:specs/vector]
+                    :opt [:specs/int]))
 
 (def simple-spec-gen (gen/one-of
                       [(gen/elements [:specs/string
@@ -941,7 +1033,8 @@ Detected 1 error\n")
                                       :specs/symbol
                                       :specs/pos-int
                                       :specs/neg-int
-                                      :specs/zero])
+                                      :specs/zero
+                                      :specs/keys])
                        (gen/set gen/simple-type-printable)]))
 
 (deftest generated-simple-spec
@@ -1666,7 +1759,7 @@ Detected 1 error\n"
 (deftest test-assert2
   (is (thrown-with-msg?
        #?(:cljs :default :clj Exception)
-       #"\"Key must be integer\"\n\nshould be one of: `Extra input`,`Insufficient input`,`no method`"
+       #"\"Key must be integer\"\n\nshould be one of: \"Extra input\", \"Insufficient input\", \"no method"
        (binding [s/*explain-out* expound/printer]
          (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) "Key must be integer")))))
 
@@ -2236,3 +2329,4 @@ Cannot find spec for
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
+
