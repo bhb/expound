@@ -11,6 +11,10 @@
             [expound.printer :as printer]
             [expound.util :as util]))
 
+;;;;; registry ;;;;;;
+
+(defonce ^:private registry-ref (atom {}))
+
 ;;;;;; specs   ;;;;;;
 
 (s/def ::singleton (s/coll-of any? :count 1))
@@ -436,12 +440,41 @@ should satisfy
    (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
    (expected-str _type spec-name val path problems opts)))
 
-(defmethod expected-str :problem/unknown [_type spec-name val path problems opts]
-  (printer/format
-   "should satisfy
+;; TODO - rename?
+(defn specced-pred? [via pred]
+  (boolean (let [last-spec (last via)]
+             (and (not= ::s/unknown pred)
+                  (s/get-spec last-spec)
+                  (=
+                   (pr-str pred)
+                   (pr-str (s/form (s/get-spec last-spec))))))))
+
+(defn error-message [k]
+  [k]
+  (get @registry-ref k))
+
+(defn predicate-errors [problems]
+  (let [[specced not-specced] (split-with
+                               (fn [{:keys [expound/via pred]}]
+                                 (and (specced-pred? via pred)
+                                      (error-message (last via))))
+                               problems)]
+    (string/join
+     "\n\nor\n\n"
+     (remove nil?
+             (conj (keep
+                    (fn [{:keys [expound/via]}]
+                      (error-message (last via)))
+                    specced)
+                   (when (seq not-specced)
+                     (printer/format
+                      "should satisfy
 
 %s"
-   (preds problems)))
+                      (preds not-specced))))))))
+
+(defmethod expected-str :problem/unknown [_type spec-name val path problems opts]
+  (predicate-errors problems))
 
 (defmethod problem-group-str :problem/unknown [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
@@ -538,3 +571,26 @@ Detected %s %s\n"
   "Given a spec and a value, either prints a success message or prints a human-readable explanation as a string."
   [spec form]
   (print (expound-str spec form)))
+
+;; TODO - move
+(defn ns-qualify
+  "Qualify symbol s by resolving it or using the current *ns*."
+  [s]
+  (if-let [ns-sym (some-> s namespace symbol)]
+    (or (some-> (get (ns-aliases *ns*) ns-sym) str (symbol (name s)))
+        s)
+    (symbol (str (.name *ns*)) (str s))))
+
+(defn register-message [k error-message]
+  (swap! registry-ref assoc k error-message))
+
+#?(:clj
+   (defmacro def
+     "Like clojure.spec.alpha/def, but optionally takes a human-readable error message (will only be used for predicates) e.g. 'should be a string'"
+     ([k spec-form]
+      `(s/def ~k ~spec-form))
+     ([k spec-form error-message]
+      (let [k (if (symbol? k) (ns-qualify k) k)]
+        `(do
+           (register-message '~k ~error-message)
+           (s/def ~k ~spec-form))))))

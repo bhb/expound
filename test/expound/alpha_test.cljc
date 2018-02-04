@@ -20,7 +20,7 @@
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
-(def num-tests 30)
+(def num-tests 5) ;; TODO - restore to 30
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -1798,7 +1798,7 @@ Detected 1 error\n"
    (deftest assert-on-real-spec-tests
      (checking
       "for any real-world spec and any data, assert returns an error that matches explain-str"
-      50
+      num-tests
       [spec spec-gen
        form gen/any-printable]
       ;; Can't reliably test fspecs until
@@ -2330,3 +2330,20 @@ Cannot find spec for
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
 
+(expound/def :predicate-messages/string string? "should be a string")
+
+(deftest predicate-messages
+  (testing "predicate with error message"
+    (is (= "-- Spec failed --------------------
+
+  :hello
+
+should be a string
+
+
+
+-------------------------
+Detected 1 error
+"
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str :predicate-messages/string :hello))))))
