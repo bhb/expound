@@ -2331,10 +2331,12 @@ Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
 
 (expound/def :predicate-messages/string string? "should be a string")
+(expound/def :predicate-messages/vector vector? "should be a vector")
 
 (deftest predicate-messages
-  (testing "predicate with error message"
-    (is (= "-- Spec failed --------------------
+  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+    (testing "predicate with error message"
+      (is (= "-- Spec failed --------------------
 
   :hello
 
@@ -2345,5 +2347,62 @@ should be a string
 -------------------------
 Detected 1 error
 "
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str :predicate-messages/string :hello))))))
+             (s/explain-str :predicate-messages/string :hello))))
+    (testing "predicate within a collection"
+      (is (= "-- Spec failed --------------------
+
+  [... :foo]
+       ^^^^
+
+should be a string
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str (s/coll-of :predicate-messages/string) ["" :foo]))))
+    (testing "two predicates with error messages"
+      (is (= "-- Spec failed --------------------
+
+  1
+
+should be a string
+
+or
+
+should be a vector
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str (s/or :s :predicate-messages/string
+                                  :v :predicate-messages/vector) 1))))
+    (testing "one predicate with error message, one without"
+      (is (= "-- Spec failed --------------------
+
+  foo
+
+should satisfy
+
+  pos-int?
+
+or
+
+  vector?
+
+or
+
+should be a string
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str (s/or :p pos-int?
+                                  :s :predicate-messages/string
+                                  :v vector?) 'foo))))))
+

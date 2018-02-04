@@ -454,7 +454,7 @@ should satisfy
   (get @registry-ref k))
 
 (defn predicate-errors [problems]
-  (let [[specced not-specced] (split-with
+  (let [[specced not-specced] ((juxt filter remove)
                                (fn [{:keys [expound/via pred]}]
                                  (and (specced-pred? via pred)
                                       (error-message (last via))))
