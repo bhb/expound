@@ -128,6 +128,39 @@
                                               (pr-pred (:pred problem)
                                                        (:spec problem)))) problems))))
 
+;; TODO - rename?
+(defn specced-pred? [via pred]
+  (boolean (let [last-spec (last via)]
+             (and (not= ::s/unknown pred)
+                  (s/get-spec last-spec)
+                  (=
+                   (pr-str pred)
+                   (pr-str (s/form (s/get-spec last-spec))))))))
+
+(defn error-message [k]
+  [k]
+  (get @registry-ref k))
+
+(defn predicate-errors [problems]
+  (let [[specced not-specced] ((juxt filter remove)
+                               (fn [{:keys [expound/via pred]}]
+                                 (and (specced-pred? via pred)
+                                      (error-message (last via))))
+                               problems)]
+    (string/join
+     "\n\nor\n\n"
+     (remove nil?
+             (conj (keep
+                    (fn [{:keys [expound/via]}]
+                      (error-message (last via)))
+                    specced)
+                   (when (seq not-specced)
+                     (printer/format
+                      "should satisfy
+
+%s"
+                      (preds not-specced))))))))
+
 (defn label
   ([size]
    (apply str (repeat size "-")))
@@ -397,11 +430,9 @@ with args:
 
 %s
 
-should satisfy
-
 %s"
      (printer/indent (pr-str (:val problem)))
-     (printer/indent (pr-pred (:pred problem) (:spec problem))))))
+     (predicate-errors problems))))
 
 (defmethod problem-group-str :problem/fspec-ret-failure [_type spec-name val path problems opts]
   (printer/format
@@ -439,39 +470,6 @@ should satisfy
    (header-label "Function spec failed")
    (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
    (expected-str _type spec-name val path problems opts)))
-
-;; TODO - rename?
-(defn specced-pred? [via pred]
-  (boolean (let [last-spec (last via)]
-             (and (not= ::s/unknown pred)
-                  (s/get-spec last-spec)
-                  (=
-                   (pr-str pred)
-                   (pr-str (s/form (s/get-spec last-spec))))))))
-
-(defn error-message [k]
-  [k]
-  (get @registry-ref k))
-
-(defn predicate-errors [problems]
-  (let [[specced not-specced] ((juxt filter remove)
-                               (fn [{:keys [expound/via pred]}]
-                                 (and (specced-pred? via pred)
-                                      (error-message (last via))))
-                               problems)]
-    (string/join
-     "\n\nor\n\n"
-     (remove nil?
-             (conj (keep
-                    (fn [{:keys [expound/via]}]
-                      (error-message (last via)))
-                    specced)
-                   (when (seq not-specced)
-                     (printer/format
-                      "should satisfy
-
-%s"
-                      (preds not-specced))))))))
 
 (defmethod expected-str :problem/unknown [_type spec-name val path problems opts]
   (predicate-errors problems))

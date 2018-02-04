@@ -2405,4 +2405,3 @@ Detected 1 error
              (s/explain-str (s/or :p pos-int?
                                   :s :predicate-messages/string
                                   :v vector?) 'foo))))))
-
