@@ -20,7 +20,7 @@
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
-(def num-tests 5) ;; TODO - restore to 30
+(def num-tests 30)
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -1007,11 +1007,11 @@ Detected 1 error\n")
 ;; Since CLJS prints out entire source of a function when
 ;; it pretty-prints a failure, the output becomes much nicer if
 ;; we wrap each function in a simple spec
-(s/def :specs/string string?)
-(s/def :specs/vector vector?)
+(expound/def :specs/string string? "should be a string")
+(expound/def :specs/vector vector? "should be a vector")
 (s/def :specs/int int?)
 (s/def :specs/boolean boolean?)
-(s/def :specs/keyword keyword?)
+(expound/def :specs/keyword keyword? "should be a keyword")
 (s/def :specs/map map?)
 (s/def :specs/symbol symbol?)
 (s/def :specs/pos-int pos-int?)
