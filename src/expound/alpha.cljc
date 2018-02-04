@@ -11,11 +11,11 @@
             [expound.printer :as printer]
             [expound.util :as util]))
 
-;;;;; registry ;;;;;;
+;;;;;; registry ;;;;;;
 
 (defonce ^:private registry-ref (atom {}))
 
-;;;;;; specs   ;;;;;;
+;;;;;; internal specs ;;;;;;
 
 (s/def ::singleton (s/coll-of any? :count 1))
 (s/def :spec/spec keyword?)
@@ -592,3 +592,30 @@ Detected %s %s\n"
         `(do
            (register-message '~k ~error-message)
            (s/def ~k ~spec-form))))))
+
+;;;; public specs ;;;;;;
+(alias 'ex 'expound.alpha)
+
+(ex/def ::bool boolean? "should be either true or false")
+(ex/def ::bytes bytes? "should be an array of bytes")
+(ex/def ::double double? "should be a double")
+(ex/def ::ident ident? "should be an identifier (a symbol or keyword)")
+(ex/def ::indexed indexed? "should be an indexed collection")
+(ex/def ::int int? "should be an integer")
+(ex/def ::kw keyword? "should be a keyword")
+(ex/def ::map map? "should be a map")
+(ex/def ::nat-int nat-int? "should be an integer equal to, or greater than, zero")
+(ex/def ::neg-int neg-int? "should be a negative integer")
+(ex/def ::pos-int pos-int? "should be a positive integer")
+(ex/def ::qualified-ident qualified-ident? "should be an identifier (a symbol or keyword) with a namespace")
+(ex/def ::qualified-kw qualified-keyword? "should be a keyword with a namespace")
+(ex/def ::qualified-sym qualified-symbol? "should be a symbol with a namespace")
+(ex/def ::sequable seqable? "should be a seqable collection")
+(ex/def ::simple-ident simple-ident? "should be an identifier (a symbol or keyword) with no namespace")
+(ex/def ::simple-kw simple-keyword? "should be a keyword with no namespace")
+(ex/def ::simple-sym simple-symbol? "should be a symbol with no namespace")
+(ex/def ::str string? "should be a string")
+(ex/def ::sym symbol? "should be a symbol")
+(ex/def ::uuid uri? "should be a URI")
+(ex/def ::uuid uuid? "should be a UUID")
+(ex/def ::vec vector? "should be a vector")

@@ -2405,3 +2405,20 @@ Detected 1 error
              (s/explain-str (s/or :p pos-int?
                                   :s :predicate-messages/string
                                   :v vector?) 'foo))))))
+
+(deftest provided-specs
+  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+    (is (= "-- Spec failed --------------------
+
+  1
+
+should be a keyword with no namespace
+
+
+
+-------------------------
+Detected 1 error
+"
+           (s/explain-str :expound.alpha/simple-kw 1)))
+    )
+  )
