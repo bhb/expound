@@ -2404,7 +2404,39 @@ Detected 1 error
 "
              (s/explain-str (s/or :p pos-int?
                                   :s :predicate-messages/string
-                                  :v vector?) 'foo))))))
+                                  :v vector?) 'foo))))
+    (testing "compound predicates"
+      (let [email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$"]
+        (expound/def :predicate-messages/email (s/and string? #(re-matches email-regex %)) "should be a valid email address")
+        (is (= "-- Spec failed --------------------
+
+  \"sally@\"
+
+should be a valid email address
+
+
+
+-------------------------
+Detected 1 error
+"
+               (s/explain-str
+                :predicate-messages/email
+                "sally@"))))
+      (expound/def :predicate-messages/score (s/int-in 0 100) "should be between 0 and 100")
+      (is (= "-- Spec failed --------------------
+
+  101
+
+should be between 0 and 100
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str
+              :predicate-messages/score
+              101))))))
 
 (deftest provided-specs
   (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
@@ -2420,5 +2452,6 @@ should be a keyword with no namespace
 Detected 1 error
 "
            (s/explain-str :expound.alpha/simple-kw 1)))
-    )
-  )
+    (doseq [kw expound/public-specs]
+      (is (some? (s/get-spec kw)) (str "Failed to find spec for keyword " kw))
+      (is (some? (expound/error-message kw)) (str "Failed to find error message for keyword " kw)))))

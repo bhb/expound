@@ -128,38 +128,34 @@
                                               (pr-pred (:pred problem)
                                                        (:spec problem)))) problems))))
 
-;; TODO - rename?
-(defn specced-pred? [via pred]
-  (boolean (let [last-spec (last via)]
-             (and (not= ::s/unknown pred)
-                  (s/get-spec last-spec)
-                  (=
-                   (pr-str pred)
-                   (pr-str (s/form (s/get-spec last-spec))))))))
-
 (defn error-message [k]
   [k]
   (get @registry-ref k))
 
+(defn spec-w-error-message? [via pred]
+  (boolean (let [last-spec (last via)]
+             (and (not= ::s/unknown pred)
+                  (error-message last-spec)
+                  (s/get-spec last-spec)))))
+
 (defn predicate-errors [problems]
-  (let [[specced not-specced] ((juxt filter remove)
-                               (fn [{:keys [expound/via pred]}]
-                                 (and (specced-pred? via pred)
-                                      (error-message (last via))))
-                               problems)]
+  (let [[with-msg no-msgs] ((juxt filter remove)
+                            (fn [{:keys [expound/via pred]}]
+                              (spec-w-error-message? via pred))
+                            problems)]
     (string/join
      "\n\nor\n\n"
      (remove nil?
              (conj (keep
                     (fn [{:keys [expound/via]}]
                       (error-message (last via)))
-                    specced)
-                   (when (seq not-specced)
+                    with-msg)
+                   (when (seq no-msgs)
                      (printer/format
                       "should satisfy
 
 %s"
-                      (preds not-specced))))))))
+                      (preds no-msgs))))))))
 
 (defn label
   ([size]
@@ -610,12 +606,18 @@ Detected %s %s\n"
 (ex/def ::qualified-ident qualified-ident? "should be an identifier (a symbol or keyword) with a namespace")
 (ex/def ::qualified-kw qualified-keyword? "should be a keyword with a namespace")
 (ex/def ::qualified-sym qualified-symbol? "should be a symbol with a namespace")
-(ex/def ::sequable seqable? "should be a seqable collection")
+(ex/def ::seqable seqable? "should be a seqable collection")
 (ex/def ::simple-ident simple-ident? "should be an identifier (a symbol or keyword) with no namespace")
 (ex/def ::simple-kw simple-keyword? "should be a keyword with no namespace")
 (ex/def ::simple-sym simple-symbol? "should be a symbol with no namespace")
 (ex/def ::str string? "should be a string")
 (ex/def ::sym symbol? "should be a symbol")
-(ex/def ::uuid uri? "should be a URI")
+(ex/def ::uri uri? "should be a URI")
 (ex/def ::uuid uuid? "should be a UUID")
 (ex/def ::vec vector? "should be a vector")
+
+(def public-specs
+  [::bool ::bytes ::double ::ident ::indexed ::int ::kw
+   ::map ::nat-int ::neg-int ::pos-int ::qualified-ident
+   ::qualified-kw ::qualified-sym ::seqable ::simple-ident
+   ::simple-kw ::simple-sym ::str ::sym ::uuid ::uri ::vec])
