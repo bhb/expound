@@ -138,6 +138,20 @@ If a value fails to satisfy a predicate, Expound will print the name of the func
 ;; should be a valid email address
 ```
 
+If you prefer to use `clojure.spec.alpha/def`, you can still add a message using `expound.alpha/defmsg`:
+
+```clojure
+(s/def :ex/name string?)
+(expound/defmsg :ex/name "should be a string")
+(expound/expound :ex/name :bob)
+;; -- Spec failed --------------------
+;;
+;; :bob
+;;
+;; should be a string
+
+```
+
 #### Built-in predicates with error messages
 
 Expound provides a default set of type-like predicates with error messages. For example:

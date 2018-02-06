@@ -575,8 +575,9 @@ Detected %s %s\n"
         s)
     (symbol (str (.name *ns*)) (str s))))
 
-(defn register-message [k error-message]
-  (swap! registry-ref assoc k error-message))
+(defn defmsg [k error-message]
+  (swap! registry-ref assoc k error-message)
+  nil)
 
 #?(:clj
    (defmacro def
@@ -586,7 +587,7 @@ Detected %s %s\n"
      ([k spec-form error-message]
       (let [k (if (symbol? k) (ns-qualify k) k)]
         `(do
-           (register-message '~k ~error-message)
+           (defmsg '~k ~error-message)
            (s/def ~k ~spec-form))))))
 
 ;;;; public specs ;;;;;;
