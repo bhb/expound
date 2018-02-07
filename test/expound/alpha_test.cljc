@@ -1007,11 +1007,11 @@ Detected 1 error\n")
 ;; Since CLJS prints out entire source of a function when
 ;; it pretty-prints a failure, the output becomes much nicer if
 ;; we wrap each function in a simple spec
-(s/def :specs/string string?)
-(s/def :specs/vector vector?)
+(expound/def :specs/string string? "should be a string")
+(expound/def :specs/vector vector? "should be a vector")
 (s/def :specs/int int?)
 (s/def :specs/boolean boolean?)
-(s/def :specs/keyword keyword?)
+(expound/def :specs/keyword keyword? "should be a keyword")
 (s/def :specs/map map?)
 (s/def :specs/symbol symbol?)
 (s/def :specs/pos-int pos-int?)
@@ -1798,7 +1798,7 @@ Detected 1 error\n"
    (deftest assert-on-real-spec-tests
      (checking
       "for any real-world spec and any data, assert returns an error that matches explain-str"
-      50
+      num-tests
       [spec spec-gen
        form gen/any-printable]
       ;; Can't reliably test fspecs until
@@ -2330,3 +2330,110 @@ Cannot find spec for
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
 
+(expound/def :predicate-messages/string string? "should be a string")
+(expound/def :predicate-messages/vector vector? "should be a vector")
+
+(deftest predicate-messages
+  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+    (testing "predicate with error message"
+      (is (= "-- Spec failed --------------------
+
+  :hello
+
+should be a string
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str :predicate-messages/string :hello))))
+    (testing "predicate within a collection"
+      (is (= "-- Spec failed --------------------
+
+  [... :foo]
+       ^^^^
+
+should be a string
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str (s/coll-of :predicate-messages/string) ["" :foo]))))
+    (testing "two predicates with error messages"
+      (is (= "-- Spec failed --------------------
+
+  1
+
+should be a string
+
+or
+
+should be a vector
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str (s/or :s :predicate-messages/string
+                                  :v :predicate-messages/vector) 1))))
+    (testing "one predicate with error message, one without"
+      (is (= "-- Spec failed --------------------
+
+  foo
+
+should satisfy
+
+  pos-int?
+
+or
+
+  vector?
+
+or
+
+should be a string
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str (s/or :p pos-int?
+                                  :s :predicate-messages/string
+                                  :v vector?) 'foo))))
+    (testing "compound predicates"
+      (let [email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$"]
+        (expound/def :predicate-messages/email (s/and string? #(re-matches email-regex %)) "should be a valid email address")
+        (is (= "-- Spec failed --------------------
+
+  \"sally@\"
+
+should be a valid email address
+
+
+
+-------------------------
+Detected 1 error
+"
+               (s/explain-str
+                :predicate-messages/email
+                "sally@"))))
+      (expound/def :predicate-messages/score (s/int-in 0 100) "should be between 0 and 100")
+      (is (= "-- Spec failed --------------------
+
+  101
+
+should be between 0 and 100
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str
+              :predicate-messages/score
+              101))))))

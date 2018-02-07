@@ -15,4 +15,5 @@ expound/core.clj
 expound/alpha.cljc
 expound/problems.cljc
 expound/printer.cljc
+expound/specs.cljc
 project.clj

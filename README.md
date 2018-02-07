@@ -118,6 +118,55 @@ If you are enabling Expound in a non-REPL environment, remember that `set!` will
 
 [Using `set!` will also not work within an uberjar](https://github.com/bhb/expound/issues/19).
 
+### Error messages for predicates
+
+#### Adding error messages
+
+If a value fails to satisfy a predicate, Expound will print the name of the function (or `<anonymous function>` if the function has no name). To improve the error message, you can use `expound.alpha/def` to add a human-readable error message to the spec.
+
+```clojure
+(def email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$")
+
+(expound/def :example/email (s/and string? #(re-matches email-regex %)) "should be a valid email address")
+
+(expound/expound :example/email "sally@")
+
+;; -- Spec failed --------------------
+;;
+;;   "sally@"
+;;
+;; should be a valid email address
+```
+
+If you prefer to use `clojure.spec.alpha/def`, you can still add a message using `expound.alpha/defmsg`:
+
+```clojure
+(s/def :ex/name string?)
+(expound/defmsg :ex/name "should be a string")
+(expound/expound :ex/name :bob)
+;; -- Spec failed --------------------
+;;
+;; :bob
+;;
+;; should be a string
+
+```
+
+#### Built-in predicates with error messages
+
+Expound provides a default set of type-like predicates with error messages. For example:
+
+```clojure
+(expound/expound :expound.specs/pos-int -1)
+;; -- Spec failed --------------------
+;;
+;; -1
+;;
+;; should be a positive integer
+```
+
+You can see the full list of available specs with `expound.specs/public-specs`.
+
 
 ### Configuring the printer
 
