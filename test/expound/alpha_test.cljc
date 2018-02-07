@@ -2437,21 +2437,3 @@ Detected 1 error
              (s/explain-str
               :predicate-messages/score
               101))))))
-
-(deftest provided-specs
-  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-    (is (= "-- Spec failed --------------------
-
-  1
-
-should be a keyword with no namespace
-
-
-
--------------------------
-Detected 1 error
-"
-           (s/explain-str :expound.alpha/simple-kw 1)))
-    (doseq [kw expound/public-specs]
-      (is (some? (s/get-spec kw)) (str "Failed to find spec for keyword " kw))
-      (is (some? (expound/error-message kw)) (str "Failed to find error message for keyword " kw)))))

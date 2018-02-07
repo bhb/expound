@@ -157,7 +157,7 @@ If you prefer to use `clojure.spec.alpha/def`, you can still add a message using
 Expound provides a default set of type-like predicates with error messages. For example:
 
 ```clojure
-(expound/expound ::expound/pos-int -1)
+(expound/expound :expound.specs/pos-int -1)
 ;; -- Spec failed --------------------
 ;;
 ;; -1
@@ -165,7 +165,7 @@ Expound provides a default set of type-like predicates with error messages. For 
 ;; should be a positive integer
 ```
 
-You can see the full list of available specs with `expound/public-specs`.
+You can see the full list of available specs with `expound.specs/public-specs`.
 
 
 ### Configuring the printer
