@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.5.0] - 2018-02-06
+
 ### Fixed
 - [Bug with displaying errors for `s/or` specs](https://github.com/bhb/expound/issues/64)
 - Bug where "should be one of..." values didn't display correctly
@@ -90,7 +92,8 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/bhb/expound/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/bhb/expound/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/bhb/expound/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/bhb/expound/compare/v0.3.2...v0.3.3
