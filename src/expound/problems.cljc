@@ -160,6 +160,38 @@
       (and (int? k) (seqable? form))
       (recur (nth (seq form) k) rst))))
 
+;; TODO - deduple with value-in??
+;; TODO - rename
+(defn assoc-in1 [form in value]
+  (let [[k & rst] in]
+    (cond
+      (empty? in)
+      value
+
+      (and (map? form) (paths/kps? k))
+      (assoc form (:key k) value)
+
+      ;; TODO - make this work
+      ;;(and (map? form) (paths/kvps? k))
+      ;;(recur (nth (seq form) (:idx k)) rst)
+
+      (associative? form)
+      (assoc form k (assoc-in1 (get form k) rst value))
+
+      (and (int? k) (seq? form))
+      (list* (assoc (vec form) k (assoc-in1 (nth (seq form) k) rst value))))))
+
+(comment
+  (require '[sc.api])
+
+  (sc.api/defsc 18)
+
+  (assoc-in1 {} [:a] 1)
+  (assoc-in {} [:a] 1)
+
+  (type `(let [x 1]))
+  (assoc-in1 `(let [x 1]) [1 0] :a))
+
 (defn escape-replacement [pattern s]
   #?(:clj (if (string? pattern)
             s

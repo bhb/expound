@@ -4,6 +4,7 @@
             [expound.paths-test]
             [expound.printer-test]
             [expound.problems-test]
+            [expound.suggest-test]
             [expound.test-utils]))
 
 (enable-console-print!)
