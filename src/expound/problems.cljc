@@ -181,17 +181,6 @@
       (and (int? k) (seq? form))
       (list* (assoc (vec form) k (assoc-in1 (nth (seq form) k) rst value))))))
 
-(comment
-  (require '[sc.api])
-
-  (sc.api/defsc 18)
-
-  (assoc-in1 {} [:a] 1)
-  (assoc-in {} [:a] 1)
-
-  (type `(let [x 1]))
-  (assoc-in1 `(let [x 1]) [1 0] :a))
-
 (defn escape-replacement [pattern s]
   #?(:clj (if (string? pattern)
             s

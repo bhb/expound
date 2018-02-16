@@ -11,7 +11,7 @@
 (s/fdef example-fn
         :args (s/cat :a simple-symbol?
                      :b string?
-                     :c keyword?
+                     :c simple-keyword?
                      :d int?
                      :e qualified-symbol?))
 (defn example-fn [a b c d])
@@ -59,5 +59,7 @@
      (is (= '(expound.suggest-test/example-fn b "b" :c 0 a/b)
             (suggest/valid-args `(example-fn ~'b "b" :c "foo" a/b))))
 
+     ;; TODO - try this with weird int-in on inst-in
+     ;; TODO - next up, if conversion doesn't work, try simplifying
      ;; HERE - try two problems with same sequence
 ))
