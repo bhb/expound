@@ -22,38 +22,41 @@
 (defn example-fn2 [a b])
 
 (deftest suggest
+  (testing "if spec matches"
+    (is (= "a"
+           (suggest/suggestion string? "a"))))
   (testing "conversions"
     (is (= 'b
-           (suggest/suggest simple-symbol? 'a/b)))
+           (suggest/suggestion simple-symbol? 'a/b)))
     (is (= "b"
-           (suggest/suggest string? 'b)))
+           (suggest/suggestion string? 'b)))
     (is (= "b"
-           (suggest/suggest string? :b)))
+           (suggest/suggestion string? :b)))
     (is (= "b"
-           (suggest/suggest string? :a/b)))
+           (suggest/suggestion string? :a/b)))
     (is (= :c
-           (suggest/suggest simple-keyword? 'c)))
+           (suggest/suggestion simple-keyword? 'c)))
     (is (= :c
-           (suggest/suggest simple-keyword? :a/c)))
+           (suggest/suggestion simple-keyword? :a/c)))
     (is (= :c
-           (suggest/suggest simple-keyword? "c")))
+           (suggest/suggestion simple-keyword? "c")))
     (is (= 0
-           (suggest/suggest int? "foo"))))
+           (suggest/suggestion int? "foo"))))
   (testing "simplification of existing options"
     (is (= :bar
-           (suggest/suggest #{:foo :bar} :baz)))
+           (suggest/suggestion #{:foo :bar} :baz)))
     (is (= 50
-           (suggest/suggest (s/int-in 50 60) 100)))
+           (suggest/suggestion (s/int-in 50 60) 100)))
     (is (= #inst "2018-01-01"
-           (suggest/suggest (s/inst-in #inst "2018-01-01" #inst "2018-12-31")
-                            #inst "2017-01-01")))
-
-    ;; TODO - try any? haha
-    ;; here - simple regex
-    ;; TODO - try this with weird int-in on inst-in
-    ;; TODO - next up, if conversion doesn't work, try simplifying
-    ;; HERE - try two problems with same sequence
-))
+           (suggest/suggestion (s/inst-in #inst "2018-01-01" #inst "2018-12-31")
+                               #inst "2017-01-01"))))
+  #_(testing "multiple problems in single spec"
+      (is (= ["a" :b 0]
+             (suggest/suggestion (s/cat
+                                  :s string?
+                                  :kw keyword?
+                                  :i int?)
+                                 [:a "b" "c"])))))
 
 #?(:cljs
    (deftest valid-args
