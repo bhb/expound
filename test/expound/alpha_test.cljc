@@ -19,7 +19,7 @@
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
-(def num-tests 30)
+(def num-tests 3) ;; TODO - restore
 
 (use-fixtures :once
   test-utils/check-spec-assertions
