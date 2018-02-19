@@ -28,12 +28,12 @@
   (testing "conversions"
     (is (= 'b
            (suggest/suggestion simple-symbol? 'a/b)))
-    (is (= "b"
-           (suggest/suggestion string? 'b)))
-    (is (= "b"
-           (suggest/suggestion string? :b)))
-    (is (= "b"
-           (suggest/suggestion string? :a/b)))
+    (is (= "abc"
+           (suggest/suggestion string? 'abc)))
+    (is (= "bc"
+           (suggest/suggestion string? :bc)))
+    (is (= "bc"
+           (suggest/suggestion string? :a/bc)))
     (is (= :c
            (suggest/suggestion simple-keyword? 'c)))
     (is (= :c
@@ -47,16 +47,17 @@
            (suggest/suggestion #{:foo :bar} :baz)))
     (is (= 50
            (suggest/suggestion (s/int-in 50 60) 100)))
-    (is (= #inst "2018-01-01"
-           (suggest/suggestion (s/inst-in #inst "2018-01-01" #inst "2018-12-31")
-                               #inst "2017-01-01"))))
-  #_(testing "multiple problems in single spec"
-      (is (= ["a" :b 0]
-             (suggest/suggestion (s/cat
-                                  :s string?
-                                  :kw keyword?
-                                  :i int?)
-                                 [:a "b" "c"])))))
+    (is (<= -1
+            (compare #inst "2018-01-01"
+                     (suggest/suggestion (s/inst-in #inst "2018-01-01" #inst "2018-12-31")
+                                         #inst "2017-01-01")))))
+  (testing "multiple problems in single spec"
+    (is (= ["a" :b 0]
+           (suggest/suggestion (s/cat
+                                :s string?
+                                :kw keyword?
+                                :i int?)
+                               [:a "b" "c"])))))
 
 #?(:cljs
    (deftest valid-args
