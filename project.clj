@@ -1,4 +1,4 @@
-(defproject expound "0.4.1-SNAPSHOT"
+(defproject expound "0.5.1-SNAPSHOT"
   :description "Human-optimized error messages for clojure.spec"
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
@@ -78,8 +78,8 @@
                                   [io.aviso/pretty "0.1.34"]
                                   [vvvvalvalval/scope-capture "0.1.4"]
                                   [org.clojure/test.check "0.9.0"]
-                                  [com.clojure-goes-fast/clj-async-profiler "0.1.2"]]
-                   ;;:resource-paths [~(format "file:///%s/../lib/tools.jar" (System/getProperty "java.home"))]
+                                  [com.clojure-goes-fast/clj-async-profiler "0.1.2"]
+                                  [metosin/spec-tools "0.5.1"]]
                    :plugins [[io.aviso/pretty "0.1.34"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
@@ -98,7 +98,8 @@
                                           [ring/ring-core "1.6.2"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.3"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.12.2.0"] ; to test specs
-                                          [vvvvalvalval/scope-capture "0.1.4"]]}
+                                          [vvvvalvalval/scope-capture "0.1.4"]
+                                          [metosin/spec-tools "0.5.1"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.14"]

@@ -16,6 +16,7 @@
             [expound.printer :as printer]
             [expound.test-utils :as test-utils]
             [clojure.walk :as walk]
+            [spec-tools.data-spec :as ds]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -27,6 +28,7 @@
 
 ;; Missing onyx specs
 (s/def :trigger/materialize any?)
+(s/def :flow/short-circuit any?)
 
 (def any-printable-wo-nan (gen/such-that (complement test-utils/contains-nan?) gen/any-printable))
 
@@ -103,7 +105,7 @@ Detected 1 error\n")
 
   :baz
 
-should be one of: `:bar`,`:foo`
+should be one of: :bar, :foo
 
 -- Relevant specs -------
 
@@ -120,7 +122,7 @@ Detected 1 error\n"
   [:three]
    ^^^^^^
 
-should be one of: `:one`,`:two`
+should be one of: :one, :two
 
 -- Relevant specs -------
 
@@ -141,7 +143,7 @@ Detected 1 error\n")
 
   :baz
 
-should be one of: `:bar`,`:foo`
+should be one of: :bar, :foo
 
 -- Relevant specs -------
 
@@ -172,7 +174,7 @@ Detected 2 errors\n")
 
   :baz
 
-should be: `:foobar`
+should be: :foobar
 
 -- Relevant specs -------
 
@@ -237,6 +239,13 @@ Detected 1 error\n")
 (s/def :or-spec/str-or-int (s/or :int int? :str string?))
 (s/def :or-spec/vals (s/coll-of :or-spec/str-or-int))
 
+(s/def :or-spec/str string?)
+(s/def :or-spec/int int?)
+(s/def :or-spec/m-with-str (s/keys :req [:or-spec/str]))
+(s/def :or-spec/m-with-int (s/keys :req [:or-spec/int]))
+(s/def :or-spec/m-with-str-or-int (s/or :m-with-str :or-spec/m-with-str
+                                        :m-with-int :or-spec/m-with-int))
+
 (deftest or-spec
   (testing "simple value"
     (is (= (pf "-- Spec failed --------------------
@@ -282,7 +291,86 @@ or
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :or-spec/vals [0 "hi" :kw "bye"])))))
+           (expound/expound-str :or-spec/vals [0 "hi" :kw "bye"]))))
+  (is (= "-- Spec failed --------------------
+
+  50
+
+should satisfy
+
+  coll?
+
+
+
+-------------------------
+Detected 1 error
+"
+         (expound/expound-str (s/or
+                               :strs (s/coll-of string?)
+                               :ints (s/coll-of int?))
+                              50)))
+  (is (= "-- Spec failed --------------------
+
+  50
+
+should be one of: \"a\", \"b\", 1, 2
+
+
+
+-------------------------
+Detected 1 error
+"
+         (expound/expound-str
+          (s/or
+           :letters #{"a" "b"}
+           :ints #{1 2})
+          50)))
+  (is (= (pf "-- Spec failed --------------------
+
+  {}
+
+should contain keys: `:or-spec/int`, `:or-spec/str`
+
+|          key |    spec |
+|--------------+---------|
+| :or-spec/int |    int? |
+| :or-spec/str | string? |
+
+-- Relevant specs -------
+
+:or-spec/m-with-int:
+  (pf.spec.alpha/keys :req [:or-spec/int])
+:or-spec/m-with-str:
+  (pf.spec.alpha/keys :req [:or-spec/str])
+:or-spec/m-with-str-or-int:
+  (pf.spec.alpha/or
+   :m-with-str
+   :or-spec/m-with-str
+   :m-with-int
+   :or-spec/m-with-int)
+
+-------------------------
+Detected 1 error
+")
+         (expound/expound-str :or-spec/m-with-str-or-int {})))
+  (testing "de-dupes keys"
+    (is (= "-- Spec failed --------------------
+
+  {}
+
+should contain keys: `:or-spec/str`
+
+|          key |    spec |
+|--------------+---------|
+| :or-spec/str | string? |
+
+
+
+-------------------------
+Detected 1 error
+"
+           (expound/expound-str (s/or :m-with-str1 (s/keys :req [:or-spec/str])
+                                      :m-with-int2 (s/keys :req [:or-spec/str])) {})))))
 
 (s/def :and-spec/name (s/and string? #(pos? (count %))))
 (s/def :and-spec/names (s/coll-of :and-spec/name))
@@ -405,7 +493,7 @@ Detected 1 error\n")
 
   []
 
-should have additional elements. The next element \":type\" should be one of: `:bar`,`:foo`
+should have additional elements. The next element \":type\" should be one of: :bar, :foo
 
 -- Relevant specs -------
 
@@ -919,16 +1007,21 @@ Detected 1 error\n")
 ;; Since CLJS prints out entire source of a function when
 ;; it pretty-prints a failure, the output becomes much nicer if
 ;; we wrap each function in a simple spec
-(s/def :specs/string string?)
-(s/def :specs/vector vector?)
+(expound/def :specs/string string? "should be a string")
+(expound/def :specs/vector vector? "should be a vector")
 (s/def :specs/int int?)
 (s/def :specs/boolean boolean?)
-(s/def :specs/keyword keyword?)
+(expound/def :specs/keyword keyword? "should be a keyword")
 (s/def :specs/map map?)
 (s/def :specs/symbol symbol?)
 (s/def :specs/pos-int pos-int?)
 (s/def :specs/neg-int neg-int?)
 (s/def :specs/zero #(and (number? %) (zero? %)))
+(s/def :specs/keys (s/keys
+                    :req-un [:specs/string]
+                    :req [:specs/map]
+                    :opt-un [:specs/vector]
+                    :opt [:specs/int]))
 
 (def simple-spec-gen (gen/one-of
                       [(gen/elements [:specs/string
@@ -940,7 +1033,8 @@ Detected 1 error\n")
                                       :specs/symbol
                                       :specs/pos-int
                                       :specs/neg-int
-                                      :specs/zero])
+                                      :specs/zero
+                                      :specs/keys])
                        (gen/set gen/simple-type-printable)]))
 
 (deftest generated-simple-spec
@@ -997,7 +1091,102 @@ Detected 1 error\n")
     :let [spec (apply-map-of simple-spec1 (apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)
           sp-form (s/form spec)]
     form any-printable-wo-nan]
-   (expound/expound-str spec form)))
+   (is (string? (expound/expound-str spec form)))))
+
+(s/def :expound.ds/spec-key (s/or :kw keyword?
+                                  :req (s/tuple
+                                        #{:expound.ds/req-key}
+                                        (s/map-of
+                                         #{:k}
+                                         keyword?
+                                         :count 1))
+                                  :opt (s/tuple
+                                        #{:expound.ds/opt-key}
+                                        (s/map-of
+                                         #{:k}
+                                         keyword?
+                                         :count 1))))
+
+(defn real-spec [form]
+  (walk/prewalk
+   (fn [x]
+     (if (vector? x)
+       (case (first x)
+         :expound.ds/opt-key
+         (ds/map->OptionalKey (second x))
+
+         :expound.ds/req-key
+         (ds/map->RequiredKey (second x))
+
+         :expound.ds/maybe-spec
+         (ds/maybe (second x))
+
+         x)
+       x))
+   form))
+
+(s/def :expound.ds/maybe-spec
+  (s/tuple
+   #{:expound.ds/maybe-spec}
+   :expound.ds/spec))
+
+(s/def :expound.ds/simple-specs
+  #{string?
+    vector?
+    int?
+    boolean?
+    keyword?
+    map?
+    symbol?
+    pos-int?
+    neg-int?
+    nat-int?})
+
+(s/def :expound.ds/vector-spec (s/coll-of
+                                :expound.ds/spec
+                                :count 1
+                                :kind vector?))
+
+(s/def :expound.ds/set-spec (s/coll-of
+                             :expound.ds/spec
+                             :count 1
+                             :kind set?))
+
+(s/def :expound.ds/map-spec
+  (s/map-of :expound.ds/spec-key
+            :expound.ds/spec))
+
+(s/def :expound.ds/spec
+  (s/or
+   :map :expound.ds/map-spec
+   :vector :expound.ds/vector-spec
+   :set :expound.ds/set-spec
+   :simple :expound.ds/simple-specs
+   :maybe :expound.ds/maybe-spec))
+
+(def data-spec-compat?
+  #?(:cljs
+     (do
+       ;; FIXME - anything including or after 1.9.908
+       ;; should work, but seems to fail, possibly due to?
+       ;; https://dev.clojure.org/jira/browse/CLJS-1297?
+       (not= "1.9.562"
+             *clojurescript-version*)
+       ;; Just force false for now
+       false)
+     :clj
+     true))
+
+(when data-spec-compat?
+  (deftest generated-data-specs
+    (checking
+     "generated data specs"
+     num-tests
+     [data-spec (s/gen :expound.ds/spec)
+      form any-printable-wo-nan
+      prefix (s/gen qualified-keyword?)
+      :let [gen-spec (ds/spec prefix (real-spec data-spec))]]
+     (is (string? (expound/expound-str gen-spec form))))))
 
 ;; FIXME - keys
 ;; FIXME - cat + alt, + ? *
@@ -1570,7 +1759,7 @@ Detected 1 error\n"
 (deftest test-assert2
   (is (thrown-with-msg?
        #?(:cljs :default :clj Exception)
-       #"\"Key must be integer\"\n\nshould be one of: `Extra input`,`Insufficient input`,`no method`"
+       #"\"Key must be integer\"\n\nshould be one of: \"Extra input\", \"Insufficient input\", \"no method"
        (binding [s/*explain-out* expound/printer]
          (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) "Key must be integer")))))
 
@@ -1609,7 +1798,7 @@ Detected 1 error\n"
    (deftest assert-on-real-spec-tests
      (checking
       "for any real-world spec and any data, assert returns an error that matches explain-str"
-      50
+      num-tests
       [spec spec-gen
        form gen/any-printable]
       ;; Can't reliably test fspecs until
@@ -1644,27 +1833,30 @@ Detected 1 error\n"
              (mutate form mutate-path)))))
 
 #?(:clj
-   (deftest real-spec-tests-mutated-valid-value
-     (checking
-      "for any real-world spec and any mutated valid data, explain-str returns a string"
-      num-tests
-      [spec spec-gen
-       mutate-path (gen/vector gen/pos-int)]
-      (when-not (some
-                 #{"clojure.spec.alpha/fspec"}
-                 (->> spec
-                      inline-specs
-                      (tree-seq coll? identity)
-                      (map str)))
-        (when (contains? (s/registry) spec)
-          (try
-            (let [valid-form (first (s/exercise spec 1))
-                  invalid-form (mutate valid-form mutate-path)]
-              (is (string? (expound/expound-str spec invalid-form))))
-            (catch clojure.lang.ExceptionInfo e
-              (when (not= :no-gen (::s/failure (ex-data e)))
-                (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
-                  (throw e))))))))))
+   1
+   ;; FIXME - we need to use generate mutated value, instead
+   ;; of adding randomness to test
+   #_(deftest real-spec-tests-mutated-valid-value
+       (checking
+        "for any real-world spec and any mutated valid data, explain-str returns a string"
+        num-tests
+        [spec spec-gen
+         mutate-path (gen/vector gen/pos-int)]
+        (when-not (some
+                   #{"clojure.spec.alpha/fspec"}
+                   (->> spec
+                        inline-specs
+                        (tree-seq coll? identity)
+                        (map str)))
+          (when (contains? (s/registry) spec)
+            (try
+              (let [valid-form (first (s/exercise spec 1))
+                    invalid-form (mutate valid-form mutate-path)]
+                (is (string? (expound/expound-str spec invalid-form))))
+              (catch clojure.lang.ExceptionInfo e
+                (when (not= :no-gen (::s/failure (ex-data e)))
+                  (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
+                    (throw e))))))))))
 
 ;; Using conformers for transformation should not crash by default, or at least give useful error message.
 (defn numberify [s]
@@ -2137,3 +2329,111 @@ Cannot find spec for
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
+
+(expound/def :predicate-messages/string string? "should be a string")
+(expound/def :predicate-messages/vector vector? "should be a vector")
+
+(deftest predicate-messages
+  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+    (testing "predicate with error message"
+      (is (= "-- Spec failed --------------------
+
+  :hello
+
+should be a string
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str :predicate-messages/string :hello))))
+    (testing "predicate within a collection"
+      (is (= "-- Spec failed --------------------
+
+  [... :foo]
+       ^^^^
+
+should be a string
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str (s/coll-of :predicate-messages/string) ["" :foo]))))
+    (testing "two predicates with error messages"
+      (is (= "-- Spec failed --------------------
+
+  1
+
+should be a string
+
+or
+
+should be a vector
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str (s/or :s :predicate-messages/string
+                                  :v :predicate-messages/vector) 1))))
+    (testing "one predicate with error message, one without"
+      (is (= "-- Spec failed --------------------
+
+  foo
+
+should satisfy
+
+  pos-int?
+
+or
+
+  vector?
+
+or
+
+should be a string
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str (s/or :p pos-int?
+                                  :s :predicate-messages/string
+                                  :v vector?) 'foo))))
+    (testing "compound predicates"
+      (let [email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$"]
+        (expound/def :predicate-messages/email (s/and string? #(re-matches email-regex %)) "should be a valid email address")
+        (is (= "-- Spec failed --------------------
+
+  \"sally@\"
+
+should be a valid email address
+
+
+
+-------------------------
+Detected 1 error
+"
+               (s/explain-str
+                :predicate-messages/email
+                "sally@"))))
+      (expound/def :predicate-messages/score (s/int-in 0 100) "should be between 0 and 100")
+      (is (= "-- Spec failed --------------------
+
+  101
+
+should be between 0 and 100
+
+
+
+-------------------------
+Detected 1 error
+"
+             (s/explain-str
+              :predicate-messages/score
+              101))))))

@@ -1,6 +1,6 @@
 (ns expound.alpha
   "Drop-in replacement for clojure.spec.alpha, with
-  human-readable `explain` function"
+  human-readable `expound` function"
   (:require [expound.paths :as paths]
             [expound.problems :as problems]
             [clojure.spec.alpha :as s]
@@ -8,9 +8,14 @@
             [clojure.set :as set]
             #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
-            [expound.printer :as printer]))
+            [expound.printer :as printer]
+            [expound.util :as util]))
 
-;;;;;; specs   ;;;;;;
+;;;;;; registry ;;;;;;
+
+(defonce ^:private registry-ref (atom {}))
+
+;;;;;; internal specs ;;;;;;
 
 (s/def ::singleton (s/coll-of any? :count 1))
 (s/def :spec/spec keyword?)
@@ -123,6 +128,35 @@
                                               (pr-pred (:pred problem)
                                                        (:spec problem)))) problems))))
 
+(defn error-message [k]
+  [k]
+  (get @registry-ref k))
+
+(defn spec-w-error-message? [via pred]
+  (boolean (let [last-spec (last via)]
+             (and (not= ::s/unknown pred)
+                  (error-message last-spec)
+                  (s/get-spec last-spec)))))
+
+(defn predicate-errors [problems]
+  (let [[with-msg no-msgs] ((juxt filter remove)
+                            (fn [{:keys [expound/via pred]}]
+                              (spec-w-error-message? via pred))
+                            problems)]
+    (string/join
+     "\n\nor\n\n"
+     (remove nil?
+             (conj (keep
+                    (fn [{:keys [expound/via]}]
+                      (error-message (last via)))
+                    with-msg)
+                   (when (seq no-msgs)
+                     (printer/format
+                      "should satisfy
+
+%s"
+                      (preds no-msgs))))))))
+
 (defn label
   ([size]
    (apply str (repeat size "-")))
@@ -230,7 +264,7 @@
   (explain-missing-keys problems))
 
 (defmethod problem-group-str :problem/missing-key [_type spec-name val path problems opts]
-  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
+  (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
   (printer/format
    "%s
 
@@ -246,10 +280,10 @@
     (printer/format
      "should be%s: %s"
      (if (= 1 (count combined-set)) "" " one of")
-     (string/join "," (map #(str "`" % "`") combined-set)))))
+     (string/join ", " (sort (map #(str "" (pr-str %) "") combined-set))))))
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]
-  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
+  (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
   (printer/format
    "%s
 
@@ -392,11 +426,9 @@ with args:
 
 %s
 
-should satisfy
-
 %s"
      (printer/indent (pr-str (:val problem)))
-     (printer/indent (pr-pred (:pred problem) (:spec problem))))))
+     (predicate-errors problems))))
 
 (defmethod problem-group-str :problem/fspec-ret-failure [_type spec-name val path problems opts]
   (printer/format
@@ -436,14 +468,10 @@ should satisfy
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/unknown [_type spec-name val path problems opts]
-  (printer/format
-   "should satisfy
-
-%s"
-   (preds problems)))
+  (predicate-errors problems))
 
 (defmethod problem-group-str :problem/unknown [_type spec-name val path problems opts]
-  (assert (apply = (map :val problems)) (str "All values should be the same, but they are " problems))
+  (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
   (printer/format
    "%s
 
@@ -500,11 +528,22 @@ should satisfy
 
 %s
 Detected %s %s\n"
-             (string/join "\n\n" (for [[[in type] problems] problems]
-                                   (problem-group-str1 type (spec-name explain-data) form in problems opts')))
+             (string/join "\n\n" (for [[[in type] probs] problems]
+                                   (problem-group-str1 type (spec-name explain-data) form in probs opts')))
              (section-label)
              (count problems)
              (if (= 1 (count problems)) "error" "errors")))))))))
+
+(s/def ::foo string?)
+
+#?(:clj
+   (defn ns-qualify
+     "Qualify symbol s by resolving it or using the current *ns*."
+     [s]
+     (if-let [ns-sym (some-> s namespace symbol)]
+       (or (some-> (get (ns-aliases *ns*) ns-sym) str (symbol (name s)))
+           s)
+       (symbol (str (.name *ns*)) (str s)))))
 
 ;;;;;; public ;;;;;;
 
@@ -537,3 +576,18 @@ Detected %s %s\n"
   "Given a spec and a value, either prints a success message or prints a human-readable explanation as a string."
   [spec form]
   (print (expound-str spec form)))
+
+(defn defmsg [k error-message]
+  (swap! registry-ref assoc k error-message)
+  nil)
+
+#?(:clj
+   (defmacro def
+     "Like clojure.spec.alpha/def, but optionally takes a human-readable error message (will only be used for predicates) e.g. 'should be a string'"
+     ([k spec-form]
+      `(s/def ~k ~spec-form))
+     ([k spec-form error-message]
+      (let [k (if (symbol? k) (ns-qualify k) k)]
+        `(do
+           (defmsg '~k ~error-message)
+           (s/def ~k ~spec-form))))))
