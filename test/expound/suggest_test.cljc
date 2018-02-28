@@ -8,19 +8,6 @@
   test-utils/check-spec-assertions
   test-utils/instrument-all)
 
-(s/fdef example-fn1
-        :args (s/cat :a simple-symbol?
-                     :b string?
-                     :c simple-keyword?
-                     :d int?
-                     :e qualified-symbol?))
-(defn example-fn1 [a b c d])
-
-(s/fdef example-fn2
-        :args (s/cat :a #{:foo :bar}
-                     :b (s/int-in 50 100)))
-(defn example-fn2 [a b])
-
 (deftest suggest
   (testing "if spec matches"
     (is (= "a"
@@ -59,12 +46,21 @@
                                 :i int?)
                                [:a "b" "c"])))))
 
+(s/fdef example-fn1
+        :args (s/cat :a simple-symbol?
+                     :b string?
+                     :c simple-keyword?
+                     :d int?
+                     :e qualified-symbol?))
+(defn example-fn1 [a b c d])
+
 #?(:cljs
    (deftest valid-args
      (is (= ::suggest/no-spec-found
-            (suggest/valid-args '(cljs.core/let1 [foo/bar 1]))))
-     (is (= '(expound.suggest-test/example-fn1 b "b" :c 1 a/b)
-            (suggest/valid-args `(example-fn1 a/b "b" :c 1 a/b))))) :clj
+            (suggest/valid-args '(clojure.core/let1 [foo/bar 1]))))
+     (is (= '(expound.suggest-test/example-fn1 a "b" :c 0 ns/symbol)
+            (suggest/valid-args '(expound.suggest-test/example-fn1 "a" "b" "c" "d" "symbol")))))
+   :clj
    (deftest valid-args
      (is (= ::suggest/no-spec-found
             (suggest/valid-args '(clojure.core/let1 [foo/bar 1]))))
@@ -72,7 +68,6 @@
      (is (=
           '(clojure.core/let [bar 1])
           (suggest/valid-args `(let [foo/bar 1]))))
-
      (is (=
           '(clojure.core/let [bar 1])
           (suggest/valid-args `(let ["bar" 1]))))))
