@@ -77,7 +77,9 @@
                                   [org.clojure/core.specs.alpha "0.1.24"]
                                   [io.aviso/pretty "0.1.34"]
                                   [vvvvalvalval/scope-capture "0.1.4"]
-                                  [org.clojure/test.check "0.9.0"]]
+                                  [org.clojure/test.check "0.9.0"]
+                                  [com.clojure-goes-fast/clj-async-profiler "0.1.2"]]
+                   ;;:resource-paths [~(format "file:///%s/../lib/tools.jar" (System/getProperty "java.home"))]
                    :plugins [[io.aviso/pretty "0.1.34"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
