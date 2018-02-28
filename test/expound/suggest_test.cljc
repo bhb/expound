@@ -26,8 +26,8 @@
     (is (= "a"
            (suggest/suggestion string? "a"))))
   (testing "conversions"
-    (is (= 'b
-           (suggest/suggestion simple-symbol? 'a/b)))
+    (is (= 'abc
+           (suggest/suggestion simple-symbol? 'a/abc)))
     (is (= "abc"
            (suggest/suggestion string? 'abc)))
     (is (= "bc"
