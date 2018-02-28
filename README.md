@@ -8,6 +8,30 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
 
+### Quick start with `clj`
+
+```
+> brew install clojure
+> clj -Sdeps '{:deps {friendly {:git/url "https://gist.github.com/bhb/2686b023d074ac052dbc21f12f324f18" :sha "cbc5b3c73d4788a25570f125e5f2de23a3d2bf5f"}}}' -m friendly
+user=> (require '[expound.alpha :as expound])
+nil
+user=> (expound/expound string? 1)
+nil
+-- Spec failed --------------------
+
+  1
+
+should satisfy
+
+  string?
+
+
+
+-------------------------
+Detected 1 error
+user=>
+```
+
 ### `expound`
 
 Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and to `clojure.spec.alpha/explain-str` with `expound.alpha/expound-str`.
