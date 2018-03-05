@@ -147,7 +147,9 @@
      (fn [problem]
        (let [most-specific-spec (last (:expound/via problem))
              in (:expound/in problem)
-             gen-values (map first (safe-exercise !cache most-specific-spec 8))
+             gen-values (if (set? most-specific-spec)
+                          most-specific-spec
+                          (map first (safe-exercise !cache most-specific-spec 8)))
              ;; TODO - this is a hack that won't work if we have nested specs
               ;; the generated spec could potentially be half-way up the "path" path
              seed-vals (map #(if-let [r (get-in (s/conform most-specific-spec %)
