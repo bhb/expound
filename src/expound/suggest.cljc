@@ -101,18 +101,29 @@
   (some #(= ::no-value %)
         (tree-seq coll? seq suggestion)))
 
-(defn score [spec form suggestion]
-  (let [failure-multiplier 100
+(s/def ::type #{::converted ::simplified ::init})
+(s/def ::types (s/coll-of ::type))
+(s/def ::form any?)
+(s/def ::suggestion (s/keys
+                     :req [::types ::form]))
+
+;; Lower score is better
+(defn score [spec init-form suggestion]
+  (s/assert
+   ::suggestion
+   suggestion)
+  (let [{:keys [::form]} suggestion
+        failure-multiplier 100
         problem-depth-multiplier 1
         total-failure 1000000000]
-    (if (step-failed? suggestion)
+    (if (step-failed? form)
       total-failure
       (let [problem-count (or (some->
-                               (s/explain-data spec suggestion)
+                               (s/explain-data spec form)
                                ::s/problems
                                count) 0)
             problem-depth   (some->>
-                             (s/explain-data spec suggestion)
+                             (s/explain-data spec form)
                              ::s/problems
                              (mapcat
                               :in)
@@ -120,12 +131,18 @@
                              (apply +)
                              inc
                              ;; TODO - need to use real path record shere
-)]
+)
+            types-penalty (apply + (map #(case %
+                                           ::converted 1
+                                           ::simplified 2
+                                           ::init 3)
+                                        (::types suggestion)))]
 
         (if (pos? problem-count)
           (/ (* failure-multiplier problem-count)
              (* problem-depth-multiplier problem-depth))
-          (levenshtein (pr-str form) (pr-str suggestion)))))))
+          (+ (levenshtein (pr-str init-form) (pr-str form))
+             types-penalty))))))
 
 (defn safe-exercise [!cache spec n]
   (try
@@ -140,8 +157,10 @@
         (safe-exercise !cache spec (dec n))
         (throw e)))))
 
-(defn suggestions* [!cache spec form]
-  (let [ed (problems/annotate (s/explain-data spec form))
+(defn suggestions* [!cache spec suggestion]
+  (s/assert ::suggestion suggestion)
+  (let [form (::form suggestion)
+        ed (problems/annotate (s/explain-data spec form))
         problems (:expound/problems ed)]
     (mapcat
      (fn [problem]
@@ -149,7 +168,7 @@
              in (:expound/in problem)
              gen-values (if (set? most-specific-spec)
                           most-specific-spec
-                          (map first (safe-exercise !cache most-specific-spec 8)))
+                          (map first (safe-exercise !cache most-specific-spec 10)))
              ;; TODO - this is a hack that won't work if we have nested specs
               ;; the generated spec could potentially be half-way up the "path" path
              seed-vals (map #(if-let [r (get-in (s/conform most-specific-spec %)
@@ -158,33 +177,49 @@
                                %)
                             gen-values)]
          (into
-          [(combine form in
-                    (simplify seed-vals))]
-          (for [seed-val seed-vals]
-            (combine form in (convert (:val problem) seed-val))))))
+          (map
+           (fn [sugg]
+             {::form  sugg
+              ::types (conj (::types suggestion) ::converted)})
+           (for [seed-val seed-vals]
+             (combine form in (convert (:val problem) seed-val))))
+          (map
+           (fn [sugg]
+             {::form  sugg
+              ::types (conj (::types suggestion) ::simplified)})
+           [(combine form in
+                     (simplify seed-vals))]))))
      problems)))
 
 (defn suggestions [spec init-form]
   (let [!cache (atom {})]
     (loop [i 10
-           forms #{init-form}]
+           suggestions #{{::form  init-form
+                          ::types '(::init)}}]
+      (s/assert (s/coll-of ::suggestion) suggestions)
       (if (zero? i)
         (sort-by
          second
          (map #(vector
                 %
                 (score spec init-form %))
-              forms))
-        (let [invalid-forms (remove (partial s/valid? spec) forms)]
+              ;; Don't depend on ordering of suggestions
+              ;; TODO - remove
+              (shuffle suggestions)))
+        (let [invalid-forms (remove (fn [sg] (s/valid? spec (::form sg)))
+                                    suggestions)]
           (recur
            (dec i)
-           (into forms
+           (into suggestions
                  (mapcat
                   (partial suggestions* !cache spec)
                   invalid-forms))))))))
 
 (defn suggestion [spec form]
-  (ffirst (suggestions spec form)))
+  (let [best-form (::form (ffirst (suggestions spec form)))]
+    (if (s/valid? spec best-form)
+      best-form
+      ::no-suggestion)))
 
 (defn valid-args [form]
   (if-let [spec (s/get-spec (first form))]

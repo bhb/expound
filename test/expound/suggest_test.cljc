@@ -13,14 +13,14 @@
     (is (= "a"
            (suggest/suggestion string? "a"))))
   (testing "conversions"
-    (is (= 'abc
-           (suggest/suggestion simple-symbol? 'a/abc)))
-    (is (= "abc"
-           (suggest/suggestion string? 'abc)))
-    (is (= "bc"
-           (suggest/suggestion string? :bc)))
-    (is (= "bc"
-           (suggest/suggestion string? :a/bc)))
+    (is (= 'b
+           (suggest/suggestion simple-symbol? 'a/b)))
+    (is (= "a"
+           (suggest/suggestion string? 'a)))
+    (is (= "b"
+           (suggest/suggestion string? :b)))
+    (is (= "b"
+           (suggest/suggestion string? :a/b)))
     (is (= :c
            (suggest/suggestion simple-keyword? 'c)))
     (is (= :c
