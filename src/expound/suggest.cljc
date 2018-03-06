@@ -1,7 +1,12 @@
 (ns expound.suggest
   (:require [clojure.spec.alpha :as s]
-            [expound.problems :as problems]))
+            [expound.problems :as problems]
+            [clojure.test.check.random :as random]
+            [clojure.test.check.rose-tree :as rose]
+            [clojure.test.check.generators :as gen]))
 
+(def seed 0)
+(def rounds 5)
 (def example-values
   ["sally@example.com"
    "http://www.example.com"
@@ -154,11 +159,23 @@
            (levenshtein (pr-str init-form) (pr-str form))
            types-penalty))))))
 
-(defn safe-exercise [!cache spec n]
+(defn sample-seq
+  "Return a sequence of realized values from `generator`."
+  [generator seed]
+  (let [max-size 200
+        r (if seed
+            (random/make-random seed)
+            (random/make-random))
+        size-seq (gen/make-size-range-seq max-size)]
+    (map #(rose/root (gen/call-gen generator %1 %2))
+         (gen/lazy-random-states r)
+         size-seq)))
+
+(defn safe-generate [!cache spec n]
   (try
     (if-let [xs (get @!cache spec)]
       xs
-      (let [xs (doall (s/exercise spec n))]
+      (let [xs (doall (take n (sample-seq (s/gen spec) seed)))]
         (swap! !cache assoc spec xs)
         xs))
     (catch #?(:cljs :default
@@ -166,7 +183,7 @@
       (if (= #?(:cljs (.-message e)
                 :clj (.getMessage e))
              "Couldn't satisfy such-that predicate after 100 tries.")
-        (safe-exercise !cache spec (dec n))
+        (safe-generate !cache spec (dec n))
         (throw e)))))
 
 (defn suggestions* [!cache spec suggestion]
@@ -180,7 +197,7 @@
              in (:expound/in problem)
              gen-values (if (set? most-specific-spec)
                           most-specific-spec
-                          (map first (safe-exercise !cache most-specific-spec 10)))
+                          (safe-generate !cache most-specific-spec 10))
              ;; TODO - this is a hack that won't work if we have nested specs
               ;; the generated spec could potentially be half-way up the "path" path
              seed-vals (map #(if-let [r (get-in (s/conform most-specific-spec %)
@@ -210,8 +227,6 @@
             [(combine form in
                       (simplify seed-vals))])))))
      problems)))
-
-(def rounds 5)
 
 (defn include? [spec init-form round old-suggestion new-suggestion]
   (let [old-score (::score old-suggestion)
