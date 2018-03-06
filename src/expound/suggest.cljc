@@ -2,6 +2,13 @@
   (:require [clojure.spec.alpha :as s]
             [expound.problems :as problems]))
 
+(def example-values
+  ["sally@example.com"
+   "http://www.example.com"
+   0
+   []
+   {}])
+
 (defn convert [original replacement]
   (cond
     (and (qualified-symbol? original)
@@ -101,11 +108,13 @@
   (some #(= ::no-value %)
         (tree-seq coll? seq suggestion)))
 
-(s/def ::type #{::converted ::simplified ::init})
+(s/def ::type #{::converted ::simplified ::init ::example})
 (s/def ::types (s/coll-of ::type))
 (s/def ::form any?)
+(s/def ::score pos?)
 (s/def ::suggestion (s/keys
-                     :req [::types ::form]))
+                     :req [::types ::form]
+                     :opt [::score]))
 
 ;; Lower score is better
 (defn score [spec init-form suggestion]
@@ -134,15 +143,19 @@
 )
             types-penalty (apply + (map #(case %
                                            ::converted 1
-                                           ::simplified 2
-                                           ::init 3)
+                                           ::example 2
+                                           ::simplified 3
+                                           ::init 4)
                                         (::types suggestion)))]
-
         (if (pos? problem-count)
           (/ (* failure-multiplier problem-count)
-             (* problem-depth-multiplier problem-depth))
-          (+ (levenshtein (pr-str init-form) (pr-str form))
-             types-penalty))))))
+                (* problem-depth-multiplier problem-depth))
+          (+ 
+         (levenshtein (pr-str init-form) (pr-str form))
+           types-penalty)
+          )
+        
+        ))))
 
 (defn safe-exercise [!cache spec n]
   (try
@@ -151,8 +164,10 @@
       (let [xs (doall (s/exercise spec n))]
         (swap! !cache assoc spec xs)
         xs))
-    (catch Exception e
-      (if (= (.getMessage e)
+    (catch #?(:cljs :default
+              :clj Exception) e
+      (if (= #?(:cljs (.-message e)
+                :clj (.getMessage e))
              "Couldn't satisfy such-that predicate after 100 tries.")
         (safe-exercise !cache spec (dec n))
         (throw e)))))
@@ -180,24 +195,60 @@
           (map
            (fn [sugg]
              {::form  sugg
-              ::types (conj (::types suggestion) ::converted)})
-           (for [seed-val seed-vals]
-             (combine form in (convert (:val problem) seed-val))))
-          (map
-           (fn [sugg]
-             {::form  sugg
-              ::types (conj (::types suggestion) ::simplified)})
-           [(combine form in
-                     (simplify seed-vals))]))))
+              ::types (conj (::types suggestion) ::example)})
+           (for [val example-values]
+             (combine form in val)))
+          (into
+           (map
+            (fn [sugg]
+              {::form  sugg
+               ::types (conj (::types suggestion) ::converted)})
+            (for [seed-val seed-vals]
+              (combine form in (convert (:val problem) seed-val))))
+           (map
+            (fn [sugg]
+              (s/assert some? suggestion)
+              {::form  sugg
+               ::types (conj (::types suggestion) ::simplified)})
+            [(combine form in
+                      (simplify seed-vals))])))))
      problems)))
 
+(def rounds 5)
+
+(defn include? [spec init-form round old-suggestion new-suggestion]
+  (let [old-score (::score old-suggestion)
+        new-score (::score new-suggestion) 
+        strict-improvement-round (* rounds (/ 1 3))
+        ]
+    (cond
+      (< 0 round strict-improvement-round)
+      (< new-score old-score)
+
+      (< strict-improvement-round round rounds)
+      (< (- new-score (* round 1.1))
+         old-score)
+
+      :else
+      (< (- new-score (* round 2))
+         old-score)
+      )
+    )
+  )
+
 (defn suggestions [spec init-form]
-  (let [!cache (atom {})]
-    (loop [i 10
-           suggestions #{{::form  init-form
-                          ::types '(::init)}}]
+  (let [!cache (atom {})
+        init-suggestion (-> {::form  init-form
+                             ::types '(::init)}
+                            ((fn [s]
+                               (assoc s ::score (score spec init-form s))
+                               )))
+        ]
+    (loop [round rounds
+           suggestions #{init-suggestion}]
       (s/assert (s/coll-of ::suggestion) suggestions)
-      (if (zero? i)
+      (s/assert set? suggestions)
+      (if (zero? round)
         (sort-by
          second
          (map #(vector
@@ -206,14 +257,29 @@
               ;; Don't depend on ordering of suggestions
               ;; TODO - remove
               (shuffle suggestions)))
-        (let [invalid-forms (remove (fn [sg] (s/valid? spec (::form sg)))
+        (let [invalid-suggestions (remove (fn [sg] (s/valid? spec (::form sg)))
                                     suggestions)]
           (recur
-           (dec i)
+           (dec round)
            (into suggestions
                  (mapcat
-                  (partial suggestions* !cache spec)
-                  invalid-forms))))))))
+                  (fn [suggestion]
+                    (->> (suggestions* !cache spec suggestion)
+                         (map
+                          (fn [s]
+                            (assoc s ::score (score spec init-form s))
+                            )
+                          )
+                         (filter
+                          (fn [s]
+                            (include? spec init-form round suggestion s)
+                            )
+                          
+                          )
+                         )
+                     
+                    )
+                  invalid-suggestions))))))))
 
 (defn suggestion [spec form]
   (let [best-form (::form (ffirst (suggestions spec form)))]

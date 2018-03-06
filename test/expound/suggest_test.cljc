@@ -38,6 +38,12 @@
             (compare #inst "2018-01-01"
                      (suggest/suggestion (s/inst-in #inst "2018-01-01" #inst "2018-12-31")
                                          #inst "2017-01-01")))))
+  (testing "providing common value"
+    (is (= "sally@example.com"
+           (suggest/suggestion (s/and string?
+                                      #(re-matches #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$" %))
+                               "bob"))))
+
   (testing "multiple problems in single spec"
     (is (= ["a" :b 0]
            (suggest/suggestion (s/cat
