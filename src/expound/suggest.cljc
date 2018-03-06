@@ -149,13 +149,10 @@
                                         (::types suggestion)))]
         (if (pos? problem-count)
           (/ (* failure-multiplier problem-count)
-                (* problem-depth-multiplier problem-depth))
-          (+ 
-         (levenshtein (pr-str init-form) (pr-str form))
-           types-penalty)
-          )
-        
-        ))))
+             (* problem-depth-multiplier problem-depth))
+          (+
+           (levenshtein (pr-str init-form) (pr-str form))
+           types-penalty))))))
 
 (defn safe-exercise [!cache spec n]
   (try
@@ -218,9 +215,8 @@
 
 (defn include? [spec init-form round old-suggestion new-suggestion]
   (let [old-score (::score old-suggestion)
-        new-score (::score new-suggestion) 
-        strict-improvement-round (* rounds (/ 1 3))
-        ]
+        new-score (::score new-suggestion)
+        strict-improvement-round (* rounds (/ 1 3))]
     (cond
       (< 0 round strict-improvement-round)
       (< new-score old-score)
@@ -231,19 +227,14 @@
 
       :else
       (< (- new-score (* round 2))
-         old-score)
-      )
-    )
-  )
+         old-score))))
 
 (defn suggestions [spec init-form]
   (let [!cache (atom {})
         init-suggestion (-> {::form  init-form
                              ::types '(::init)}
                             ((fn [s]
-                               (assoc s ::score (score spec init-form s))
-                               )))
-        ]
+                               (assoc s ::score (score spec init-form s)))))]
     (loop [round rounds
            suggestions #{init-suggestion}]
       (s/assert (s/coll-of ::suggestion) suggestions)
@@ -258,7 +249,7 @@
               ;; TODO - remove
               (shuffle suggestions)))
         (let [invalid-suggestions (remove (fn [sg] (s/valid? spec (::form sg)))
-                                    suggestions)]
+                                          suggestions)]
           (recur
            (dec round)
            (into suggestions
@@ -267,18 +258,10 @@
                     (->> (suggestions* !cache spec suggestion)
                          (map
                           (fn [s]
-                            (assoc s ::score (score spec init-form s))
-                            )
-                          )
+                            (assoc s ::score (score spec init-form s))))
                          (filter
                           (fn [s]
-                            (include? spec init-form round suggestion s)
-                            )
-                          
-                          )
-                         )
-                     
-                    )
+                            (include? spec init-form round suggestion s)))))
                   invalid-suggestions))))))))
 
 (defn suggestion [spec form]
