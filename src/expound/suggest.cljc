@@ -116,7 +116,7 @@
         (tree-seq coll? seq suggestion)))
 
 ;; TODO - move specs to the top
-(s/def ::type #{::converted ::simplified ::init ::example ::deleted})
+(s/def ::type #{::converted ::simplified ::init ::example ::deleted ::inserted})
 (s/def ::types (s/coll-of ::type))
 (s/def ::form any?)
 (s/def ::score pos?)
@@ -155,9 +155,10 @@
             types-penalty (apply + (map #(case %
                                            ::converted 1
                                            ::deleted 2
-                                           ::example 3
-                                           ::simplified 4
-                                           ::init 5)
+                                           ::inserted 3
+                                           ::example 4
+                                           ::simplified 5
+                                           ::init 6)
                                         (::types suggestion)))]
         (if (pos? problem-count)
           (/ (* failure-multiplier problem-count)
@@ -210,6 +211,21 @@
       (drop-idx n form))
     [form]))
 
+(defn insert-idx [n x coll]
+  (let [new-coll (concat
+                  (take n coll)
+                  [x]
+                  (drop n coll))]
+    (if (vector? coll)
+      (vec new-coll)
+      new-coll)))
+
+(defn insertions [val form]
+  (if (sequential? form)
+    (for [n (range 0 (inc (count form)))]
+      (insert-idx n val form))
+    [form]))
+
 (defn suggestions* [!cache spec suggestion]
   (s/assert ::suggestion suggestion)
   (let [form (::form suggestion)
@@ -255,7 +271,16 @@
                {::form sugg
                 ::types (conj (::types suggestion) ::deleted)})
              (deletions (::form suggestion)))
-            []))))
+            [])
+          (if (= "Insufficient input" (:reason problem))
+            (map
+             (fn [sugg]
+               (prn [:bhb.sugg sugg])
+               {::form sugg
+                ::types (conj (::types suggestion) ::inserted)})
+             (insertions (first seed-vals) (::form suggestion)))
+            [])
+          )))
      problems)))
 
 (defn include? [spec init-form round old-suggestion new-suggestion]

@@ -56,7 +56,13 @@
            (suggest/suggestion (s/cat
                                 :s1 string?
                                 :s2 string?)
-                               ["a" "b" "c"])))))
+                               ["a" "b" "c"]))))
+  (testing "adding an element"
+    (is (= ["a" ""]
+           (suggest/suggestion (s/cat
+                                :s1 string?
+                                :s2 string?)
+                               ["a"])))))
 
 (s/fdef example-fn1
         :args (s/cat :a simple-symbol?
