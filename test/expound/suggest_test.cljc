@@ -50,7 +50,13 @@
                                 :s string?
                                 :kw keyword?
                                 :i int?)
-                               [:a "b" "c"])))))
+                               [:a "b" "c"]))))
+  (testing "deleting an element"
+    (is (= ["a" "b"]
+           (suggest/suggestion (s/cat
+                                :s1 string?
+                                :s2 string?)
+                               ["a" "b" "c"])))))
 
 (s/fdef example-fn1
         :args (s/cat :a simple-symbol?

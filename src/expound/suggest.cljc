@@ -115,13 +115,17 @@
   (some #(= ::no-value %)
         (tree-seq coll? seq suggestion)))
 
-(s/def ::type #{::converted ::simplified ::init ::example})
+;; TODO - move specs to the top
+(s/def ::type #{::converted ::simplified ::init ::example ::deleted})
 (s/def ::types (s/coll-of ::type))
 (s/def ::form any?)
 (s/def ::score pos?)
 (s/def ::suggestion (s/keys
                      :req [::types ::form]
                      :opt [::score]))
+
+(defn longest-substring-length [s1 s2]
+  (count (take-while true? (map = s1 s2))))
 
 ;; Lower score is better
 (defn score [spec init-form suggestion]
@@ -150,15 +154,17 @@
 )
             types-penalty (apply + (map #(case %
                                            ::converted 1
-                                           ::example 2
-                                           ::simplified 3
-                                           ::init 4)
+                                           ::deleted 2
+                                           ::example 3
+                                           ::simplified 4
+                                           ::init 5)
                                         (::types suggestion)))]
         (if (pos? problem-count)
           (/ (* failure-multiplier problem-count)
              (* problem-depth-multiplier problem-depth))
           (+
            (levenshtein (pr-str init-form) (pr-str form))
+           (- (count (pr-str init-form)) (longest-substring-length (pr-str init-form) (pr-str form)))
            types-penalty))))))
 
 (defn sample-seq
@@ -190,6 +196,20 @@
         (safe-generate !cache spec (dec n))
         (throw e)))))
 
+(defn drop-idx [n coll]
+  (let [new-coll (concat
+                  (take n coll)
+                  (drop (inc n) coll))]
+    (if (vector? coll)
+      (vec new-coll)
+      new-coll)))
+
+(defn deletions [form]
+  (if (sequential? form)
+    (for [n (range 0 (count form))]
+      (drop-idx n form))
+    [form]))
+
 (defn suggestions* [!cache spec suggestion]
   (s/assert ::suggestion suggestion)
   (let [form (::form suggestion)
@@ -211,6 +231,7 @@
                             gen-values)]
          (concat
           (map
+           ;; TODO - rename sugg -> form
            (fn [sugg]
              {::form  sugg
               ::types (conj (::types suggestion) ::example)})
@@ -224,11 +245,15 @@
              (combine form in (convert (:val problem) seed-val))))
           (map
            (fn [sugg]
-             (s/assert some? suggestion)
              {::form  sugg
               ::types (conj (::types suggestion) ::simplified)})
            [(combine form in
-                     (simplify seed-vals))]))))
+                     (simplify seed-vals))])
+          (map
+           (fn [sugg]
+             {::form sugg
+              ::types (conj (::types suggestion) ::deleted)})
+           (deletions (::form suggestion))))))
      problems)))
 
 (defn include? [spec init-form round old-suggestion new-suggestion]
