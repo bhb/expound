@@ -9,6 +9,12 @@
 (def rounds 5)
 (def good-enough-score 30)
 (def num-samples 5)
+;; TODO - this will grow without bound. LRU?
+;; keep a normal map and keep a persist queue
+;; #queue in CLJS, clojure.lang.PersistentQueue/EMPTY in CLJ
+;; every write should (if above limit), delete element from
+;; map? use priority queue/heap?
+(def !example-cache (atom {}))
 (def example-values
   ["sally@example.com"
    "http://www.example.com"
@@ -169,11 +175,13 @@
 
 (defn safe-generate [!cache spec n]
   (try
-    (if-let [xs (get @!cache spec)]
-      xs
-      (let [xs (doall (take n (sample-seq (s/gen spec) seed)))]
-        (swap! !cache assoc spec xs)
-        xs))
+    (let [frm (s/form spec)]
+      (if-let [xs (get @!cache frm)]
+        xs
+        (let [xs (doall (take n (sample-seq (s/gen spec) seed)))]
+          (when-not (= ::s/unknown frm)
+            (swap! !cache assoc frm xs))
+          xs)))
     (catch #?(:cljs :default
               :clj Exception) e
       (if (= #?(:cljs (.-message e)
@@ -240,8 +248,7 @@
          old-score))))
 
 (defn suggestions [spec init-form]
-  (let [!cache (atom {})
-        init-suggestion (-> {::form  init-form
+  (let [init-suggestion (-> {::form  init-form
                              ::types '(::init)}
                             ((fn [s]
                                (assoc s ::score (score spec init-form s)))))]
@@ -267,7 +274,7 @@
            (into suggestions
                  (mapcat
                   (fn [suggestion]
-                    (->> (suggestions* !cache spec suggestion)
+                    (->> (suggestions* !example-cache spec suggestion)
                          (map
                           (fn [s]
                             (assoc s ::score (score spec init-form s))))
