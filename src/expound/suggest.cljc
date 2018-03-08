@@ -7,6 +7,8 @@
 
 (def seed 0)
 (def rounds 5)
+(def good-enough-score 30)
+(def num-samples 5)
 (def example-values
   ["sally@example.com"
    "http://www.example.com"
@@ -60,12 +62,6 @@
 
     (qualified-symbol? replacement)
     'ns/symbol
-
-    ;;(neg-int? replacement)
-    ;;-1
-
-    ;;(pos-int? replacement)
-    ;;1
 
     :else
     ::no-value))
@@ -197,7 +193,7 @@
              in (:expound/in problem)
              gen-values (if (set? most-specific-spec)
                           most-specific-spec
-                          (safe-generate !cache most-specific-spec 10))
+                          (safe-generate !cache most-specific-spec num-samples))
              ;; TODO - this is a hack that won't work if we have nested specs
               ;; the generated spec could potentially be half-way up the "path" path
              seed-vals (map #(if-let [r (get-in (s/conform most-specific-spec %)
@@ -205,27 +201,26 @@
                                r
                                %)
                             gen-values)]
-         (into
+         (concat
           (map
            (fn [sugg]
              {::form  sugg
               ::types (conj (::types suggestion) ::example)})
            (for [val example-values]
              (combine form in val)))
-          (into
-           (map
-            (fn [sugg]
-              {::form  sugg
-               ::types (conj (::types suggestion) ::converted)})
-            (for [seed-val seed-vals]
-              (combine form in (convert (:val problem) seed-val))))
-           (map
-            (fn [sugg]
-              (s/assert some? suggestion)
-              {::form  sugg
-               ::types (conj (::types suggestion) ::simplified)})
-            [(combine form in
-                      (simplify seed-vals))])))))
+          (map
+           (fn [sugg]
+             {::form  sugg
+              ::types (conj (::types suggestion) ::converted)})
+           (for [seed-val seed-vals]
+             (combine form in (convert (:val problem) seed-val))))
+          (map
+           (fn [sugg]
+             (s/assert some? suggestion)
+             {::form  sugg
+              ::types (conj (::types suggestion) ::simplified)})
+           [(combine form in
+                     (simplify seed-vals))]))))
      problems)))
 
 (defn include? [spec init-form round old-suggestion new-suggestion]
@@ -254,7 +249,9 @@
            suggestions #{init-suggestion}]
       (s/assert (s/coll-of ::suggestion) suggestions)
       (s/assert set? suggestions)
-      (if (zero? round)
+      (if (or (zero? round)
+              (some #(< (::score %) good-enough-score) suggestions))
+        ;; TODO - no need to build vector now that score is included
         (sort-by
          second
          (map #(vector
