@@ -61,21 +61,30 @@
 (s/fdef example-fn1
         :args (s/cat :a simple-symbol?
                      :b string?
-                     :c simple-keyword?
-                     :d int?
-                     :e qualified-symbol?))
-(defn example-fn1 [a b c d])
+                     :c int?))
+(defn example-fn1 [a b c])
+
+(s/fdef example-fn2
+        :args (s/cat :a (s/and string?
+                               #(re-matches #"^some string that will not match$" %))))
+(defn example-fn2 [a])
 
 #?(:cljs
    (deftest valid-args
      (is (= ::suggest/no-spec-found
-            (suggest/valid-args '(clojure.core/let1 [foo/bar 1]))))
-     (is (= '(expound.suggest-test/example-fn1 a "b" :c 0 ns/symbol)
-            (suggest/valid-args '(expound.suggest-test/example-fn1 "a" "b" "c" "d" "symbol")))))
+              (suggest/valid-args '(clojure.core/fake-let [foo/bar 1]))))
+     (is (= '(expound.suggest-test/example-fn1 a "b" 0)
+            (suggest/valid-args '(expound.suggest-test/example-fn1 "a" "b" "c")))))
    :clj
    (deftest valid-args
      (is (= ::suggest/no-spec-found
-            (suggest/valid-args '(clojure.core/let1 [foo/bar 1]))))
+            (suggest/valid-args '(clojure.core/fake-let [foo/bar 1]))))
+
+     (is (= ::suggest/no-suggestion
+            (suggest/valid-args '(expound.suggest-test/example-fn2 "a"))))
+
+     (is (= '(expound.suggest-test/example-fn1 a "b" 0)
+            (suggest/valid-args '(expound.suggest-test/example-fn1 "a" "b" "c"))))
 
      (is (=
           '(clojure.core/let [bar 1])

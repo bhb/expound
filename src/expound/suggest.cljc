@@ -249,11 +249,13 @@
               ::types (conj (::types suggestion) ::simplified)})
            [(combine form in
                      (simplify seed-vals))])
-          (map
-           (fn [sugg]
-             {::form sugg
-              ::types (conj (::types suggestion) ::deleted)})
-           (deletions (::form suggestion))))))
+          (if (= "Extra input" (:reason problem))
+            (map
+             (fn [sugg]
+               {::form sugg
+                ::types (conj (::types suggestion) ::deleted)})
+             (deletions (::form suggestion)))
+            []))))
      problems)))
 
 (defn include? [spec init-form round old-suggestion new-suggestion]
@@ -285,13 +287,10 @@
               (some #(< (::score %) good-enough-score) suggestions))
         ;; TODO - no need to build vector now that score is included
         (sort-by
-         second
-         (map #(vector
-                %
-                (score spec init-form %))
-              ;; Don't depend on ordering of suggestions
+         ::score
+         ;; Don't depend on ordering of suggestions
               ;; TODO - remove
-              (shuffle suggestions)))
+         (shuffle suggestions))
         (let [invalid-suggestions (remove (fn [sg] (s/valid? spec (::form sg)))
                                           suggestions)]
           (recur
@@ -309,15 +308,19 @@
                   invalid-suggestions))))))))
 
 (defn suggestion [spec form]
-  (let [best-form (::form (ffirst (suggestions spec form)))]
+  (let [best-form (::form (first (suggestions spec form)))]
     (if (s/valid? spec best-form)
       best-form
       ::no-suggestion)))
 
 (defn valid-args [form]
   (if-let [spec (s/get-spec (first form))]
-    (let [args-spec (:args spec)
-          args (next form)]
-      (list* (first form)
-             (suggestion args-spec args)))
+    (do
+      (let [args-spec (:args spec)
+            args (next form)
+            sugg (suggestion args-spec args)]
+        (if (= ::no-suggestion sugg)
+          sugg
+          (list* (first form)
+                 sugg))))
     ::no-spec-found))
