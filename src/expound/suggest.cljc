@@ -1,26 +1,29 @@
 (ns expound.suggest
   (:require [clojure.spec.alpha :as s]
+            [clojure.walk :as walk]
             [expound.problems :as problems]
             [clojure.test.check.random :as random]
             [clojure.test.check.rose-tree :as rose]
             [clojure.test.check.generators :as gen]))
 
-(def seed 0)
-(def rounds 5)
-(def good-enough-score 30)
+(def init-seed 0)
+(def generation-rounds 5)
+(def simplify-rounds 20)
+(def good-enough-score 20)
 (def num-samples 5)
+(def base-values
+  [0
+   nil
+   ""
+   []
+   #{}])
+
 ;; TODO - this will grow without bound. LRU?
 ;; keep a normal map and keep a persist queue
 ;; #queue in CLJS, clojure.lang.PersistentQueue/EMPTY in CLJ
 ;; every write should (if above limit), delete element from
 ;; map? use priority queue/heap?
 (def !example-cache (atom {}))
-(def example-values
-  ["sally@example.com"
-   "http://www.example.com"
-   0
-   []
-   {}])
 
 (defn convert [original replacement]
   (cond
@@ -61,7 +64,7 @@
     :keyword
 
     (string? replacement)
-    "string"
+    (str original)
 
     (simple-symbol? replacement)
     'symbol
@@ -77,7 +80,7 @@
     (* -1 x)
     x))
 
-(defn simplify [seed-vals]
+(defn pick-simplest [seed-vals]
   (if (every? number? seed-vals)
     (first (sort-by abs seed-vals))
     (first (sort-by pr-str seed-vals))))
@@ -116,8 +119,8 @@
         (tree-seq coll? seq suggestion)))
 
 ;; TODO - move specs to the top
-(s/def ::type #{::converted ::simplified ::init ::example ::deleted ::inserted})
-(s/def ::types (s/coll-of ::type))
+(s/def ::type #{::base ::converted ::simplified ::init ::deleted ::inserted ::converted-then-simplified ::generated})
+(s/def ::types (s/coll-of ::type :kind vector?))
 (s/def ::form any?)
 (s/def ::score pos?)
 (s/def ::suggestion (s/keys
@@ -156,22 +159,26 @@
                                            ::converted 1
                                            ::deleted 2
                                            ::inserted 3
-                                           ::example 4
-                                           ::simplified 5
-                                           ::init 6)
-                                        (::types suggestion)))]
+                                           ::base 4
+                                           ::converted-then-simplified 5
+                                           ::simplified 6
+                                           ::generated 7
+                                           ::init 100)
+                                        (::types suggestion)))
+            temp-todo-replace (+
+                               (levenshtein (pr-str init-form) (pr-str form))
+                               (- (count (pr-str init-form)) (longest-substring-length (pr-str init-form) (pr-str form)))
+                               types-penalty)]
         (if (pos? problem-count)
-          (/ (* failure-multiplier problem-count)
-             (* problem-depth-multiplier problem-depth))
-          (+
-           (levenshtein (pr-str init-form) (pr-str form))
-           (- (count (pr-str init-form)) (longest-substring-length (pr-str init-form) (pr-str form)))
-           types-penalty))))))
+          (+ temp-todo-replace
+             (/ (* failure-multiplier problem-count)
+                (* problem-depth-multiplier problem-depth)))
+          temp-todo-replace)))))
 
 (defn sample-seq
   "Return a sequence of realized values from `generator`."
   [generator seed]
-  (let [max-size 200
+  (let [max-size 1
         r (if seed
             (random/make-random seed)
             (random/make-random))
@@ -185,7 +192,7 @@
     (let [frm (s/form spec)]
       (if-let [xs (get @!cache frm)]
         xs
-        (let [xs (doall (take n (sample-seq (s/gen spec) seed)))]
+        (let [xs (sort-by (comp count pr-str) (take n (sample-seq (s/gen spec) init-seed)))]
           (when-not (= ::s/unknown frm)
             (swap! !cache assoc frm xs))
           xs)))
@@ -201,8 +208,14 @@
   (let [new-coll (concat
                   (take n coll)
                   (drop (inc n) coll))]
-    (if (vector? coll)
+    (cond
+      (string? coll)
+      (apply str new-coll)
+
+      (vector? coll)
       (vec new-coll)
+
+      :else
       new-coll)))
 
 (defn deletions [form]
@@ -238,52 +251,53 @@
              gen-values (if (set? most-specific-spec)
                           most-specific-spec
                           (safe-generate !cache most-specific-spec num-samples))
-             ;; TODO - this is a hack that won't work if we have nested specs
-              ;; the generated spec could potentially be half-way up the "path" path
-             seed-vals (map #(if-let [r (get-in (s/conform most-specific-spec %)
-                                                (:path problem))]
-                               r
-                               %)
-                            gen-values)]
+             ;; TODO - this dupes check below
+             seed-vals (if (= "Extra input" (:reason problem))
+                         []
+                         (mapcat
+                          (fn [v]
+                            ;; Not sure how to determine if we should look in
+                            ;; generated value or not, so just generate both.
+                            ;; TODO: We could also generate for every subpath, since
+                            ;; we don't know the depth of the spec
+                            [v (problems/value-in v (:expound/in problem))])
+                          gen-values))]
          (concat
           (map
-           ;; TODO - rename sugg -> form
-           (fn [sugg]
-             {::form  sugg
-              ::types (conj (::types suggestion) ::example)})
-           (for [val example-values]
+           (fn [form]
+             {::form form
+              ::types (conj (::types suggestion) ::base)})
+           (for [val base-values]
              (combine form in val)))
           (map
-           (fn [sugg]
-             {::form  sugg
+           (fn [form]
+             {::form form
               ::types (conj (::types suggestion) ::converted)})
            (for [seed-val seed-vals]
              (combine form in (convert (:val problem) seed-val))))
           (map
-           (fn [sugg]
-             {::form  sugg
-              ::types (conj (::types suggestion) ::simplified)})
-           [(combine form in
-                     (simplify seed-vals))])
+           (fn [form]
+             {::form form
+              ::types (conj (::types suggestion) ::generated)})
+           (for [seed-val seed-vals]
+             (combine form in seed-val)))
           (if (= "Extra input" (:reason problem))
             (map
-             (fn [sugg]
-               {::form sugg
+             (fn [form]
+               {::form form
                 ::types (conj (::types suggestion) ::deleted)})
              (deletions (::form suggestion)))
             [])
           (if (= "Insufficient input" (:reason problem))
             (map
-             (fn [sugg]
-               (prn [:bhb.sugg sugg])
-               {::form sugg
+             (fn [form]
+               {::form form
                 ::types (conj (::types suggestion) ::inserted)})
              (insertions (first seed-vals) (::form suggestion)))
-            [])
-          )))
+            []))))
      problems)))
 
-(defn include? [spec init-form round old-suggestion new-suggestion]
+(defn include? [rounds spec init-form round old-suggestion new-suggestion]
   (let [old-score (::score old-suggestion)
         new-score (::score new-suggestion)
         strict-improvement-round (* rounds (/ 1 3))]
@@ -301,21 +315,20 @@
 
 (defn suggestions [spec init-form]
   (let [init-suggestion (-> {::form  init-form
-                             ::types '(::init)}
+                             ::types [::init]}
                             ((fn [s]
                                (assoc s ::score (score spec init-form s)))))]
-    (loop [round rounds
+    (loop [round generation-rounds
            suggestions #{init-suggestion}]
       (s/assert (s/coll-of ::suggestion) suggestions)
       (s/assert set? suggestions)
       (if (or (zero? round)
               (some #(< (::score %) good-enough-score) suggestions))
         ;; TODO - no need to build vector now that score is included
+        ;; TODO - don't sort twice? Or maybe do, for debugging
         (sort-by
          ::score
-         ;; Don't depend on ordering of suggestions
-              ;; TODO - remove
-         (shuffle suggestions))
+         suggestions)
         (let [invalid-suggestions (remove (fn [sg] (s/valid? spec (::form sg)))
                                           suggestions)]
           (recur
@@ -329,11 +342,116 @@
                             (assoc s ::score (score spec init-form s))))
                          (filter
                           (fn [s]
-                            (include? spec init-form round suggestion s)))))
+                            (include? generation-rounds spec init-form round suggestion s)))))
                   invalid-suggestions))))))))
 
+(defn map-entry-ish? [x]
+  ;; TODO - obviously, this is a terrible hack
+  ;; apparently new CLJS gets a real implementation of map-entry
+  #?(:clj (map-entry? x)
+     :cljs (and (vector? x)
+                (= 2 (count x)))))
+
+(defn simplify1 [seed form]
+  ;; TODO - won't work in CLJS, because map entries aren't distinct
+  (cond
+    (string? form)
+    (drop-idx (first (sample-seq
+                      (gen/large-integer* {:min 0 :max (count form)})
+                      seed)) form)
+
+    (and
+     ;; TODO - won't work in CLJS, so either upgrade to latest
+     ;; CLJS or workaround
+     (not (map-entry-ish? form))
+     (sequential? form))
+    ;; TODO - control seed here
+    (drop-idx (first (sample-seq
+                      (gen/large-integer* {:min 0 :max (count form)})
+                      seed)) form)
+
+    (pos-int? form)
+    (dec form)
+
+    (neg-int? form)
+    (inc form)
+
+    :else
+    form))
+
+(defn simplify [!seed form]
+  (swap! !seed inc)
+  (let [total-elements (count (tree-seq coll? seq form))
+        !items-left (atom
+                     (first
+                      (sample-seq
+                       (gen/frequency
+                        ;; bias towards earlier elements
+                        [[10 (gen/return 0)]
+                         [3 (gen/large-integer* {:min 0
+                                                 :max (* total-elements (/ 1 3))})]
+                         [2 (gen/large-integer* {:min 0
+                                                 :max (* total-elements (/ 2 3))})]
+                         [1 (gen/large-integer* {:min 0
+                                                 :max (* total-elements (/ 3 3))})]])
+                       @!seed)))]
+    (walk/prewalk
+     (fn [x]
+       (swap! !items-left dec)
+       (if (zero? @!items-left)
+         (simplify1 @!seed x)
+         x))
+     form)))
+
+(defn simplified-suggestions [spec init-form suggestions]
+  (let [!seed (atom init-seed)]
+    (loop [round simplify-rounds
+           suggestions' (set suggestions)]
+      (s/assert set? suggestions')
+      (if (or (zero? round)
+              ;; TODO - make 20 a constant
+              (some #(< (::score %) 20) suggestions')
+              (< 10000 (count suggestions')))
+        (sort-by ::score suggestions')
+        (recur
+         (dec round)
+         (into suggestions'
+               (mapcat
+                (fn [suggestion]
+                  ;; TODO - no need to wrap in vector and then map
+                  (->> [(update suggestion ::form (partial simplify !seed))]
+                       ;; If we've simplified this, it's no longer
+                       ;; a conversion from their data type
+                       (map
+                        (fn [s]
+                          (if (= suggestion s)
+                            s
+                            (assoc s ::types
+                                   (let [types (mapv
+                                                (fn [t]
+                                                  (if (= t ::converted)
+                                                    ::converted-then-simplified
+                                                    t))
+                                                (::types s))]
+                                     (if (some #{::simplified} types)
+                                       types
+                                       (conj types ::simplified)))))))
+
+                       (map
+                        (fn [s]
+                          (assoc s ::score (score spec init-form s))))
+                       ;; TODO - restore filter
+                       #_(filter
+                          (fn [s]
+                            (prn [:bhb.include??? (include? spec init-form round suggestion s)])
+                            (include? spec init-form round suggestion s)))))
+                suggestions')))))))
+
 (defn suggestion [spec form]
-  (let [best-form (::form (first (suggestions spec form)))]
+  (let [best-form (->> (suggestions spec form)
+                       (simplified-suggestions spec form)
+                       first
+                       ::form)]
     (if (s/valid? spec best-form)
       best-form
       ::no-suggestion)))

@@ -38,11 +38,6 @@
             (compare #inst "2018-01-01"
                      (suggest/suggestion (s/inst-in #inst "2018-01-01" #inst "2018-12-31")
                                          #inst "2017-01-01")))))
-  (testing "providing common value"
-    (is (= "sally@example.com"
-           (suggest/suggestion (s/and string?
-                                      #(re-matches #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$" %))
-                               "bob"))))
 
   (testing "multiple problems in single spec"
     (is (= ["a" :b 0]
@@ -64,6 +59,17 @@
                                 :s2 string?)
                                ["a"])))))
 
+(deftest suggest-different-spec-types
+  (testing "colls"
+    (is (= ["1"]
+           (suggest/suggestion (s/coll-of string?) [1])))
+    ;; TODO - this really should only have two elements
+    (is (= ["" "" ""]
+           (suggest/suggestion (s/coll-of string? :min-count 2) [])))
+    ;; TODO - it would be better if "1" was in results
+    (is (= ["" "" ""]
+           (suggest/suggestion (s/coll-of string? :min-count 2) [1])))))
+
 (s/fdef example-fn1
         :args (s/cat :a simple-symbol?
                      :b string?
@@ -78,20 +84,18 @@
 #?(:cljs
    (deftest valid-args
      (is (= ::suggest/no-spec-found
-              (suggest/valid-args '(clojure.core/fake-let [foo/bar 1]))))
+            (suggest/valid-args '(clojure.core/fake-let [foo/bar 1]))))
      (is (= '(expound.suggest-test/example-fn1 a "b" 0)
             (suggest/valid-args '(expound.suggest-test/example-fn1 "a" "b" "c")))))
    :clj
    (deftest valid-args
      (is (= ::suggest/no-spec-found
             (suggest/valid-args '(clojure.core/fake-let [foo/bar 1]))))
-
      (is (= ::suggest/no-suggestion
             (suggest/valid-args '(expound.suggest-test/example-fn2 "a"))))
 
      (is (= '(expound.suggest-test/example-fn1 a "b" 0)
             (suggest/valid-args '(expound.suggest-test/example-fn1 "a" "b" "c"))))
-
      (is (=
           '(clojure.core/let [bar 1])
           (suggest/valid-args `(let [foo/bar 1]))))
