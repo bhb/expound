@@ -28,7 +28,13 @@
     (is (= :c
            (suggest/suggestion simple-keyword? "c")))
     (is (= 0
-           (suggest/suggestion int? "foo"))))
+           (suggest/suggestion int? "foo")))
+    (is (= "abcd"
+           (suggest/suggestion string? ["abcd"])))
+    (is (= ["abcd"]
+           (suggest/suggestion (s/coll-of string?) "abcd")))
+    (is (= #{100}
+           (suggest/suggestion (s/coll-of int? :kind set?) 100))))
   (testing "simplification of existing options"
     (is (= :bar
            (suggest/suggestion #{:foo :bar} :baz)))

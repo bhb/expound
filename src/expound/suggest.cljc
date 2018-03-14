@@ -59,7 +59,16 @@
          (simple-keyword? replacement))
     (keyword (name original))
 
-    ;;;;;;;;;;;;;;; defaults
+    (and (and (not (map? original))
+              (coll? original)
+              (= 1 (count original))
+              (not (coll? replacement))))
+    (first original)
+
+    (and (and (not (map? replacement))
+              (coll? replacement)
+              (not (coll? original))))
+    (conj (empty replacement) original);;;;;;;;;;;;;;; defaults
     (keyword? replacement)
     :keyword
 
