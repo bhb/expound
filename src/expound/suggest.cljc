@@ -32,6 +32,7 @@
     (symbol (name original))
 
     (and (string? original)
+         (not (re-find #"\s" original))
          (simple-symbol? replacement))
     (symbol original)
 
@@ -44,6 +45,7 @@
     (name original)
 
     (and (string? original)
+         (not (re-find #"\s" original))
          (simple-keyword? replacement))
     (keyword original)
 
@@ -248,6 +250,21 @@
       (insert-idx n val form))
     [form]))
 
+(defn all-values-in [v in-path vals]
+  (if (empty? in-path)
+    vals
+    (try
+      (all-values-in
+       v
+       (rest in-path)
+       (conj vals (problems/value-in v in-path)))
+      (catch #?(:cljs :default
+                :clj Exception) e
+        (all-values-in
+         v
+         (rest in-path)
+         vals)))))
+
 (defn suggestions* [!cache spec suggestion]
   (s/assert ::suggestion suggestion)
   (let [form (::form suggestion)
@@ -269,7 +286,7 @@
                             ;; generated value or not, so just generate both.
                             ;; TODO: We could also generate for every subpath, since
                             ;; we don't know the depth of the spec
-                            [v (problems/value-in v (:expound/in problem))])
+                            (all-values-in v (:expound/in problem) [v]))
                           gen-values))]
          (concat
           (map
@@ -467,12 +484,11 @@
 
 (defn valid-args [form]
   (if-let [spec (s/get-spec (first form))]
-    (do
-      (let [args-spec (:args spec)
-            args (next form)
-            sugg (suggestion args-spec args)]
-        (if (= ::no-suggestion sugg)
-          sugg
-          (list* (first form)
-                 sugg))))
+    (let [args-spec (:args spec)
+          args (next form)
+          sugg (suggestion args-spec args)]
+      (if (= ::no-suggestion sugg)
+        sugg
+        (list* (first form)
+               sugg)))
     ::no-spec-found))

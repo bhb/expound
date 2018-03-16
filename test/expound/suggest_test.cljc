@@ -15,6 +15,8 @@
   (testing "conversions"
     (is (= 'b
            (suggest/suggestion simple-symbol? 'a/b)))
+    (is (= 'symbol
+           (suggest/suggestion simple-symbol? "a b")))
     (is (= "a"
            (suggest/suggestion string? 'a)))
     (is (= "b"
@@ -27,6 +29,8 @@
            (suggest/suggestion simple-keyword? :a/c)))
     (is (= :c
            (suggest/suggestion simple-keyword? "c")))
+    (is (= :keyword
+           (suggest/suggestion simple-keyword? "a b")))
     (is (= 0
            (suggest/suggestion int? "foo")))
     (is (= "abcd"
@@ -108,3 +112,17 @@
      (is (=
           '(clojure.core/let [bar 1])
           (suggest/valid-args `(let ["bar" 1]))))))
+
+;; From "Improving Clojure's Error Messages with Grammars"
+;; https://youtu.be/kt4haSH2xcs?t=10m20s
+(deftest defn-examples
+  (is (= ::foobar
+         (suggest/valid-args `(defn ~'foo (~'arg1 ~'arg2)))))
+  #_(valid-args `(defn ~'a "asdf" ([~'a] 1) {:a :b} ([] 1)))
+  #_(valid-args `(defn ~'a))
+  #_(valid-args `(defn "bad docstring" ~'testname [~'arg1 ~'arg2])) ;; doesn't work
+
+  #_(valid-args `(defn ~'foo (~'arg1 ~'arg2)))
+  #_(valid-args `(defn ~'a "asdf" ([~'a] 1) {:a :b} ([] 1)))
+
+  #_(valid-args `(defn ~'a)))
