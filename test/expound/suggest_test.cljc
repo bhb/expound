@@ -116,16 +116,27 @@
 ;; From "Improving Clojure's Error Messages with Grammars"
 ;; https://youtu.be/kt4haSH2xcs?t=10m20s
 (deftest defn-examples
+  (is (= `(defn ~'foo [])
+         (suggest/valid-args `(defn ~'foo))))
+
   (is (= `(defn ~'foo ([~'arg1] ~'arg2))
          (suggest/valid-args `(defn ~'foo (~'arg1 ~'arg2)))))
+
   (is (= `(defn ~'foo [~'arg1 ~'arg2] ~'arg2)
          (suggest/valid-args `(defn ~'foo (~'arg1 ~'arg2) ~'arg2))))
 
-  #_(valid-args `(defn ~'a "asdf" ([~'a] 1) {:a :b} ([] 1)))
-  #_(valid-args `(defn ~'a))
+  (is (= `(defn ~'foo [~'a])
+         (suggest/valid-args `(defn ~'foo ~'a))))
+
+  #_(is (= ::foobar
+           (suggest/valid-args `(defn "bad docstring" ~'testname [~'arg1 ~'arg2]))))
+
   #_(valid-args `(defn "bad docstring" ~'testname [~'arg1 ~'arg2])) ;; doesn't work
 
   #_(valid-args `(defn ~'foo (~'arg1 ~'arg2)))
   #_(valid-args `(defn ~'a "asdf" ([~'a] 1) {:a :b} ([] 1)))
 
-  #_(valid-args `(defn ~'a)))
+  #_(valid-args `(defn ~'a))
+
+  #_(is (= `(defn ~'foo [~'arg1 ~'arg2] ~'arg2)
+           (suggest/valid-args `(defn ~'a "asdf" ([~'a] 1) {:a :b} ([] 1))))))
