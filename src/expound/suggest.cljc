@@ -70,7 +70,13 @@
     (and (and (not (map? replacement))
               (coll? replacement)
               (not (coll? original))))
-    (conj (empty replacement) original);;;;;;;;;;;;;;; defaults
+    (conj (empty replacement) original)
+
+    (and (or (seq? original) (list? original))
+         (vector? replacement))
+    (vec original)
+
+    ;;;;;;;;;;;;;;; defaults
     (keyword? replacement)
     :keyword
 
@@ -469,18 +475,16 @@
                        ;; TODO - restore filter
                        #_(filter
                           (fn [s]
-                            (prn [:bhb.include??? (include? spec init-form round suggestion s)])
                             (include? spec init-form round suggestion s)))))
                 suggestions')))))))
 
 (defn suggestion [spec form]
-  (let [best-form (->> (suggestions spec form)
-                       (simplified-suggestions spec form)
-                       first
-                       ::form)]
-    (if (s/valid? spec best-form)
-      best-form
-      ::no-suggestion)))
+  (if-let [best-sugg (->> (suggestions spec form)
+                          (simplified-suggestions spec form)
+                          (filter #(s/valid? spec (::form %)))
+                          first)]
+    (::form best-sugg)
+    ::no-suggestion))
 
 (defn valid-args [form]
   (if-let [spec (s/get-spec (first form))]
