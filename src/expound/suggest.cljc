@@ -76,6 +76,10 @@
          (vector? replacement))
     (vec original)
 
+    (and (vector? original)
+         (or (seq? replacement) (list? replacement)))
+    (list* original)
+
     ;;;;;;;;;;;;;;; defaults
     (keyword? replacement)
     :keyword

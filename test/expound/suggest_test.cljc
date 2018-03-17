@@ -128,15 +128,11 @@
   (is (= `(defn ~'foo [~'a])
          (suggest/valid-args `(defn ~'foo ~'a))))
 
+  (is (= `(defn ~'foo [~'a ~'b])
+         (suggest/valid-args `(defn ~'foo ([~'a] 1) [~'a ~'b]))))
+
   (is (= `(defn ~'testname "bad docstring" [~'arg1 ~'arg2])
          (suggest/valid-args `(defn "bad docstring" ~'testname [~'arg1 ~'arg2]))))
 
-  #_(valid-args `(defn "bad docstring" ~'testname [~'arg1 ~'arg2])) ;; doesn't work
-
-  #_(valid-args `(defn ~'foo (~'arg1 ~'arg2)))
-  #_(valid-args `(defn ~'a "asdf" ([~'a] 1) {:a :b} ([] 1)))
-
-  #_(valid-args `(defn ~'a))
-
-  #_(is (= `(defn ~'foo [~'arg1 ~'arg2] ~'arg2)
-           (suggest/valid-args `(defn ~'a "asdf" ([~'a] 1) {:a :b} ([] 1))))))
+  (is (= `(defn ~'a "asdf" ([~'a] 1) {:a :b})
+         (suggest/valid-args `(defn ~'a "asdf" ([~'a] 1) {:a :b} ([] 1))))))
