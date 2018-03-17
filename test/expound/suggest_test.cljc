@@ -128,8 +128,8 @@
   (is (= `(defn ~'foo [~'a])
          (suggest/valid-args `(defn ~'foo ~'a))))
 
-  #_(is (= ::foobar
-           (suggest/valid-args `(defn "bad docstring" ~'testname [~'arg1 ~'arg2]))))
+  (is (= `(defn ~'testname "bad docstring" [~'arg1 ~'arg2])
+         (suggest/valid-args `(defn "bad docstring" ~'testname [~'arg1 ~'arg2]))))
 
   #_(valid-args `(defn "bad docstring" ~'testname [~'arg1 ~'arg2])) ;; doesn't work
 

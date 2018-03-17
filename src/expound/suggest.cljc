@@ -136,7 +136,7 @@
         (tree-seq coll? seq suggestion)))
 
 ;; TODO - move specs to the top
-(s/def ::type #{::base ::converted ::simplified ::init ::deleted ::inserted ::converted-then-simplified ::generated})
+(s/def ::type #{::base ::converted ::simplified ::init ::deleted ::inserted ::converted-then-simplified ::generated ::swapped})
 (s/def ::types (s/coll-of ::type :kind vector?))
 (s/def ::form any?)
 (s/def ::score pos?)
@@ -174,12 +174,13 @@
 )
             types-penalty (apply + (map #(case %
                                            ::converted 1
-                                           ::deleted 2
-                                           ::inserted 3
-                                           ::base 4
-                                           ::converted-then-simplified 5
-                                           ::simplified 6
-                                           ::generated 7
+                                           ::swapped 2
+                                           ::deleted 3
+                                           ::inserted 4
+                                           ::base 5
+                                           ::converted-then-simplified 6
+                                           ::simplified 7
+                                           ::generated 8
                                            ::init 100)
                                         (::types suggestion)))
             temp-todo-replace (+
@@ -256,6 +257,23 @@
       (insert-idx n val form))
     [form]))
 
+(defn swap-idx [n coll]
+  (let [[x y & rst] (drop n coll)
+        new-coll (concat
+                  (take n coll)
+                  [y]
+                  [x]
+                  rst)]
+    (if (vector? coll)
+      (vec new-coll)
+      new-coll)))
+
+(defn swaps [form]
+  (if (sequential? form)
+    (for [n (range 0 (dec (count form)))]
+      (swap-idx n form))
+    [form]))
+
 (defn all-values-in [v in-path vals]
   (if (empty? in-path)
     vals
@@ -313,6 +331,11 @@
               ::types (conj (::types suggestion) ::generated)})
            (for [seed-val seed-vals]
              (combine form in seed-val)))
+          (map
+           (fn [form]
+             {::form form
+              ::types (conj (::types suggestion) ::swapped)})
+           (swaps (::form suggestion)))
           (if (= "Extra input" (:reason problem))
             (map
              (fn [form]
