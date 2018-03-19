@@ -115,24 +115,25 @@
 
 ;; From "Improving Clojure's Error Messages with Grammars"
 ;; https://youtu.be/kt4haSH2xcs?t=10m20s
-(deftest defn-examples
-  (is (= `(defn ~'foo [])
-         (suggest/valid-args `(defn ~'foo))))
+#?(:clj
+   (deftest defn-examples
+     (is (= `(defn ~'foo [])
+            (suggest/valid-args `(defn ~'foo))))
 
-  (is (= `(defn ~'foo ([~'arg1] ~'arg2))
-         (suggest/valid-args `(defn ~'foo (~'arg1 ~'arg2)))))
+     (is (= `(defn ~'foo ([~'arg1] ~'arg2))
+            (suggest/valid-args `(defn ~'foo (~'arg1 ~'arg2)))))
 
-  (is (= `(defn ~'foo [~'arg1 ~'arg2] ~'arg2)
-         (suggest/valid-args `(defn ~'foo (~'arg1 ~'arg2) ~'arg2))))
+     (is (= `(defn ~'foo [~'arg1 ~'arg2] ~'arg2)
+            (suggest/valid-args `(defn ~'foo (~'arg1 ~'arg2) ~'arg2))))
 
-  (is (= `(defn ~'foo [~'a])
-         (suggest/valid-args `(defn ~'foo ~'a))))
+     (is (= `(defn ~'foo [~'a])
+            (suggest/valid-args `(defn ~'foo ~'a))))
 
-  (is (= `(defn ~'foo [~'a ~'b])
-         (suggest/valid-args `(defn ~'foo ([~'a] 1) [~'a ~'b]))))
+     (is (= `(defn ~'foo [~'a ~'b])
+            (suggest/valid-args `(defn ~'foo ([~'a] 1) [~'a ~'b]))))
 
-  (is (= `(defn ~'testname "bad docstring" [~'arg1 ~'arg2])
-         (suggest/valid-args `(defn "bad docstring" ~'testname [~'arg1 ~'arg2]))))
+     (is (= `(defn ~'testname "bad docstring" [~'arg1 ~'arg2])
+            (suggest/valid-args `(defn "bad docstring" ~'testname [~'arg1 ~'arg2]))))
 
-  (is (= `(defn ~'a "asdf" ([~'a] 1) {:a :b})
-         (suggest/valid-args `(defn ~'a "asdf" ([~'a] 1) {:a :b} ([] 1))))))
+     (is (= `(defn ~'a "asdf" ([~'a] 1) {:a :b})
+            (suggest/valid-args `(defn ~'a "asdf" ([~'a] 1) {:a :b} ([] 1)))))))
