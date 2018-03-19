@@ -18,3 +18,7 @@ expound/printer.cljc
 expound/specs.cljc
 expound/suggest.cljc
 project.clj
+expound/java/
+expound/java/Util.java
+expound/js/
+expound/js/util.js
