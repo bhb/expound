@@ -1316,6 +1316,10 @@ should satisfy
 
 
 
+-- Example ------------------------
+
+  (<f> 0 0)
+
 -------------------------
 Detected 1 error\n"
             (no-linum
@@ -1368,6 +1372,10 @@ should satisfy
 
 
 
+-- Example ------------------------
+
+  (<f> 0 0)
+
 -------------------------
 Detected 1 error\n"
             (no-linum
@@ -1417,6 +1425,10 @@ should have additional elements. The next element \":y\" should satisfy
   int?
 
 
+
+-- Example ------------------------
+
+  (<f> -1 0)
 
 -------------------------
 Detected 1 error\n"
@@ -1572,6 +1584,10 @@ should satisfy
   int?
 
 
+
+-- Example ------------------------
+
+  (<f> 0 0)
 
 -------------------------
 Detected 1 error\n"
