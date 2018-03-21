@@ -347,6 +347,9 @@ If you want to use Expound with conformers, you'll need to write a custom printe
 * Error messages in [Figwheel](https://github.com/bhauman/lein-figwheel), in particular the config error messages generated from [strictly-specking](https://github.com/bhauman/strictly-specking)
 * [Clojure Error Message Catalog](https://github.com/yogthos/clojure-error-message-catalog)
 * [The Usability of beginner-oriented Clojure error messages](http://wiki.science.ru.nl/tfpie/images/6/6e/TFPIE16-slides-emachkasova.pdf)
+* ["Illuminated Macros" - Chris Houser / Jonathan Claggett](https://www.youtube.com/watch?v=o75g9ZRoLaw)
+* [seqex](https://github.com/jclaggett/seqex)
+* ["Improving Clojure's Error Messages with Grammars" - Colin Fleming](https://www.youtube.com/watch?v=kt4haSH2xcs)
 
 ## Contributing
 
