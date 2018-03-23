@@ -6,7 +6,7 @@
             [clojure.test.check.rose-tree :as rose]
             [clojure.test.check.generators :as gen]
             #?(:cljs [expound.js.util]))
-  #?(:clj (:import Util)))
+  #?(:clj (:import [expound.java Util])))
 
 (def init-seed 0)
 (def generation-rounds 5)
