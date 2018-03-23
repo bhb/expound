@@ -404,11 +404,10 @@
                  invalid-suggestions)))))))
 
 (defn map-entry-ish? [x]
-  ;; TODO - obviously, this is a terrible hack
-  ;; apparently new CLJS gets a real implementation of map-entry
+  ;; Older versions of CLJS don't have map-entry?
   #?(:clj (map-entry? x)
-     :cljs (and (vector? x)
-                (= 2 (count x)))))
+     :cljs (or (instance? RedNode x)
+               (instance? BlackNode x))))
 
 (defn simplify1 [seed form]
   ;; TODO - won't work in CLJS, because map entries aren't distinct
@@ -458,7 +457,13 @@
        (swap! !items-left dec)
        (if (zero? @!items-left)
          (simplify1 @!seed x)
-         x))
+         (if (map? x)
+           ;; Force maps to be sorted-maps so we can check if
+           ;; key-value pairs are RedNode or BlackNode, since
+           ;; older versions of CLJS don't support map-entry?
+           #?(:cljs (into (sorted-map) x)
+              :clj x)
+           x)))
      form)))
 
 (defn simplified-suggestions [spec init-form suggestions]
