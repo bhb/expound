@@ -9,7 +9,8 @@
             #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
             [expound.printer :as printer]
-            [expound.util :as util]))
+            [expound.util :as util]
+            [expound.ansi :as ansi]))
 
 ;;;;;; registry ;;;;;;
 
@@ -28,6 +29,10 @@
 
 (def header-size 35)
 (def section-size 25)
+
+(comment
+  (require '[expound.alpha :as expound])
+  (binding [ansi/*enable-color* true] (expound/expound string? 1)))
 
 (def ^:dynamic *value-str-fn* (fn [_ _ _ _] "NOT IMPLEMENTED"))
 
@@ -124,9 +129,11 @@
 
 (defn preds [problems]
   (string/join "\n\nor\n\n" (distinct (map (fn [problem]
-                                             (printer/indent
-                                              (pr-pred (:pred problem)
-                                                       (:spec problem)))) problems))))
+                                             (ansi/color
+                                              (printer/indent
+                                               (pr-pred (:pred problem)
+                                                        (:spec problem)))
+                                              :good-pred)) problems))))
 
 (defn error-message [k]
   [k]
@@ -161,9 +168,11 @@
   ([size]
    (apply str (repeat size "-")))
   ([size s]
-   (let [prefix (str "-- " s " ")
-         chars-left (- size (count prefix))]
-     (str prefix (apply str (repeat chars-left "-"))))))
+   (ansi/color
+    (let [prefix (str "-- " s " ")
+          chars-left (- size (count prefix))]
+      (str prefix (apply str (repeat chars-left "-"))))
+    :header)))
 
 (def header-label (partial label header-size))
 (def section-label (partial label section-size))
@@ -280,7 +289,8 @@
     (printer/format
      "should be%s: %s"
      (if (= 1 (count combined-set)) "" " one of")
-     (string/join ", " (sort (map #(str "" (pr-str %) "") combined-set))))))
+     (ansi/color (string/join ", " (map #(ansi/color % :good) (sort (map #(str "" (pr-str %) "") combined-set))))
+                 :good))))
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
@@ -452,7 +462,7 @@ with args:
 should satisfy
 
 %s"
-     (printer/indent (pr-str (:val problem)))
+     (ansi/color (printer/indent (pr-str (:val problem))) :good-pred)
      (printer/indent (pr-pred (:pred problem) (:spec problem))))))
 
 (defmethod problem-group-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
@@ -510,7 +520,8 @@ should satisfy
                      opts)]
     (if-not explain-data
       "Success!\n"
-      (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))]
+      (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))
+                ansi/*enable-color* (= :dark-screen-theme (get opts :color-theme :none))]
         (let [{:keys [::s/fn ::s/failure]} explain-data
               explain-data' (problems/annotate explain-data)
               caller (:expound/caller explain-data')
