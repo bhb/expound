@@ -1,5 +1,3 @@
 {:deps
- {expound/expound {:local/root ".."}}
- }
-
-
+ {expound/expound {:local/root ".."}
+  }}
