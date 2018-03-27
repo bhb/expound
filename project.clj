@@ -24,7 +24,7 @@
                            :output-to "resources/public/test-web/test.js"
                            :output-dir "resources/public/test-web/out"
                            :main "expound.test-runner"
-                           :optimizations :none1
+                           :optimizations :none
                            :verbose true
                            :compiler-stats true}}]}
   :figwheel {;; :http-server-root "public" ;; default and assumes "resources"
