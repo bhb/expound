@@ -2,13 +2,13 @@
 
 Notes from reading other articles or blog posts about error messages.
 
-##["Finding and fixing errors" (Urn)](http://urn-lang.com/tutorial/03-finding-errors.html)
+## ["Finding and fixing errors" (Urn)](http://urn-lang.com/tutorial/03-finding-errors.html)
 
 Urn prints line numbers and underlines error. 
 
 Explanantions are printed to the right of `^^^`
 
-##[Urn](https://github.com/SquidDev/urn)
+## [Urn](https://github.com/SquidDev/urn)
 
 Urn assertions show value of expressions below the expressions themselves 
 
@@ -37,7 +37,7 @@ Urn points of syntax errors (underlining good and bad stuff), e.g.
 > 
 ```
 
-##["Way, Way, Waaaay Nicer Error Messages!" (ReasonML)](https://reasonml.github.io/blog/2017/08/25/way-nicer-error-messages.html)
+## ["Way, Way, Waaaay Nicer Error Messages!" (ReasonML)](https://reasonml.github.io/blog/2017/08/25/way-nicer-error-messages.html)
 
 “We’ve four a bug for you!” is friendly but not minimalist. I imagine it would quickly become noise.
 
@@ -51,7 +51,7 @@ Also use color to demarcate regions of errors by colorizing headings
 
 Tracks error messages in custom [repository](https://github.com/reasonml-community/error-message-improvement/issues).
 
-##["Shape of errors to come" (Rust)](https://blog.rust-lang.org/2016/08/10/Shape-of-errors-to-come.html)
+## ["Shape of errors to come" (Rust)](https://blog.rust-lang.org/2016/08/10/Shape-of-errors-to-come.html)
 
 Rust errors have numbers for more explanation E0499.
 
@@ -63,7 +63,7 @@ Displays other “points of interest”
 
 Rust explain (based on error number) is not generic, it uses your example in explanation!
 
-##["Measuring the Effectiveness of Error Messages Designed for Novice Programmers" (Racket)](http://cs.brown.edu/~sk/Publications/Papers/Published/mfk-measur-effect-error-msg-novice-sigcse/)
+## ["Measuring the Effectiveness of Error Messages Designed for Novice Programmers" (Racket)](http://cs.brown.edu/~sk/Publications/Papers/Published/mfk-measur-effect-error-msg-novice-sigcse/)
 
 DrRacket reports only one error at a time.
 
@@ -71,7 +71,7 @@ In this experiment, they record edits to analyze how effective errors are.
 
 No analysis in this article of what factors caused bad error messages.
 
-##["Mind Your Language: 
+## ["Mind Your Language: 
 On Novices' Interactions with Error Messages" (Racket)](http://cs.brown.edu/~sk/Publications/Papers/Published/mfk-mind-lang-novice-inter-error-msg/paper.pdf)
 
 > Yet, ask any experienced programmer about the quality of error messages in their programming environments, and you will often get an embarrassed laugh.
@@ -95,7 +95,7 @@ Could beginner mode ask questions if solution is ambiguous? Or provide multiple 
 > IDE developers should provide guides (not just documentation buried in some help menu) about the semantics of notations such as source highlighting.
 
 
-##["Error Message Conventions" (Racket)](https://docs.racket-lang.org/reference/exns.html)
+## ["Error Message Conventions" (Racket)](https://docs.racket-lang.org/reference/exns.html)
 
 Racket’s error message convention is to produce error messages with the following shape:
 
@@ -106,7 +106,7 @@ Racket’s error message convention is to produce error messages with the follow
   ...
 ```
 
-##["Compilers as Assistants" (Elm)](http://elm-lang.org/blog/compilers-as-assistants)
+## ["Compilers as Assistants" (Elm)](http://elm-lang.org/blog/compilers-as-assistants)
 
 Elm can detect likely typos.
 
@@ -116,7 +116,7 @@ Elm uses the term “mismatch”, or “does not match”
 
 Avoids cascading errors using [this approach](https://news.ycombinator.com/item?id=9808317)
 
-##["Compiler Errors for Humans" (Elm)](http://elm-lang.org/blog/compiler-errors-for-humans)
+## ["Compiler Errors for Humans" (Elm)](http://elm-lang.org/blog/compiler-errors-for-humans)
 
 "When we read code, color is a huge usability improvement”
 "When we read prose, layout has a major impact on our experience."
