@@ -538,12 +538,13 @@ should satisfy
              "%s
 
 %s
-Detected %s %s\n"
+%s %s %s\n"
              (string/join "\n\n" (for [[[in type] probs] problems]
                                    (problem-group-str1 type (spec-name explain-data) form in probs opts')))
-             (section-label)
-             (count problems)
-             (if (= 1 (count problems)) "error" "errors")))))))))
+             (ansi/color (section-label) :footer)
+             (ansi/color "Detected" :footer)
+             (ansi/color (count problems) :footer)
+             (ansi/color (if (= 1 (count problems)) "error" "errors") :footer)))))))))
 
 (s/def ::foo string?)
 
