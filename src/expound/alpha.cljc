@@ -50,9 +50,9 @@
    in the form"
   [opts spec-name form path value]
   (if (= :fn spec-name)
-    (binding [*print-namespace-maps* false] (pr-str form))
+    (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value))
     (if (= form value)
-      (binding [*print-namespace-maps* false] (printer/pprint-str value))
+      (binding [*print-namespace-maps* false] (ansi/color (printer/pprint-str value) :bad-value))
       ;; It's silly to reconstruct a fake "problem"
       ;; after I've deconstructed it, but I'm not yet ready
       ;; to break the API for value-in-context BUT
@@ -248,7 +248,7 @@
  Dispatch function:     `%s`
  Dispatch value:        `%s`
  "
-     (show-spec-name spec-name (printer/indent (ansi/color (*value-str-fn* spec-name val path (problems/value-in val path)) :bad-value)))
+     (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
      (pr-str mm)
      (pr-str retag)
      (pr-str (if retag (retag (problems/value-in val path)) nil)))))
@@ -281,7 +281,7 @@
 
 %s"
    (header-label "Spec failed")
-   (show-spec-name spec-name (printer/indent (ansi/color (*value-str-fn* spec-name val path (problems/value-in val path)) :bad-value)))
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/not-in-set [_type _spec-name _val _path problems _opts]
@@ -301,7 +301,7 @@
 
 %s"
    (header-label "Spec failed")
-   (show-spec-name spec-name (printer/indent (ansi/color (*value-str-fn* spec-name val path (problems/value-in val path)) :bad-value)))
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/missing-spec [_type spec-name val path problems opts]
@@ -384,7 +384,7 @@
 
 %s"
    (header-label "Syntax error")
-   (show-spec-name spec-name (printer/indent (ansi/color (*value-str-fn* spec-name val path (problems/value-in val path)) :bad-value)))
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/extra-input [_type spec-name val path problems opts]
@@ -400,7 +400,7 @@
 
 %s"
    (header-label "Syntax error")
-   (show-spec-name spec-name (printer/indent (ansi/color (*value-str-fn* spec-name val path (problems/value-in val path)) :bad-value)))
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/fspec-exception-failure [_type spec-name val path problems opts]
@@ -425,7 +425,7 @@ with args:
 
 %s"
    (header-label "Exception")
-   (printer/indent (ansi/color (*value-str-fn* spec-name val path (problems/value-in val path)) :bad-value))
+   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/fspec-ret-failure [_type spec-name val path problems opts]
@@ -448,7 +448,7 @@ with args:
 
 %s"
    (header-label "Function spec failed")
-   (printer/indent (ansi/color (*value-str-fn* spec-name val path (problems/value-in val path)) :bad-value))
+   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
@@ -474,7 +474,7 @@ should satisfy
 
 %s"
    (header-label "Function spec failed")
-   (printer/indent (ansi/color (*value-str-fn* spec-name val path (problems/value-in val path)) :bad-value))
+   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/unknown [_type spec-name val path problems opts]
@@ -489,7 +489,7 @@ should satisfy
 
 %s"
    (header-label "Spec failed")
-   (show-spec-name spec-name (printer/indent (ansi/color (*value-str-fn* spec-name val path (problems/value-in val path)) :bad-value)))
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (expected-str _type spec-name val path problems opts)))
 
 (defn problem-group-str1 [type spec-name val path problems opts]

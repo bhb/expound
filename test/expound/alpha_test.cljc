@@ -329,7 +329,7 @@ Detected 1 error
 
   {}
 
-should contain keys: `:or-spec/int`, `:or-spec/str`
+should contain keys: :or-spec/int, :or-spec/str
 
 |          key |    spec |
 |--------------+---------|
@@ -358,7 +358,7 @@ Detected 1 error
 
   {}
 
-should contain keys: `:or-spec/str`
+should contain keys: :or-spec/str
 
 |          key |    spec |
 |--------------+---------|
@@ -616,7 +616,7 @@ Detected 1 error\n")
 
   {}
 
-should contain keys: `:age`, `:keys-spec/name`
+should contain keys: :age, :keys-spec/name
 
 |             key |    spec |
 |-----------------+---------|
@@ -692,7 +692,7 @@ Detected 1 error\n")
 
   {}
 
-should contain keys: `:age`, `:name`
+should contain keys: :age, :name
 
 |   key |    spec |
 |-------+---------|
@@ -793,7 +793,7 @@ Detected 1 error\n")
 
   {:multi-spec/el-type :text}
 
-should contain key: `:multi-spec/value`
+should contain key: :multi-spec/value
 
 |               key |    spec |
 |-------------------+---------|
@@ -892,7 +892,7 @@ Detected 1 error\n"
 
   {\"foo\" \"hi\"}
 
-should contain key: `:cat-wrapped-in-or-spec/type`
+should contain key: :cat-wrapped-in-or-spec/type
 
 |                          key |     spec |
 |------------------------------+----------|

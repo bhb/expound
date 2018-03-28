@@ -38,7 +38,7 @@
 (def ^:dynamic *enable-color* false)
 
 (defn esc
-    "Returns an ANSI escope string which will apply the given collection of SGR
+  "Returns an ANSI escope string which will apply the given collection of SGR
   codes."
   [codes]
   (let [codes (map sgr-code codes codes)
@@ -51,7 +51,7 @@
   (esc codes))
 
 (defn sgr
-    "Wraps the given string with SGR escapes to apply the given codes, then reset
+  "Wraps the given string with SGR escapes to apply the given codes, then reset
   the graphics."
   [string & codes]
   (str (esc codes) string (escape :none)))
