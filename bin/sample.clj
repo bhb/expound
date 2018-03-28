@@ -70,7 +70,35 @@
   (display-explain :or-spec/m-with-str-or-int {})
 
   (display-explain (s/or :m-with-str1 (s/keys :req [:or-spec/str])
-                         :m-with-int2 (s/keys :req [:or-spec/str])) {}))
+                         :m-with-int2 (s/keys :req [:or-spec/str])) {}) (s/def :and-spec/name (s/and string? #(pos? (count %))))
+  (s/def :and-spec/names (s/coll-of :and-spec/name))
+
+  (display-explain :and-spec/name "")
+
+  (display-explain :and-spec/names ["bob" "sally" "" 1])
+
+  (s/def :coll-of-spec/big-int-coll (s/coll-of int? :min-count 10))
+
+  (display-explain :coll-of-spec/big-int-coll [])
+
+  (s/def :cat-spec/kw (s/cat :k keyword? :v any?))
+  (s/def :cat-spec/set (s/cat :type #{:foo :bar} :str string?))
+  (s/def :cat-spec/alt* (s/alt :s string? :i int?))
+  (s/def :cat-spec/alt (s/+ :cat-spec/alt*))
+  (s/def :cat-spec/alt-inline (s/+ (s/alt :s string? :i int?)))
+  (s/def :cat-spec/any (s/cat :x (s/+ any?))) ;; Not a useful spec, but worth testing
+
+  (display-explain :cat-spec/kw [])
+
+  (display-explain :cat-spec/set [])
+
+  (display-explain :cat-spec/alt [])
+
+  (display-explain :cat-spec/alt-inline [])
+
+  (display-explain :cat-spec/any [])
+
+  (display-explain :cat-spec/kw [:foo 1 :bar :baz]))
 
 (go)
 
