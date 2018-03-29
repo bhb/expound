@@ -5,17 +5,26 @@
   for seeting how output appears in practice"
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as st]
-            [expound.alpha :as expound]))
+            [expound.alpha :as expound]
+            [orchestra.spec.test :as orch.st]))
 
 (defmacro display-explain [spec value]
   `(do
-     (println "=====" '(s/explain ~spec ~value) "=========")
+     (println "===== " '(s/explain ~spec ~value) " =========")
      (s/explain ~spec ~value)
      (println "\n\n")))
+
+(defmacro display-try [form]
+  `(try
+     (println "===== " '~form " =========")
+     ~form
+     (catch Exception e#
+       (println (.getMessage e#)))))
 
 (defn go []
   (set! s/*explain-out* (expound/custom-printer {:color-theme :dark-screen-theme}))
   (st/instrument)
+  (s/check-asserts true)
 
   (display-explain string? 1)
 
@@ -168,7 +177,38 @@
                                                :map (s/keys :req [:cat-wrapped-in-or-spec/type])
                                                :kv :cat-wrapped-in-or-spec/kv))
 
-  (display-explain :cat-wrapped-in-or-spec/kv-or-string {"foo" "hi"}))
+  (display-explain :cat-wrapped-in-or-spec/kv-or-string {"foo" "hi"})
+
+  (s/def :test-assert/name string?)
+
+  (display-try
+   (s/assert :test-assert/name :hello))
+
+  (s/fdef test-instrument-adder
+          :args (s/cat :x int? :y int?)
+          :fn #(> (:ret %) (-> % :args :x))
+          :ret pos-int?)
+  (defn test-instrument-adder [x y]
+    (+ x y))
+
+  (st/instrument `test-instrument-adder)
+
+  (display-try
+   (test-instrument-adder "" :x))
+
+  (orch.st/instrument `test-instrument-adder)
+
+  (display-try
+   (test-instrument-adder "" :x))
+
+  (display-try
+   (test-instrument-adder 1))
+
+  (display-try
+   (test-instrument-adder -1 -2))
+
+  (display-try
+   (test-instrument-adder 1 0)))
 
 (go)
 

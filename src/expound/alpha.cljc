@@ -129,11 +129,11 @@
 
 (defn preds [problems]
   (string/join "\n\nor\n\n" (distinct (map (fn [problem]
-                                             (ansi/color
-                                              (printer/indent
+                                             (printer/indent
+                                              (ansi/color
                                                (pr-pred (:pred problem)
-                                                        (:spec problem)))
-                                              :good-pred)) problems))))
+                                                        (:spec problem))
+                                               :good-pred))) problems))))
 
 (defn error-message [k]
   [k]
@@ -451,6 +451,7 @@ with args:
    (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
    (expected-str _type spec-name val path problems opts)))
 
+;; TODO - is this ever called?
 (defmethod expected-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
@@ -462,7 +463,7 @@ with args:
 should satisfy
 
 %s"
-     (ansi/color (printer/indent (pr-str (:val problem))) :good-pred)
+     (printer/indent (pr-str (:val problem)))
      (printer/indent (pr-pred (:pred problem) (:spec problem))))))
 
 (defmethod problem-group-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
@@ -488,7 +489,7 @@ should satisfy
 %s
 
 %s"
-   (header-label "Spec failed")
+   (header-label (str "Spec failed"))
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (expected-str _type spec-name val path problems opts)))
 
@@ -533,7 +534,7 @@ should satisfy
 
           (printer/no-trailing-whitespace
            (str
-            (instrumentation-info failure caller)
+            (ansi/color (instrumentation-info failure caller) :none)
             (printer/format
              "%s
 
