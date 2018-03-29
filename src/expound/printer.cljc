@@ -200,14 +200,14 @@
 (defn print-missing-keys [problems]
   (let [keys-clauses (distinct (map (comp missing-key :pred) problems))]
     (if (every? keyword? keys-clauses)
-      (string/join ", " (sort (map #(ansi/color % :correct-key) keys-clauses)))
+      (string/join ", " (map #(ansi/color % :correct-key) (sort keys-clauses)))
       (str "\n\n"
-           (pprint-str
-            (if (singleton? keys-clauses)
-              (ansi/color (first keys-clauses) :correct-key)
-              (apply list
-                     'and
-                     (map #(ansi/color % :correct-key) keys-clauses))))))))
+           (ansi/color (pprint-str
+                        (if (singleton? keys-clauses)
+                          (first keys-clauses)
+                          (apply list
+                                 'and
+                                 keys-clauses))) :correct-key)))))
 
 (s/fdef no-trailing-whitespace
         :args (s/cat :s string?)

@@ -98,7 +98,77 @@
 
   (display-explain :cat-spec/any [])
 
-  (display-explain :cat-spec/kw [:foo 1 :bar :baz]))
+  (display-explain :cat-spec/kw [:foo 1 :bar :baz])
+
+  (s/def :keys-spec/name string?)
+  (s/def :keys-spec/age int?)
+  (s/def :keys-spec/user (s/keys :req [:keys-spec/name]
+                                 :req-un [:keys-spec/age]))
+
+  (s/def :key-spec/state string?)
+  (s/def :key-spec/city string?)
+  (s/def :key-spec/zip pos-int?)
+
+  (s/def :keys-spec/user2 (s/keys :req [(and :keys-spec/name
+                                             :keys-spec/age)]
+                                  :req-un [(or
+                                            :key-spec/zip
+                                            (and
+                                             :key-spec/state
+                                             :key-spec/city))]))
+
+  (s/def :keys-spec/user3 (s/keys :req-un [(or
+                                            :key-spec/zip
+                                            (and
+                                             :key-spec/state
+                                             :key-spec/city))]))
+
+  (display-explain :keys-spec/user {})
+
+  (display-explain :keys-spec/user2 {})
+
+  (display-explain :keys-spec/user3 {})
+  (display-explain (s/keys :req-un [:keys-spec/name :keys-spec/age]) {})
+
+  (display-explain :keys-spec/user {:age 1 :keys-spec/name :bob})
+
+  (s/def :multi-spec/value string?)
+  (s/def :multi-spec/children vector?)
+  (defmulti el-type :multi-spec/el-type)
+  (defmethod el-type :text [x]
+    (s/keys :req [:multi-spec/value]))
+  (defmethod el-type :group [x]
+    (s/keys :req [:multi-spec/children]))
+  (s/def :multi-spec/el (s/multi-spec el-type :multi-spec/el-type))
+
+  (display-explain :multi-spec/el {})
+  (display-explain :multi-spec/el {:multi-spec/el-type :image})
+
+  (display-explain :multi-spec/el {:multi-spec/el-type :text})
+
+  (s/def :recursive-spec/tag #{:text :group})
+  (s/def :recursive-spec/on-tap (s/coll-of map? :kind vector?))
+  (s/def :recursive-spec/props (s/keys :opt-un [:recursive-spec/on-tap]))
+  (s/def :recursive-spec/el (s/keys :req-un [:recursive-spec/tag]
+                                    :opt-un [:recursive-spec/props :recursive-spec/children]))
+  (s/def :recursive-spec/children (s/coll-of (s/nilable :recursive-spec/el) :kind vector?))
+
+  (display-explain
+   :recursive-spec/el
+   {:tag :group
+    :children [{:tag :group
+                :children [{:tag :group
+                            :props {:on-tap {}}}]}]})
+
+  (s/def :cat-wrapped-in-or-spec/kv (s/and
+                                     sequential?
+                                     (s/cat :k keyword? :v any?)))
+  (s/def :cat-wrapped-in-or-spec/type #{:text})
+  (s/def :cat-wrapped-in-or-spec/kv-or-string (s/or
+                                               :map (s/keys :req [:cat-wrapped-in-or-spec/type])
+                                               :kv :cat-wrapped-in-or-spec/kv))
+
+  (display-explain :cat-wrapped-in-or-spec/kv-or-string {"foo" "hi"}))
 
 (go)
 
