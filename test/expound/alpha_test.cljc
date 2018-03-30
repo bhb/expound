@@ -17,10 +17,11 @@
             [expound.test-utils :as test-utils]
             [clojure.walk :as walk]
             [spec-tools.data-spec :as ds]
+            [expound.ansi :as ansi]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
-(def num-tests 30)
+(def num-tests 1) ;; TODO - restore
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -2437,3 +2438,77 @@ Detected 1 error
              (s/explain-str
               :predicate-messages/score
               101))))))
+
+(def inverted-ansi-codes
+  (reduce
+   (fn [m [k v]]
+     (assoc m (str v) k))
+   {}
+   ansi/sgr-code))
+
+(defn readable-ansi [s]
+  (string/replace
+   s
+   #"\x1b\[([0-9]*)m"
+   #(str "<" (string/upper-case (name (get inverted-ansi-codes (second %)))) ">")))
+
+(s/def :colorized-output/strings (s/coll-of string?))
+(deftest colorized-output
+  (is (= (pf "-- Spec failed --------------------
+
+  [... :a ...]
+       ^^
+
+should satisfy
+
+  string?
+
+-- Relevant specs -------
+
+:colorized-output/strings:
+  (pf.spec.alpha/coll-of pf.core/string?)
+
+-------------------------
+Detected 1 error
+")
+         (binding [s/*explain-out* (expound/custom-printer {:color-theme :none})]
+           (s/explain-str :colorized-output/strings ["" :a ""]))))
+  (is (= (pf "<NONE><NONE><NONE>-- Spec failed --------------------<NONE>
+
+  [... <NONE>:a<NONE> ...]
+  <NONE>     ^^<NONE>
+
+should satisfy
+
+  <NONE>string?<NONE>
+
+<NONE>-- Relevant specs -------<NONE>
+
+:colorized-output/strings:
+  (pf.spec.alpha/coll-of pf.core/string?)
+
+<NONE>-------------------------<NONE>
+<NONE>Detected<NONE> <NONE>1<NONE> <NONE>error<NONE>
+")
+         (binding [s/*explain-out* (expound/custom-printer {:color-theme :no-color-theme})]
+           (readable-ansi (s/explain-str :colorized-output/strings ["" :a ""])))))
+
+  (is (= (pf "<NONE><NONE><CYAN>-- Spec failed --------------------<NONE>
+
+  [... <RED>:a<NONE> ...]
+  <MAGENTA>     ^^<NONE>
+
+should satisfy
+
+  <GREEN>string?<NONE>
+
+<CYAN>-- Relevant specs -------<NONE>
+
+:colorized-output/strings:
+  (pf.spec.alpha/coll-of pf.core/string?)
+
+<CYAN>-------------------------<NONE>
+<CYAN>Detected<NONE> <CYAN>1<NONE> <CYAN>error<NONE>
+")
+         (binding [s/*explain-out* (expound/custom-printer {:color-theme :figwheel-theme})]
+           (readable-ansi (s/explain-str :colorized-output/strings ["" :a ""]))))))

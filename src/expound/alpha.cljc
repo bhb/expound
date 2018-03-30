@@ -25,6 +25,45 @@
 (s/def :spec/problem (s/keys :req-un [:spec.problem/via]))
 (s/def :spec/problems (s/coll-of :spec/problem))
 
+;;;;;; themes ;;;;;;
+
+(def figwheel-theme
+  {:highlight   [:bold]
+   :good        [:green]
+   :good-pred   [:green]
+   :good-key    [:green]
+   :bad         [:red]
+   :bad-value   [:red]
+   :error-key   [:red]
+   :focus-key   [:bold]
+   :correct-key [:green]
+   :header      [:cyan]
+   :footer      [:cyan]
+   :warning-key [:bold]
+   :focus-path  [:magenta]
+   :message     [:magenta]
+   :pointer     [:magenta]
+   :none        [:none]})
+
+;; TODO - rename to "blank-theme" ???
+(def no-color-theme
+  {:highlight   [:bold]
+   :good        [:none]
+   :good-pred   [:none]
+   :good-key    [:none]
+   :bad         [:none]
+   :bad-value   [:none]
+   :error-key   [:none]
+   :focus-key   [:none]
+   :correct-key [:none]
+   :header      [:none]
+   :footer      [:none]
+   :warning-key [:none]
+   :focus-path  [:none]
+   :message     [:none]
+   :pointer     [:none]
+   :none        [:none]})
+
 ;;;;;; private ;;;;;;
 
 (def header-size 35)
@@ -520,10 +559,10 @@ should satisfy
                 ansi/*enable-color* (not= :none (get opts :color-theme :none))
                 ansi/*print-styles* (case (get opts :color-theme :none)
                                       :figwheel-theme
-                                      ansi/figwheel-theme
+                                      figwheel-theme
 
                                       :no-color-theme
-                                      ansi/no-color-theme
+                                      no-color-theme
 
                                       :none
                                       {})]
