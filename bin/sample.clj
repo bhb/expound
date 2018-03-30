@@ -249,13 +249,60 @@
 
   (defn my-minus [x y]
     (- x y)) (display-explain :fspec-fn-test/minus my-minus)
+
   (display-explain (s/coll-of :fspec-fn-test/minus) [my-minus])
 
   (display-explain (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?)) [:foo])
 
   (display-explain (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?)) [#{}])
 
-  (display-explain (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?)) [[]]))
+  (display-explain (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?)) [[]]) (defmulti pet :pet/type)
+  (defmethod pet :dog [_]
+    (s/keys))
+  (defmethod pet :cat [_]
+    (s/keys))
+
+  (defmulti animal :animal/type)
+  (defmethod animal :dog [_]
+    (s/keys))
+  (defmethod animal :cat [_]
+    (s/keys))
+
+  (s/def :multispec-in-compound-spec/pet1 (s/and
+                                           map?
+                                           (s/multi-spec pet :pet/type)))
+
+  (s/def :multispec-in-compound-spec/pet2 (s/or
+                                           :map1 (s/multi-spec pet :pet/type)
+                                           :map2 (s/multi-spec animal :animal/type)))
+
+  (display-explain :multispec-in-compound-spec/pet1 {:pet/type :fish})
+
+  (display-explain :multispec-in-compound-spec/pet2 {:pet/type :fish})
+
+  (expound/def :predicate-messages/string string? "should be a string")
+  (expound/def :predicate-messages/vector vector? "should be a vector")
+
+  (display-explain :predicate-messages/string :hello)
+
+  (display-explain (s/or :s :predicate-messages/string
+                         :v :predicate-messages/vector) 1)
+
+  (display-explain (s/or :p pos-int?
+                         :s :predicate-messages/string
+                         :v vector?) 'foo)
+  (def email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$")
+
+  (expound/def :predicate-messages/email (s/and string? #(re-matches email-regex %)) "should be a valid email address")
+  (expound/def :predicate-messages/score (s/int-in 0 100) "should be between 0 and 100")
+
+  (display-explain
+   :predicate-messages/email
+   "sally@")
+
+  (display-explain
+   :predicate-messages/score
+   101))
 
 (go)
 

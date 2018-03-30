@@ -151,7 +151,7 @@
      (remove nil?
              (conj (keep
                     (fn [{:keys [expound/via]}]
-                      (error-message (last via)))
+                      (ansi/color (error-message (last via)) :good))
                     with-msg)
                    (when (seq no-msgs)
                      (printer/format
