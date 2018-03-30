@@ -26,7 +26,7 @@
   (s/check-asserts false))
 
 (defn instrument-all [test-fn]
-  (set! s/*explain-out* expound/printer)
+  (set! s/*explain-out* (expound/custom-printer {:color-theme :dark-screen-theme}))
   (st/instrument)
   (test-fn)
   (st/unstrument))

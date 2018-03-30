@@ -30,10 +30,6 @@
 (def header-size 35)
 (def section-size 25)
 
-(comment
-  (require '[expound.alpha :as expound])
-  (binding [ansi/*enable-color* true] (expound/expound string? 1)))
-
 (def ^:dynamic *value-str-fn* (fn [_ _ _ _] "NOT IMPLEMENTED"))
 
 (s/fdef value-in-context
