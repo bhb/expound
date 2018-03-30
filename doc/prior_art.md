@@ -71,8 +71,7 @@ In this experiment, they record edits to analyze how effective errors are.
 
 No analysis in this article of what factors caused bad error messages.
 
-## ["Mind Your Language: 
-On Novices' Interactions with Error Messages" (Racket)](http://cs.brown.edu/~sk/Publications/Papers/Published/mfk-mind-lang-novice-inter-error-msg/paper.pdf)
+## ["Mind Your Language: On Novices' Interactions with Error Messages" (Racket)](http://cs.brown.edu/~sk/Publications/Papers/Published/mfk-mind-lang-novice-inter-error-msg/paper.pdf)
 
 > Yet, ask any experienced programmer about the quality of error messages in their programming environments, and you will often get an embarrassed laugh.
 
