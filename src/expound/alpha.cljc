@@ -517,7 +517,16 @@ should satisfy
     (if-not explain-data
       "Success!\n"
       (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))
-                ansi/*enable-color* (= :dark-screen-theme (get opts :color-theme :none))]
+                ansi/*enable-color* (not= :none (get opts :color-theme :none))
+                ansi/*print-styles* (case (get opts :color-theme :none)
+                                      :figwheel-theme
+                                      ansi/figwheel-theme
+
+                                      :no-color-theme
+                                      ansi/no-color-theme
+
+                                      :none
+                                      {})]
         (let [{:keys [::s/fn ::s/failure]} explain-data
               explain-data' (problems/annotate explain-data)
               caller (:expound/caller explain-data')

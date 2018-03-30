@@ -22,7 +22,7 @@
        (println (.getMessage e#)))))
 
 (defn go []
-  (set! s/*explain-out* (expound/custom-printer {:color-theme :dark-screen-theme}))
+  (set! s/*explain-out* (expound/custom-printer {:color-theme :figwheel-theme}))
   (st/instrument)
   (s/check-asserts true)
 
