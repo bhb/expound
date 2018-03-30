@@ -447,7 +447,6 @@ with args:
    (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
    (expected-str _type spec-name val path problems opts)))
 
-;; TODO - is this ever called?
 (defmethod expected-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
@@ -459,8 +458,8 @@ with args:
 should satisfy
 
 %s"
-     (printer/indent (pr-str (:val problem)))
-     (printer/indent (pr-pred (:pred problem) (:spec problem))))))
+     (printer/indent (ansi/color (pr-str (:val problem)) :bad-value))
+     (printer/indent (ansi/color (pr-pred (:pred problem) (:spec problem)) :good-pred)))))
 
 (defmethod problem-group-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)

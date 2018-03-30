@@ -208,7 +208,54 @@
    (test-instrument-adder -1 -2))
 
   (display-try
-   (test-instrument-adder 1 0)))
+   (test-instrument-adder 1 0)) (s/def :alt-spec/int-or-str (s/alt :int int? :string string?))
+  (display-explain :alt-spec/int-or-str [:hi])
+
+  (s/def :duplicate-preds/str-or-str (s/or
+                                    ;; Use anonymous functions to assure
+                                    ;; non-equality
+                                      :str1 #(string? %)
+                                      :str2 #(string? %)))
+
+  (display-explain :duplicate-preds/str-or-str 1)
+
+  (s/def :fspec-test/div (s/fspec
+                          :args (s/cat :x int? :y pos-int?)))
+
+  (defn my-div [x y]
+    (assert (not (zero? (/ x y)))))
+
+  (display-explain :fspec-test/div my-div)
+
+  (display-explain (s/coll-of :fspec-test/div) [my-div])
+
+  (s/def :fspec-ret-test/my-int pos-int?)
+  (s/def :fspec-ret-test/plus (s/fspec
+                               :args (s/cat :x int? :y pos-int?)
+                               :ret :fspec-ret-test/my-int))
+
+  (defn my-plus [x y]
+    (+ x y))
+
+  (display-explain :fspec-ret-test/plus my-plus)
+
+  (display-explain (s/coll-of :fspec-ret-test/plus) [my-plus])
+
+  (s/def :fspec-fn-test/minus (s/fspec
+                               :args (s/cat :x int? :y int?)
+                               :fn (s/and
+                                    #(< (:ret %) (-> % :args :x))
+                                    #(< (:ret %) (-> % :args :y)))))
+
+  (defn my-minus [x y]
+    (- x y)) (display-explain :fspec-fn-test/minus my-minus)
+  (display-explain (s/coll-of :fspec-fn-test/minus) [my-minus])
+
+  (display-explain (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?)) [:foo])
+
+  (display-explain (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?)) [#{}])
+
+  (display-explain (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?)) [[]]))
 
 (go)
 
