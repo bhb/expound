@@ -2471,7 +2471,7 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-         (binding [s/*explain-out* (expound/custom-printer {:color-theme :none})]
+         (binding [s/*explain-out* (expound/custom-printer {:theme :none})]
            (s/explain-str :colorized-output/strings ["" :a ""]))))
   (is (= (pf "<NONE><NONE><CYAN>-- Spec failed --------------------<NONE>
 
@@ -2490,5 +2490,5 @@ should satisfy
 <CYAN>-------------------------<NONE>
 <CYAN>Detected<NONE> <CYAN>1<NONE> <CYAN>error<NONE>
 ")
-         (binding [s/*explain-out* (expound/custom-printer {:color-theme :figwheel-theme})]
+         (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
            (readable-ansi (s/explain-str :colorized-output/strings ["" :a ""]))))))
