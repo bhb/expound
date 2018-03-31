@@ -25,6 +25,16 @@
 (s/def :spec/problem (s/keys :req-un [:spec.problem/via]))
 (s/def :spec/problems (s/coll-of :spec/problem))
 
+(s/def :expound.printer/show-valid-values? boolean?)
+(s/def :expound.printer/value-str-fn ifn?)
+(s/def :expound.printer/print-specs? boolean?)
+(s/def :expound.printer/theme #{:figwheel-theme :none})
+(s/def :expound.printer/opts (s/keys
+                              :opt-un [:expound.printer/show-valid-values?
+                                       :expound.printer/value-str-fn
+                                       :expound.printer/print-specs?
+                                       :expound.printer/theme]))
+
 ;;;;;; themes ;;;;;;
 
 (def figwheel-theme
@@ -581,6 +591,8 @@ should satisfy
 
 ;;;;;; public ;;;;;;
 
+(s/fdef custom-printer
+        :args (s/cat :opts :expound.printer/opts))
 (defn custom-printer
   "Returns a printer, configured via opts"
   [opts]
