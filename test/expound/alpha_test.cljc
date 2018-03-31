@@ -2473,26 +2473,6 @@ Detected 1 error
 ")
          (binding [s/*explain-out* (expound/custom-printer {:color-theme :none})]
            (s/explain-str :colorized-output/strings ["" :a ""]))))
-  (is (= (pf "<NONE><NONE><NONE>-- Spec failed --------------------<NONE>
-
-  [... <NONE>:a<NONE> ...]
-  <NONE>     ^^<NONE>
-
-should satisfy
-
-  <NONE>string?<NONE>
-
-<NONE>-- Relevant specs -------<NONE>
-
-:colorized-output/strings:
-  (pf.spec.alpha/coll-of pf.core/string?)
-
-<NONE>-------------------------<NONE>
-<NONE>Detected<NONE> <NONE>1<NONE> <NONE>error<NONE>
-")
-         (binding [s/*explain-out* (expound/custom-printer {:color-theme :no-color-theme})]
-           (readable-ansi (s/explain-str :colorized-output/strings ["" :a ""])))))
-
   (is (= (pf "<NONE><NONE><CYAN>-- Spec failed --------------------<NONE>
 
   [... <RED>:a<NONE> ...]

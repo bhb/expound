@@ -45,25 +45,6 @@
    :pointer     [:magenta]
    :none        [:none]})
 
-;; TODO - rename to "blank-theme" ???
-(def no-color-theme
-  {:highlight   [:bold]
-   :good        [:none]
-   :good-pred   [:none]
-   :good-key    [:none]
-   :bad         [:none]
-   :bad-value   [:none]
-   :error-key   [:none]
-   :focus-key   [:none]
-   :correct-key [:none]
-   :header      [:none]
-   :footer      [:none]
-   :warning-key [:none]
-   :focus-path  [:none]
-   :message     [:none]
-   :pointer     [:none]
-   :none        [:none]})
-
 ;;;;;; private ;;;;;;
 
 (def header-size 35)
@@ -556,13 +537,10 @@ should satisfy
     (if-not explain-data
       "Success!\n"
       (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))
-                ansi/*enable-color* (not= :none (get opts :color-theme :none))
-                ansi/*print-styles* (case (get opts :color-theme :none)
+                ansi/*enable-color* (not= :none (get opts :theme :none))
+                ansi/*print-styles* (case (get opts :theme :none)
                                       :figwheel-theme
                                       figwheel-theme
-
-                                      :no-color-theme
-                                      no-color-theme
 
                                       :none
                                       {})]
