@@ -1272,7 +1272,7 @@ Detected 1 error\n")
   (+ x y))
 
 (defn no-linum [s]
-  (string/replace s #".cljc:\d+" ".cljc:LINUM"))
+  (string/replace s #"(.cljc?):\d+" "$1:LINUM"))
 
 (deftest test-instrument
   (st/instrument `test-instrument-adder)
@@ -2439,7 +2439,7 @@ Detected 1 error
               101))))))
 
 (s/fdef results-str-fn1
-        :args (s/cat :x number? :y number?)
+        :args (s/cat :x nat-int? :y nat-int?)
         :ret pos-int?)
 (defn results-str-fn1
   [x y]
@@ -2455,13 +2455,13 @@ Detected 1 error
   [x y]
   (+ x y))
 
-;; TODO - CLJS tests
+;; FIXME - why is CLJ and CLJS output different?
 (deftest results-str
   (testing "single bad result (failing return spec)"
     (is (= (pf
-            "Failure in expound.alpha-test/results-str-fn1
+            #?(:clj "Failure in expound.alpha-test/results-str-fn1
 
-core.clj:657
+core.clj:LINUM
 
 -- Spec failed --------------------
 
@@ -2477,13 +2477,33 @@ should satisfy
 
 -------------------------
 Detected 1 error
-")
-           (expound/results-str (st/check `results-str-fn1)))))
+"
+               :cljs "Failure in expound.alpha-test/results-str-fn1
+
+-- Function spec failed -----------
+
+  0
+
+returned an invalid value
+
+  0
+
+should satisfy
+
+  pos-int?
+
+
+
+-------------------------
+Detected 1 error
+"))
+           (no-linum (expound/results-str (st/check `results-str-fn1))))))
   (testing "single bad result (failing fn spec)"
     (is (= (pf
-            "Failure in expound.alpha-test/results-str-fn2
+            #?(:clj
+               "Failure in expound.alpha-test/results-str-fn2
 
-core.clj:657
+core.clj:LINUM
 
 -- Spec failed --------------------
 
@@ -2508,8 +2528,36 @@ should satisfy
 
 -------------------------
 Detected 1 error
-")
-           (expound/results-str (st/check `results-str-fn2)))))
+"
+               :cljs "Failure in expound.alpha-test/results-str-fn2
+
+-- Function spec failed -----------
+
+  {:args {:x 0, :y 0}, :ret 0}
+
+failed spec. Function arguments and return value
+
+  {:args {:x 0, :y 0}, :ret 0}
+
+should satisfy
+
+  (fn
+   [%]
+   (let
+    [x
+     (-> % :args :x)
+     y
+     (-> % :args :y)
+     ret
+     (-> % :ret)]
+    (< x ret)))
+
+
+
+-------------------------
+Detected 1 error
+"))
+           (no-linum (expound/results-str (st/check `results-str-fn2))))))
   (testing "single valid result")
   (testing "multiple results")
   (testing "custom printer"))

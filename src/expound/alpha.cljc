@@ -602,6 +602,7 @@ Detected %s %s\n"
   ([check-results]
    (results-str check-results printer))
   ([check-results printer]
+   ;; TODO - have a single result in 'result' function
    (string/join "\n\n"
                 (for [result check-results]
                   (let [{:keys [sym failure]} result]
