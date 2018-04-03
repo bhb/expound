@@ -2437,3 +2437,79 @@ Detected 1 error
              (s/explain-str
               :predicate-messages/score
               101))))))
+
+(s/fdef results-str-fn1
+        :args (s/cat :x number? :y number?)
+        :ret pos-int?)
+(defn results-str-fn1
+  [x y]
+  (+ x y))
+
+(s/fdef results-str-fn2
+        :args (s/cat :x nat-int? :y nat-int?)
+        :fn #(let [x (-> % :args :x)
+                   y (-> % :args :y)
+                   ret (-> % :ret)]
+               (< x ret)))
+(defn results-str-fn2
+  [x y]
+  (+ x y))
+
+;; TODO - CLJS tests
+(deftest results-str
+  (testing "single bad result (failing return spec)"
+    (is (= (pf
+            "Failure in expound.alpha-test/results-str-fn1
+
+core.clj:657
+
+-- Spec failed --------------------
+
+Return value
+
+  0
+
+should satisfy
+
+  pos-int?
+
+
+
+-------------------------
+Detected 1 error
+")
+           (expound/results-str (st/check `results-str-fn1)))))
+  (testing "single bad result (failing fn spec)"
+    (is (= (pf
+            "Failure in expound.alpha-test/results-str-fn2
+
+core.clj:657
+
+-- Spec failed --------------------
+
+Function arguments and return value
+
+  {:ret 0, :args {:x 0, :y 0}}
+
+should satisfy
+
+  (fn
+   [%%]
+   (let
+    [x
+     (-> %% :args :x)
+     y
+     (-> %% :args :y)
+     ret
+     (-> %% :ret)]
+    (< x ret)))
+
+
+
+-------------------------
+Detected 1 error
+")
+           (expound/results-str (st/check `results-str-fn2)))))
+  (testing "single valid result")
+  (testing "multiple results")
+  (testing "custom printer"))

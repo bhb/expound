@@ -591,3 +591,27 @@ Detected %s %s\n"
         `(do
            (defmsg '~k ~error-message)
            (s/def ~k ~spec-form))))))
+
+(defn unwrap-failure
+  [x]
+  (if
+   (ex-data x)
+    x))
+
+(defn results-str
+  ([check-results]
+   (results-str check-results printer))
+  ([check-results printer]
+   (string/join "\n\n"
+                (for [result check-results]
+                  (let [{:keys [sym failure]} result]
+                    (str
+                     "Failure in "
+                     sym
+                     "\n\n"
+                     (with-out-str
+                       (printer (ex-data failure)))))))))
+
+;; TODO - implement
+;;(defn results [])
+
