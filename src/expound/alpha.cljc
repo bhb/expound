@@ -161,9 +161,12 @@
   ([size]
    (apply str (repeat size "-")))
   ([size s]
-   (let [prefix (str "-- " s " ")
+   (label size s "-"))
+  ([size s label-str]
+   (let [prefix (str label-str label-str " " s " ")
          chars-left (- size (count prefix))]
-     (str prefix (apply str (repeat chars-left "-"))))))
+     (str prefix (apply str (repeat chars-left label-str)))))
+  )
 
 (def header-label (partial label header-size))
 (def section-label (partial label section-size))
@@ -598,6 +601,8 @@ Detected %s %s\n"
    (ex-data x)
     x))
 
+;; TODO - use *explain-out* here
+;; Explain results
 (defn results-str
   ([check-results]
    (results-str check-results printer))
@@ -607,7 +612,7 @@ Detected %s %s\n"
                 (for [result check-results]
                   (let [{:keys [sym failure]} result]
                     (str
-                     "Failure in "
+                     "Checked "
                      sym
                      "\n\n"
                      (with-out-str
@@ -615,4 +620,21 @@ Detected %s %s\n"
 
 ;; TODO - implement
 ;;(defn results [])
+
+(comment
+  (s/fdef results-str-fn3
+        :args (s/cat :x nat-int? :y nat-int?)
+        :ret nat-int?)
+  (defn results-str-fn3 [x y]
+    (+ x y))
+
+  (results-str (st/check `results-str-fn3))
+
+  (require '[clojure.spec.test.alpha :as st])
+  (st/summarize-results (st/check `results-str-fn3))
+
+  (map st/abbrev-result (st/check `results-str-fn3))
+
+  
+  )
 

@@ -2441,8 +2441,7 @@ Detected 1 error
 (s/fdef results-str-fn1
         :args (s/cat :x nat-int? :y nat-int?)
         :ret pos-int?)
-(defn results-str-fn1
-  [x y]
+(defn results-str-fn1 [x y]
   (+ x y))
 
 (s/fdef results-str-fn2
@@ -2451,15 +2450,20 @@ Detected 1 error
                    y (-> % :args :y)
                    ret (-> % :ret)]
                (< x ret)))
-(defn results-str-fn2
-  [x y]
+(defn results-str-fn2 [x y]
+  (+ x y))
+
+(s/fdef results-str-fn3
+        :args (s/cat :x nat-int? :y nat-int?)
+        :ret nat-int?)
+(defn results-str-fn3 [x y]
   (+ x y))
 
 ;; FIXME - why is CLJ and CLJS output different?
 (deftest results-str
   (testing "single bad result (failing return spec)"
     (is (= (pf
-            #?(:clj "Failure in expound.alpha-test/results-str-fn1
+            #?(:clj "Checked expound.alpha-test/results-str-fn1
 
 core.clj:LINUM
 
@@ -2478,7 +2482,7 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-               :cljs "Failure in expound.alpha-test/results-str-fn1
+               :cljs "Checked expound.alpha-test/results-str-fn1
 
 -- Function spec failed -----------
 
@@ -2501,7 +2505,7 @@ Detected 1 error
   (testing "single bad result (failing fn spec)"
     (is (= (pf
             #?(:clj
-               "Failure in expound.alpha-test/results-str-fn2
+               "Checked expound.alpha-test/results-str-fn2
 
 core.clj:LINUM
 
@@ -2529,7 +2533,7 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-               :cljs "Failure in expound.alpha-test/results-str-fn2
+               :cljs "Checked expound.alpha-test/results-str-fn2
 
 -- Function spec failed -----------
 
@@ -2558,6 +2562,14 @@ should satisfy
 Detected 1 error
 "))
            (no-linum (expound/results-str (st/check `results-str-fn2))))))
-  (testing "single valid result")
+  (testing "single valid result"
+    (is (= "Checked expound.alpha-test/results-str-fn3
+
+Success!
+"
+           (no-linum (expound/results-str (st/check `results-str-fn3)))
+           ))
+
+    )
   (testing "multiple results")
   (testing "custom printer"))
