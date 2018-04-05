@@ -2459,6 +2459,12 @@ Detected 1 error
 (defn results-str-fn3 [x y]
   (+ x y))
 
+(s/fdef results-str-fn4
+        :args (s/cat :x int?)
+        :ret (s/coll-of int?))
+(defn results-str-fn4 [x]
+  [x :not-int])
+
 ;; FIXME - why is CLJ and CLJS output different?
 (deftest results-str
   (testing "single bad result (failing return spec)"
@@ -2501,7 +2507,7 @@ should satisfy
 -------------------------
 Detected 1 error
 "))
-           (no-linum (expound/results-str (st/check `results-str-fn1))))))
+           (no-linum (expound/explain-results-str (st/check `results-str-fn1))))))
   (testing "single bad result (failing fn spec)"
     (is (= (pf
             #?(:clj
@@ -2561,13 +2567,13 @@ should satisfy
 -------------------------
 Detected 1 error
 "))
-           (no-linum (expound/results-str (st/check `results-str-fn2))))))
+           (no-linum (expound/explain-results-str (st/check `results-str-fn2))))))
   (testing "single valid result"
     (is (= "== Checked expound.alpha-test/results-str-fn3 
 
 Success!
 "
-           (no-linum (expound/results-str (st/check `results-str-fn3))))))
+           (no-linum (expound/explain-results-str (st/check `results-str-fn3))))))
   #?(:clj
      (testing "multiple results"
        (is (= "== Checked expound.alpha-test/results-str-fn2 
@@ -2603,7 +2609,7 @@ Detected 1 error
 
 Success!
 "
-              (no-linum (expound/results-str (st/check [`results-str-fn2 `results-str-fn3])))))))
+              (no-linum (expound/explain-results-str (st/check [`results-str-fn2 `results-str-fn3])))))))
   (testing "check-fn"
     (is (= "== Checked  =================================
 
@@ -2633,5 +2639,27 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-           (no-linum (expound/result-str (st/check-fn `results-str-fn1 (s/get-spec `results-str-fn2)))))))
-  (testing "custom printer"))
+           (no-linum (expound/explain-result-str (st/check-fn `results-str-fn1 (s/get-spec `results-str-fn2)))))))
+  #?(:clj (testing "custom printer"
+            (is (= "== Checked expound.alpha-test/results-str-fn4 
+
+core.clj:LINUM
+
+-- Spec failed --------------------
+
+Return value
+
+  [0 :not-int]
+     ^^^^^^^^
+
+should satisfy
+
+  int?
+
+
+
+-------------------------
+Detected 1 error
+"
+                   (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
+                     (no-linum (expound/explain-results-str (st/check `results-str-fn4)))))))))
