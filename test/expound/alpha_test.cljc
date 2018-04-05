@@ -2571,5 +2571,44 @@ Success!
            ))
 
     )
-  (testing "multiple results")
-  (testing "custom printer"))
+  #?(:clj
+     (testing "multiple results"
+       (is (= "== Checked expound.alpha-test/results-str-fn2 
+
+core.clj:LINUM
+
+-- Spec failed --------------------
+
+Function arguments and return value
+
+  {:ret 0, :args {:x 0, :y 0}}
+
+should satisfy
+
+  (fn
+   [%]
+   (let
+    [x
+     (-> % :args :x)
+     y
+     (-> % :args :y)
+     ret
+     (-> % :ret)]
+    (< x ret)))
+
+
+
+-------------------------
+Detected 1 error
+
+
+== Checked expound.alpha-test/results-str-fn3 
+
+Success!
+"
+              (no-linum (expound/results-str (st/check [`results-str-fn2 `results-str-fn3])))
+              ))
+       ))
+  (testing "check-fn")
+  (testing "custom printer")
+  )
