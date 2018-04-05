@@ -166,8 +166,7 @@
   ([size s label-str]
    (let [prefix (str label-str label-str " " s " ")
          chars-left (- size (count prefix))]
-     (str prefix (apply str (repeat chars-left label-str)))))
-  )
+     (str prefix (apply str (repeat chars-left label-str))))))
 
 (def header-label (partial label header-size))
 (def section-label (partial label section-size))
@@ -596,11 +595,14 @@ Detected %s %s\n"
            (defmsg '~k ~error-message)
            (s/def ~k ~spec-form))))))
 
-(defn unwrap-failure
-  [x]
-  (if
-   (ex-data x)
-    x))
+;; TODO - rename
+(defn result-str [check-result]
+  (let [{:keys [sym failure]} check-result]
+    (str
+     (label check-header-size (str "Checked " sym) "=")
+     "\n\n"
+     (with-out-str
+       (printer (ex-data failure))))))
 
 ;; TODO - use *explain-out* here
 ;; Explain results
@@ -610,36 +612,20 @@ Detected %s %s\n"
   ([check-results printer]
    ;; TODO - have a single result in 'result' function
    (string/join "\n\n"
-                (for [result check-results]
-                  (let [{:keys [sym failure]} result]
-                    (str
-                     (label check-header-size (str "Checked " sym) "=")
-                     "\n\n"
-                     (with-out-str
-                       (printer (ex-data failure)))))))))
-
-;; TODO - implement
-;;(defn results [])
+                (for [check-result check-results]
+                  (result-str check-result)))))
 
 (comment
   (s/fdef results-str-fn3
-        :args (s/cat :x nat-int? :y nat-int?)
-        :ret nat-int?)
+          :args (s/cat :x nat-int? :y nat-int?)
+          :ret nat-int?)
   (defn results-str-fn3 [x y]
     (+ x y))
 
   (results-str (st/check `results-str-fn3))
 
-  "== Checked expound.alpha/results-str-fn3 ====\n\nSuccess!\n"
-
-
-
-
-  (require '[clojure.spec.test.alpha :as st])
+  "== Checked expound.alpha/results-str-fn3 ====\n\nSuccess!\n" (require '[clojure.spec.test.alpha :as st])
   (st/summarize-results (st/check `results-str-fn3))
 
-  (map st/abbrev-result (st/check `results-str-fn3))
-
-  
-  )
+  (map st/abbrev-result (st/check `results-str-fn3)))
 

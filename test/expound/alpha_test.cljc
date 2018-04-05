@@ -20,7 +20,7 @@
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
-(def num-tests 30)
+(def num-tests 1) ;; TODO - restore
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -2567,10 +2567,7 @@ Detected 1 error
 
 Success!
 "
-           (no-linum (expound/results-str (st/check `results-str-fn3)))
-           ))
-
-    )
+           (no-linum (expound/results-str (st/check `results-str-fn3))))))
   #?(:clj
      (testing "multiple results"
        (is (= "== Checked expound.alpha-test/results-str-fn2 
@@ -2606,9 +2603,35 @@ Detected 1 error
 
 Success!
 "
-              (no-linum (expound/results-str (st/check [`results-str-fn2 `results-str-fn3])))
-              ))
-       ))
-  (testing "check-fn")
-  (testing "custom printer")
-  )
+              (no-linum (expound/results-str (st/check [`results-str-fn2 `results-str-fn3])))))))
+  (testing "check-fn"
+    (is (= "== Checked  =================================
+
+-- Function spec failed -----------
+
+  {:args {:x 0, :y 0}, :ret 0}
+
+failed spec. Function arguments and return value
+
+  {:args {:x 0, :y 0}, :ret 0}
+
+should satisfy
+
+  (fn
+   [%]
+   (let
+    [x
+     (-> % :args :x)
+     y
+     (-> % :args :y)
+     ret
+     (-> % :ret)]
+    (< x ret)))
+
+
+
+-------------------------
+Detected 1 error
+"
+           (no-linum (expound/result-str (st/check-fn `results-str-fn1 (s/get-spec `results-str-fn2)))))))
+  (testing "custom printer"))
