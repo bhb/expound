@@ -2463,7 +2463,7 @@ Detected 1 error
 (deftest results-str
   (testing "single bad result (failing return spec)"
     (is (= (pf
-            #?(:clj "Checked expound.alpha-test/results-str-fn1
+            #?(:clj "== Checked expound.alpha-test/results-str-fn1 
 
 core.clj:LINUM
 
@@ -2482,7 +2482,7 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-               :cljs "Checked expound.alpha-test/results-str-fn1
+               :cljs "== Checked expound.alpha-test/results-str-fn1 
 
 -- Function spec failed -----------
 
@@ -2505,7 +2505,7 @@ Detected 1 error
   (testing "single bad result (failing fn spec)"
     (is (= (pf
             #?(:clj
-               "Checked expound.alpha-test/results-str-fn2
+               "== Checked expound.alpha-test/results-str-fn2 
 
 core.clj:LINUM
 
@@ -2533,7 +2533,7 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-               :cljs "Checked expound.alpha-test/results-str-fn2
+               :cljs "== Checked expound.alpha-test/results-str-fn2 
 
 -- Function spec failed -----------
 
@@ -2563,7 +2563,7 @@ Detected 1 error
 "))
            (no-linum (expound/results-str (st/check `results-str-fn2))))))
   (testing "single valid result"
-    (is (= "Checked expound.alpha-test/results-str-fn3
+    (is (= "== Checked expound.alpha-test/results-str-fn3 
 
 Success!
 "

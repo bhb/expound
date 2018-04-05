@@ -26,6 +26,7 @@
 
 ;;;;;; private ;;;;;;
 
+(def check-header-size 45)
 (def header-size 35)
 (def section-size 25)
 
@@ -612,8 +613,7 @@ Detected %s %s\n"
                 (for [result check-results]
                   (let [{:keys [sym failure]} result]
                     (str
-                     "Checked "
-                     sym
+                     (label check-header-size (str "Checked " sym) "=")
                      "\n\n"
                      (with-out-str
                        (printer (ex-data failure)))))))))
@@ -629,6 +629,11 @@ Detected %s %s\n"
     (+ x y))
 
   (results-str (st/check `results-str-fn3))
+
+  "== Checked expound.alpha/results-str-fn3 ====\n\nSuccess!\n"
+
+
+
 
   (require '[clojure.spec.test.alpha :as st])
   (st/summarize-results (st/check `results-str-fn3))
