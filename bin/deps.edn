@@ -1,0 +1,4 @@
+{:deps
+ {expound/expound {:local/root ".."}
+  orchestra {:mvn/version "0.3.0"}
+  }}

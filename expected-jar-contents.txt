@@ -17,3 +17,4 @@ expound/problems.cljc
 expound/printer.cljc
 expound/specs.cljc
 project.clj
+expound/ansi.cljc
