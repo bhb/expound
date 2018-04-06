@@ -254,6 +254,15 @@ You can even provide your own function to display the invalid value.
 ;;   string?
 ```
 
+#### Printer options
+
+| name | spec |  default | description |
+|------|------|----------|-------------|
+| `:show-valid-values?` | `boolean?` | `false` | If `false`, replaces valid values with `...` |
+| `:value-str-fn` | `ifn?` | provided function | Function to print bad value |
+| `:print-specs?` | `boolean?` | `true` | If true, display "Relevant specs" section. Otherwise, omit that section. |
+| `:theme` | `#{:figwheel-theme :none}` | `:none` | Enables color theme. |
+
 ### Manual clojure.test/report override
 
 Clojure test allows you to declare a custom multi-method for its `clojure.test/report` function. This is particularly useful in ClojureScript, where a test runner can take care of the boilerplate code:

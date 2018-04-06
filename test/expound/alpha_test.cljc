@@ -17,6 +17,7 @@
             [expound.test-utils :as test-utils]
             [clojure.walk :as walk]
             [spec-tools.data-spec :as ds]
+            [expound.ansi :as ansi]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -329,7 +330,7 @@ Detected 1 error
 
   {}
 
-should contain keys: `:or-spec/int`, `:or-spec/str`
+should contain keys: :or-spec/int, :or-spec/str
 
 |          key |    spec |
 |--------------+---------|
@@ -358,7 +359,7 @@ Detected 1 error
 
   {}
 
-should contain keys: `:or-spec/str`
+should contain keys: :or-spec/str
 
 |          key |    spec |
 |--------------+---------|
@@ -616,7 +617,7 @@ Detected 1 error\n")
 
   {}
 
-should contain keys: `:age`, `:keys-spec/name`
+should contain keys: :age, :keys-spec/name
 
 |             key |    spec |
 |-----------------+---------|
@@ -692,7 +693,7 @@ Detected 1 error\n")
 
   {}
 
-should contain keys: `:age`, `:name`
+should contain keys: :age, :name
 
 |   key |    spec |
 |-------+---------|
@@ -793,7 +794,7 @@ Detected 1 error\n")
 
   {:multi-spec/el-type :text}
 
-should contain key: `:multi-spec/value`
+should contain key: :multi-spec/value
 
 |               key |    spec |
 |-------------------+---------|
@@ -892,7 +893,7 @@ Detected 1 error\n"
 
   {\"foo\" \"hi\"}
 
-should contain key: `:cat-wrapped-in-or-spec/type`
+should contain key: :cat-wrapped-in-or-spec/type
 
 |                          key |     spec |
 |------------------------------+----------|
@@ -2437,3 +2438,57 @@ Detected 1 error
              (s/explain-str
               :predicate-messages/score
               101))))))
+
+(def inverted-ansi-codes
+  (reduce
+   (fn [m [k v]]
+     (assoc m (str v) k))
+   {}
+   ansi/sgr-code))
+
+(defn readable-ansi [s]
+  (string/replace
+   s
+   #"\x1b\[([0-9]*)m"
+   #(str "<" (string/upper-case (name (get inverted-ansi-codes (second %)))) ">")))
+
+(s/def :colorized-output/strings (s/coll-of string?))
+(deftest colorized-output
+  (is (= (pf "-- Spec failed --------------------
+
+  [... :a ...]
+       ^^
+
+should satisfy
+
+  string?
+
+-- Relevant specs -------
+
+:colorized-output/strings:
+  (pf.spec.alpha/coll-of pf.core/string?)
+
+-------------------------
+Detected 1 error
+")
+         (binding [s/*explain-out* (expound/custom-printer {:theme :none})]
+           (s/explain-str :colorized-output/strings ["" :a ""]))))
+  (is (= (pf "<NONE><NONE><CYAN>-- Spec failed --------------------<NONE>
+
+  [... <RED>:a<NONE> ...]
+  <MAGENTA>     ^^<NONE>
+
+should satisfy
+
+  <GREEN>string?<NONE>
+
+<CYAN>-- Relevant specs -------<NONE>
+
+:colorized-output/strings:
+  (pf.spec.alpha/coll-of pf.core/string?)
+
+<CYAN>-------------------------<NONE>
+<CYAN>Detected<NONE> <CYAN>1<NONE> <CYAN>error<NONE>
+")
+         (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
+           (readable-ansi (s/explain-str :colorized-output/strings ["" :a ""]))))))

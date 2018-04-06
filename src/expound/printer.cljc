@@ -5,6 +5,7 @@
             [clojure.walk :as walk]
             [clojure.set :as set]
             [expound.util :as util]
+            [expound.ansi :as ansi]
             #?(:clj [clojure.main :as clojure.main]))
   (:refer-clojure :exclude [format]))
 
@@ -199,14 +200,14 @@
 (defn print-missing-keys [problems]
   (let [keys-clauses (distinct (map (comp missing-key :pred) problems))]
     (if (every? keyword? keys-clauses)
-      (string/join ", " (sort (map #(str "`" % "`") keys-clauses)))
+      (string/join ", " (map #(ansi/color % :correct-key) (sort keys-clauses)))
       (str "\n\n"
-           (pprint-str
-            (if (singleton? keys-clauses)
-              (first keys-clauses)
-              (apply list
-                     'and
-                     keys-clauses)))))))
+           (ansi/color (pprint-str
+                        (if (singleton? keys-clauses)
+                          (first keys-clauses)
+                          (apply list
+                                 'and
+                                 keys-clauses))) :correct-key)))))
 
 (s/fdef no-trailing-whitespace
         :args (s/cat :s string?)

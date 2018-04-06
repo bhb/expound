@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Added
+- Optional colorized output
+
 ## [0.5.0] - 2018-02-06
 
 ### Fixed
