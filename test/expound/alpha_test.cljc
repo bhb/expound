@@ -2458,7 +2458,7 @@ Detected 1 error
   (+ x y))
 
 (s/fdef results-str-fn3
-        :args (s/cat :x nat-int? :y nat-int?)
+        :args (s/cat :x #{0} :y #{0})
         :ret nat-int?)
 (defn results-str-fn3 [x y]
   (+ x y))
@@ -2474,46 +2474,21 @@ Detected 1 error
         :ret string?)
 (defn results-str-fn5
   [x y]
-  (+ (str x) y))
+  #?(:clj (throw (Exception. "Ooop!"))
+     :cljs (throw (js/Error. "Oops!"))))
 
-(comment
-  (require '[clojure.spec.alpha :as s])
-  (require '[clojure.spec.test.alpha :as st])
-
-  (st/summarize-results
-   (st/check `results-str-fn5))
-
-  (keys (st/abbrev-result
-         (first (st/check `results-str-fn5))))
-
-  (expound/explain-results (st/check `results-str-fn5))
-
-  (st/check `results-str-fn5))
+(s/fdef results-str-fn6
+        :args (s/cat :f fn?)
+        :ret any?)
+(defn results-str-fn6
+  [f]
+  (f 1))
 
 ;; FIXME - why is CLJ and CLJS output different?
-(deftest results-str
+(deftest explain-results
   (testing "single bad result (failing return spec)"
     (is (= (pf
-            #?(:clj "== Checked expound.alpha-test/results-str-fn1 
-
-core.clj:LINUM
-
--- Spec failed --------------------
-
-Return value
-
-  0
-
-should satisfy
-
-  pos-int?
-
-
-
--------------------------
-Detected 1 error
-"
-               :cljs "== Checked expound.alpha-test/results-str-fn1 
+            "== Checked expound.alpha-test/results-str-fn1 
 
 -- Function spec failed -----------
 
@@ -2531,21 +2506,20 @@ should satisfy
 
 -------------------------
 Detected 1 error
-"))
+")
            (binding [s/*explain-out* expound/printer]
-             (no-linum (expound/explain-results-str (st/check `results-str-fn1)))))))
+             (no-linum (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1))))))))
   (testing "single bad result (failing fn spec)"
     (is (= (pf
-            #?(:clj
-               "== Checked expound.alpha-test/results-str-fn2 
+            "== Checked expound.alpha-test/results-str-fn2 
 
-core.clj:LINUM
+-- Function spec failed -----------
 
--- Spec failed --------------------
+  {:args {:x 0, :y 0}, :ret 0}
 
-Function arguments and return value
+failed spec. Function arguments and return value
 
-  {:ret 0, :args {:x 0, :y 0}}
+  {:args {:x 0, :y 0}, :ret 0}
 
 should satisfy
 
@@ -2564,8 +2538,19 @@ should satisfy
 
 -------------------------
 Detected 1 error
+")
+           (binding [s/*explain-out* expound/printer]
+             (no-linum (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn2))))))))
+  (testing "single valid result"
+    (is (= "== Checked expound.alpha-test/results-str-fn3 
+
+Success!
 "
-               :cljs "== Checked expound.alpha-test/results-str-fn2 
+           (binding [s/*explain-out* expound/printer]
+             (no-linum (expound/explain-results-str (st/check `results-str-fn3)))))))
+  #?(:clj
+     (testing "multiple results"
+       (is (= "== Checked expound.alpha-test/results-str-fn2 
 
 -- Function spec failed -----------
 
@@ -2592,45 +2577,6 @@ should satisfy
 
 -------------------------
 Detected 1 error
-"))
-           (binding [s/*explain-out* expound/printer]
-             (no-linum (expound/explain-results-str (st/check `results-str-fn2)))))))
-  (testing "single valid result"
-    (is (= "== Checked expound.alpha-test/results-str-fn3 
-
-Success!
-"
-           (binding [s/*explain-out* expound/printer]
-             (no-linum (expound/explain-results-str (st/check `results-str-fn3)))))))
-  #?(:clj
-     (testing "multiple results"
-       (is (= "== Checked expound.alpha-test/results-str-fn2 
-
-core.clj:LINUM
-
--- Spec failed --------------------
-
-Function arguments and return value
-
-  {:ret 0, :args {:x 0, :y 0}}
-
-should satisfy
-
-  (fn
-   [%]
-   (let
-    [x
-     (-> % :args :x)
-     y
-     (-> % :args :y)
-     ret
-     (-> % :ret)]
-    (< x ret)))
-
-
-
--------------------------
-Detected 1 error
 
 
 == Checked expound.alpha-test/results-str-fn3 
@@ -2638,7 +2584,7 @@ Detected 1 error
 Success!
 "
               (binding [s/*explain-out* expound/printer]
-                (no-linum (expound/explain-results-str (st/check [`results-str-fn2 `results-str-fn3]))))))))
+                (no-linum (expound/explain-results-str (orch.st/with-instrument-disabled (st/check [`results-str-fn2 `results-str-fn3])))))))))
   (testing "check-fn"
     (is (= "== Checked  =================================
 
@@ -2673,14 +2619,14 @@ Detected 1 error
   #?(:clj (testing "custom printer"
             (is (= "== Checked expound.alpha-test/results-str-fn4 
 
-core.clj:LINUM
-
--- Spec failed --------------------
-
-Return value
+-- Function spec failed -----------
 
   [0 :not-int]
      ^^^^^^^^
+
+returned an invalid value
+
+  :not-int
 
 should satisfy
 
@@ -2692,18 +2638,33 @@ should satisfy
 Detected 1 error
 "
                    (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
-                     (no-linum (expound/explain-results-str (st/check `results-str-fn4))))))))
-
+                     (no-linum (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn4)))))))))
   (testing "exceptions raised during check"
     (is (= "== Checked expound.alpha-test/results-str-fn5 
 
   (expound.alpha-test/results-str-fn5 1 1)
 
- threw error
-
-#error {"
+ threw error"
            (binding [s/*explain-out* expound/printer]
-             (take-lines 7 (no-linum (expound/explain-results-str (st/check `results-str-fn5)))))))))
+             (take-lines 5 (no-linum (expound/explain-results-str (st/check `results-str-fn5))))))))
+  (testing "failure to generate"
+    (is (=
+         #?(:clj "== Checked expound.alpha-test/results-str-fn6 
+
+Unable to construct generator for [:f] in
+
+  (clojure.spec.alpha/cat :f clojure.core/fn?)
+"
+            ;; CLJS doesn't contain correct data for check failure
+
+            :cljs "== Checked expound.alpha-test/results-str-fn6 
+
+Unable to construct gen at: [:f] for: fn? in
+
+  (cljs.spec.alpha/cat :f cljs.core/fn?)
+")
+         (binding [s/*explain-out* expound/printer]
+           (no-linum (expound/explain-results-str (st/check `results-str-fn6))))))))
 
 (def inverted-ansi-codes
   (reduce

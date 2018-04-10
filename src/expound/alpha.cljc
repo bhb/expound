@@ -644,39 +644,47 @@ should satisfy
 (defn explain-result-str [check-result]
   (let [{:keys [sym failure]} check-result
         ret #?(:clj (:clojure.spec.test.check/ret check-result)
-               :cljs (:cljs.spec.test.check/ret check-result))
+               :cljs (:clojure.test.check/ret check-result))
         bad-args (first (:fail ret))
         explain-data (ex-data failure)]
-    (def check-result check-result)
+    (s/assert (s/nilable #{:check-failed :no-gen}) (-> explain-data ::s/failure))
     (str
      (label check-header-size (str "Checked " sym) "=")
      "\n\n"
-     (if explain-data
+     (cond
+       ;; FIXME - once we have a function that can highlight
+       ;;         a spec, use it here to make this error message clearer
+       #?(:clj (and explain-data (= :no-gen (-> explain-data ::s/failure)))
+          ;; Workaround for CLJS
+          :cljs (and
+                 failure
+                 (re-matches #"Unable to construct gen at.*" (.-message failure))))
+       (let [path (::s/path explain-data)]
+         (str
+          #?(:clj
+             (str
+              "Unable to construct generator for "
+              (ansi/color (pr-str path) :error-key))
+             :cljs
+             (.-message failure))
+          " in\n\n"
+          (printer/indent (str (s/form (:args (:spec check-result)))))
+          "\n"))
+
+       (and explain-data
+            (= :check-failed (-> explain-data ::s/failure)))
        (with-out-str
          (s/*explain-out* explain-data))
-       (if failure
-         (str
-          (printer/indent (printer/pprint-str
-                           (concat (list sym) bad-args)))
-          "\n\n threw error\n\n"
-          (printer/pprint-str failure))
-         "Success!\n")))))
 
-(comment
-  (require '[expound.alpha :as expound])
-  (require '[clojure.spec.test.alpha :as st])
-  (expound/explain-results (st/check `results-str-fn5))
-  (s/fdef results-str-fn5
-          :args (s/cat :x nat-int? :y nat-int?)
-          :ret string?)
-  (defn results-str-fn5
-    [x y]
-    (+ (str x) y))
+       failure
+       (str
+        (printer/indent (printer/pprint-str
+                         (concat (list sym) bad-args)))
+        "\n\n threw error\n\n"
+        (printer/pprint-str failure))
 
-  (keys check-result)
-
-  (:fail (:clojure.spec.test.check/ret check-result))
-  (ex-data (:failure check-result)))
+       :else
+       "Success!\n"))))
 
 (defn explain-result [check-result]
   (print (explain-result-str check-result)))

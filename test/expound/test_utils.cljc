@@ -2,6 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             #?(:cljs
                [clojure.spec.test.alpha :as st]
+               ;; FIXME
                ;; orchestra is supposed to work with cljs but
                ;; it isn't working for me right now
                #_[orchestra-cljs.spec.test :as st]
