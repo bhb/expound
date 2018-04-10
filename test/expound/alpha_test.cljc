@@ -41,6 +41,9 @@
             :clj (string/replace s "pf." "clojure."))
          args))
 
+(defn take-lines [n s]
+  (string/join "\n" (take n (string/split-lines s))))
+
 ;; https://github.com/bhb/expound/issues/8
 (deftest expound-output-ends-in-newline
   (is (= "\n" (str (last (expound/expound-str string? 1)))))
@@ -2466,6 +2469,27 @@ Detected 1 error
 (defn results-str-fn4 [x]
   [x :not-int])
 
+(s/fdef results-str-fn5
+        :args (s/cat :x #{1} :y #{1})
+        :ret string?)
+(defn results-str-fn5
+  [x y]
+  (+ (str x) y))
+
+(comment
+  (require '[clojure.spec.alpha :as s])
+  (require '[clojure.spec.test.alpha :as st])
+
+  (st/summarize-results
+   (st/check `results-str-fn5))
+
+  (keys (st/abbrev-result
+         (first (st/check `results-str-fn5))))
+
+  (expound/explain-results (st/check `results-str-fn5))
+
+  (st/check `results-str-fn5))
+
 ;; FIXME - why is CLJ and CLJS output different?
 (deftest results-str
   (testing "single bad result (failing return spec)"
@@ -2668,7 +2692,18 @@ should satisfy
 Detected 1 error
 "
                    (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
-                     (no-linum (expound/explain-results-str (st/check `results-str-fn4)))))))))
+                     (no-linum (expound/explain-results-str (st/check `results-str-fn4))))))))
+
+  (testing "exceptions raised during check"
+    (is (= "== Checked expound.alpha-test/results-str-fn5 
+
+  (expound.alpha-test/results-str-fn5 1 1)
+
+ threw error
+
+#error {"
+           (binding [s/*explain-out* expound/printer]
+             (take-lines 7 (no-linum (expound/explain-results-str (st/check `results-str-fn5)))))))))
 
 (def inverted-ansi-codes
   (reduce
