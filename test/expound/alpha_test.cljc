@@ -2484,7 +2484,6 @@ Detected 1 error
   [f]
   (f 1))
 
-;; FIXME - why is CLJ and CLJS output different?
 (deftest explain-results
   (testing "single bad result (failing return spec)"
     (is (= (pf
