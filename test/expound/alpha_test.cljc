@@ -2484,6 +2484,8 @@ Detected 1 error
   [f]
   (f 1))
 
+;; HERE- the value 0 looks really wrong here. Above, we printed out the
+;; value of the function. Why is this set incorrectly?
 (deftest explain-results
   (testing "single bad result (failing return spec)"
     (is (= (pf
@@ -2491,7 +2493,7 @@ Detected 1 error
 
 -- Function spec failed -----------
 
-  0
+  (expound.alpha-test/results-str-fn1 0 0)
 
 returned an invalid value
 
@@ -2509,12 +2511,11 @@ Detected 1 error
            (binding [s/*explain-out* expound/printer]
              (no-linum (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1))))))))
   (testing "single bad result (failing fn spec)"
-    (is (= (pf
-            "== Checked expound.alpha-test/results-str-fn2 
+    (is (= (pf "== Checked expound.alpha-test/results-str-fn2 
 
 -- Function spec failed -----------
 
-  {:args {:x 0, :y 0}, :ret 0}
+  (expound.alpha-test/results-str-fn2 0 0)
 
 failed spec. Function arguments and return value
 
@@ -2553,7 +2554,7 @@ Success!
 
 -- Function spec failed -----------
 
-  {:args {:x 0, :y 0}, :ret 0}
+  (expound.alpha-test/results-str-fn2 0 0)
 
 failed spec. Function arguments and return value
 
@@ -2584,12 +2585,13 @@ Success!
 "
               (binding [s/*explain-out* expound/printer]
                 (no-linum (expound/explain-results-str (orch.st/with-instrument-disabled (st/check [`results-str-fn2 `results-str-fn3])))))))))
+  ;; TODO - replace nil with "no spec found" or equivalent
   (testing "check-fn"
     (is (= "== Checked  =================================
 
 -- Function spec failed -----------
 
-  {:args {:x 0, :y 0}, :ret 0}
+  (nil 0 0)
 
 failed spec. Function arguments and return value
 
@@ -2614,18 +2616,18 @@ should satisfy
 Detected 1 error
 "
            (binding [s/*explain-out* expound/printer]
-             (no-linum (expound/explain-result-str (st/check-fn `results-str-fn1 (s/get-spec `results-str-fn2))))))))
+             (no-linum (expound/explain-result-str (st/check-fn `resultsf-str-fn1 (s/spec `results-str-fn2))))))))
   #?(:clj (testing "custom printer"
             (is (= "== Checked expound.alpha-test/results-str-fn4 
 
 -- Function spec failed -----------
 
-  [0 :not-int]
-     ^^^^^^^^
+  (expound.alpha-test/results-str-fn4 0)
 
 returned an invalid value
 
-  :not-int
+  [0 :not-int]
+     ^^^^^^^^
 
 should satisfy
 

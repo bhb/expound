@@ -229,17 +229,34 @@
 
 (defn fspec-exception-failure? [failure problem]
   (and (not= :instrument failure)
+       (not= :check-failed failure)
        (= '(apply fn) (:pred problem))))
 
 (defn fspec-ret-failure? [failure problem]
   (and
    (not= :instrument failure)
+   (not= :check-failed failure)
    (= :ret (first (:path problem)))))
 
 (defn fspec-fn-failure? [failure problem]
   (and
    (not= :instrument failure)
+   (not= :check-failed failure)
    (= :fn (first (:path problem)))))
+
+(defn check-exception-failure? [failure problem]
+  (and (= :check-failed failure)
+       ;; TODO - fill in here
+       false))
+
+(defn check-ret-failure? [failure problem]
+  (and
+   (= :check-failed failure)
+   (= :ret (first (:path problem)))))
+
+(defn check-fn-failure? [failure problem]
+  (and (= :check-failed failure)
+       (= :fn (first (:path problem)))))
 
 (defn missing-key? [_failure problem]
   (let [pred (:pred problem)]
@@ -380,6 +397,15 @@
     (fspec-fn-failure? failure problem)
     :problem/fspec-fn-failure
 
+    (check-exception-failure? failure problem)
+    :problem/check-exception-failure
+
+    (check-ret-failure? failure problem)
+    :problem/check-ret-failure
+
+    (check-fn-failure? failure problem)
+    :problem/check-fn-failure
+
     :else
     :problem/unknown))
 
@@ -506,6 +532,61 @@ should satisfy
    (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
    (expected-str _type spec-name val path problems opts)))
 
+(defmethod expected-str :problem/check-fn-failure [_type spec-name val path problems opts]
+  (s/assert ::singleton problems)
+  (let [problem (first problems)]
+    (printer/format
+     "failed spec. Function arguments and return value
+
+%s
+
+should satisfy
+
+%s"
+     (printer/indent (ansi/color (pr-str (:val problem)) :bad-value))
+     (printer/indent (ansi/color (pr-pred (:pred problem) (:spec problem)) :good-pred)))))
+
+;; TODO - colorize
+(defmethod problem-group-str :problem/check-fn-failure [_type spec-name val path problems opts]
+  (s/assert ::singleton problems)
+  (printer/format
+   "%s
+
+%s
+
+%s"
+   (header-label "Function spec failed")
+   (printer/indent (pr-str (:expound/check-fn-call (first problems))))
+   #_(printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+   (expected-str _type spec-name val path problems opts)))
+
+;; TODO - remove?
+(defmethod expected-str :problem/check-ret-failure [_type spec-name val path problems opts]
+  (predicate-errors problems))
+
+(defmethod problem-group-str :problem/check-ret-failure [_type spec-name val path problems opts]
+  (printer/format
+   "%s
+
+%s
+
+returned an invalid value
+
+%s
+
+%s"
+   (header-label "Function spec failed")
+
+   (printer/indent (pr-str (:expound/check-fn-call (first problems))))
+
+   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+   (expected-str _type spec-name val path problems opts)))
+
+;; TODO - fill in tests for check-exception (need to detect it better)
+
+(comment
+  (explain-result (first (st/check `results-str-fn4))))
+
 (defmethod expected-str :problem/unknown [_type spec-name val path problems opts]
   (predicate-errors problems))
 
@@ -521,6 +602,7 @@ should satisfy
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (expected-str _type spec-name val path problems opts)))
 
+;; FIXME - rename
 (defn problem-group-str1 [type spec-name val path problems opts]
   (str
    (problem-group-str type spec-name val path problems opts)
@@ -645,6 +727,7 @@ should satisfy
   (let [{:keys [sym failure]} check-result
         ret #?(:clj (:clojure.spec.test.check/ret check-result)
                :cljs (:clojure.test.check/ret check-result))
+        ;; TODO - should this be :clojure.spec.test.alpha/args (0 0) in explain-data
         bad-args (first (:fail ret))
         explain-data (ex-data failure)]
     (s/assert (s/nilable #{:check-failed :no-gen}) (-> explain-data ::s/failure))
@@ -674,8 +757,15 @@ should satisfy
        (and explain-data
             (= :check-failed (-> explain-data ::s/failure)))
        (with-out-str
-         (s/*explain-out* explain-data))
-
+         (s/*explain-out* (update
+                           explain-data
+                           ::s/problems
+                           #(map
+                             (fn [p]
+                               (assoc p :expound/check-fn-call (concat (list sym)
+                                                                       #?(:clj (:clojure.spec.test.alpha/args explain-data)
+                                                                          :cljs (:cljs.spec.test.alpha/args explain-data)))))
+                             %))))
        failure
        (str
         (printer/indent (printer/pprint-str
@@ -685,6 +775,24 @@ should satisfy
 
        :else
        "Success!\n"))))
+
+(comment
+  (s/fdef results-str-fn2
+          :args (s/cat :x nat-int? :y nat-int?)
+          :fn #(let [x (-> % :args :x)
+                     y (-> % :args :y)
+                     ret (-> % :ret)]
+                 (< x ret)))
+  (defn results-str-fn2 [x y]
+    (+ x y))
+  (explain-result (first (st/check `results-str-fn2)))
+
+  (s/fdef results-str-fn4
+          :args (s/cat :x int?)
+          :ret (s/coll-of int?))
+  (defn results-str-fn4 [x]
+    [x :not-int]) (set! s/*explain-out* printer)
+  (explain-result (first (st/check `results-str-fn4))) (:sym (first (st/check `results-str-fn4))))
 
 (defn explain-result [check-result]
   (print (explain-result-str check-result)))
