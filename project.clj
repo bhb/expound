@@ -96,7 +96,7 @@
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.2"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.3"] ; to test specs
-                                          [org.onyxplatform/onyx-spec "0.12.2.0"] ; to test specs
+                                          [org.onyxplatform/onyx-spec "0.12.7.0"] ; to test specs
                                           [vvvvalvalval/scope-capture "0.1.4"]
                                           [metosin/spec-tools "0.5.1"]]}
              :test-web [:test-common
