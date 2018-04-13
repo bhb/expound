@@ -254,6 +254,15 @@ You can even provide your own function to display the invalid value.
 ;;   string?
 ```
 
+#### Printer options
+
+| name | spec |  default | description |
+|------|------|----------|-------------|
+| `:show-valid-values?` | `boolean?` | `false` | If `false`, replaces valid values with `...` |
+| `:value-str-fn` | `ifn?` | provided function | Function to print bad value |
+| `:print-specs?` | `boolean?` | `true` | If true, display "Relevant specs" section. Otherwise, omit that section. |
+| `:theme` | `#{:figwheel-theme :none}` | `:none` | Enables color theme. |
+
 ### Manual clojure.test/report override
 
 Clojure test allows you to declare a custom multi-method for its `clojure.test/report` function. This is particularly useful in ClojureScript, where a test runner can take care of the boilerplate code:
@@ -347,6 +356,9 @@ If you want to use Expound with conformers, you'll need to write a custom printe
 * Error messages in [Figwheel](https://github.com/bhauman/lein-figwheel), in particular the config error messages generated from [strictly-specking](https://github.com/bhauman/strictly-specking)
 * [Clojure Error Message Catalog](https://github.com/yogthos/clojure-error-message-catalog)
 * [The Usability of beginner-oriented Clojure error messages](http://wiki.science.ru.nl/tfpie/images/6/6e/TFPIE16-slides-emachkasova.pdf)
+* ["Illuminated Macros" - Chris Houser / Jonathan Claggett](https://www.youtube.com/watch?v=o75g9ZRoLaw)
+* [seqex](https://github.com/jclaggett/seqex)
+* ["Improving Clojure's Error Messages with Grammars" - Colin Fleming](https://www.youtube.com/watch?v=kt4haSH2xcs)
 
 ## Contributing
 

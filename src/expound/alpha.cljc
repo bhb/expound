@@ -9,7 +9,8 @@
             #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
             [expound.printer :as printer]
-            [expound.util :as util]))
+            [expound.util :as util]
+            [expound.ansi :as ansi]))
 
 ;;;;;; registry ;;;;;;
 
@@ -23,6 +24,36 @@
 (s/def :spec.problem/via (s/coll-of :spec/spec :kind vector?))
 (s/def :spec/problem (s/keys :req-un [:spec.problem/via]))
 (s/def :spec/problems (s/coll-of :spec/problem))
+
+(s/def :expound.printer/show-valid-values? boolean?)
+(s/def :expound.printer/value-str-fn ifn?)
+(s/def :expound.printer/print-specs? boolean?)
+(s/def :expound.printer/theme #{:figwheel-theme :none})
+(s/def :expound.printer/opts (s/keys
+                              :opt-un [:expound.printer/show-valid-values?
+                                       :expound.printer/value-str-fn
+                                       :expound.printer/print-specs?
+                                       :expound.printer/theme]))
+
+;;;;;; themes ;;;;;;
+
+(def figwheel-theme
+  {:highlight   [:bold]
+   :good        [:green]
+   :good-pred   [:green]
+   :good-key    [:green]
+   :bad         [:red]
+   :bad-value   [:red]
+   :error-key   [:red]
+   :focus-key   [:bold]
+   :correct-key [:green]
+   :header      [:cyan]
+   :footer      [:cyan]
+   :warning-key [:bold]
+   :focus-path  [:magenta]
+   :message     [:magenta]
+   :pointer     [:magenta]
+   :none        [:none]})
 
 ;;;;;; private ;;;;;;
 
@@ -45,9 +76,9 @@
    in the form"
   [opts spec-name form path value]
   (if (= :fn spec-name)
-    (binding [*print-namespace-maps* false] (pr-str form))
+    (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value))
     (if (= form value)
-      (binding [*print-namespace-maps* false] (printer/pprint-str value))
+      (binding [*print-namespace-maps* false] (ansi/color (printer/pprint-str value) :bad-value))
       ;; It's silly to reconstruct a fake "problem"
       ;; after I've deconstructed it, but I'm not yet ready
       ;; to break the API for value-in-context BUT
@@ -125,8 +156,10 @@
 (defn preds [problems]
   (string/join "\n\nor\n\n" (distinct (map (fn [problem]
                                              (printer/indent
-                                              (pr-pred (:pred problem)
-                                                       (:spec problem)))) problems))))
+                                              (ansi/color
+                                               (pr-pred (:pred problem)
+                                                        (:spec problem))
+                                               :good-pred))) problems))))
 
 (defn error-message [k]
   [k]
@@ -148,7 +181,7 @@
      (remove nil?
              (conj (keep
                     (fn [{:keys [expound/via]}]
-                      (error-message (last via)))
+                      (ansi/color (error-message (last via)) :good))
                     with-msg)
                    (when (seq no-msgs)
                      (printer/format
@@ -161,9 +194,11 @@
   ([size]
    (apply str (repeat size "-")))
   ([size s]
-   (let [prefix (str "-- " s " ")
-         chars-left (- size (count prefix))]
-     (str prefix (apply str (repeat chars-left "-"))))))
+   (ansi/color
+    (let [prefix (str "-- " s " ")
+          chars-left (- size (count prefix))]
+      (str prefix (apply str (repeat chars-left "-"))))
+    :header)))
 
 (def header-label (partial label header-size))
 (def section-label (partial label section-size))
@@ -280,7 +315,8 @@
     (printer/format
      "should be%s: %s"
      (if (= 1 (count combined-set)) "" " one of")
-     (string/join ", " (sort (map #(str "" (pr-str %) "") combined-set))))))
+     (ansi/color (string/join ", " (map #(ansi/color % :good) (sort (map #(str "" (pr-str %) "") combined-set))))
+                 :good))))
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
@@ -427,7 +463,7 @@ with args:
 %s
 
 %s"
-     (printer/indent (pr-str (:val problem)))
+     (ansi/color (printer/indent (pr-str (:val problem))) :bad-value)
      (predicate-errors problems))))
 
 (defmethod problem-group-str :problem/fspec-ret-failure [_type spec-name val path problems opts]
@@ -452,8 +488,8 @@ with args:
 should satisfy
 
 %s"
-     (printer/indent (pr-str (:val problem)))
-     (printer/indent (pr-pred (:pred problem) (:spec problem))))))
+     (printer/indent (ansi/color (pr-str (:val problem)) :bad-value))
+     (printer/indent (ansi/color (pr-pred (:pred problem) (:spec problem)) :good-pred)))))
 
 (defmethod problem-group-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
@@ -478,7 +514,7 @@ should satisfy
 %s
 
 %s"
-   (header-label "Spec failed")
+   (header-label (str "Spec failed"))
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (expected-str _type spec-name val path problems opts)))
 
@@ -510,7 +546,14 @@ should satisfy
                      opts)]
     (if-not explain-data
       "Success!\n"
-      (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))]
+      (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))
+                ansi/*enable-color* (not= :none (get opts :theme :none))
+                ansi/*print-styles* (case (get opts :theme :none)
+                                      :figwheel-theme
+                                      figwheel-theme
+
+                                      :none
+                                      {})]
         (let [{:keys [::s/fn ::s/failure]} explain-data
               explain-data' (problems/annotate explain-data)
               caller (:expound/caller explain-data')
@@ -522,17 +565,18 @@ should satisfy
 
           (printer/no-trailing-whitespace
            (str
-            (instrumentation-info failure caller)
+            (ansi/color (instrumentation-info failure caller) :none)
             (printer/format
              "%s
 
 %s
-Detected %s %s\n"
+%s %s %s\n"
              (string/join "\n\n" (for [[[in type] probs] problems]
                                    (problem-group-str1 type (spec-name explain-data) form in probs opts')))
-             (section-label)
-             (count problems)
-             (if (= 1 (count problems)) "error" "errors")))))))))
+             (ansi/color (section-label) :footer)
+             (ansi/color "Detected" :footer)
+             (ansi/color (count problems) :footer)
+             (ansi/color (if (= 1 (count problems)) "error" "errors") :footer)))))))))
 
 (s/def ::foo string?)
 
@@ -547,6 +591,8 @@ Detected %s %s\n"
 
 ;;;;;; public ;;;;;;
 
+(s/fdef custom-printer
+        :args (s/cat :opts :expound.printer/opts))
 (defn custom-printer
   "Returns a printer, configured via opts"
   [opts]
