@@ -78,7 +78,7 @@
                                   [io.aviso/pretty "0.1.34"]
                                   [vvvvalvalval/scope-capture "0.1.4"]
                                   [org.clojure/test.check "0.9.0"]
-                                  [metosin/spec-tools "0.5.1"]]
+                                  [metosin/spec-tools "0.6.1"]]
                    :plugins [[io.aviso/pretty "0.1.34"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
