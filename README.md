@@ -4,9 +4,24 @@ Expound formats `clojure.spec` error messages in a way that is optimized for hum
 
 Expound is in alpha while `clojure.spec` is in alpha.
 
-## Usage
+## Installation
 
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
+
+### Leiningen/Boot
+
+`[expound "0.5.0"]`
+
+#### deps.edn
+
+`expound {:mvn/version "0.5.0"}`
+
+### Lumo
+
+`npm install @bbrinck/expound`
+
+## Usage
+
 
 ### Quick start with `clj`
 
