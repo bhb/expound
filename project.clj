@@ -11,7 +11,7 @@
   :plugins [[com.jakemccrary/lein-test-refresh "0.22.0"]
             [lein-cljfmt "0.5.7"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
-            [lein-figwheel "0.5.14"]]
+            [lein-figwheel "0.5.15"]]
 
   :cljsbuild {:builds
               [{:id "test"
@@ -70,8 +70,8 @@
              ;; to pipe all the output to the repl
              ;; :server-logfile false
 }
-  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.8"]
-                                  [figwheel-sidecar "0.5.14"]
+  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
+                                  [figwheel-sidecar "0.5.15"]
                                   [com.cemerick/piggieback "0.2.2"]
                                   [orchestra "2017.11.12-1"]
                                   [org.clojure/core.specs.alpha "0.1.24"]
