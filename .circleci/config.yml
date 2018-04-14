@@ -69,7 +69,7 @@ jobs:
       - run: sudo bin/install-node && npm install
       - run: lein check
       - run: lein with-profile test-common test
-      - run: lein clean && lein with-profile test-web,cljs-1.9.946 cljsbuild once test && bin/tests
+      - run: lein clean && lein with-profile test-web cljsbuild once test && bin/tests
       - run: lein jar && diff -u <(jar tf target/*.jar | sort) <(cat expected-jar-contents.txt | sort)
 
   test_cljs_old:
@@ -101,7 +101,7 @@ jobs:
       - run: bin/install-chrome
       - run: sudo bin/install-node && npm install
       - run: lein clean && lein with-profile test-web,clj-1.9.0-alpha19,cljs-1.9.562 cljsbuild once test && bin/tests
-      - run: lein clean && lein with-profile test-web,clj-1.9.0-alpha19,cljs-1.9.908 cljsbuild once test && bin/tests
+      - run: lein clean && lein with-profile test-web,clj-1.9.0-alpha19,cljs-1.9.946 cljsbuild once test && bin/tests
 
   test_clj_old:
     docker:
