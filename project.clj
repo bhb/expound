@@ -94,14 +94,14 @@
                                           [orchestra "2017.11.12-1"]
                                           [org.clojure/core.specs.alpha "0.1.24"]
                                           [com.stuartsierra/dependency "0.2.0"]
-                                          [ring/ring-core "1.6.2"] ; required to make ring-spec work, may cause issues with figwheel?
-                                          [ring/ring-spec "0.0.3"] ; to test specs
+                                          [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
+                                          [ring/ring-spec "0.0.4"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.12.7.0"] ; to test specs
                                           [vvvvalvalval/scope-capture "0.1.4"]
                                           [metosin/spec-tools "0.5.1"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
-                         :dependencies [[figwheel-sidecar "0.5.14"]
+                         :dependencies [[figwheel-sidecar "0.5.15"]
                                         [karma-reporter "2.1.2"]]}]
              :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
              :clj-1.9.0-alpha19 {:dependencies [[org.clojure/clojure "1.9.0-alpha19"]]}
