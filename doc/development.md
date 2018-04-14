@@ -29,3 +29,13 @@ open http://localhost:3446/index.html
 or
 
 `lein with-profile +test-common test-refresh :changes-only`
+
+## Release
+
+### clojars
+
+`lein deploy clojars`
+
+### NPM
+
+`npm publish --access=public`
