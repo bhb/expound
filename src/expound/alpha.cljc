@@ -30,10 +30,59 @@
 (s/def :expound.printer/print-specs? boolean?)
 (s/def :expound.printer/theme #{:figwheel-theme :none})
 (s/def :expound.printer/opts (s/keys
-                              :opt-un [:expound.printer/show-valid-values?
+                              :opt-un [;;:expound.printer/show-valid-values?
                                        :expound.printer/value-str-fn
-                                       :expound.printer/print-specs?
-                                       :expound.printer/theme]))
+                                       ;;:expound.printer/print-specs?
+                                       ;;:expound.printer/theme
+]))
+
+(comment
+
+  (require '[clojure.spec.test.alpha :as st1])
+
+  (st1/check `custom-printer {:clojure.spec.test.check/opts {:num-tests 10}})
+
+  (s/def ::fn ifn?)
+  (s/def ::keys (s/keys :req [::fn]))
+
+  (s/fdef results-str-fn6
+          :args (s/cat :k ::keys)
+          :ret any?)
+  (defn results-str-fn6
+    [k])
+
+  (s/fdef custom-printer2
+          :args (s/cat :opts :expound.printer/opts))
+  (defn custom-printer2 [opts])
+  (st1/check `custom-printer2 {:clojure.spec.test.check/opts {:num-tests 10}})
+
+  (s/fdef fn1
+          :args (s/cat :f fn?))
+  (defn fn1 [f])
+  (clojure.spec.test.alpha/check `fn1);;(s/def :ex/fn fn?)
+
+  (s/def :ex/f fn?)
+  (s/def :ex/m (s/keys :opt [:ex/f]))
+  (s/fdef my-fn
+          :args (s/cat :m :ex/m))
+  (defn my-fn [f])
+  (try
+    (clojure.spec.test.alpha/check `my-fn)
+    (catch Exception e
+      (.getMessage e)))
+
+  (try
+    (clojure.spec.test.alpha/check `my-fn)
+    (catch Exception e (str "caught exception: " (.getMessage e))))
+
+  (ex-data (:result (:clojure.spec.test.check/ret (first (clojure.spec.test.alpha/check `my-fn))))) ;; => #:clojure.spec.alpha{:path [:m :ex/f], :form :ex/f, :failure :no-gen}
+
+
+  (require '[clojure.spec.alpha :as s])
+  (require '[clojure.spec.test.alpha :as st])
+  (require '[orchestra.spec.test :as st2])
+  (st1/check `results-str-fn6 {:clojure.spec.test.check/opts {:num-tests 10}}) (st/check) (st2/with-instrument-disabled
+                                                                                            (st1/check `custom-printer {:clojure.spec.test.check/opts {:num-tests 10}})))
 
 ;;;;;; themes ;;;;;;
 
@@ -570,14 +619,14 @@ should satisfy
 
 %s
 
-returned an invalid value
+returned an invalid value.
 
 %s
 
 %s"
    (header-label "Function spec failed")
 
-   (printer/indent (pr-str (:expound/check-fn-call (first problems))))
+   (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
 
    (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
    (expected-str _type spec-name val path problems opts)))
@@ -766,6 +815,8 @@ returned an invalid value
                                                                        #?(:clj (:clojure.spec.test.alpha/args explain-data)
                                                                           :cljs (:cljs.spec.test.alpha/args explain-data)))))
                              %))))
+
+       ;; TODO - move this into pinter
        failure
        (str
         (printer/indent (printer/pprint-str
@@ -805,3 +856,29 @@ returned an invalid value
 
 (defn explain-results [check-results]
   (print (explain-results-str check-results)))
+
+(comment
+
+  (require '[clojure.spec.test.alpha :as st1])
+
+  (st1/check `custom-printer {:clojure.spec.test.check/opts {:num-tests 10}})
+
+  (s/def ::fn fn?)
+  (s/def ::keys (s/keys :req [::fn]))
+
+  (s/fdef results-str-fn6
+          :args (s/cat :k ::keys)
+          :ret any?)
+  (defn results-str-fn6
+    [k])
+
+  (s/fdef custom-printer2
+          :args (s/cat :opts :expound.printer/opts))
+  (defn custom-printer2 [opts])
+  (st1/check `custom-printer2 {:clojure.spec.test.check/opts {:num-tests 10}})
+
+  (require '[clojure.spec.alpha :as s])
+  (require '[clojure.spec.test.alpha :as st])
+  (require '[orchestra.spec.test :as st2])
+  (st1/check `results-str-fn6 {:clojure.spec.test.check/opts {:num-tests 10}}) (st/check) (st2/with-instrument-disabled
+                                                                                            (st1/check `custom-printer {:clojure.spec.test.check/opts {:num-tests 10}})))

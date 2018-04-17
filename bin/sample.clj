@@ -302,7 +302,16 @@
 
   (display-explain
    :predicate-messages/score
-   101))
+   101)
+
+  (doseq [sym-to-check (st/checkable-syms)]
+    (println "trying to check" sym-to-check "...")
+    (try
+      (st/with-instrument-disabled
+        (orch.st/with-instrument-disabled
+          (expound/explain-results (st/check sym-to-check {:clojure.spec.test.check/opts {:num-tests 5}}))))
+      (catch Exception e
+        (println "caught exception: " (.getMessage e))))))
 
 (go)
 

@@ -2495,7 +2495,7 @@ Detected 1 error
 
   (expound.alpha-test/results-str-fn1 0 0)
 
-returned an invalid value
+returned an invalid value.
 
   0
 
@@ -2624,7 +2624,7 @@ Detected 1 error
 
   (expound.alpha-test/results-str-fn4 0)
 
-returned an invalid value
+returned an invalid value.
 
   [0 :not-int]
      ^^^^^^^^
@@ -2666,6 +2666,35 @@ Unable to construct gen at: [:f] for: fn? in
 ")
          (binding [s/*explain-out* expound/printer]
            (no-linum (expound/explain-results-str (st/check `results-str-fn6))))))))
+
+(comment
+  (ns user)
+
+  (s/fdef results-str-fn6
+          :args (s/cat :f fn?)
+          :ret any?)
+  (defn results-str-fn6
+    [f]
+    (f 1))
+  (require '[clojure.spec.alpha :as s])
+  (require '[clojure.spec.test.alpha :as st])
+  (st/check `results-str-fn6))
+
+#?(:clj
+   (deftest explain-results-gen
+     (checking
+      "all functions can be checked and printed"
+      10
+      [sym-to-check (gen/elements (st/checkable-syms))]
+      ;; Just confirm an error is not thrown
+      (try
+        (orch.st/with-instrument-disabled
+          (is (string?
+               (expound/explain-results-str (st/check sym-to-check
+                                                      {:clojure.spec.test.check/opts {:num-tests 1}})))))
+        (catch Exception e
+          (is (= "foobar"
+                 (.getMessage e))))))))
 
 (def inverted-ansi-codes
   (reduce
