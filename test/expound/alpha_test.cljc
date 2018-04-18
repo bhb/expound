@@ -2671,6 +2671,7 @@ Unable to construct gen at: [:f] for: fn? in
           :args (s/cat :x int?))
   (testing "no-fn failure"
     (is (= "== Checked expound.alpha-test/results-str-missing-fn 
+
   (expound.alpha-test/results-str-missing-fn)
 
  threw error
@@ -2693,23 +2694,27 @@ Unable to construct gen at: [:f] for: fn? in
     (f 1))
   (require '[clojure.spec.alpha :as s])
   (require '[clojure.spec.test.alpha :as st])
-  (st/check `results-str-fn6))
+  (st/check `results-str-fn6)
 
-#?(:clj
-   (deftest explain-results-gen
-     (checking
-      "all functions can be checked and printed"
-      10 ;; TODO - try 100
-      [sym-to-check (gen/elements (st/checkable-syms))]
-      ;; Just confirm an error is not thrown
-      (try
-        (orch.st/with-instrument-disabled
-          (is (string?
-               (expound/explain-results-str (st/check sym-to-check
-                                                      {:clojure.spec.test.check/opts {:num-tests 1}})))))
-        (catch Exception e
-          (is (= "foobar"
-                 (.getMessage e))))))))
+  (require '[expound.paths])
+  (require '[expound.alpha :as expound])
+  (require '[orchestra.spec.test :as orch.st])
+  (expound/explain-results
+   (orch.st/with-instrument-disabled (st/check `expound.paths/prefix-path?
+                                               {:clojure.spec.test.check/opts {:num-tests 10}}))))
+
+(deftest explain-results-gen
+  (checking
+   "all functions can be checked and printed"
+   200 ;; TODO - put to num-tests
+   [sym-to-check (gen/elements (st/checkable-syms))]
+    ;; Just confirm an error is not thrown
+   (is (string?
+        (expound/explain-results-str
+         (orch.st/with-instrument-disabled
+           (with-out-str
+             (st/check sym-to-check
+                       {:clojure.spec.test.check/opts {:num-tests 10}}))))))))
 
 (def inverted-ansi-codes
   (reduce
