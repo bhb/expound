@@ -2509,7 +2509,7 @@ should satisfy
 Detected 1 error
 ")
            (binding [s/*explain-out* expound/printer]
-             (no-linum (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1))))))))
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1)))))))
   (testing "single bad result (failing fn spec)"
     (is (= (pf "== Checked expound.alpha-test/results-str-fn2 
 
@@ -2540,14 +2540,14 @@ should satisfy
 Detected 1 error
 ")
            (binding [s/*explain-out* expound/printer]
-             (no-linum (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn2))))))))
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn2)))))))
   (testing "single valid result"
     (is (= "== Checked expound.alpha-test/results-str-fn3 
 
 Success!
 "
            (binding [s/*explain-out* expound/printer]
-             (no-linum (expound/explain-results-str (st/check `results-str-fn3)))))))
+             (expound/explain-results-str (st/check `results-str-fn3))))))
   #?(:clj
      (testing "multiple results"
        (is (= "== Checked expound.alpha-test/results-str-fn2 
@@ -2584,7 +2584,7 @@ Detected 1 error
 Success!
 "
               (binding [s/*explain-out* expound/printer]
-                (no-linum (expound/explain-results-str (orch.st/with-instrument-disabled (st/check [`results-str-fn2 `results-str-fn3])))))))))
+                (expound/explain-results-str (orch.st/with-instrument-disabled (st/check [`results-str-fn2 `results-str-fn3]))))))))
   ;; TODO - replace nil with "no spec found" or equivalent
   (testing "check-fn"
     (is (= "== Checked  =================================
@@ -2616,7 +2616,7 @@ should satisfy
 Detected 1 error
 "
            (binding [s/*explain-out* expound/printer]
-             (no-linum (expound/explain-result-str (st/check-fn `resultsf-str-fn1 (s/spec `results-str-fn2))))))))
+             (expound/explain-result-str (st/check-fn `resultsf-str-fn1 (s/spec `results-str-fn2)))))))
   #?(:clj (testing "custom printer"
             (is (= "== Checked expound.alpha-test/results-str-fn4 
 
@@ -2639,7 +2639,7 @@ should satisfy
 Detected 1 error
 "
                    (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
-                     (no-linum (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn4)))))))))
+                     (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn4))))))))
   (testing "exceptions raised during check"
     (is (= "== Checked expound.alpha-test/results-str-fn5 
 
@@ -2647,7 +2647,7 @@ Detected 1 error
 
  threw error"
            (binding [s/*explain-out* expound/printer]
-             (take-lines 5 (no-linum (expound/explain-results-str (st/check `results-str-fn5))))))))
+             (take-lines 5 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn5))))))))
   (testing "failure to generate"
     (is (=
          #?(:clj "== Checked expound.alpha-test/results-str-fn6 
@@ -2665,7 +2665,22 @@ Unable to construct gen at: [:f] for: fn? in
   (cljs.spec.alpha/cat :f cljs.core/fn?)
 ")
          (binding [s/*explain-out* expound/printer]
-           (no-linum (expound/explain-results-str (st/check `results-str-fn6))))))))
+           (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn6)))))))
+  ;; TODO - move above
+  (s/fdef results-str-missing-fn
+          :args (s/cat :x int?))
+  (testing "no-fn failure"
+    (is (= "== Checked expound.alpha-test/results-str-missing-fn 
+  (expound.alpha-test/results-str-missing-fn)
+
+ threw error
+
+#error {
+ :cause \"No fn to spec\"
+ :data #:clojure.spec.alpha{:failure :no-fn}
+ :via"
+           (binding [s/*explain-out* expound/printer]
+             (take-lines 10 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-fn)))))))))
 
 (comment
   (ns user)
@@ -2684,7 +2699,7 @@ Unable to construct gen at: [:f] for: fn? in
    (deftest explain-results-gen
      (checking
       "all functions can be checked and printed"
-      10
+      10 ;; TODO - try 100
       [sym-to-check (gen/elements (st/checkable-syms))]
       ;; Just confirm an error is not thrown
       (try

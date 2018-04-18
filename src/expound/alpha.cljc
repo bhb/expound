@@ -779,7 +779,7 @@ returned an invalid value.
         ;; TODO - should this be :clojure.spec.test.alpha/args (0 0) in explain-data
         bad-args (first (:fail ret))
         explain-data (ex-data failure)]
-    (s/assert (s/nilable #{:check-failed :no-gen}) (-> explain-data ::s/failure))
+    (s/assert (s/nilable #{:check-failed :no-gen :no-fn}) (-> explain-data ::s/failure))
     (str
      (label check-header-size (str "Checked " sym) "=")
      "\n\n"
