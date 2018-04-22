@@ -492,8 +492,7 @@
 
 (defmethod expected-str :problem/extra-input [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
-  (let [problem (first problems)]
-    "has extra input"))
+  "has extra input")
 
 (defmethod problem-group-str :problem/extra-input [_type spec-name val path problems opts]
   (printer/format
