@@ -304,6 +304,8 @@
    :predicate-messages/score
    101)
 
+  (println "----- check results -----")
+
   (doseq [sym-to-check (st/checkable-syms)]
     (println "trying to check" sym-to-check "...")
     (try

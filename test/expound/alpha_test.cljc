@@ -2484,8 +2484,6 @@ Detected 1 error
   [f]
   (f 1))
 
-;; HERE- the value 0 looks really wrong here. Above, we printed out the
-;; value of the function. Why is this set incorrectly?
 (deftest explain-results
   (testing "single bad result (failing return spec)"
     (is (= (pf
@@ -2587,7 +2585,7 @@ Success!
                 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check [`results-str-fn2 `results-str-fn3]))))))))
   ;; TODO - replace nil with "no spec found" or equivalent
   (testing "check-fn"
-    (is (= "== Checked  =================================
+    (is (= "=============================================
 
 -- Function spec failed -----------
 
@@ -2670,31 +2668,47 @@ Unable to construct gen at: [:f] for: fn? in
   (s/fdef results-str-missing-fn
           :args (s/cat :x int?))
   (testing "no-fn failure"
-    (is (= "== Checked expound.alpha-test/results-str-missing-fn 
+    (is (= #?(:clj "== Checked expound.alpha-test/results-str-missing-fn 
 
-  (expound.alpha-test/results-str-missing-fn)
+Failed to check function.
 
- threw error
+  expound.alpha-test/results-str-missing-fn
 
-#error {
- :cause \"No fn to spec\"
- :data #:clojure.spec.alpha{:failure :no-fn}
- :via"
+is not defined
+"
+              :cljs "=============================================
+
+Cannot check undefined function
+")
            (binding [s/*explain-out* expound/printer]
-             (take-lines 10 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-fn)))))))))
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-fn)))))))
+  ;; TODO - move to top
+  (s/fdef results-str-missing-args-spec
+          :ret int?)
+  (defn results-str-missing-args-spec [] 1)
+  (testing "no args spec"
+    (is (= (pf "== Checked expound.alpha-test/results-str-missing-args-spec 
+
+Failed to check function.
+
+  (pf.spec.alpha/fspec :ret pf.core/int?)
+
+should contain an :args spec
+")
+           (binding [s/*explain-out* expound/printer]
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-args-spec))))))))
 
 (comment
   (ns user)
 
   (s/fdef results-str-fn6
-          :args (s/cat :f fn?)
           :ret any?)
   (defn results-str-fn6
     [f]
     (f 1))
   (require '[clojure.spec.alpha :as s])
   (require '[clojure.spec.test.alpha :as st])
-  (st/check `results-str-fn6)
+  (explain-results (st/check `results-str-fn6))
 
   (require '[expound.paths])
   (require '[expound.alpha :as expound])
@@ -2703,18 +2717,18 @@ Unable to construct gen at: [:f] for: fn? in
    (orch.st/with-instrument-disabled (st/check `expound.paths/prefix-path?
                                                {:clojure.spec.test.check/opts {:num-tests 10}}))))
 
-(deftest explain-results-gen
-  (checking
-   "all functions can be checked and printed"
-   200 ;; TODO - put to num-tests
-   [sym-to-check (gen/elements (st/checkable-syms))]
-    ;; Just confirm an error is not thrown
-   (is (string?
-        (expound/explain-results-str
-         (orch.st/with-instrument-disabled
-           (with-out-str
-             (st/check sym-to-check
-                       {:clojure.spec.test.check/opts {:num-tests 10}}))))))))
+#?(:clj (deftest explain-results-gen
+          (checking
+           "all functions can be checked and printed"
+           200 ;; TODO - put to num-tests
+           [sym-to-check (gen/elements (st/checkable-syms))]
+          ;; Just confirm an error is not thrown
+           (is (string?
+                (expound/explain-results-str
+                 (orch.st/with-instrument-disabled
+                   (with-out-str
+                     (st/check sym-to-check
+                               {:clojure.spec.test.check/opts {:num-tests 10}})))))))))
 
 (def inverted-ansi-codes
   (reduce

@@ -37,7 +37,6 @@
 ]))
 
 (comment
-
   (require '[clojure.spec.test.alpha :as st1])
 
   (st1/check `custom-printer {:clojure.spec.test.check/opts {:num-tests 10}})
@@ -772,21 +771,41 @@ returned an invalid value.
            (defmsg '~k ~error-message)
            (s/def ~k ~spec-form))))))
 
+;; TODO - move this up to top
+(defn minimal-fspec [form]
+  (let [fspec-sp (s/cat
+                  :sym qualified-symbol?
+                  :args (s/*
+                         (s/cat :k #{:args :fn :ret} :v any?)))]
+
+    (-> (s/conform fspec-sp form)
+        (update :args (fn [args] (filter #(some? (:v %)) args)))
+        (->> (s/unform fspec-sp)))))
+
+(comment
+  (minimal-fspec '(clojure.spec.alpha/fspec :args nil :ret clojure.core/int? :fn nil)))
+
 (defn explain-result-str [check-result]
-  (let [{:keys [sym failure]} check-result
+  ;; TODO - could this steal theme settings from printer???
+  (let [{:keys [sym spec failure]} check-result
         ret #?(:clj (:clojure.spec.test.check/ret check-result)
                :cljs (:clojure.test.check/ret check-result))
         ;; TODO - should this be :clojure.spec.test.alpha/args (0 0) in explain-data
         bad-args (first (:fail ret))
-        explain-data (ex-data failure)]
-    (s/assert (s/nilable #{:check-failed :no-gen :no-fn}) (-> explain-data ::s/failure))
+        explain-data (ex-data failure)
+        failure-reason (::s/failure explain-data)]
+    ;; TODO - remove this
+    (s/assert (s/nilable #{:check-failed :no-gen :no-fn :no-args-spec}) (-> explain-data ::s/failure))
     (str
-     (label check-header-size (str "Checked " sym) "=")
+     ;; CLJS does not contain symbol if function is undefined
+     (if sym
+       (label check-header-size (str "Checked " sym) "=")
+       (apply str (repeat check-header-size "=")))
      "\n\n"
      (cond
        ;; FIXME - once we have a function that can highlight
        ;;         a spec, use it here to make this error message clearer
-       #?(:clj (and explain-data (= :no-gen (-> explain-data ::s/failure)))
+       #?(:clj (and failure (= :no-gen failure-reason))
           ;; Workaround for CLJS
           :cljs (and
                  failure
@@ -803,6 +822,25 @@ returned an invalid value.
           (printer/indent (str (s/form (:args (:spec check-result)))))
           "\n"))
 
+              ;; TODO - implement
+       (= :no-args-spec failure-reason)
+       (str
+        "Failed to check function.\n\n"
+        (printer/indent (printer/pprint-str
+                         (minimal-fspec (s/form spec))))
+        "\n\nshould contain an :args spec\n")
+
+       ;; TODO - implement
+       (= :no-fn failure-reason)
+       (if (some? sym)
+         (str
+          "Failed to check function.\n\n"
+          (printer/indent (pr-str sym))
+          "\n\nis not defined\n")
+         ;; CLJS doesn't set the symbol
+         (str
+          "Cannot check undefined function\n"))
+
        (and explain-data
             (= :check-failed (-> explain-data ::s/failure)))
        (with-out-str
@@ -816,7 +854,6 @@ returned an invalid value.
                                                                           :cljs (:cljs.spec.test.alpha/args explain-data)))))
                              %))))
 
-       ;; TODO - move this into pinter
        failure
        (str
         (printer/indent (printer/pprint-str
@@ -826,6 +863,25 @@ returned an invalid value.
 
        :else
        "Success!\n"))))
+
+(comment
+  (s/fdef results-str-missing-fn
+          :args (s/cat :x int?))
+  (explain-results (st/check `results-str-missing-fn))
+
+  (require '[cljs.spec.test.alpha :as st])
+  (st/check `results-str-missing-fn)
+    ;;; HERE 
+
+
+  (s/fdef results-str-missing-args-spec
+          :ret int?)
+  (defn results-str-missing-args-spec [] 1)
+
+  (explain-results (st/check `results-str-missing-args-spec))
+  (::s/failure (ex-data (:failure (first (st/check `results-str-missing-args-spec)))))
+
+  bhb-failure)
 
 (comment
   (s/fdef results-str-fn2
@@ -858,7 +914,6 @@ returned an invalid value.
   (print (explain-results-str check-results)))
 
 (comment
-
   (require '[clojure.spec.test.alpha :as st1])
 
   (st1/check `custom-printer {:clojure.spec.test.check/opts {:num-tests 10}})
