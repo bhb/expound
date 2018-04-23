@@ -243,7 +243,3 @@
      (string/join "\n"
                   (into [(str (apply str (repeat first-line-indent " ")) line)]
                         (map #(str (apply str (repeat rest-lines-indent " ")) %) lines))))))
-
-(comment
-  (require '[clojure.spec.test.alpha :as st1]) (st1/check `custom-printer {:clojure.spec.test.check/opts {:num-tests 10}}))
-

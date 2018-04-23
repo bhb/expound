@@ -2502,9 +2502,8 @@ Detected 1 error
     ;; Ensure this doesn't throw exception
     (is (string?
          (binding [s/*explain-out* s/explain-printer]
-           (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1))))))
-    )
-  
+           (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1)))))))
+
   (testing "single bad result (failing return spec)"
     (is (= (pf
             "== Checked expound.alpha-test/results-str-fn1 

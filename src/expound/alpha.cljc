@@ -36,53 +36,6 @@
                                        ;;:expound.printer/theme
 ]))
 
-(comment
-  (require '[clojure.spec.test.alpha :as st1])
-
-  (st1/check `custom-printer {:clojure.spec.test.check/opts {:num-tests 10}})
-
-  (s/def ::fn ifn?)
-  (s/def ::keys (s/keys :req [::fn]))
-
-  (s/fdef results-str-fn6
-          :args (s/cat :k ::keys)
-          :ret any?)
-  (defn results-str-fn6
-    [k])
-
-  (s/fdef custom-printer2
-          :args (s/cat :opts :expound.printer/opts))
-  (defn custom-printer2 [opts])
-  (st1/check `custom-printer2 {:clojure.spec.test.check/opts {:num-tests 10}})
-
-  (s/fdef fn1
-          :args (s/cat :f fn?))
-  (defn fn1 [f])
-  (clojure.spec.test.alpha/check `fn1);;(s/def :ex/fn fn?)
-
-  (s/def :ex/f fn?)
-  (s/def :ex/m (s/keys :opt [:ex/f]))
-  (s/fdef my-fn
-          :args (s/cat :m :ex/m))
-  (defn my-fn [f])
-  (try
-    (clojure.spec.test.alpha/check `my-fn)
-    (catch Exception e
-      (.getMessage e)))
-
-  (try
-    (clojure.spec.test.alpha/check `my-fn)
-    (catch Exception e (str "caught exception: " (.getMessage e))))
-
-  (ex-data (:result (:clojure.spec.test.check/ret (first (clojure.spec.test.alpha/check `my-fn))))) ;; => #:clojure.spec.alpha{:path [:m :ex/f], :form :ex/f, :failure :no-gen}
-
-
-  (require '[clojure.spec.alpha :as s])
-  (require '[clojure.spec.test.alpha :as st])
-  (require '[orchestra.spec.test :as st2])
-  (st1/check `results-str-fn6 {:clojure.spec.test.check/opts {:num-tests 10}}) (st/check) (st2/with-instrument-disabled
-                                                                                            (st1/check `custom-printer {:clojure.spec.test.check/opts {:num-tests 10}})))
-
 ;;;;;; themes ;;;;;;
 
 (def figwheel-theme
@@ -629,11 +582,6 @@ returned an invalid value.
    (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
    (expected-str _type spec-name val path problems opts)))
 
-;; TODO - fill in tests for check-exception (need to detect it better)
-
-(comment
-  (explain-result (first (st/check `results-str-fn4))))
-
 (defmethod expected-str :problem/unknown [_type spec-name val path problems opts]
   (predicate-errors problems))
 
@@ -674,31 +622,30 @@ returned an invalid value.
 
 (defn print-explain-data [opts explain-data]
   (if-not explain-data
-        "Success!\n"
-        (let [{:keys [::s/fn ::s/failure]} explain-data
-              explain-data' (problems/annotate explain-data)
-              caller (:expound/caller explain-data')
-              form (:expound/form explain-data')
-              problems (->> explain-data'
-                            :expound/problems
-                            (problems/leaf-only)
-                            (grouped-and-sorted-problems (::s/failure explain-data)))]
+    "Success!\n"
+    (let [{:keys [::s/fn ::s/failure]} explain-data
+          explain-data' (problems/annotate explain-data)
+          caller (:expound/caller explain-data')
+          form (:expound/form explain-data')
+          problems (->> explain-data'
+                        :expound/problems
+                        (problems/leaf-only)
+                        (grouped-and-sorted-problems (::s/failure explain-data)))]
 
-          (printer/no-trailing-whitespace
-           (str
-            (ansi/color (instrumentation-info failure caller) :none)
-            (printer/format
-             "%s
+      (printer/no-trailing-whitespace
+       (str
+        (ansi/color (instrumentation-info failure caller) :none)
+        (printer/format
+         "%s
 
 %s
 %s %s %s\n"
-             (string/join "\n\n" (for [[[in type] probs] problems]
-                                   (problem-group-str1 type (spec-name explain-data) form in probs opts)))
-             (ansi/color (section-label) :footer)
-             (ansi/color "Detected" :footer)
-             (ansi/color (count problems) :footer)
-             (ansi/color (if (= 1 (count problems)) "error" "errors") :footer))))))
-  )
+         (string/join "\n\n" (for [[[in type] probs] problems]
+                               (problem-group-str1 type (spec-name explain-data) form in probs opts)))
+         (ansi/color (section-label) :footer)
+         (ansi/color "Detected" :footer)
+         (ansi/color (count problems) :footer)
+         (ansi/color (if (= 1 (count problems)) "error" "errors") :footer)))))))
 
 ;; TODO - move this up to top
 (defn minimal-fspec [form]
@@ -710,7 +657,6 @@ returned an invalid value.
     (-> (s/conform fspec-sp form)
         (update :args (fn [args] (filter #(some? (:v %)) args)))
         (->> (s/unform fspec-sp)))))
-
 
 (defn print-check-result [check-result]
   (let [{:keys [sym spec failure]} check-result
@@ -788,33 +734,25 @@ returned an invalid value.
         (printer/pprint-str failure))
 
        :else
-       "Success!\n")))
-  )
+       "Success!\n"))))
 
 (defn explain-data? [data]
   (s/valid?
    (s/keys :req
            [::s/problems
             ::s/spec
-            ::s/value
-            ]
+            ::s/value]
            :opt
-           [::s/failure]
-           )
-   data
-   )
-  )
+           [::s/failure])
+   data))
 
 (defn check-result? [data]
   (s/valid?
    (s/keys :req-un [::spec]
            :opt-un [::sym
                     ::failure
-                    :clojure.spec.test.check/ret]
-           )
-   data
-   )
-  )
+                    :clojure.spec.test.check/ret])
+   data))
 
 ;; TODO - rename explain-data
 (defn printer-str [opts explain-data]
@@ -841,12 +779,7 @@ returned an invalid value.
         :elsep
         (do
           (str "Unknonw data:::" (keys explain-data))
-          #_(str "Unknown data:\n\n" explain-data)
-          )
-        )
-
-      
-      )))
+          #_(str "Unknown data:\n\n" explain-data))))))
 
 ;;(s/def ::foo string?)
 
@@ -908,56 +841,13 @@ returned an invalid value.
            (defmsg '~k ~error-message)
            (s/def ~k ~spec-form))))))
 
-(comment
-  (minimal-fspec '(clojure.spec.alpha/fspec :args nil :ret clojure.core/int? :fn nil)))
-
 (defn explain-result-str [check-result]
-  ;; TODO - could this steal theme settings from printer???
   (with-out-str
-    (s/*explain-out* check-result))
-  )
-
-(comment
-  (s/fdef results-str-missing-fn
-          :args (s/cat :x int?))
-  (explain-results (st/check `results-str-missing-fn))
-
-  (require '[cljs.spec.test.alpha :as st])
-  (st/check `results-str-missing-fn)
-    ;;; HERE 
-
-
-  (s/fdef results-str-missing-args-spec
-          :ret int?)
-  (defn results-str-missing-args-spec [] 1)
-
-  (explain-results (st/check `results-str-missing-args-spec))
-  (::s/failure (ex-data (:failure (first (st/check `results-str-missing-args-spec)))))
-
-  bhb-failure)
-
-(comment
-  (s/fdef results-str-fn2
-          :args (s/cat :x nat-int? :y nat-int?)
-          :fn #(let [x (-> % :args :x)
-                     y (-> % :args :y)
-                     ret (-> % :ret)]
-                 (< x ret)))
-  (defn results-str-fn2 [x y]
-    (+ x y))
-  (explain-result (first (st/check `results-str-fn2)))
-
-  (s/fdef results-str-fn4
-          :args (s/cat :x int?)
-          :ret (s/coll-of int?))
-  (defn results-str-fn4 [x]
-    [x :not-int]) (set! s/*explain-out* printer)
-  (explain-result (first (st/check `results-str-fn4))) (:sym (first (st/check `results-str-fn4))))
+    (s/*explain-out* check-result)))
 
 (defn explain-result [check-result]
   (print (explain-result-str check-result)))
 
-;; Explain results
 (defn explain-results-str [check-results]
   (string/join "\n\n"
                (for [check-result check-results]
@@ -965,56 +855,3 @@ returned an invalid value.
 
 (defn explain-results [check-results]
   (print (explain-results-str check-results)))
-
-(comment
-
-  (s/fdef results-str-fn6
-          :args (s/cat :k ::keys)
-          :ret any?)
-  (defn results-str-fn6
-    [k])
-  (binding [s/*explain-out* (custom-printer {:theme :figwheel-theme})]
-    
-    )
-
-
-
-  (s/fdef results-str-fn1
-        :args (s/cat :x nat-int? :y nat-int?)
-        :ret pos-int?)
-  (defn results-str-fn1 [x y]
-    (+ x y))
-
-
-  (require '[clojure.spec.test.alpha :as st])
-  (binding [s/*explain-out* s/explain-printer]
-    (explain-results (st/check `results-str-fn1)))
-
-  
-  
-  
-  
-  
-  (require '[clojure.spec.test.alpha :as st1])
-
-  (st1/check `custom-printer {:clojure.spec.test.check/opts {:num-tests 10}})
-
-  (s/def ::fn fn?)
-  (s/def ::keys (s/keys :req [::fn]))
-
-  (s/fdef results-str-fn6
-          :args (s/cat :k ::keys)
-          :ret any?)
-  (defn results-str-fn6
-    [k])
-
-  (s/fdef custom-printer2
-          :args (s/cat :opts :expound.printer/opts))
-  (defn custom-printer2 [opts])
-  (st1/check `custom-printer2 {:clojure.spec.test.check/opts {:num-tests 10}})
-
-  (require '[clojure.spec.alpha :as s])
-  (require '[clojure.spec.test.alpha :as st])
-  (require '[orchestra.spec.test :as st2])
-  (st1/check `results-str-fn6 {:clojure.spec.test.check/opts {:num-tests 10}}) (st/check) (st2/with-instrument-disabled
-                                                                                            (st1/check `custom-printer {:clojure.spec.test.check/opts {:num-tests 10}})))
