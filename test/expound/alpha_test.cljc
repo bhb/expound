@@ -2602,13 +2602,12 @@ Success!
 "
               (binding [s/*explain-out* expound/printer]
                 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check [`results-str-fn2 `results-str-fn3]))))))))
-  ;; TODO - replace nil with "no spec found" or equivalent .. (nil 0 0) is not informative
   (testing "check-fn"
-    (is (= "=============================================
+    (is (= "== Checked <unknown> ========================
 
 -- Function spec failed -----------
 
-  (nil 0 0)
+  (<unknown> 0 0)
 
 failed spec. Function arguments and return value
 
@@ -2633,7 +2632,7 @@ should satisfy
 Detected 1 error
 "
            (binding [s/*explain-out* expound/printer]
-             (expound/explain-result-str (st/check-fn `resultsf-str-fn1 (s/spec `results-str-fn2)))))))
+             (expound/explain-result-str (st/check-fn `results-str-fn1 (s/spec `results-str-fn2)))))))
   #?(:clj (testing "custom printer"
             (is (= "== Checked expound.alpha-test/results-str-fn4 
 
@@ -2704,9 +2703,13 @@ Failed to check function.
 
 is not defined
 "
-              :cljs "=============================================
+              :cljs "== Checked <unknown> ========================
 
-Cannot check undefined function
+Failed to check function.
+
+  <unknown>
+
+is not defined
 ")
            (binding [s/*explain-out* expound/printer]
              (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-fn)))))))
@@ -2748,7 +2751,7 @@ should contain an :args spec
 #?(:clj (deftest explain-results-gen
           (checking
            "all functions can be checked and printed"
-           200 ;; TODO - put to num-tests
+           num-tests
            [sym-to-check (gen/elements (st/checkable-syms))]
           ;; Just confirm an error is not thrown
            (is (string?

@@ -642,17 +642,16 @@ returned an invalid value.
         (->> (s/unform fspec-sp)))))
 
 (defn print-check-result [check-result]
-  (let [{:keys [sym spec failure]} check-result
+  (let [{:keys [sym spec failure] :or {sym '<unknown>}} check-result
         ret #?(:clj (:clojure.spec.test.check/ret check-result)
                :cljs (:clojure.test.check/ret check-result))
         bad-args (first (:fail ret))
         explain-data (ex-data failure)
-        failure-reason (::s/failure explain-data)]
+        failure-reason (::s/failure explain-data)
+        sym (or sym '<unknown>)]
     (str
      ;; CLJS does not contain symbol if function is undefined
-     (if sym
-       (label check-header-size (str "Checked " sym) "=")
-       (apply str (repeat check-header-size "=")))
+     (label check-header-size (str "Checked " sym) "=")
      "\n\n"
      (cond
        ;; FIXME - once we have a function that can highlight
