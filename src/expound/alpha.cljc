@@ -245,11 +245,6 @@
    (not= :check-failed failure)
    (= :fn (first (:path problem)))))
 
-(defn check-exception-failure? [failure problem]
-  (and (= :check-failed failure)
-       ;; TODO - fill in here
-       false))
-
 (defn check-ret-failure? [failure problem]
   (and
    (= :check-failed failure)
@@ -397,9 +392,6 @@
 
     (fspec-fn-failure? failure problem)
     :problem/fspec-fn-failure
-
-    (check-exception-failure? failure problem)
-    :problem/check-exception-failure
 
     (check-ret-failure? failure problem)
     :problem/check-ret-failure
