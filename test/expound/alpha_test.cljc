@@ -21,7 +21,7 @@
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
-(def num-tests 1) ;; TODO - restore
+(def num-tests 30)
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -2497,6 +2497,13 @@ Detected 1 error
   [f]
   (f 1))
 
+(s/fdef results-str-missing-fn
+        :args (s/cat :x int?))
+
+(s/fdef results-str-missing-args-spec
+        :ret int?)
+(defn results-str-missing-args-spec [] 1)
+
 (deftest explain-results
   (testing "explaining results with non-expound printer"
     ;; Ensure this doesn't throw exception
@@ -2691,9 +2698,6 @@ Unable to construct gen at: [:f] for: fn? in
 ")
          (binding [s/*explain-out* expound/printer]
            (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn6)))))))
-  ;; TODO - move above
-  (s/fdef results-str-missing-fn
-          :args (s/cat :x int?))
   (testing "no-fn failure"
     (is (= #?(:clj "== Checked expound.alpha-test/results-str-missing-fn 
 
@@ -2713,10 +2717,6 @@ is not defined
 ")
            (binding [s/*explain-out* expound/printer]
              (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-fn)))))))
-  ;; TODO - move to top
-  (s/fdef results-str-missing-args-spec
-          :ret int?)
-  (defn results-str-missing-args-spec [] 1)
   (testing "no args spec"
     (is (= (pf "== Checked expound.alpha-test/results-str-missing-args-spec 
 
@@ -2728,25 +2728,6 @@ should contain an :args spec
 ")
            (binding [s/*explain-out* expound/printer]
              (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-args-spec))))))))
-
-(comment
-  (ns user)
-
-  (s/fdef results-str-fn6
-          :ret any?)
-  (defn results-str-fn6
-    [f]
-    (f 1))
-  (require '[clojure.spec.alpha :as s])
-  (require '[clojure.spec.test.alpha :as st])
-  (explain-results (st/check `results-str-fn6))
-
-  (require '[expound.paths])
-  (require '[expound.alpha :as expound])
-  (require '[orchestra.spec.test :as orch.st])
-  (expound/explain-results
-   (orch.st/with-instrument-disabled (st/check `expound.paths/prefix-path?
-                                               {:clojure.spec.test.check/opts {:num-tests 10}}))))
 
 #?(:clj (deftest explain-results-gen
           (checking
