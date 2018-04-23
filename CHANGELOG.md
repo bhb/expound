@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+- Bug with extra whitespace when "Revelant specs" are not printed
+
 ### Added
 - [Optional colorized output](https://github.com/bhb/expound/issues/44)
 - [`explain-results` and `explain-results-str` functions print human-optimized output for `clojure.spec.test.alpha/check` results](https://github.com/bhb/expound/issues/72)
