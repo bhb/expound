@@ -814,17 +814,17 @@ returned an invalid value.
            (defmsg '~k ~error-message)
            (s/def ~k ~spec-form))))))
 
-(defn explain-result-str [check-result]
-  (with-out-str
-    (s/*explain-out* check-result)))
-
 (defn explain-result [check-result]
-  (print (explain-result-str check-result)))
+  (s/*explain-out* check-result))
 
-(defn explain-results-str [check-results]
-  (string/join "\n\n"
-               (for [check-result check-results]
-                 (explain-result-str check-result))))
+(defn explain-result-str [check-result]
+  (with-out-str (explain-result check-result)))
 
 (defn explain-results [check-results]
-  (print (explain-results-str check-results)))
+  (doseq [check-result (butlast check-results)]
+    (explain-result check-result)
+    (print "\n\n"))
+  (explain-result (last check-results)))
+
+(defn explain-results-str [check-results]
+  (with-out-str (explain-results check-results)))
