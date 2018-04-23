@@ -645,8 +645,10 @@ returned an invalid value.
   (let [{:keys [sym spec failure] :or {sym '<unknown>}} check-result
         ret #?(:clj (:clojure.spec.test.check/ret check-result)
                :cljs (:clojure.test.check/ret check-result))
-        bad-args (first (:fail ret))
         explain-data (ex-data failure)
+        bad-args (or #?(:clj (:clojure.spec.test.alpha/args explain-data)
+                        :cljs (:cljs.spec.test.alpha/args explain-data))
+                     (first (:fail ret)))
         failure-reason (::s/failure explain-data)
         sym (or sym '<unknown>)]
     (str
@@ -699,8 +701,7 @@ returned an invalid value.
                            #(map
                              (fn [p]
                                (assoc p :expound/check-fn-call (concat (list sym)
-                                                                       #?(:clj (:clojure.spec.test.alpha/args explain-data)
-                                                                          :cljs (:cljs.spec.test.alpha/args explain-data)))))
+                                                                       bad-args)))
                              %))))
 
        failure
