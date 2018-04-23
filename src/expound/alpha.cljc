@@ -549,7 +549,6 @@ should satisfy
    (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
    (expected-str _type spec-name val path problems opts)))
 
-;; TODO - remove?
 (defmethod expected-str :problem/check-ret-failure [_type spec-name val path problems opts]
   (predicate-errors problems))
 
@@ -756,8 +755,6 @@ returned an invalid value.
 
         :else
         (str "Unknown data:\n\n" data)))))
-
-;;(s/def ::foo string?)
 
 #?(:clj
    (defn ns-qualify
