@@ -766,10 +766,8 @@ returned an invalid value.
         (check-result? explain-data)
         (print-check-result explain-data)
 
-        :elsep
-        (do
-          (str "Unknonw data:::" (keys explain-data))
-          #_(str "Unknown data:\n\n" explain-data))))))
+        :else
+        (str "Unknown data:\n\n" explain-data)))))
 
 ;;(s/def ::foo string?)
 
