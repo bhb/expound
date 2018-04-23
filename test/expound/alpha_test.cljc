@@ -2506,8 +2506,9 @@ Detected 1 error
 
 (deftest explain-results
   (testing "explaining results with non-expound printer"
-    ;; Ensure this doesn't throw exception
-    (is (string?
+    (is (thrown-with-msg?
+         #?(:cljs :default :clj Exception)
+         #"Cannot print check results"
          (binding [s/*explain-out* s/explain-printer]
            (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1)))))))
 
