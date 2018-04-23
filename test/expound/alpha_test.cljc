@@ -1485,8 +1485,6 @@ should satisfy
 
   (fn [%] (> (:ret %) (-> % :args :x)))
 
-
-
 -------------------------
 Detected 1 error\n"
                 (.-message (try
