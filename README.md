@@ -8,7 +8,7 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
 
-### Quick start with `clj`
+### Quick start
 
 ```
 > brew install clojure
@@ -24,8 +24,6 @@ nil
 should satisfy
 
   string?
-
-
 
 -------------------------
 Detected 1 error
@@ -331,8 +329,6 @@ Use [Orchestra](https://github.com/jeaye/orchestra) with Expound to get human-op
 ;; should satisfy
 ;;
 ;; string?
-;;
-;;
 ;;
 ;; -------------------------
 ;; Detected 1 error
