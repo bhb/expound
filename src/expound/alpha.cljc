@@ -30,11 +30,10 @@
 (s/def :expound.printer/print-specs? boolean?)
 (s/def :expound.printer/theme #{:figwheel-theme :none})
 (s/def :expound.printer/opts (s/keys
-                              :opt-un [;;:expound.printer/show-valid-values?
+                              :opt-un [:expound.printer/show-valid-values?
                                        :expound.printer/value-str-fn
-                                       ;;:expound.printer/print-specs?
-                                       ;;:expound.printer/theme
-]))
+                                       :expound.printer/print-specs?
+                                       :expound.printer/theme]))
 
 ;;;;;; themes ;;;;;;
 
@@ -587,13 +586,6 @@ returned an invalid value.
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (expected-str _type spec-name val path problems opts)))
 
-;; FIXME - rename
-(defn problem-group-str1 [type spec-name val path problems opts]
-  (str
-   (problem-group-str type spec-name val path problems opts)
-   "\n\n"
-   (if (:print-specs? opts) (relevant-specs problems) "")))
-
 (defn instrumentation-info [failure caller]
   ;; As of version 1.9.562, Clojurescript does
   ;; not include failure or caller info, so
@@ -631,7 +623,10 @@ returned an invalid value.
 %s
 %s %s %s\n"
          (string/join "\n\n" (for [[[in type] probs] problems]
-                               (problem-group-str1 type (spec-name explain-data) form in probs opts)))
+                               (str
+                                (problem-group-str type (spec-name explain-data) form in probs opts)
+                                "\n\n"
+                                (if (:print-specs? opts) (relevant-specs probs) ""))))
          (ansi/color (section-label) :footer)
          (ansi/color "Detected" :footer)
          (ansi/color (count problems) :footer)
