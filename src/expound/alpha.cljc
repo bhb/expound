@@ -632,7 +632,6 @@ returned an invalid value.
          (ansi/color (count problems) :footer)
          (ansi/color (if (= 1 (count problems)) "error" "errors") :footer)))))))
 
-;; TODO - move this up to top
 (defn minimal-fspec [form]
   (let [fspec-sp (s/cat
                   :sym qualified-symbol?
@@ -647,12 +646,9 @@ returned an invalid value.
   (let [{:keys [sym spec failure]} check-result
         ret #?(:clj (:clojure.spec.test.check/ret check-result)
                :cljs (:clojure.test.check/ret check-result))
-        ;; TODO - should this be :clojure.spec.test.alpha/args (0 0) in explain-data
         bad-args (first (:fail ret))
         explain-data (ex-data failure)
         failure-reason (::s/failure explain-data)]
-    ;; TODO - remove this
-    (s/assert (s/nilable #{:check-failed :no-gen :no-fn :no-args-spec}) (-> explain-data ::s/failure))
     (str
      ;; CLJS does not contain symbol if function is undefined
      (if sym
@@ -679,7 +675,6 @@ returned an invalid value.
           (printer/indent (str (s/form (:args (:spec check-result)))))
           "\n"))
 
-              ;; TODO - implement
        (= :no-args-spec failure-reason)
        (str
         "Failed to check function.\n\n"
@@ -687,7 +682,6 @@ returned an invalid value.
                                      (minimal-fspec (s/form spec)))) :bad-value)
         "\n\nshould contain an :args spec\n")
 
-       ;; TODO - implement
        (= :no-fn failure-reason)
        (if (some? sym)
          (str
@@ -739,8 +733,7 @@ returned an invalid value.
                     :clojure.spec.test.check/ret])
    data))
 
-;; TODO - rename explain-data
-(defn printer-str [opts explain-data]
+(defn printer-str [opts data]
   (let [opts' (merge {:show-valid-values? false
                       :print-specs? true}
                      opts)]
@@ -754,15 +747,15 @@ returned an invalid value.
                                     {})]
 
       (cond
-        (or (explain-data? explain-data)
-            (nil? explain-data))
-        (print-explain-data opts' explain-data)
+        (or (explain-data? data)
+            (nil? data))
+        (print-explain-data opts' data)
 
-        (check-result? explain-data)
-        (print-check-result explain-data)
+        (check-result? data)
+        (print-check-result data)
 
         :else
-        (str "Unknown data:\n\n" explain-data)))))
+        (str "Unknown data:\n\n" data)))))
 
 ;;(s/def ::foo string?)
 
