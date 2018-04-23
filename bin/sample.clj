@@ -320,7 +320,22 @@
 
   (st/with-instrument-disabled
     (orch.st/with-instrument-disabled
-      (expound/explain-results (st/check `some-func)))))
+      (expound/explain-results (st/check `some-func)))) (s/fdef results-str-fn1
+                                                                :args (s/cat :x nat-int? :y nat-int?)
+                                                                :ret pos-int?)
+  (defn results-str-fn1 [x y]
+    (+ x y))
+
+  (s/fdef results-str-fn2
+          :args (s/cat :x nat-int? :y nat-int?)
+          :fn #(let [x (-> % :args :x)
+                     y (-> % :args :y)
+                     ret (-> % :ret)]
+                 (< x ret)))
+  (defn results-str-fn2 [x y]
+    (+ x y))
+
+  (expound/explain-result (st/check-fn `resultsf-str-fn1 (s/spec `results-str-fn2))))
 
 (go)
 

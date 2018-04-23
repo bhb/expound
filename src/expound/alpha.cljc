@@ -538,7 +538,6 @@ should satisfy
      (printer/indent (ansi/color (pr-str (:val problem)) :bad-value))
      (printer/indent (ansi/color (pr-pred (:pred problem) (:spec problem)) :good-pred)))))
 
-;; TODO - colorize
 (defmethod problem-group-str :problem/check-fn-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (printer/format
@@ -548,8 +547,7 @@ should satisfy
 
 %s"
    (header-label "Function spec failed")
-   (printer/indent (pr-str (:expound/check-fn-call (first problems))))
-   #_(printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+   (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
    (expected-str _type spec-name val path problems opts)))
 
 ;; TODO - remove?

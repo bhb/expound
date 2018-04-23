@@ -2602,7 +2602,7 @@ Success!
 "
               (binding [s/*explain-out* expound/printer]
                 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check [`results-str-fn2 `results-str-fn3]))))))))
-  ;; TODO - replace nil with "no spec found" or equivalent
+  ;; TODO - replace nil with "no spec found" or equivalent .. (nil 0 0) is not informative
   (testing "check-fn"
     (is (= "=============================================
 
