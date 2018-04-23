@@ -313,7 +313,14 @@
         (orch.st/with-instrument-disabled
           (expound/explain-results (st/check sym-to-check {:clojure.spec.test.check/opts {:num-tests 5}}))))
       (catch Exception e
-        (println "caught exception: " (.getMessage e))))))
+        (println "caught exception: " (.getMessage e)))))
+
+  (s/fdef some-func
+          :args (s/cat :x int?))
+
+  (st/with-instrument-disabled
+    (orch.st/with-instrument-disabled
+      (expound/explain-results (st/check `some-func)))))
 
 (go)
 

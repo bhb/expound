@@ -672,20 +672,9 @@ returned an invalid value.
     (-> ed ::s/problems first :path first)
     nil))
 
-(defn printer-str [opts explain-data]
-  (let [opts' (merge {:show-valid-values? false
-                      :print-specs? true}
-                     opts)]
-    (if-not explain-data
-      "Success!\n"
-      (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))
-                ansi/*enable-color* (not= :none (get opts :theme :none))
-                ansi/*print-styles* (case (get opts :theme :none)
-                                      :figwheel-theme
-                                      figwheel-theme
-
-                                      :none
-                                      {})]
+(defn print-explain-data [opts explain-data]
+  (if-not explain-data
+        "Success!\n"
         (let [{:keys [::s/fn ::s/failure]} explain-data
               explain-data' (problems/annotate explain-data)
               caller (:expound/caller explain-data')
@@ -704,13 +693,162 @@ returned an invalid value.
 %s
 %s %s %s\n"
              (string/join "\n\n" (for [[[in type] probs] problems]
-                                   (problem-group-str1 type (spec-name explain-data) form in probs opts')))
+                                   (problem-group-str1 type (spec-name explain-data) form in probs opts)))
              (ansi/color (section-label) :footer)
              (ansi/color "Detected" :footer)
              (ansi/color (count problems) :footer)
-             (ansi/color (if (= 1 (count problems)) "error" "errors") :footer)))))))))
+             (ansi/color (if (= 1 (count problems)) "error" "errors") :footer))))))
+  )
 
-(s/def ::foo string?)
+;; TODO - move this up to top
+(defn minimal-fspec [form]
+  (let [fspec-sp (s/cat
+                  :sym qualified-symbol?
+                  :args (s/*
+                         (s/cat :k #{:args :fn :ret} :v any?)))]
+
+    (-> (s/conform fspec-sp form)
+        (update :args (fn [args] (filter #(some? (:v %)) args)))
+        (->> (s/unform fspec-sp)))))
+
+
+(defn print-check-result [check-result]
+  (let [{:keys [sym spec failure]} check-result
+        ret #?(:clj (:clojure.spec.test.check/ret check-result)
+               :cljs (:clojure.test.check/ret check-result))
+        ;; TODO - should this be :clojure.spec.test.alpha/args (0 0) in explain-data
+        bad-args (first (:fail ret))
+        explain-data (ex-data failure)
+        failure-reason (::s/failure explain-data)]
+    ;; TODO - remove this
+    (s/assert (s/nilable #{:check-failed :no-gen :no-fn :no-args-spec}) (-> explain-data ::s/failure))
+    (str
+     ;; CLJS does not contain symbol if function is undefined
+     (if sym
+       (label check-header-size (str "Checked " sym) "=")
+       (apply str (repeat check-header-size "=")))
+     "\n\n"
+     (cond
+       ;; FIXME - once we have a function that can highlight
+       ;;         a spec, use it here to make this error message clearer
+       #?(:clj (and failure (= :no-gen failure-reason))
+          ;; Workaround for CLJS
+          :cljs (and
+                 failure
+                 (re-matches #"Unable to construct gen at.*" (.-message failure))))
+       (let [path (::s/path explain-data)]
+         (str
+          #?(:clj
+             (str
+              "Unable to construct generator for "
+              (ansi/color (pr-str path) :error-key))
+             :cljs
+             (.-message failure))
+          " in\n\n"
+          (printer/indent (str (s/form (:args (:spec check-result)))))
+          "\n"))
+
+              ;; TODO - implement
+       (= :no-args-spec failure-reason)
+       (str
+        "Failed to check function.\n\n"
+        (ansi/color (printer/indent (printer/pprint-str
+                                     (minimal-fspec (s/form spec)))) :bad-value)
+        "\n\nshould contain an :args spec\n")
+
+       ;; TODO - implement
+       (= :no-fn failure-reason)
+       (if (some? sym)
+         (str
+          "Failed to check function.\n\n"
+          (ansi/color (printer/indent (pr-str sym)) :bad-value)
+          "\n\nis not defined\n")
+         ;; CLJS doesn't set the symbol
+         (str
+          "Cannot check undefined function\n"))
+
+       (and explain-data
+            (= :check-failed (-> explain-data ::s/failure)))
+       (with-out-str
+         (s/*explain-out* (update
+                           explain-data
+                           ::s/problems
+                           #(map
+                             (fn [p]
+                               (assoc p :expound/check-fn-call (concat (list sym)
+                                                                       #?(:clj (:clojure.spec.test.alpha/args explain-data)
+                                                                          :cljs (:cljs.spec.test.alpha/args explain-data)))))
+                             %))))
+
+       failure
+       (str
+        (ansi/color (printer/indent (printer/pprint-str
+                                     (concat (list sym) bad-args))) :bad-value)
+        "\n\n threw error\n\n"
+        (printer/pprint-str failure))
+
+       :else
+       "Success!\n")))
+  )
+
+(defn explain-data? [data]
+  (s/valid?
+   (s/keys :req
+           [::s/problems
+            ::s/spec
+            ::s/value
+            ]
+           :opt
+           [::s/failure]
+           )
+   data
+   )
+  )
+
+(defn check-result? [data]
+  (s/valid?
+   (s/keys :req-un [::spec]
+           :opt-un [::sym
+                    ::failure
+                    :clojure.spec.test.check/ret]
+           )
+   data
+   )
+  )
+
+;; TODO - rename explain-data
+(defn printer-str [opts explain-data]
+  (let [opts' (merge {:show-valid-values? false
+                      :print-specs? true}
+                     opts)]
+    (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))
+              ansi/*enable-color* (not= :none (get opts :theme :none))
+              ansi/*print-styles* (case (get opts :theme :none)
+                                    :figwheel-theme
+                                    figwheel-theme
+
+                                    :none
+                                    {})]
+
+      (cond
+        (or (explain-data? explain-data)
+            (nil? explain-data))
+        (print-explain-data opts' explain-data)
+
+        (check-result? explain-data)
+        (print-check-result explain-data)
+
+        :elsep
+        (do
+          (str "Unknonw data:::" (keys explain-data))
+          #_(str "Unknown data:\n\n" explain-data)
+          )
+        )
+
+      
+      )))
+
+;;(s/def ::foo string?)
 
 #?(:clj
    (defn ns-qualify
@@ -770,98 +908,14 @@ returned an invalid value.
            (defmsg '~k ~error-message)
            (s/def ~k ~spec-form))))))
 
-;; TODO - move this up to top
-(defn minimal-fspec [form]
-  (let [fspec-sp (s/cat
-                  :sym qualified-symbol?
-                  :args (s/*
-                         (s/cat :k #{:args :fn :ret} :v any?)))]
-
-    (-> (s/conform fspec-sp form)
-        (update :args (fn [args] (filter #(some? (:v %)) args)))
-        (->> (s/unform fspec-sp)))))
-
 (comment
   (minimal-fspec '(clojure.spec.alpha/fspec :args nil :ret clojure.core/int? :fn nil)))
 
 (defn explain-result-str [check-result]
   ;; TODO - could this steal theme settings from printer???
-  (let [{:keys [sym spec failure]} check-result
-        ret #?(:clj (:clojure.spec.test.check/ret check-result)
-               :cljs (:clojure.test.check/ret check-result))
-        ;; TODO - should this be :clojure.spec.test.alpha/args (0 0) in explain-data
-        bad-args (first (:fail ret))
-        explain-data (ex-data failure)
-        failure-reason (::s/failure explain-data)]
-    ;; TODO - remove this
-    (s/assert (s/nilable #{:check-failed :no-gen :no-fn :no-args-spec}) (-> explain-data ::s/failure))
-    (str
-     ;; CLJS does not contain symbol if function is undefined
-     (if sym
-       (label check-header-size (str "Checked " sym) "=")
-       (apply str (repeat check-header-size "=")))
-     "\n\n"
-     (cond
-       ;; FIXME - once we have a function that can highlight
-       ;;         a spec, use it here to make this error message clearer
-       #?(:clj (and failure (= :no-gen failure-reason))
-          ;; Workaround for CLJS
-          :cljs (and
-                 failure
-                 (re-matches #"Unable to construct gen at.*" (.-message failure))))
-       (let [path (::s/path explain-data)]
-         (str
-          #?(:clj
-             (str
-              "Unable to construct generator for "
-              (ansi/color (pr-str path) :error-key))
-             :cljs
-             (.-message failure))
-          " in\n\n"
-          (printer/indent (str (s/form (:args (:spec check-result)))))
-          "\n"))
-
-              ;; TODO - implement
-       (= :no-args-spec failure-reason)
-       (str
-        "Failed to check function.\n\n"
-        (printer/indent (printer/pprint-str
-                         (minimal-fspec (s/form spec))))
-        "\n\nshould contain an :args spec\n")
-
-       ;; TODO - implement
-       (= :no-fn failure-reason)
-       (if (some? sym)
-         (str
-          "Failed to check function.\n\n"
-          (printer/indent (pr-str sym))
-          "\n\nis not defined\n")
-         ;; CLJS doesn't set the symbol
-         (str
-          "Cannot check undefined function\n"))
-
-       (and explain-data
-            (= :check-failed (-> explain-data ::s/failure)))
-       (with-out-str
-         (s/*explain-out* (update
-                           explain-data
-                           ::s/problems
-                           #(map
-                             (fn [p]
-                               (assoc p :expound/check-fn-call (concat (list sym)
-                                                                       #?(:clj (:clojure.spec.test.alpha/args explain-data)
-                                                                          :cljs (:cljs.spec.test.alpha/args explain-data)))))
-                             %))))
-
-       failure
-       (str
-        (printer/indent (printer/pprint-str
-                         (concat (list sym) bad-args)))
-        "\n\n threw error\n\n"
-        (printer/pprint-str failure))
-
-       :else
-       "Success!\n"))))
+  (with-out-str
+    (s/*explain-out* check-result))
+  )
 
 (comment
   (s/fdef results-str-missing-fn
@@ -913,6 +967,34 @@ returned an invalid value.
   (print (explain-results-str check-results)))
 
 (comment
+
+  (s/fdef results-str-fn6
+          :args (s/cat :k ::keys)
+          :ret any?)
+  (defn results-str-fn6
+    [k])
+  (binding [s/*explain-out* (custom-printer {:theme :figwheel-theme})]
+    
+    )
+
+
+
+  (s/fdef results-str-fn1
+        :args (s/cat :x nat-int? :y nat-int?)
+        :ret pos-int?)
+  (defn results-str-fn1 [x y]
+    (+ x y))
+
+
+  (require '[clojure.spec.test.alpha :as st])
+  (binding [s/*explain-out* s/explain-printer]
+    (explain-results (st/check `results-str-fn1)))
+
+  
+  
+  
+  
+  
   (require '[clojure.spec.test.alpha :as st1])
 
   (st1/check `custom-printer {:clojure.spec.test.check/opts {:num-tests 10}})

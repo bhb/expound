@@ -44,6 +44,19 @@
 (defn take-lines [n s]
   (string/join "\n" (take n (string/split-lines s))))
 
+(def inverted-ansi-codes
+  (reduce
+   (fn [m [k v]]
+     (assoc m (str v) k))
+   {}
+   ansi/sgr-code))
+
+(defn readable-ansi [s]
+  (string/replace
+   s
+   #"\x1b\[([0-9]*)m"
+   #(str "<" (string/upper-case (name (get inverted-ansi-codes (second %)))) ">")))
+
 ;; https://github.com/bhb/expound/issues/8
 (deftest expound-output-ends-in-newline
   (is (= "\n" (str (last (expound/expound-str string? 1)))))
@@ -2485,6 +2498,13 @@ Detected 1 error
   (f 1))
 
 (deftest explain-results
+  (testing "explaining results with non-expound printer"
+    ;; Ensure this doesn't throw exception
+    (is (string?
+         (binding [s/*explain-out* s/explain-printer]
+           (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1))))))
+    )
+  
   (testing "single bad result (failing return spec)"
     (is (= (pf
             "== Checked expound.alpha-test/results-str-fn1 
@@ -2646,6 +2666,15 @@ Detected 1 error
  threw error"
            (binding [s/*explain-out* expound/printer]
              (take-lines 5 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn5))))))))
+  (testing "colorized output"
+    (is (= (pf "<CYAN>== Checked expound.alpha-test/results-str-fn5 <NONE>
+
+<RED>  (expound.alpha-test/results-str-fn5 1 1)<NONE>
+
+ threw error")
+           (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
+             (readable-ansi (take-lines 5 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn5)))))))))
+
   (testing "failure to generate"
     (is (=
          #?(:clj "== Checked expound.alpha-test/results-str-fn6 
@@ -2729,19 +2758,6 @@ should contain an :args spec
                    (with-out-str
                      (st/check sym-to-check
                                {:clojure.spec.test.check/opts {:num-tests 10}})))))))))
-
-(def inverted-ansi-codes
-  (reduce
-   (fn [m [k v]]
-     (assoc m (str v) k))
-   {}
-   ansi/sgr-code))
-
-(defn readable-ansi [s]
-  (string/replace
-   s
-   #"\x1b\[([0-9]*)m"
-   #(str "<" (string/upper-case (name (get inverted-ansi-codes (second %)))) ">")))
 
 (s/def :colorized-output/strings (s/coll-of string?))
 (deftest colorized-output
