@@ -2,6 +2,25 @@
 
 Expound formats `clojure.spec` error messages in a way that is optimized for humans to read.
 
+For example, Expound will replace a Spec error message like:
+
+```
+val: {} fails spec: :example/place predicate: (contains? % :city)
+val: {} fails spec: :example/place predicate: (contains? % :state)
+:clojure.spec.alpha/spec  :example/place
+:clojure.spec.alpha/value  {}
+```
+
+with 
+
+```
+-- Spec failed --------------------
+
+ {}
+
+should contain keys: `:city`,`:state`
+```
+
 Expound is in alpha while `clojure.spec` is in alpha.
 
 ## Usage
@@ -43,35 +62,6 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 (s/def :example.place/city string?)
 (s/def :example.place/state string?)
 (s/def :example/place (s/keys :req-un [:example.place/city :example.place/state]))
-
-(s/explain :example/place {})
-;; val: {} fails spec: :example/place predicate: (contains? % :city)
-;; val: {} fails spec: :example/place predicate: (contains? % :state)
-;; :clojure.spec.alpha/spec  :example/place
-;; :clojure.spec.alpha/value  {}
-
-(expound/expound :example/place {})
-;; -- Spec failed --------------------
-
-;;   {}
-
-;; should contain keys: `:city`,`:state`
-
-;; -- Relevant specs -------
-
-;; :example/place:
-;;   (clojure.spec.alpha/keys
-;;    :req-un
-;;    [:example.place/city :example.place/state])
-
-;; -------------------------
-;; Detected 1 error
-
-(s/explain :example/place {:city "Denver", :state :CO})
-;; In: [:state] val: :CO fails spec: :example.place/state at: [:state] predicate: string?
-;; :clojure.spec.alpha/spec  :example/place
-;; :clojure.spec.alpha/value  {:city "Denver", :state :CO}
-
 (expound/expound :example/place {:city "Denver", :state :CO})
 ;; -- Spec failed --------------------
 
@@ -189,8 +179,23 @@ Expound provides a default set of type-like predicates with error messages. For 
 
 You can see the full list of available specs with `expound.specs/public-specs`.
 
+### Printer options
 
-### Configuring the printer
+Create a custom printer by changing the following options e.g.
+
+```clojure
+(set! s/*explain-out* (expound/custom-printer {:show-valid-values? true :print-specs? false :theme :fighwheel-theme}))
+```
+
+| name | spec |  default | description |
+|------|------|----------|-------------|
+| `:show-valid-values?` | `boolean?` | `false` | If `false`, replaces valid values with `...` (example below) |
+| `:value-str-fn` | `ifn?` | provided function | Function to print bad value (example below) |
+| `:print-specs?` | `boolean?` | `true` | If true, display "Relevant specs" section. Otherwise, omit that section. |
+| `:theme` | `#{:figwheel-theme :none}` | `:none` | Enables color theme. |
+
+
+#### `:show-valid-values?`
 
 By default, `printer` will omit valid values and replace them with `...`
 
@@ -224,7 +229,9 @@ You can configure Expound to show valid values:
 ;;   string?
 ```
 
-You can even provide your own function to display the invalid value.
+##### `:value-str-fn`
+
+You can provide your own function to display the invalid value.
 
 ```clojure
 ;; Your implementation should meet the following spec:
@@ -251,15 +258,6 @@ You can even provide your own function to display the invalid value.
 ;;
 ;;   string?
 ```
-
-#### Printer options
-
-| name | spec |  default | description |
-|------|------|----------|-------------|
-| `:show-valid-values?` | `boolean?` | `false` | If `false`, replaces valid values with `...` |
-| `:value-str-fn` | `ifn?` | provided function | Function to print bad value |
-| `:print-specs?` | `boolean?` | `true` | If true, display "Relevant specs" section. Otherwise, omit that section. |
-| `:theme` | `#{:figwheel-theme :none}` | `:none` | Enables color theme. |
 
 ### Manual clojure.test/report override
 
@@ -337,7 +335,7 @@ Use [Orchestra](https://github.com/jeaye/orchestra) with Expound to get human-op
 
 Expound will not give helpful errors (and in some cases, will throw an exception) if you use conformers to transform values. Although using conformers in this way is fairly common, my understanding is that this is not an [intended use case](https://dev.clojure.org/jira/browse/CLJ-2116).
 
-If you want to use Expound with conformers, you'll need to write a custom printer. See "Configuring the printer" above.
+If you want to use Expound with conformers, you'll need to write a custom printer. See "Printer options" above.
 
 ## Related work
 
