@@ -11,7 +11,7 @@ val: {} fails spec: :example/place predicate: (contains? % :state)
 :clojure.spec.alpha/value  {}
 ```
 
-with 
+with
 
 ```
 -- Spec failed --------------------
@@ -129,6 +129,46 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 If you are enabling Expound in a non-REPL environment, remember that `set!` will only change `s/*explain-out*` in the *current thread*. If your program spawns additional threads (e.g. a web server), you can set `s/*explain-out*` for all threads with `(alter-var-root #'s/*explain-out* (constantly expound/printer))`. This won't work (and is not necessary) in CLJS.
 
 [Using `set!` will also not work within an uberjar](https://github.com/bhb/expound/issues/19).
+
+### Printing results for `check`
+
+The Expound printer can print results from `clojure.spec.test.alpha/check`
+
+```clojure
+(require '[expound.alpha :as expound]
+         '[clojure.spec.test.alpha :as st]
+         '[clojure.spec.alpha :as s]
+         '[clojure.test.check])
+
+(s/fdef ranged-rand
+  :args (s/and (s/cat :start int? :end int?)
+               #(< (:start %) (:end %)))
+  :ret int?
+  :fn (s/and #(>= (:ret %) (-> % :args :start))
+             #(< (:ret %) (-> % :args :end))))
+(defn ranged-rand
+  "Returns random int in range start <= rand < end"
+  [start end]
+  (+ start (long (rand (- start end)))))
+
+(set! s/*explain-out* expound/printer)
+(expound/explain-results (st/check `ranged-rand))
+;;== Checked user/ranged-rand =================
+;;
+;;-- Function spec failed -----------
+;;
+;;  (user/ranged-rand -3 0)
+;;
+;;failed spec. Function arguments and return value
+;;
+;;  {:args {:start -3, :end 0}, :ret -5}
+;;
+;;should satisfy
+;;
+;;  (fn
+;;   [%]
+;;   (>= (:ret %) (-> % :args :start)))
+```
 
 ### Error messages for predicates
 
