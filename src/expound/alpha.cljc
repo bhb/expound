@@ -819,6 +819,8 @@ returned an invalid value.
            (s/def ~k ~spec-form))))))
 
 (defn explain-result [check-result]
+  (when (= s/*explain-out* s/explain-printer)
+    (throw (ex-info "Cannot print check results with default printer. Use 'set!' or 'binding' to use Expound printer." {})))
   (s/*explain-out* check-result))
 
 (defn explain-result-str [check-result]
