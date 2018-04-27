@@ -16,7 +16,7 @@
   (is (= "expound.alpha/expound"
          (printer/pprint-fn expound/expound)))
   (is (= "<anonymous function>"
-         (printer/pprint-fn #(inc %))))
+         (printer/pprint-fn #(inc (inc %)))))
   (is (= "<anonymous function>"
          (printer/pprint-fn (constantly true))))
   (is (= "<anonymous function>"
@@ -55,15 +55,15 @@
               (s/explain-data
                :print-spec-keys/key-spec
                {}))))))
-  (is (= nil
-         (printer/print-spec-keys
-          (map #(copy-key % :via :expound/via)
-               (::s/problems
-                (s/explain-data
-                 (s/keys
-                  :req [:print-spec-keys/field1]
-                  :req-un [:print-spec-keys/field2])
-                 {}))))))
+  (is (nil?
+       (printer/print-spec-keys
+        (map #(copy-key % :via :expound/via)
+             (::s/problems
+              (s/explain-data
+               (s/keys
+                :req [:print-spec-keys/field1]
+                :req-un [:print-spec-keys/field2])
+               {}))))))
 
   (is (=
        "|                     key |    spec |

@@ -57,6 +57,7 @@
 
 ;;;;;; private ;;;;;;
 
+(def check-header-size 45)
 (def header-size 35)
 (def section-size 25)
 
@@ -194,10 +195,12 @@
   ([size]
    (apply str (repeat size "-")))
   ([size s]
+   (label size s "-"))
+  ([size s label-str]
    (ansi/color
-    (let [prefix (str "-- " s " ")
+    (let [prefix (str label-str label-str " " s " ")
           chars-left (- size (count prefix))]
-      (str prefix (apply str (repeat chars-left "-"))))
+      (str prefix (apply str (repeat chars-left label-str))))
     :header)))
 
 (def header-label (partial label header-size))
@@ -226,17 +229,29 @@
 
 (defn fspec-exception-failure? [failure problem]
   (and (not= :instrument failure)
+       (not= :check-failed failure)
        (= '(apply fn) (:pred problem))))
 
 (defn fspec-ret-failure? [failure problem]
   (and
    (not= :instrument failure)
+   (not= :check-failed failure)
    (= :ret (first (:path problem)))))
 
 (defn fspec-fn-failure? [failure problem]
   (and
    (not= :instrument failure)
+   (not= :check-failed failure)
    (= :fn (first (:path problem)))))
+
+(defn check-ret-failure? [failure problem]
+  (and
+   (= :check-failed failure)
+   (= :ret (first (:path problem)))))
+
+(defn check-fn-failure? [failure problem]
+  (and (= :check-failed failure)
+       (= :fn (first (:path problem)))))
 
 (defn missing-key? [_failure problem]
   (let [pred (:pred problem)]
@@ -377,6 +392,12 @@
     (fspec-fn-failure? failure problem)
     :problem/fspec-fn-failure
 
+    (check-ret-failure? failure problem)
+    :problem/check-ret-failure
+
+    (check-fn-failure? failure problem)
+    :problem/check-fn-failure
+
     :else
     :problem/unknown))
 
@@ -415,8 +436,7 @@
 
 (defmethod expected-str :problem/extra-input [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
-  (let [problem (first problems)]
-    "has extra input"))
+  "has extra input")
 
 (defmethod problem-group-str :problem/extra-input [_type spec-name val path problems opts]
   (printer/format
@@ -503,6 +523,53 @@ should satisfy
    (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
    (expected-str _type spec-name val path problems opts)))
 
+(defmethod expected-str :problem/check-fn-failure [_type spec-name val path problems opts]
+  (s/assert ::singleton problems)
+  (let [problem (first problems)]
+    (printer/format
+     "failed spec. Function arguments and return value
+
+%s
+
+should satisfy
+
+%s"
+     (printer/indent (ansi/color (pr-str (:val problem)) :bad-value))
+     (printer/indent (ansi/color (pr-pred (:pred problem) (:spec problem)) :good-pred)))))
+
+(defmethod problem-group-str :problem/check-fn-failure [_type spec-name val path problems opts]
+  (s/assert ::singleton problems)
+  (printer/format
+   "%s
+
+%s
+
+%s"
+   (header-label "Function spec failed")
+   (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
+   (expected-str _type spec-name val path problems opts)))
+
+(defmethod expected-str :problem/check-ret-failure [_type spec-name val path problems opts]
+  (predicate-errors problems))
+
+(defmethod problem-group-str :problem/check-ret-failure [_type spec-name val path problems opts]
+  (printer/format
+   "%s
+
+%s
+
+returned an invalid value.
+
+%s
+
+%s"
+   (header-label "Function spec failed")
+
+   (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
+
+   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+   (expected-str _type spec-name val path problems opts)))
+
 (defmethod expected-str :problem/unknown [_type spec-name val path problems opts]
   (predicate-errors problems))
 
@@ -517,12 +584,6 @@ should satisfy
    (header-label (str "Spec failed"))
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (expected-str _type spec-name val path problems opts)))
-
-(defn problem-group-str1 [type spec-name val path problems opts]
-  (str
-   (problem-group-str type spec-name val path problems opts)
-   "\n\n"
-   (if (:print-specs? opts) (relevant-specs problems) "")))
 
 (defn instrumentation-info [failure caller]
   ;; As of version 1.9.562, Clojurescript does
@@ -540,45 +601,160 @@ should satisfy
     (-> ed ::s/problems first :path first)
     nil))
 
-(defn printer-str [opts explain-data]
-  (let [opts' (merge {:show-valid-values? false
-                      :print-specs? true}
-                     opts)]
-    (if-not explain-data
-      "Success!\n"
-      (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))
-                ansi/*enable-color* (not= :none (get opts :theme :none))
-                ansi/*print-styles* (case (get opts :theme :none)
-                                      :figwheel-theme
-                                      figwheel-theme
+(defn print-explain-data [opts explain-data]
+  (if-not explain-data
+    "Success!\n"
+    (let [{:keys [::s/fn ::s/failure]} explain-data
+          explain-data' (problems/annotate explain-data)
+          caller (:expound/caller explain-data')
+          form (:expound/form explain-data')
+          problems (->> explain-data'
+                        :expound/problems
+                        (problems/leaf-only)
+                        (grouped-and-sorted-problems (::s/failure explain-data)))]
 
-                                      :none
-                                      {})]
-        (let [{:keys [::s/fn ::s/failure]} explain-data
-              explain-data' (problems/annotate explain-data)
-              caller (:expound/caller explain-data')
-              form (:expound/form explain-data')
-              problems (->> explain-data'
-                            :expound/problems
-                            (problems/leaf-only)
-                            (grouped-and-sorted-problems (::s/failure explain-data)))]
-
-          (printer/no-trailing-whitespace
-           (str
-            (ansi/color (instrumentation-info failure caller) :none)
-            (printer/format
-             "%s
+      (printer/no-trailing-whitespace
+       (str
+        (ansi/color (instrumentation-info failure caller) :none)
+        (printer/format
+         "%s
 
 %s
 %s %s %s\n"
-             (string/join "\n\n" (for [[[in type] probs] problems]
-                                   (problem-group-str1 type (spec-name explain-data) form in probs opts')))
-             (ansi/color (section-label) :footer)
-             (ansi/color "Detected" :footer)
-             (ansi/color (count problems) :footer)
-             (ansi/color (if (= 1 (count problems)) "error" "errors") :footer)))))))))
+         (string/join "\n\n" (for [[[in type] probs] problems]
+                               (str
+                                (problem-group-str type (spec-name explain-data) form in probs opts)
+                                "\n\n"
+                                (if (:print-specs? opts) (relevant-specs probs) ""))))
+         (ansi/color (section-label) :footer)
+         (ansi/color "Detected" :footer)
+         (ansi/color (count problems) :footer)
+         (ansi/color (if (= 1 (count problems)) "error" "errors") :footer)))))))
 
-(s/def ::foo string?)
+(defn minimal-fspec [form]
+  (let [fspec-sp (s/cat
+                  :sym qualified-symbol?
+                  :args (s/*
+                         (s/cat :k #{:args :fn :ret} :v any?)))]
+
+    (-> (s/conform fspec-sp form)
+        (update :args (fn [args] (filter #(some? (:v %)) args)))
+        (->> (s/unform fspec-sp)))))
+
+(defn print-check-result [check-result]
+  (let [{:keys [sym spec failure] :or {sym '<unknown>}} check-result
+        ret #?(:clj (:clojure.spec.test.check/ret check-result)
+               :cljs (:clojure.test.check/ret check-result))
+        explain-data (ex-data failure)
+        bad-args (or #?(:clj (:clojure.spec.test.alpha/args explain-data)
+                        :cljs (:cljs.spec.test.alpha/args explain-data))
+                     (first (:fail ret)))
+        failure-reason (::s/failure explain-data)
+        sym (or sym '<unknown>)]
+    (str
+     ;; CLJS does not contain symbol if function is undefined
+     (label check-header-size (str "Checked " sym) "=")
+     "\n\n"
+     (cond
+       ;; FIXME - once we have a function that can highlight
+       ;;         a spec, use it here to make this error message clearer
+       #?(:clj (and failure (= :no-gen failure-reason))
+          ;; Workaround for CLJS
+          :cljs (and
+                 failure
+                 (re-matches #"Unable to construct gen at.*" (.-message failure))))
+       (let [path (::s/path explain-data)]
+         (str
+          #?(:clj
+             (str
+              "Unable to construct generator for "
+              (ansi/color (pr-str path) :error-key))
+             :cljs
+             (.-message failure))
+          " in\n\n"
+          (printer/indent (str (s/form (:args (:spec check-result)))))
+          "\n"))
+
+       (= :no-args-spec failure-reason)
+       (str
+        "Failed to check function.\n\n"
+        (ansi/color (printer/indent (printer/pprint-str
+                                     (minimal-fspec (s/form spec)))) :bad-value)
+        "\n\nshould contain an :args spec\n")
+
+       (= :no-fn failure-reason)
+       (if (some? sym)
+         (str
+          "Failed to check function.\n\n"
+          (ansi/color (printer/indent (pr-str sym)) :bad-value)
+          "\n\nis not defined\n")
+         ;; CLJS doesn't set the symbol
+         (str
+          "Cannot check undefined function\n"))
+
+       (and explain-data
+            (= :check-failed (-> explain-data ::s/failure)))
+       (with-out-str
+         (s/*explain-out* (update
+                           explain-data
+                           ::s/problems
+                           #(map
+                             (fn [p]
+                               (assoc p :expound/check-fn-call (concat (list sym)
+                                                                       bad-args)))
+                             %))))
+
+       failure
+       (str
+        (ansi/color (printer/indent (printer/pprint-str
+                                     (concat (list sym) bad-args))) :bad-value)
+        "\n\n threw error\n\n"
+        (printer/pprint-str failure))
+
+       :else
+       "Success!\n"))))
+
+(defn explain-data? [data]
+  (s/valid?
+   (s/keys :req
+           [::s/problems
+            ::s/spec
+            ::s/value]
+           :opt
+           [::s/failure])
+   data))
+
+(defn check-result? [data]
+  (s/valid?
+   (s/keys :req-un [::spec]
+           :opt-un [::sym
+                    ::failure
+                    :clojure.spec.test.check/ret])
+   data))
+
+(defn printer-str [opts data]
+  (let [opts' (merge {:show-valid-values? false
+                      :print-specs? true}
+                     opts)]
+    (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))
+              ansi/*enable-color* (not= :none (get opts :theme :none))
+              ansi/*print-styles* (case (get opts :theme :none)
+                                    :figwheel-theme
+                                    figwheel-theme
+
+                                    :none
+                                    {})]
+
+      (cond
+        (or (explain-data? data)
+            (nil? data))
+        (print-explain-data opts' data)
+
+        (check-result? data)
+        (print-check-result data)
+
+        :else
+        (str "Unknown data:\n\n" data)))))
 
 #?(:clj
    (defn ns-qualify
@@ -637,3 +813,20 @@ should satisfy
         `(do
            (defmsg '~k ~error-message)
            (s/def ~k ~spec-form))))))
+
+(defn explain-result [check-result]
+  (when (= s/*explain-out* s/explain-printer)
+    (throw (ex-info "Cannot print check results with default printer. Use 'set!' or 'binding' to use Expound printer." {})))
+  (s/*explain-out* check-result))
+
+(defn explain-result-str [check-result]
+  (with-out-str (explain-result check-result)))
+
+(defn explain-results [check-results]
+  (doseq [check-result (butlast check-results)]
+    (explain-result check-result)
+    (print "\n\n"))
+  (explain-result (last check-results)))
+
+(defn explain-results-str [check-results]
+  (with-out-str (explain-results check-results)))

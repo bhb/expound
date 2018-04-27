@@ -302,7 +302,40 @@
 
   (display-explain
    :predicate-messages/score
-   101))
+   101)
+
+  (println "----- check results -----")
+
+  (doseq [sym-to-check (st/checkable-syms)]
+    (println "trying to check" sym-to-check "...")
+    (try
+      (st/with-instrument-disabled
+        (orch.st/with-instrument-disabled
+          (expound/explain-results (st/check sym-to-check {:clojure.spec.test.check/opts {:num-tests 5}}))))
+      (catch Exception e
+        (println "caught exception: " (.getMessage e)))))
+
+  (s/fdef some-func
+          :args (s/cat :x int?))
+
+  (st/with-instrument-disabled
+    (orch.st/with-instrument-disabled
+      (expound/explain-results (st/check `some-func)))) (s/fdef results-str-fn1
+                                                                :args (s/cat :x nat-int? :y nat-int?)
+                                                                :ret pos-int?)
+  (defn results-str-fn1 [x y]
+    (+ x y))
+
+  (s/fdef results-str-fn2
+          :args (s/cat :x nat-int? :y nat-int?)
+          :fn #(let [x (-> % :args :x)
+                     y (-> % :args :y)
+                     ret (-> % :ret)]
+                 (< x ret)))
+  (defn results-str-fn2 [x y]
+    (+ x y))
+
+  (expound/explain-result (st/check-fn `resultsf-str-fn1 (s/spec `results-str-fn2))))
 
 (go)
 
