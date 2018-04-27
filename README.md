@@ -45,7 +45,7 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ```
 > brew install clojure
-> clj -Sdeps '{:deps {friendly {:git/url "https://gist.github.com/bhb/2686b023d074ac052dbc21f12f324f18" :sha "cbc5b3c73d4788a25570f125e5f2de23a3d2bf5f"}}}' -m friendly
+> clj -Sdeps '{:deps {friendly {:git/url "https://gist.github.com/bhb/2686b023d074ac052dbc21f12f324f18" :sha "9bd01f28522a0083c6a7428a871aa5fbb8070d1d"}}}' -m friendly
 user=> (require '[expound.alpha :as expound])
 nil
 user=> (expound/expound string? 1)
