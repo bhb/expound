@@ -238,7 +238,7 @@ You can see the full list of available specs with `expound.specs/public-specs`.
 Create a custom printer by changing the following options e.g.
 
 ```clojure
-(set! s/*explain-out* (expound/custom-printer {:show-valid-values? true :print-specs? false :theme :fighwheel-theme}))
+(set! s/*explain-out* (expound/custom-printer {:show-valid-values? true :print-specs? false :theme :figwheel-theme}))
 ```
 
 | name | spec |  default | description |
