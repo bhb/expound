@@ -17,8 +17,6 @@
 
 should be a keyword with no namespace
 
-
-
 -------------------------
 Detected 1 error
 "

@@ -617,15 +617,19 @@ returned an invalid value.
        (str
         (ansi/color (instrumentation-info failure caller) :none)
         (printer/format
-         "%s
-
-%s
+         "%s%s
 %s %s %s\n"
-         (string/join "\n\n" (for [[[in type] probs] problems]
-                               (str
-                                (problem-group-str type (spec-name explain-data) form in probs opts)
-                                "\n\n"
-                                (if (:print-specs? opts) (relevant-specs probs) ""))))
+         (apply str
+                (for [[[in type] probs] problems]
+                  (str
+                   (problem-group-str type (spec-name explain-data) form in probs opts)
+                   "\n\n"
+                   (let [s (if (:print-specs? opts)
+                             (relevant-specs probs)
+                             "")]
+                     (if (empty? s)
+                       s
+                       (str s "\n\n"))))))
          (ansi/color (section-label) :footer)
          (ansi/color "Detected" :footer)
          (ansi/color (count problems) :footer)

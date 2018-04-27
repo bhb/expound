@@ -76,8 +76,6 @@ should satisfy
 
   string?
 
-
-
 -------------------------
 Detected 1 error\n")
          (expound/expound-str string? 1))))
@@ -317,8 +315,6 @@ should satisfy
 
   coll?
 
-
-
 -------------------------
 Detected 1 error
 "
@@ -331,8 +327,6 @@ Detected 1 error
   50
 
 should be one of: \"a\", \"b\", 1, 2
-
-
 
 -------------------------
 Detected 1 error
@@ -380,8 +374,6 @@ should contain keys: :or-spec/str
 |          key |    spec |
 |--------------+---------|
 | :or-spec/str | string? |
-
-
 
 -------------------------
 Detected 1 error
@@ -715,8 +707,6 @@ should contain keys: :age, :name
 |-------+---------|
 |  :age |    int? |
 | :name | string? |
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -1308,8 +1298,6 @@ should satisfy
 
   int?
 
-
-
 -------------------------
 Detected 1 error\n"
                 (.-message (try
@@ -1330,8 +1318,6 @@ Function arguments
 should satisfy
 
   int?
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -1360,8 +1346,6 @@ should satisfy
 
   int?
 
-
-
 -------------------------
 Detected 1 error\n"
                 (.-message (try
@@ -1382,8 +1366,6 @@ Function arguments
 should satisfy
 
   int?
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -1411,8 +1393,6 @@ should have additional elements. The next element \":y\" should satisfy
 
   int?
 
-
-
 -------------------------
 Detected 1 error\n"
                 (.-message (try
@@ -1432,8 +1412,6 @@ Function arguments
 should have additional elements. The next element \":y\" should satisfy
 
   int?
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -1461,8 +1439,6 @@ should satisfy
 
   pos-int?
 
-
-
 -------------------------
 Detected 1 error\n"
                 (.-message (try
@@ -1482,8 +1458,6 @@ Return value
 should satisfy
 
   pos-int?
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -1511,8 +1485,6 @@ should satisfy
 
   (fn [%] (> (:ret %) (-> % :args :x)))
 
-
-
 -------------------------
 Detected 1 error\n"
                 (.-message (try
@@ -1534,8 +1506,6 @@ should satisfy
   (fn
    [%]
    (> (:ret %) (-> % :args :x)))
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -1565,8 +1535,6 @@ should satisfy
 
   int?
 
-
-
 -------------------------
 Detected 1 error\n"
           (.-message (try
@@ -1587,8 +1555,6 @@ Function arguments
 should satisfy
 
   int?
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -2131,8 +2097,6 @@ should satisfy
 
   %s
 
-
-
 -------------------------
 Detected 1 error\n"
 
@@ -2156,8 +2120,6 @@ failed spec. Function arguments and return value
 should satisfy
 
   %s
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -2184,8 +2146,6 @@ should satisfy
 
   int?
 
-
-
 -------------------------
 Detected 1 error\n"
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
@@ -2204,8 +2164,6 @@ returned an invalid value
 should satisfy
 
   int?
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -2226,8 +2184,6 @@ threw exception
 with args:
 
   0
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -2359,8 +2315,6 @@ Detected 1 error\n")
 
 should be a string
 
-
-
 -------------------------
 Detected 1 error
 "
@@ -2372,8 +2326,6 @@ Detected 1 error
        ^^^^
 
 should be a string
-
-
 
 -------------------------
 Detected 1 error
@@ -2389,8 +2341,6 @@ should be a string
 or
 
 should be a vector
-
-
 
 -------------------------
 Detected 1 error
@@ -2414,8 +2364,6 @@ or
 
 should be a string
 
-
-
 -------------------------
 Detected 1 error
 "
@@ -2431,8 +2379,6 @@ Detected 1 error
 
 should be a valid email address
 
-
-
 -------------------------
 Detected 1 error
 "
@@ -2445,8 +2391,6 @@ Detected 1 error
   101
 
 should be between 0 and 100
-
-
 
 -------------------------
 Detected 1 error
@@ -2528,8 +2472,6 @@ should satisfy
 
   pos-int?
 
-
-
 -------------------------
 Detected 1 error
 ")
@@ -2558,8 +2500,6 @@ should satisfy
      ret
      (-> %% :ret)]
     (< x ret)))
-
-
 
 -------------------------
 Detected 1 error
@@ -2598,8 +2538,6 @@ should satisfy
      (-> % :ret)]
     (< x ret)))
 
-
-
 -------------------------
 Detected 1 error
 
@@ -2634,8 +2572,6 @@ should satisfy
      (-> % :ret)]
     (< x ret)))
 
-
-
 -------------------------
 Detected 1 error
 "
@@ -2656,8 +2592,6 @@ returned an invalid value.
 should satisfy
 
   int?
-
-
 
 -------------------------
 Detected 1 error
