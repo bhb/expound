@@ -23,11 +23,25 @@ should contain keys: `:city`,`:state`
 
 Expound is in alpha while `clojure.spec` is in alpha.
 
-## Usage
+## Installation
 
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
 
 ### Quick start
+
+### Leiningen/Boot
+
+`[expound "0.6.0"]`
+
+#### deps.edn
+
+`expound {:mvn/version "0.6.0"}`
+
+### Lumo
+
+`npm install @bbrinck/expound`
+
+## Usage
 
 ```
 > brew install clojure
