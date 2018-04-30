@@ -1,6 +1,7 @@
 (ns expound.alpha
+  ;; TODO - rewrite
   "Drop-in replacement for clojure.spec.alpha, with
-  human-readable `expound` function"
+  human-readable `expound` function ... "
   (:require [expound.paths :as paths]
             [expound.problems :as problems]
             [clojure.spec.alpha :as s]
@@ -37,7 +38,7 @@
 
 ;;;;;; themes ;;;;;;
 
-(def figwheel-theme
+(def ^:private figwheel-theme
   {:highlight   [:bold]
    :good        [:green]
    :good-pred   [:green]
@@ -57,11 +58,11 @@
 
 ;;;;;; private ;;;;;;
 
-(def check-header-size 45)
-(def header-size 35)
-(def section-size 25)
+(def ^:private check-header-size 45)
+(def ^:private header-size 35)
+(def ^:private section-size 25)
 
-(def ^:dynamic *value-str-fn* (fn [_ _ _ _] "NOT IMPLEMENTED"))
+(def ^:private ^:dynamic *value-str-fn* (fn [_ _ _ _] "NOT IMPLEMENTED"))
 
 (s/fdef value-in-context
         :args (s/cat
@@ -71,7 +72,7 @@
                :path :expound/path
                :value any?)
         :ret string?)
-(defn value-in-context
+(defn ^:private value-in-context
   "Given a form and a path into that form, returns a string
    that helps the user understand where that path is located
    in the form"
@@ -90,7 +91,7 @@
                                   {:expound/form form
                                    :expound/in path}))))
 
-(defn spec-str [spec]
+(defn ^:private spec-str [spec]
   (if (keyword? spec)
     (printer/format
      "%s:\n%s"
@@ -99,7 +100,7 @@
     (printer/pprint-str (s/form spec))))
 
 ;; via is different when using asserts
-(defn spec+via [problem]
+(defn ^:private spec+via [problem]
   (let [{:keys [via spec]} problem]
     (if (keyword? spec)
       (into [spec] via)
@@ -108,7 +109,7 @@
 (s/fdef specs
         :args (s/cat :problems :spec/problems)
         :ret :spec/specs)
-(defn specs
+(defn ^:private specs
   "Given a collection of problems, returns the specs for those problems, with duplicates removed"
   [problems]
   (->> problems
@@ -116,18 +117,18 @@
        flatten
        distinct))
 
-(defn specs-str [problems]
+(defn ^:private specs-str [problems]
   (->> problems
        specs
        reverse
        (map spec-str)
        (string/join "\n")))
 
-(defn named? [x]
+(defn ^:private named? [x]
   #?(:clj (instance? clojure.lang.Named x)
      :cljs (implements? cljs.core.INamed x)))
 
-(defn pr-pred* [pred]
+(defn ^:private pr-pred* [pred]
   (cond
     (or (symbol? pred) (named? pred))
     (name pred)
@@ -138,12 +139,12 @@
     :else
     (printer/elide-core-ns (binding [*print-namespace-maps* false] (printer/pprint-str pred)))))
 
-(defn pr-pred [pred spec]
+(defn ^:private pr-pred [pred spec]
   (if (= ::s/unknown pred)
     (pr-pred* spec)
     (pr-pred* pred)))
 
-(defn show-spec-name [spec-name value]
+(defn ^:private show-spec-name [spec-name value]
   (if spec-name
     (str
      (case spec-name
@@ -154,7 +155,7 @@
      value)
     value))
 
-(defn preds [problems]
+(defn ^:private preds [problems]
   (string/join "\n\nor\n\n" (distinct (map (fn [problem]
                                              (printer/indent
                                               (ansi/color
@@ -162,17 +163,15 @@
                                                         (:spec problem))
                                                :good-pred))) problems))))
 
-(defn error-message [k]
-  [k]
-  (get @registry-ref k))
+(declare error-message)
 
-(defn spec-w-error-message? [via pred]
+(defn ^:private spec-w-error-message? [via pred]
   (boolean (let [last-spec (last via)]
              (and (not= ::s/unknown pred)
                   (error-message last-spec)
                   (s/get-spec last-spec)))))
 
-(defn predicate-errors [problems]
+(defn ^:private predicate-errors [problems]
   (let [[with-msg no-msgs] ((juxt filter remove)
                             (fn [{:keys [expound/via pred]}]
                               (spec-w-error-message? via pred))
@@ -191,7 +190,7 @@
 %s"
                       (preds no-msgs))))))))
 
-(defn label
+(defn ^:private label
   ([size]
    (apply str (repeat size "-")))
   ([size s]
@@ -203,10 +202,10 @@
       (str prefix (apply str (repeat chars-left label-str))))
     :header)))
 
-(def header-label (partial label header-size))
-(def section-label (partial label section-size))
+(def ^:private header-label (partial label header-size))
+(def ^:private section-label (partial label section-size))
 
-(defn relevant-specs [problems]
+(defn ^:private relevant-specs [problems]
   (let [sp-str (specs-str problems)]
     (if (string/blank? sp-str)
       ""
@@ -217,43 +216,43 @@
        (section-label "Relevant specs")
        sp-str))))
 
-(defn multi-spec-parts [spec-form]
+(defn ^:private multi-spec-parts [spec-form]
   (let [[_multi-spec mm retag] spec-form]
     {:mm mm :retag retag}))
 
-(defn missing-spec? [_failure problem]
+(defn ^:private missing-spec? [_failure problem]
   (= "no method" (:reason problem)))
 
-(defn not-in-set? [_failure problem]
+(defn ^:private not-in-set? [_failure problem]
   (set? (:pred problem)))
 
-(defn fspec-exception-failure? [failure problem]
+(defn ^:private fspec-exception-failure? [failure problem]
   (and (not= :instrument failure)
        (not= :check-failed failure)
        (= '(apply fn) (:pred problem))))
 
-(defn fspec-ret-failure? [failure problem]
+(defn ^:private fspec-ret-failure? [failure problem]
   (and
    (not= :instrument failure)
    (not= :check-failed failure)
    (= :ret (first (:path problem)))))
 
-(defn fspec-fn-failure? [failure problem]
+(defn ^:private fspec-fn-failure? [failure problem]
   (and
    (not= :instrument failure)
    (not= :check-failed failure)
    (= :fn (first (:path problem)))))
 
-(defn check-ret-failure? [failure problem]
+(defn ^:private check-ret-failure? [failure problem]
   (and
    (= :check-failed failure)
    (= :ret (first (:path problem)))))
 
-(defn check-fn-failure? [failure problem]
+(defn ^:private check-fn-failure? [failure problem]
   (and (= :check-failed failure)
        (= :fn (first (:path problem)))))
 
-(defn missing-key? [_failure problem]
+(defn ^:private missing-key? [_failure problem]
   (let [pred (:pred problem)]
     (and (seq? pred)
          (< 2 (count pred))
@@ -261,13 +260,13 @@
           :spec/contains-key-pred
           (nth pred 2)))))
 
-(defn insufficient-input? [_failure problem]
+(defn ^:private insufficient-input? [_failure problem]
   (contains? #{"Insufficient input"} (:reason problem)))
 
-(defn extra-input? [_failure problem]
+(defn ^:private extra-input? [_failure problem]
   (contains? #{"Extra input"} (:reason problem)))
 
-(defn multi-spec [pred spec]
+(defn ^:private multi-spec [pred spec]
   (->> (s/form spec)
        (tree-seq coll? seq)
        (filter #(and (sequential? %)
@@ -276,7 +275,7 @@
                      (= pred (second %))))
        first))
 
-(defn no-method [spec-name val path problem]
+(defn ^:private no-method [spec-name val path problem]
   (let [sp (s/spec (last (:expound/via problem)))
         {:keys [mm retag]} (multi-spec-parts
                             (multi-spec (:pred problem) sp))]
@@ -294,10 +293,10 @@
      (pr-str retag)
      (pr-str (if retag (retag (problems/value-in val path)) nil)))))
 
-(defmulti problem-group-str (fn [type spec-name _val _path _problems _opts] type))
-(defmulti expected-str (fn [type  spec-name _val _path _problems _opts] type))
+(defmulti ^:private problem-group-str (fn [type spec-name _val _path _problems _opts] type))
+(defmulti ^:private expected-str (fn [type  spec-name _val _path _problems _opts] type))
 
-(defn explain-missing-keys [problems]
+(defn ^:private explain-missing-keys [problems]
   (let [missing-keys (map #(printer/missing-key (:pred %)) problems)]
     (str (printer/format
           "should contain %s: %s"
@@ -358,7 +357,7 @@
    (header-label "Missing spec")
    (expected-str _type spec-name val path problems opts)))
 
-(defn safe-sort-by
+(defn ^:private safe-sort-by
   "Same as sort-by, but if an error is raised, returns the original unsorted collection"
   [key-fn comp coll]
   (try
@@ -366,7 +365,7 @@
     (catch #?(:cljs :default
               :clj Exception) e coll)))
 
-(defn problem-type [failure problem]
+(defn ^:private problem-type [failure problem]
   (cond
     (insufficient-input? failure problem)
     :problem/insufficient-input
@@ -401,7 +400,7 @@
     :else
     :problem/unknown))
 
-(defn grouped-and-sorted-problems [failure problems]
+(defn ^:private grouped-and-sorted-problems [failure problems]
   (->> problems
        (group-by (juxt :expound/in (partial problem-type failure)))
        ;; We attempt to sort the problems by path, but it's not feasible to sort in
@@ -585,7 +584,7 @@ returned an invalid value.
    (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
    (expected-str _type spec-name val path problems opts)))
 
-(defn instrumentation-info [failure caller]
+(defn ^:private instrumentation-info [failure caller]
   ;; As of version 1.9.562, Clojurescript does
   ;; not include failure or caller info, so
   ;; if these are null, print a placeholder
@@ -596,12 +595,12 @@ returned an invalid value.
                     (:line caller "<line number missing>"))
     ""))
 
-(defn spec-name [ed]
+(defn ^:private spec-name [ed]
   (if (#{:instrument} (::s/failure ed))
     (-> ed ::s/problems first :path first)
     nil))
 
-(defn print-explain-data [opts explain-data]
+(defn ^:private print-explain-data [opts explain-data]
   (if-not explain-data
     "Success!\n"
     (let [{:keys [::s/fn ::s/failure]} explain-data
@@ -635,7 +634,7 @@ returned an invalid value.
          (ansi/color (count problems) :footer)
          (ansi/color (if (= 1 (count problems)) "error" "errors") :footer)))))))
 
-(defn minimal-fspec [form]
+(defn ^:private minimal-fspec [form]
   (let [fspec-sp (s/cat
                   :sym qualified-symbol?
                   :args (s/*
@@ -645,7 +644,7 @@ returned an invalid value.
         (update :args (fn [args] (filter #(some? (:v %)) args)))
         (->> (s/unform fspec-sp)))))
 
-(defn print-check-result [check-result]
+(defn ^:private print-check-result [check-result]
   (let [{:keys [sym spec failure] :or {sym '<unknown>}} check-result
         ret #?(:clj (:clojure.spec.test.check/ret check-result)
                :cljs (:clojure.test.check/ret check-result))
@@ -718,7 +717,7 @@ returned an invalid value.
        :else
        "Success!\n"))))
 
-(defn explain-data? [data]
+(defn ^:private explain-data? [data]
   (s/valid?
    (s/keys :req
            [::s/problems
@@ -728,7 +727,7 @@ returned an invalid value.
            [::s/failure])
    data))
 
-(defn check-result? [data]
+(defn ^:private check-result? [data]
   (s/valid?
    (s/keys :req-un [::spec]
            :opt-un [::sym
@@ -736,7 +735,7 @@ returned an invalid value.
                     :clojure.spec.test.check/ret])
    data))
 
-(defn printer-str [opts data]
+(defn ^:private printer-str [opts data]
   (let [opts' (merge {:show-valid-values? false
                       :print-specs? true}
                      opts)]
@@ -761,7 +760,7 @@ returned an invalid value.
         (str "Unknown data:\n\n" data)))))
 
 #?(:clj
-   (defn ns-qualify
+   (defn ^:private ns-qualify
      "Qualify symbol s by resolving it or using the current *ns*."
      [s]
      (if-let [ns-sym (some-> s namespace symbol)]
@@ -770,6 +769,10 @@ returned an invalid value.
        (symbol (str (.name *ns*)) (str s)))))
 
 ;;;;;; public ;;;;;;
+
+(defn error-message [k]
+  [k]
+  (get @registry-ref k))
 
 (s/fdef custom-printer
         :args (s/cat :opts :expound.printer/opts))
