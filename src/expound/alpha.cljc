@@ -10,7 +10,8 @@
             #?(:cljs [goog.string])
             [expound.printer :as printer]
             [expound.util :as util]
-            [expound.ansi :as ansi]))
+            [expound.ansi :as ansi]
+            [expound.suggest :as suggest]))
 
 ;;;;;; registry ;;;;;;
 
@@ -617,7 +618,7 @@ returned an invalid value.
        (str
         (ansi/color (instrumentation-info failure caller) :none)
         (printer/format
-         "%s%s
+         "%s%s%s
 %s %s %s\n"
          (apply str
                 (for [[[in type] probs] problems]
@@ -630,6 +631,20 @@ returned an invalid value.
                      (if (empty? s)
                        s
                        (str s "\n\n"))))))
+         ;; FIXME - this is not a very clear heuristic, but until
+             ;; https://dev.clojure.org/jira/browse/CLJ-2271 is fixed, I think it's the best we can do
+             (if (::s/args explain-data')
+               (str
+                (header-label "Example")
+                "\n\n"
+                (printer/indent (str (conj
+                                      (suggest/suggestion (::s/spec explain-data') (::s/value explain-data'))
+                                      ;; FIXME - when https://dev.clojure.org/jira/browse/CLJ-2218 and
+                                      ;; https://dev.clojure.org/jira/browse/CLJ-2271 are fixed and explain-data
+                                      ;; contains the name of the function, use it here
+                                      (symbol "<f>"))))
+                "\n\n")
+               "")
          (ansi/color (section-label) :footer)
          (ansi/color "Detected" :footer)
          (ansi/color (count problems) :footer)

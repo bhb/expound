@@ -16,5 +16,13 @@ expound/alpha.cljc
 expound/problems.cljc
 expound/printer.cljc
 expound/specs.cljc
+expound/suggest.cljc
+expound/java/
+expound/java/Util.java
+expound/java/Util.class
+expound/js/
+expound/js/util.js
+Util.class
+Util.java
 project.clj
 expound/ansi.cljc

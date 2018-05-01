@@ -57,9 +57,9 @@
                       (assoc k (summary-form show-valid-values? (nth form k) rst))))
 
       (and (int? k) (set? form))
-      (into #{} (-> displayed-form
-                    vec
-                    (assoc k (summary-form show-valid-values? (nth (seq form) k) rst))))
+      (set (-> displayed-form
+               vec
+               (assoc k (summary-form show-valid-values? (nth (seq form) k) rst))))
 
       (and (int? k) (list? form))
       (into '() (-> displayed-form
@@ -122,24 +122,26 @@
      problems)))
 
 (defn annotate [explain-data]
-  (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure ::s/spec]} explain-data
-        caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
-        form (if (not= :instrument failure)
-               value
-               (cond
-                 (contains? explain-data ::s/ret) ret
-                 (contains? explain-data ::s/fn) fn
-                 (contains? explain-data ::s/args) args))
-        problems' (map (comp (partial adjust-in form)
-                             (partial adjust-path failure)
-                             (partial add-spec spec)
-                             (partial fix-via spec)
-                             #(assoc % :expound/form form))
-                       problems)]
-    (assoc explain-data
-           :expound/form form
-           :expound/caller caller
-           :expound/problems problems')))
+  (if (nil? explain-data)
+    nil
+    (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure ::s/spec]} explain-data
+          caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
+          form (if (not= :instrument failure)
+                 value
+                 (cond
+                   (contains? explain-data ::s/ret) ret
+                   (contains? explain-data ::s/fn) fn
+                   (contains? explain-data ::s/args) args))
+          problems' (map (comp (partial adjust-in form)
+                               (partial adjust-path failure)
+                               (partial add-spec spec)
+                               (partial fix-via spec)
+                               #(assoc % :expound/form form))
+                         problems)]
+      (assoc explain-data
+             :expound/form form
+             :expound/caller caller
+             :expound/problems problems'))))
 
 (defn value-in
   "Similar to get-in, but works with paths that reference map keys"
@@ -160,6 +162,27 @@
 
       (and (int? k) (seqable? form))
       (recur (nth (seq form) k) rst))))
+
+;; TODO - deduple with value-in??
+;; TODO - rename
+(defn assoc-in1 [form in value]
+  (let [[k & rst] in]
+    (cond
+      (empty? in)
+      value
+
+      (and (map? form) (paths/kps? k))
+      (assoc form (:key k) value)
+
+      ;; TODO - make this work
+      ;;(and (map? form) (paths/kvps? k))
+      ;;(recur (nth (seq form) (:idx k)) rst)
+
+      (associative? form)
+      (assoc form k (assoc-in1 (get form k) rst value))
+
+      (and (int? k) (seq? form))
+      (list* (assoc (vec form) k (assoc-in1 (nth (seq form) k) rst value))))))
 
 (defn escape-replacement [pattern s]
   #?(:clj (if (string? pattern)

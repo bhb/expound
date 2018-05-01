@@ -8,10 +8,12 @@
                  [org.clojure/spec.alpha "0.1.143" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
+  :java-source-paths ["src/expound/java"]
   :plugins [[com.jakemccrary/lein-test-refresh "0.22.0"]
             [lein-cljfmt "0.5.7"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.15"]]
+
 
   :cljsbuild {:builds
               [{:id "test"
@@ -26,7 +28,9 @@
                            :main "expound.test-runner"
                            :optimizations :none
                            :verbose true
-                           :compiler-stats true}}]}
+                           :compiler-stats true
+                           :libs ["src/expound/js/util.js"]
+                           }}]}
   :figwheel {;; :http-server-root "public" ;; default and assumes "resources"
              :server-port 3446 ;; default is 3449
 
@@ -78,6 +82,7 @@
                                   [io.aviso/pretty "0.1.34"]
                                   [vvvvalvalval/scope-capture "0.1.4"]
                                   [org.clojure/test.check "0.9.0"]
+                                  [com.clojure-goes-fast/clj-async-profiler "0.1.2"]
                                   [metosin/spec-tools "0.6.1"]]
                    :plugins [[io.aviso/pretty "0.1.34"]]
                    ;; need to add dev source path here to get user.clj loaded

@@ -30,6 +30,17 @@ or
 
 `lein with-profile +test-common test-refresh :changes-only`
 
+## Profiling in the REPL
+
+```
+(comment
+  (require '[clj-async-profiler.core :as prof])
+  (do
+    (prof/start {})
+    ;; some expensive operation here
+    (prof/stop {}))
+  )
+
 ## Release
 
 ### clojars

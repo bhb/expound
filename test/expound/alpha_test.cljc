@@ -21,7 +21,7 @@
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
-(def num-tests 30)
+(def num-tests 3) ;; TODO - restore
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -1275,8 +1275,10 @@ Detected 1 error\n")
         :args (s/cat :x int? :y int?)
         :fn #(> (:ret %) (-> % :args :x))
         :ret pos-int?)
-(defn test-instrument-adder [x y]
-  (+ x y))
+(defn test-instrument-adder
+  ([x]) ;; Just to avoid compiler errors
+  ([x y]
+   (+ x y)))
 
 (defn no-linum [s]
   (string/replace s #"(.cljc?):\d+" "$1:LINUM"))
@@ -1298,6 +1300,10 @@ should satisfy
 
   int?
 
+-- Example ------------------------
+
+  (<f> 0 0)
+
 -------------------------
 Detected 1 error\n"
                 (.-message (try
@@ -1318,6 +1324,10 @@ Function arguments
 should satisfy
 
   int?
+
+-- Example ------------------------
+
+  (<f> 0 0)
 
 -------------------------
 Detected 1 error\n"
@@ -1346,6 +1356,10 @@ should satisfy
 
   int?
 
+-- Example ------------------------
+
+  (<f> 0 0)
+
 -------------------------
 Detected 1 error\n"
                 (.-message (try
@@ -1366,6 +1380,10 @@ Function arguments
 should satisfy
 
   int?
+
+-- Example ------------------------
+
+  (<f> 0 0)
 
 -------------------------
 Detected 1 error\n"
@@ -1393,6 +1411,10 @@ should have additional elements. The next element \":y\" should satisfy
 
   int?
 
+-- Example ------------------------
+
+  (<f> -1 0)
+
 -------------------------
 Detected 1 error\n"
                 (.-message (try
@@ -1412,6 +1434,10 @@ Function arguments
 should have additional elements. The next element \":y\" should satisfy
 
   int?
+
+-- Example ------------------------
+
+  (<f> -1 0)
 
 -------------------------
 Detected 1 error\n"
@@ -1535,6 +1561,10 @@ should satisfy
 
   int?
 
+-- Example ------------------------
+
+  (<f> 0 0)
+
 -------------------------
 Detected 1 error\n"
           (.-message (try
@@ -1555,6 +1585,10 @@ Function arguments
 should satisfy
 
   int?
+
+-- Example ------------------------
+
+  (<f> 0 0)
 
 -------------------------
 Detected 1 error\n"
