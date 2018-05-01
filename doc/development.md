@@ -40,3 +40,13 @@ or
     ;; some expensive operation here
     (prof/stop {}))
   )
+
+## Release
+
+### clojars
+
+`lein deploy clojars`
+
+### NPM
+
+`npm publish --access=public`

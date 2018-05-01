@@ -1,10 +1,10 @@
-(defproject expound "0.5.1-SNAPSHOT"
+(defproject expound "0.6.1-SNAPSHOT"
   :description "Human-optimized error messages for clojure.spec"
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.9.946" :scope "provided"]
+                 [org.clojure/clojurescript "1.10.238" :scope "provided"]
                  [org.clojure/spec.alpha "0.1.143" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
@@ -12,7 +12,7 @@
   :plugins [[com.jakemccrary/lein-test-refresh "0.22.0"]
             [lein-cljfmt "0.5.7"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
-            [lein-figwheel "0.5.14"]]
+            [lein-figwheel "0.5.15"]]
 
 
   :cljsbuild {:builds
@@ -74,8 +74,8 @@
              ;; to pipe all the output to the repl
              ;; :server-logfile false
 }
-  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.8"]
-                                  [figwheel-sidecar "0.5.14"]
+  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
+                                  [figwheel-sidecar "0.5.15"]
                                   [com.cemerick/piggieback "0.2.2"]
                                   [orchestra "2017.11.12-1"]
                                   [org.clojure/core.specs.alpha "0.1.24"]
@@ -83,7 +83,7 @@
                                   [vvvvalvalval/scope-capture "0.1.4"]
                                   [org.clojure/test.check "0.9.0"]
                                   [com.clojure-goes-fast/clj-async-profiler "0.1.2"]
-                                  [metosin/spec-tools "0.5.1"]]
+                                  [metosin/spec-tools "0.6.1"]]
                    :plugins [[io.aviso/pretty "0.1.34"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
@@ -99,20 +99,19 @@
                                           [orchestra "2017.11.12-1"]
                                           [org.clojure/core.specs.alpha "0.1.24"]
                                           [com.stuartsierra/dependency "0.2.0"]
-                                          [ring/ring-core "1.6.2"] ; required to make ring-spec work, may cause issues with figwheel?
-                                          [ring/ring-spec "0.0.3"] ; to test specs
-                                          [org.onyxplatform/onyx-spec "0.12.2.0"] ; to test specs
+                                          [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
+                                          [ring/ring-spec "0.0.4"] ; to test specs
+                                          [org.onyxplatform/onyx-spec "0.12.7.0"] ; to test specs
                                           [vvvvalvalval/scope-capture "0.1.4"]
-                                          [metosin/spec-tools "0.5.1"]]}
+                                          [metosin/spec-tools "0.6.1"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
-                         :dependencies [[figwheel-sidecar "0.5.14"]
+                         :dependencies [[figwheel-sidecar "0.5.15"]
                                         [karma-reporter "2.1.2"]]}]
              :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
              :clj-1.9.0-alpha19 {:dependencies [[org.clojure/clojure "1.9.0-alpha19"]]}
              :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :cljs-1.9.562 {:dependencies [[org.clojure/clojurescript "1.9.562"]]}
-             :cljs-1.9.908 {:dependencies  [[org.clojure/clojurescript "1.9.908"]]}
              :cljs-1.9.946 {:dependencies  [[org.clojure/clojurescript "1.9.946"]]}}
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"

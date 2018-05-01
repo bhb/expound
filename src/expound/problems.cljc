@@ -3,7 +3,8 @@
             [clojure.spec.alpha :as s]
             [clojure.walk :as walk]
             [clojure.string :as string]
-            [expound.printer :as printer]))
+            [expound.printer :as printer]
+            [expound.ansi :as ansi]))
 
 (defn blank-form [form]
   (cond
@@ -24,7 +25,7 @@
     ::irrelevant))
 
 (s/fdef summary-form
-        :args (s/cat :show-valid-valids? boolean?
+        :args (s/cat :show-valid-values? boolean?
                      :form any?
                      :highlighted-path :expound/path))
 (defn summary-form [show-valid-values? form in]
@@ -203,8 +204,9 @@
         highlighted-line (-> line
                              (string/replace (re-pattern relevant) (escape-replacement
                                                                     (re-pattern relevant)
-                                                                    (printer/indent 0 (count prefix) (printer/pprint-str value-at-path))))
-                             (str "\n" (highlight-line prefix (printer/pprint-str value-at-path))))]
+                                                                    (printer/indent 0 (count prefix) (ansi/color (printer/pprint-str value-at-path) :bad-value))))
+                             (str "\n" (ansi/color (highlight-line prefix (printer/pprint-str value-at-path))
+                                                   :pointer)))]
     ;;highlighted-line
     (printer/no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))
 

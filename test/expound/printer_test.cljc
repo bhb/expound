@@ -16,7 +16,7 @@
   (is (= "expound.alpha/expound"
          (printer/pprint-fn expound/expound)))
   (is (= "<anonymous function>"
-         (printer/pprint-fn #(+ % %))))
+         (printer/pprint-fn #(inc (inc %)))))
   (is (= "<anonymous function>"
          (printer/pprint-fn (constantly true))))
   (is (= "<anonymous function>"

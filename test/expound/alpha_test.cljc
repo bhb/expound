@@ -17,6 +17,7 @@
             [expound.test-utils :as test-utils]
             [clojure.walk :as walk]
             [spec-tools.data-spec :as ds]
+            [expound.ansi :as ansi]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -40,6 +41,22 @@
             :clj (string/replace s "pf." "clojure."))
          args))
 
+(defn take-lines [n s]
+  (string/join "\n" (take n (string/split-lines s))))
+
+(def inverted-ansi-codes
+  (reduce
+   (fn [m [k v]]
+     (assoc m (str v) k))
+   {}
+   ansi/sgr-code))
+
+(defn readable-ansi [s]
+  (string/replace
+   s
+   #"\x1b\[([0-9]*)m"
+   #(str "<" (string/upper-case (name (get inverted-ansi-codes (second %)))) ">")))
+
 ;; https://github.com/bhb/expound/issues/8
 (deftest expound-output-ends-in-newline
   (is (= "\n" (str (last (expound/expound-str string? 1)))))
@@ -58,8 +75,6 @@
 should satisfy
 
   string?
-
-
 
 -------------------------
 Detected 1 error\n")
@@ -300,8 +315,6 @@ should satisfy
 
   coll?
 
-
-
 -------------------------
 Detected 1 error
 "
@@ -315,8 +328,6 @@ Detected 1 error
 
 should be one of: \"a\", \"b\", 1, 2
 
-
-
 -------------------------
 Detected 1 error
 "
@@ -329,7 +340,7 @@ Detected 1 error
 
   {}
 
-should contain keys: `:or-spec/int`, `:or-spec/str`
+should contain keys: :or-spec/int, :or-spec/str
 
 |          key |    spec |
 |--------------+---------|
@@ -358,13 +369,11 @@ Detected 1 error
 
   {}
 
-should contain keys: `:or-spec/str`
+should contain keys: :or-spec/str
 
 |          key |    spec |
 |--------------+---------|
 | :or-spec/str | string? |
-
-
 
 -------------------------
 Detected 1 error
@@ -616,7 +625,7 @@ Detected 1 error\n")
 
   {}
 
-should contain keys: `:age`, `:keys-spec/name`
+should contain keys: :age, :keys-spec/name
 
 |             key |    spec |
 |-----------------+---------|
@@ -692,14 +701,12 @@ Detected 1 error\n")
 
   {}
 
-should contain keys: `:age`, `:name`
+should contain keys: :age, :name
 
 |   key |    spec |
 |-------+---------|
 |  :age |    int? |
 | :name | string? |
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -793,7 +800,7 @@ Detected 1 error\n")
 
   {:multi-spec/el-type :text}
 
-should contain key: `:multi-spec/value`
+should contain key: :multi-spec/value
 
 |               key |    spec |
 |-------------------+---------|
@@ -892,7 +899,7 @@ Detected 1 error\n"
 
   {\"foo\" \"hi\"}
 
-should contain key: `:cat-wrapped-in-or-spec/type`
+should contain key: :cat-wrapped-in-or-spec/type
 
 |                          key |     spec |
 |------------------------------+----------|
@@ -1274,7 +1281,7 @@ Detected 1 error\n")
    (+ x y)))
 
 (defn no-linum [s]
-  (string/replace s #".cljc:\d+" ".cljc:LINUM"))
+  (string/replace s #"(.cljc?):\d+" "$1:LINUM"))
 
 (deftest test-instrument
   (st/instrument `test-instrument-adder)
@@ -1292,8 +1299,6 @@ Function arguments
 should satisfy
 
   int?
-
-
 
 -- Example ------------------------
 
@@ -1319,8 +1324,6 @@ Function arguments
 should satisfy
 
   int?
-
-
 
 -- Example ------------------------
 
@@ -1353,8 +1356,6 @@ should satisfy
 
   int?
 
-
-
 -- Example ------------------------
 
   (<f> 0 0)
@@ -1379,8 +1380,6 @@ Function arguments
 should satisfy
 
   int?
-
-
 
 -- Example ------------------------
 
@@ -1412,8 +1411,6 @@ should have additional elements. The next element \":y\" should satisfy
 
   int?
 
-
-
 -- Example ------------------------
 
   (<f> -1 0)
@@ -1437,8 +1434,6 @@ Function arguments
 should have additional elements. The next element \":y\" should satisfy
 
   int?
-
-
 
 -- Example ------------------------
 
@@ -1470,8 +1465,6 @@ should satisfy
 
   pos-int?
 
-
-
 -------------------------
 Detected 1 error\n"
                 (.-message (try
@@ -1491,8 +1484,6 @@ Return value
 should satisfy
 
   pos-int?
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -1520,8 +1511,6 @@ should satisfy
 
   (fn [%] (> (:ret %) (-> % :args :x)))
 
-
-
 -------------------------
 Detected 1 error\n"
                 (.-message (try
@@ -1543,8 +1532,6 @@ should satisfy
   (fn
    [%]
    (> (:ret %) (-> % :args :x)))
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -1574,8 +1561,6 @@ should satisfy
 
   int?
 
-
-
 -- Example ------------------------
 
   (<f> 0 0)
@@ -1600,8 +1585,6 @@ Function arguments
 should satisfy
 
   int?
-
-
 
 -- Example ------------------------
 
@@ -2148,8 +2131,6 @@ should satisfy
 
   %s
 
-
-
 -------------------------
 Detected 1 error\n"
 
@@ -2173,8 +2154,6 @@ failed spec. Function arguments and return value
 should satisfy
 
   %s
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -2201,8 +2180,6 @@ should satisfy
 
   int?
 
-
-
 -------------------------
 Detected 1 error\n"
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
@@ -2221,8 +2198,6 @@ returned an invalid value
 should satisfy
 
   int?
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -2243,8 +2218,6 @@ threw exception
 with args:
 
   0
-
-
 
 -------------------------
 Detected 1 error\n"
@@ -2376,8 +2349,6 @@ Detected 1 error\n")
 
 should be a string
 
-
-
 -------------------------
 Detected 1 error
 "
@@ -2389,8 +2360,6 @@ Detected 1 error
        ^^^^
 
 should be a string
-
-
 
 -------------------------
 Detected 1 error
@@ -2406,8 +2375,6 @@ should be a string
 or
 
 should be a vector
-
-
 
 -------------------------
 Detected 1 error
@@ -2431,8 +2398,6 @@ or
 
 should be a string
 
-
-
 -------------------------
 Detected 1 error
 "
@@ -2448,8 +2413,6 @@ Detected 1 error
 
 should be a valid email address
 
-
-
 -------------------------
 Detected 1 error
 "
@@ -2463,11 +2426,328 @@ Detected 1 error
 
 should be between 0 and 100
 
-
-
 -------------------------
 Detected 1 error
 "
              (s/explain-str
               :predicate-messages/score
               101))))))
+
+(s/fdef results-str-fn1
+        :args (s/cat :x nat-int? :y nat-int?)
+        :ret pos-int?)
+(defn results-str-fn1 [x y]
+  (+ x y))
+
+(s/fdef results-str-fn2
+        :args (s/cat :x nat-int? :y nat-int?)
+        :fn #(let [x (-> % :args :x)
+                   y (-> % :args :y)
+                   ret (-> % :ret)]
+               (< x ret)))
+(defn results-str-fn2 [x y]
+  (+ x y))
+
+(s/fdef results-str-fn3
+        :args (s/cat :x #{0} :y #{0})
+        :ret nat-int?)
+(defn results-str-fn3 [x y]
+  (+ x y))
+
+(s/fdef results-str-fn4
+        :args (s/cat :x int?)
+        :ret (s/coll-of int?))
+(defn results-str-fn4 [x]
+  [x :not-int])
+
+(s/fdef results-str-fn5
+        :args (s/cat :x #{1} :y #{1})
+        :ret string?)
+(defn results-str-fn5
+  [x y]
+  #?(:clj (throw (Exception. "Ooop!"))
+     :cljs (throw (js/Error. "Oops!"))))
+
+(s/fdef results-str-fn6
+        :args (s/cat :f fn?)
+        :ret any?)
+(defn results-str-fn6
+  [f]
+  (f 1))
+
+(s/fdef results-str-missing-fn
+        :args (s/cat :x int?))
+
+(s/fdef results-str-missing-args-spec
+        :ret int?)
+(defn results-str-missing-args-spec [] 1)
+
+(deftest explain-results
+  (testing "explaining results with non-expound printer"
+    (is (thrown-with-msg?
+         #?(:cljs :default :clj Exception)
+         #"Cannot print check results"
+         (binding [s/*explain-out* s/explain-printer]
+           (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1)))))))
+
+  (testing "single bad result (failing return spec)"
+    (is (= (pf
+            "== Checked expound.alpha-test/results-str-fn1 
+
+-- Function spec failed -----------
+
+  (expound.alpha-test/results-str-fn1 0 0)
+
+returned an invalid value.
+
+  0
+
+should satisfy
+
+  pos-int?
+
+-------------------------
+Detected 1 error
+")
+           (binding [s/*explain-out* expound/printer]
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1)))))))
+  (testing "single bad result (failing fn spec)"
+    (is (= (pf "== Checked expound.alpha-test/results-str-fn2 
+
+-- Function spec failed -----------
+
+  (expound.alpha-test/results-str-fn2 0 0)
+
+failed spec. Function arguments and return value
+
+  {:args {:x 0, :y 0}, :ret 0}
+
+should satisfy
+
+  (fn
+   [%%]
+   (let
+    [x
+     (-> %% :args :x)
+     y
+     (-> %% :args :y)
+     ret
+     (-> %% :ret)]
+    (< x ret)))
+
+-------------------------
+Detected 1 error
+")
+           (binding [s/*explain-out* expound/printer]
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn2)))))))
+  (testing "single valid result"
+    (is (= "== Checked expound.alpha-test/results-str-fn3 
+
+Success!
+"
+           (binding [s/*explain-out* expound/printer]
+             (expound/explain-results-str (st/check `results-str-fn3))))))
+  #?(:clj
+     (testing "multiple results"
+       (is (= "== Checked expound.alpha-test/results-str-fn2 
+
+-- Function spec failed -----------
+
+  (expound.alpha-test/results-str-fn2 0 0)
+
+failed spec. Function arguments and return value
+
+  {:args {:x 0, :y 0}, :ret 0}
+
+should satisfy
+
+  (fn
+   [%]
+   (let
+    [x
+     (-> % :args :x)
+     y
+     (-> % :args :y)
+     ret
+     (-> % :ret)]
+    (< x ret)))
+
+-------------------------
+Detected 1 error
+
+
+== Checked expound.alpha-test/results-str-fn3 
+
+Success!
+"
+              (binding [s/*explain-out* expound/printer]
+                (expound/explain-results-str (orch.st/with-instrument-disabled (st/check [`results-str-fn2 `results-str-fn3]))))))))
+  (testing "check-fn"
+    (is (= "== Checked <unknown> ========================
+
+-- Function spec failed -----------
+
+  (<unknown> 0 0)
+
+failed spec. Function arguments and return value
+
+  {:args {:x 0, :y 0}, :ret 0}
+
+should satisfy
+
+  (fn
+   [%]
+   (let
+    [x
+     (-> % :args :x)
+     y
+     (-> % :args :y)
+     ret
+     (-> % :ret)]
+    (< x ret)))
+
+-------------------------
+Detected 1 error
+"
+           (binding [s/*explain-out* expound/printer]
+             (expound/explain-result-str (st/check-fn `results-str-fn1 (s/spec `results-str-fn2)))))))
+  #?(:clj (testing "custom printer"
+            (is (= "== Checked expound.alpha-test/results-str-fn4 
+
+-- Function spec failed -----------
+
+  (expound.alpha-test/results-str-fn4 0)
+
+returned an invalid value.
+
+  [0 :not-int]
+     ^^^^^^^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 1 error
+"
+                   (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
+                     (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn4))))))))
+  (testing "exceptions raised during check"
+    (is (= "== Checked expound.alpha-test/results-str-fn5 
+
+  (expound.alpha-test/results-str-fn5 1 1)
+
+ threw error"
+           (binding [s/*explain-out* expound/printer]
+             (take-lines 5 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn5))))))))
+  (testing "colorized output"
+    (is (= (pf "<CYAN>== Checked expound.alpha-test/results-str-fn5 <NONE>
+
+<RED>  (expound.alpha-test/results-str-fn5 1 1)<NONE>
+
+ threw error")
+           (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
+             (readable-ansi (take-lines 5 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn5)))))))))
+
+  (testing "failure to generate"
+    (is (=
+         #?(:clj "== Checked expound.alpha-test/results-str-fn6 
+
+Unable to construct generator for [:f] in
+
+  (clojure.spec.alpha/cat :f clojure.core/fn?)
+"
+            ;; CLJS doesn't contain correct data for check failure
+
+            :cljs "== Checked expound.alpha-test/results-str-fn6 
+
+Unable to construct gen at: [:f] for: fn? in
+
+  (cljs.spec.alpha/cat :f cljs.core/fn?)
+")
+         (binding [s/*explain-out* expound/printer]
+           (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn6)))))))
+  (testing "no-fn failure"
+    (is (= #?(:clj "== Checked expound.alpha-test/results-str-missing-fn 
+
+Failed to check function.
+
+  expound.alpha-test/results-str-missing-fn
+
+is not defined
+"
+              :cljs "== Checked <unknown> ========================
+
+Failed to check function.
+
+  <unknown>
+
+is not defined
+")
+           (binding [s/*explain-out* expound/printer]
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-fn)))))))
+  (testing "no args spec"
+    (is (= (pf "== Checked expound.alpha-test/results-str-missing-args-spec 
+
+Failed to check function.
+
+  (pf.spec.alpha/fspec :ret pf.core/int?)
+
+should contain an :args spec
+")
+           (binding [s/*explain-out* expound/printer]
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-args-spec))))))))
+
+#?(:clj (deftest explain-results-gen
+          (checking
+           "all functions can be checked and printed"
+           num-tests
+           [sym-to-check (gen/elements (st/checkable-syms))]
+          ;; Just confirm an error is not thrown
+           (is (string?
+                (expound/explain-results-str
+                 (orch.st/with-instrument-disabled
+                   (with-out-str
+                     (st/check sym-to-check
+                               {:clojure.spec.test.check/opts {:num-tests 10}})))))))))
+
+(s/def :colorized-output/strings (s/coll-of string?))
+(deftest colorized-output
+  (is (= (pf "-- Spec failed --------------------
+
+  [... :a ...]
+       ^^
+
+should satisfy
+
+  string?
+
+-- Relevant specs -------
+
+:colorized-output/strings:
+  (pf.spec.alpha/coll-of pf.core/string?)
+
+-------------------------
+Detected 1 error
+")
+         (binding [s/*explain-out* (expound/custom-printer {:theme :none})]
+           (s/explain-str :colorized-output/strings ["" :a ""]))))
+  (is (= (pf "<NONE><NONE><CYAN>-- Spec failed --------------------<NONE>
+
+  [... <RED>:a<NONE> ...]
+  <MAGENTA>     ^^<NONE>
+
+should satisfy
+
+  <GREEN>string?<NONE>
+
+<CYAN>-- Relevant specs -------<NONE>
+
+:colorized-output/strings:
+  (pf.spec.alpha/coll-of pf.core/string?)
+
+<CYAN>-------------------------<NONE>
+<CYAN>Detected<NONE> <CYAN>1<NONE> <CYAN>error<NONE>
+")
+         (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
+           (readable-ansi (s/explain-str :colorized-output/strings ["" :a ""]))))))
