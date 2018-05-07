@@ -1,7 +1,5 @@
 (ns expound.alpha
-  ;; TODO - rewrite
-  "Drop-in replacement for clojure.spec.alpha, with
-  human-readable `expound` function ... "
+  "Functions to print human-readable errors for clojure.spec"
   (:require [expound.paths :as paths]
             [expound.problems :as problems]
             [clojure.spec.alpha :as s]
@@ -780,7 +778,7 @@ returned an invalid value.
 (defn custom-printer
   "Returns a printer.
 
-  Options:
+Options:
   :show-valid-values? - if false, replaces valid values with \"...\"
   :value-str-fn       - function to print bad values
   :print-specs?       - if true, display \"Relevant specs\" section. Otherwise, omit that section.|
@@ -820,7 +818,9 @@ returned an invalid value.
 
 #?(:clj
    (defmacro def
-     "Like clojure.spec.alpha/def, but optionally takes a human-readable error message (will only be used for predicates) e.g. 'should be a string'"
+     "Define a spec with an optional error message.
+
+This is a replacement for `clojure.spec.alpha/def` but optionally takes a human-readable error message (will only be used for predicates) e.g. 'should be a string'"
      ([k spec-form]
       `(s/def ~k ~spec-form))
      ([k spec-form error-message]
