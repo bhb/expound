@@ -452,7 +452,7 @@
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
-     "threw exception 
+     "threw exception
 
 %s
 
@@ -775,9 +775,17 @@ returned an invalid value.
   (get @registry-ref k))
 
 (s/fdef custom-printer
-        :args (s/cat :opts :expound.printer/opts))
+        :args (s/cat :opts :expound.printer/opts)
+        :ret ifn?)
 (defn custom-printer
-  "Returns a printer, configured via opts"
+  "Returns a printer.
+
+  Options:
+  :show-valid-values? - if false, replaces valid values with \"...\"
+  :value-str-fn       - function to print bad values
+  :print-specs?       - if true, display \"Relevant specs\" section. Otherwise, omit that section.|
+ :theme               - enables color theme. Possible values: :figwheel-theme, :none
+   "
   [opts]
   (fn [explain-data]
     (print (printer-str opts explain-data))))
