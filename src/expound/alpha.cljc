@@ -18,11 +18,12 @@
 ;;;;;; internal specs ;;;;;;
 
 (s/def ::singleton (s/coll-of any? :count 1))
-(s/def :spec/spec keyword?)
-(s/def :spec/specs (s/coll-of :spec/spec))
-(s/def :spec.problem/via (s/coll-of :spec/spec :kind vector?))
-(s/def :spec/problem (s/keys :req-un [:spec.problem/via]))
-(s/def :spec/problems (s/coll-of :spec/problem))
+;; TODO - rename within expound namespace, I can't take top-level spec namespace
+;; (s/def :spec/spec keyword?)
+;; (s/def :spec/specs (s/coll-of :spec/spec))
+;; (s/def :spec.problem/via (s/coll-of :spec/spec :kind vector?))
+;; (s/def :spec/problem (s/keys :req-un [:spec.problem/via]))
+;; (s/def :spec/problems (s/coll-of :spec/problem))
 
 (s/def :expound.printer/show-valid-values? boolean?)
 (s/def :expound.printer/value-str-fn ifn?)
@@ -33,6 +34,11 @@
                                        :expound.printer/value-str-fn
                                        :expound.printer/print-specs?
                                        :expound.printer/theme]))
+(s/def :expound.spec/spec (s/or
+                           :set set?
+                           :pred ifn?
+                           :kw qualified-keyword?
+                           :spec s/spec?))
 
 ;;;;;; themes ;;;;;;
 
@@ -166,6 +172,7 @@
 (defn ^:private spec-w-error-message? [via pred]
   (boolean (let [last-spec (last via)]
              (and (not= ::s/unknown pred)
+                  (qualified-keyword? last-spec)
                   (error-message last-spec)
                   (s/get-spec last-spec)))))
 
@@ -179,7 +186,10 @@
      (remove nil?
              (conj (keep
                     (fn [{:keys [expound/via]}]
-                      (ansi/color (error-message (last via)) :good))
+                      (let [last-spec (last via)]
+                        (if (qualified-keyword? last-spec)
+                          (ansi/color (error-message last-spec) :good)
+                          nil)))
                     with-msg)
                    (when (seq no-msgs)
                      (printer/format
@@ -770,7 +780,7 @@ returned an invalid value.
 
 (s/fdef error-message
         :args (s/cat :k qualified-keyword?)
-        :ret string?)
+        :ret (s/nilable string?))
 (defn error-message
   "Given a spec named `k`, return its human-readable error message"
   [k]
@@ -792,13 +802,20 @@ Options:
   (fn [explain-data]
     (print (printer-str opts explain-data))))
 
+(s/fdef printer
+        :args (s/cat :explain-data map?)
+        :ret nil?)
 (defn printer
-  "Prints explain-data in a human-readable format"
+  "Prints `explain-data` in a human-readable format"
   [explain-data]
   ((custom-printer {}) explain-data))
 
+(s/fdef expound-str
+        :args (s/cat :spec :expound.spec/spec
+                     :form any?)
+        :ret string?)
 (defn expound-str
-  "Given a spec and a value, either returns success message or returns a human-readable explanation as a string."
+  "Given a `spec` and a `form`, either returns success message or returns a human-readable explanation as a string."
   [spec form]
   ;; expound was initially released with support
   ;; for CLJS 1.9.542 which did not include
@@ -811,8 +828,12 @@ Options:
                           ::s/value form)
                    nil))))
 
+(s/fdef expound
+        :args (s/cat :spec :expound.spec/spec
+                     :form any?)
+        :ret nil?)
 (defn expound
-  "Given a spec and a value, either prints a success message or prints a human-readable explanation as a string."
+  "Given a `spec` and a `form`, either prints a success message or prints a human-readable explanation"
   [spec form]
   (print (expound-str spec form)))
 
