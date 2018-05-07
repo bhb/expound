@@ -18,12 +18,11 @@
 ;;;;;; internal specs ;;;;;;
 
 (s/def ::singleton (s/coll-of any? :count 1))
-;; TODO - rename within expound namespace, I can't take top-level spec namespace
-;; (s/def :spec/spec keyword?)
-;; (s/def :spec/specs (s/coll-of :spec/spec))
-;; (s/def :spec.problem/via (s/coll-of :spec/spec :kind vector?))
-;; (s/def :spec/problem (s/keys :req-un [:spec.problem/via]))
-;; (s/def :spec/problems (s/coll-of :spec/problem))
+(s/def :expound.spec/spec keyword?)
+(s/def :expound.spec/specs (s/coll-of :expound.spec/spec))
+(s/def :expound.spec.problem/via (s/coll-of :expound.spec/spec :kind vector?))
+(s/def :expound.spec/problem (s/keys :req-un [:expound.spec.problem/via]))
+(s/def :expound.spec/problems (s/coll-of :expound.spec/problem))
 
 (s/def :expound.printer/show-valid-values? boolean?)
 (s/def :expound.printer/value-str-fn ifn?)
@@ -111,8 +110,8 @@
       via)))
 
 (s/fdef specs
-        :args (s/cat :problems :spec/problems)
-        :ret :spec/specs)
+        :args (s/cat :problems :expound.spec/problems)
+        :ret :expound.spec/specs)
 (defn ^:private specs
   "Given a collection of problems, returns the specs for those problems, with duplicates removed"
   [problems]
@@ -806,7 +805,7 @@ Options:
         :args (s/cat :explain-data map?)
         :ret nil?)
 (defn printer
-  "Prints `explain-data` in a human-readable format"
+  "Prints `explain-data` in a human-readable format."
   [explain-data]
   ((custom-printer {}) explain-data))
 
@@ -833,7 +832,7 @@ Options:
                      :form any?)
         :ret nil?)
 (defn expound
-  "Given a `spec` and a `form`, either prints a success message or prints a human-readable explanation"
+  "Given a `spec` and a `form`, either prints a success message or prints a human-readable explanation."
   [spec form]
   (print (expound-str spec form)))
 
@@ -851,7 +850,7 @@ Options:
    (defmacro def
      "Define a spec with an optional error message.
 
-This is a replacement for `clojure.spec.alpha/def` but optionally takes a human-readable `error-message` (will only be used for predicates) e.g. 'should be a string'"
+This is a replacement for `clojure.spec.alpha/def` but optionally takes a human-readable `error-message` (will only be used for predicates) e.g. 'should be a string'."
      ([k spec-form]
       `(s/def ~k ~spec-form))
      ([k spec-form error-message]
