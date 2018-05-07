@@ -768,7 +768,11 @@ returned an invalid value.
 
 ;;;;;; public ;;;;;;
 
-(defn error-message [k]
+(s/fdef error-message
+        :args (s/cat :k qualified-keyword?)
+        :ret string?)
+(defn error-message
+  "Given a spec named `k`, return its human-readable error message"
   [k]
   (get @registry-ref k))
 
