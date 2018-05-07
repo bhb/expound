@@ -812,7 +812,13 @@ Options:
   [spec form]
   (print (expound-str spec form)))
 
-(defn defmsg [k error-message]
+(s/fdef defmsg
+        :args (s/cat :k qualified-keyword?
+                     :error-message string?)
+        :ret nil?)
+(defn defmsg
+  "Associates the spec named `k` with `error-message`."
+  [k error-message]
   (swap! registry-ref assoc k error-message)
   nil)
 
@@ -820,7 +826,7 @@ Options:
    (defmacro def
      "Define a spec with an optional error message.
 
-This is a replacement for `clojure.spec.alpha/def` but optionally takes a human-readable error message (will only be used for predicates) e.g. 'should be a string'"
+This is a replacement for `clojure.spec.alpha/def` but optionally takes a human-readable `error-message` (will only be used for predicates) e.g. 'should be a string'"
      ([k spec-form]
       `(s/def ~k ~spec-form))
      ([k spec-form error-message]
