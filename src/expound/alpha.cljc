@@ -858,6 +858,9 @@ returned an invalid value.
            (defmsg '~k ~error-message)
            (s/def ~k ~spec-form))))))
 
+(s/fdef explain-result
+        :args (s/cat :check-result (s/nilable map?))
+        :ret nil?)
 (defn explain-result
   "Given a result from `clojure.spec.test.alpha/check`, prints a summary of the result."
   [check-result]
@@ -865,11 +868,17 @@ returned an invalid value.
     (throw (ex-info "Cannot print check results with default printer. Use 'set!' or 'binding' to use Expound printer." {})))
   (s/*explain-out* check-result))
 
+(s/fdef explain-result-str
+        :args (s/cat :check-result (s/nilable map?))
+        :ret string?)
 (defn explain-result-str
   "Given a result from `clojure.spec.test.alpha/check`, returns a string summarizing the result."
   [check-result]
   (with-out-str (explain-result check-result)))
 
+(s/fdef explain-results
+        :args (s/cat :check-results (s/coll-of (s/nilable map?)))
+        :ret nil?)
 (defn explain-results
   "Given a sequence of results from `clojure.spec.test.alpha/check`, prints a summary of the results."
   [check-results]
@@ -878,6 +887,9 @@ returned an invalid value.
     (print "\n\n"))
   (explain-result (last check-results)))
 
+(s/fdef explain-results-str
+        :args (s/cat :check-results (s/coll-of (s/nilable map?)))
+        :ret string?)
 (defn explain-results-str
   "Given a sequence of results from `clojure.spec.test.alpha/check`, returns a string summarizing the results."
   [check-results]

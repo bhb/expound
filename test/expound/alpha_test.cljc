@@ -2652,9 +2652,8 @@ should contain an :args spec
            (is (string?
                 (expound/explain-results-str
                  (orch.st/with-instrument-disabled
-                   (with-out-str
-                     (st/check sym-to-check
-                               {:clojure.spec.test.check/opts {:num-tests 10}})))))))))
+                   (st/check sym-to-check
+                             {:clojure.spec.test.check/opts {:num-tests 10}}))))))))
 
 (s/def :colorized-output/strings (s/coll-of string?))
 (deftest colorized-output
