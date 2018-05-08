@@ -264,8 +264,8 @@
     (and (seq? pred)
          (< 2 (count pred))
          (s/valid?
-           :expound.spec/contains-key-pred
-           (nth pred 2)))))
+          :expound.spec/contains-key-pred
+          (nth pred 2)))))
 
 (defn ^:private insufficient-input? [_failure problem]
   (contains? #{"Insufficient input"} (:reason problem)))

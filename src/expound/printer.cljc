@@ -15,26 +15,26 @@
 
 (s/def :expound.spec/spec-conjunction
   (s/cat
-    :op #{'or 'and}
-    :specs (s/+ :expound.spec/kw-or-conjunction)))
+   :op #{'or 'and}
+   :specs (s/+ :expound.spec/kw-or-conjunction)))
 (s/def :expound.spec/kw-or-conjunction
   (s/or
-    :kw qualified-keyword?
-    :conj :expound.spec/spec-conjunction))
+   :kw qualified-keyword?
+   :conj :expound.spec/spec-conjunction))
 (s/def :expound.spec/key-spec
   (s/cat :keys #{'clojure.spec.alpha/keys
                  'cljs.spec.alpha/keys}
          :clauses (s/*
-                    (s/cat :qualifier #{:req-un :req :opt-un :opt}
-                           :specs (s/coll-of :expound.spec/kw-or-conjunction)))))
+                   (s/cat :qualifier #{:req-un :req :opt-un :opt}
+                          :specs (s/coll-of :expound.spec/kw-or-conjunction)))))
 (s/def :expound.spec/contains-key-pred (s/or
-                                         :simple (s/cat
-                                         :contains #{`contains? 'contains?}
-                                         :arg #{'%}
-                                         :kw keyword?)
-                                         :compound (s/cat
-                                                     :op #{`or `and}
-                                                     :clauses (s/+ :expound.spec/contains-key-pred))))
+                                        :simple (s/cat
+                                                 :contains #{`contains? 'contains?}
+                                                 :arg #{'%}
+                                                 :kw keyword?)
+                                        :compound (s/cat
+                                                   :op #{`or `and}
+                                                   :clauses (s/+ :expound.spec/contains-key-pred))))
 
 ;;;; private
 
