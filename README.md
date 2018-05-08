@@ -244,7 +244,7 @@ Create a custom printer by changing the following options e.g.
 | name | spec |  default | description |
 |------|------|----------|-------------|
 | `:show-valid-values?` | `boolean?` | `false` | If `false`, replaces valid values with `...` (example below) |
-| `:value-str-fn` | `ifn?` | provided function | Function to print bad value (example below) |
+| `:value-str-fn` | `ifn?` | provided function | Function to print bad values (example below) |
 | `:print-specs?` | `boolean?` | `true` | If true, display "Relevant specs" section. Otherwise, omit that section. |
 | `:theme` | `#{:figwheel-theme :none}` | `:none` | Enables color theme. |
 

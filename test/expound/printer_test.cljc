@@ -4,17 +4,26 @@
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [expound.alpha :as expound]
             [expound.printer :as printer]
+            #?(:cljs
+               [clojure.spec.test.alpha :as st]
+               ;; FIXME
+               ;; orchestra is supposed to work with cljs but
+               ;; it isn't working for me right now
+               #_[orchestra-cljs.spec.test :as st]
+               :clj [orchestra.spec.test :as st])
             [expound.test-utils :as test-utils :refer [contains-nan?]]))
 
 (use-fixtures :once
   test-utils/check-spec-assertions
   test-utils/instrument-all)
 
+(defn example-fn [])
+
 (deftest pprint-fn
   (is (= "string?"
          (printer/pprint-fn (::s/spec (s/explain-data string? 1)))))
-  (is (= "expound.alpha/expound"
-         (printer/pprint-fn expound/expound)))
+  (is (= "expound.printer-test/example-fn"
+         (printer/pprint-fn example-fn)))
   (is (= "<anonymous function>"
          (printer/pprint-fn #(inc (inc %)))))
   (is (= "<anonymous function>"

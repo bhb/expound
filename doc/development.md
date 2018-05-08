@@ -39,3 +39,7 @@ or
 ### NPM
 
 `npm publish --access=public`
+
+## Generating docs
+
+`lein codox`

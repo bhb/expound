@@ -11,8 +11,13 @@
   :plugins [[com.jakemccrary/lein-test-refresh "0.22.0"]
             [lein-cljfmt "0.5.7"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
-            [lein-figwheel "0.5.15"]]
-
+            [lein-figwheel "0.5.15"]
+            [lein-codox "0.10.3"]]
+  :codox {:output-path "docs"
+          :source-paths ["src"]
+          :namespaces [expound.alpha]
+          ;; Exclude 'doc' directory, since it's all internal documentation right now.
+          :doc-paths []}
   :cljsbuild {:builds
               [{:id "test"
                 :source-paths ["src" "test"]

@@ -1586,28 +1586,7 @@ should satisfy
 Detected 1 error
 ")
            (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (fn [spec-name form path val] "<HIDDEN>")})]
-             (s/explain-str :custom-printer/strings ["a" "b" :c])))))
-  (testing "modified version of the included value printer"
-    (testing "custom value printer"
-      (is (= (pf "-- Spec failed --------------------
-
-  [\"a\" \"b\" :c]
-           ^^
-
-should satisfy
-
-  string?
-
--- Relevant specs -------
-
-:custom-printer/strings:
-  (pf.spec.alpha/coll-of pf.core/string?)
-
--------------------------
-Detected 1 error
-")
-             (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (partial expound/value-in-context {:show-valid-values? true})})]
-               (s/explain-str :custom-printer/strings ["a" "b" :c])))))))
+             (s/explain-str :custom-printer/strings ["a" "b" :c]))))))
 
 (defn spec-dependencies [spec]
   (->> spec
@@ -2454,7 +2433,7 @@ Detected 1 error
          #?(:cljs :default :clj Exception)
          #"Cannot print check results"
          (binding [s/*explain-out* s/explain-printer]
-           (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1)))))))
+           (expound/explain-results-str (st/check `results-str-fn1))))))
 
   (testing "single bad result (failing return spec)"
     (is (= (pf
@@ -2673,9 +2652,8 @@ should contain an :args spec
            (is (string?
                 (expound/explain-results-str
                  (orch.st/with-instrument-disabled
-                   (with-out-str
-                     (st/check sym-to-check
-                               {:clojure.spec.test.check/opts {:num-tests 10}})))))))))
+                   (st/check sym-to-check
+                             {:clojure.spec.test.check/opts {:num-tests 10}}))))))))
 
 (s/def :colorized-output/strings (s/coll-of string?))
 (deftest colorized-output
