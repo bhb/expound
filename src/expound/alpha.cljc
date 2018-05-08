@@ -781,7 +781,7 @@ returned an invalid value.
         :args (s/cat :k qualified-keyword?)
         :ret (s/nilable string?))
 (defn error-message
-  "Given a spec named `k`, return its human-readable error message"
+  "Given a spec named `k`, return its human-readable error message."
   [k]
   (get @registry-ref k))
 
@@ -791,12 +791,11 @@ returned an invalid value.
 (defn custom-printer
   "Returns a printer.
 
-Options:
-  :show-valid-values? - if false, replaces valid values with \"...\"
-  :value-str-fn       - function to print bad values
-  :print-specs?       - if true, display \"Relevant specs\" section. Otherwise, omit that section.|
- :theme               - enables color theme. Possible values: :figwheel-theme, :none
-   "
+  Options:
+   :show-valid-values? - if false, replaces valid values with \"...\"
+   :value-str-fn       - function to print bad values
+   :print-specs?       - if true, display \"Relevant specs\" section. Otherwise, omit that section.
+   :theme               - enables color theme. Possible values: :figwheel-theme, :none"
   [opts]
   (fn [explain-data]
     (print (printer-str opts explain-data))))
@@ -814,7 +813,7 @@ Options:
                      :form any?)
         :ret string?)
 (defn expound-str
-  "Given a `spec` and a `form`, either returns success message or returns a human-readable explanation as a string."
+  "Given a `spec` and a `form`, either returns success message or a human-readable error message."
   [spec form]
   ;; expound was initially released with support
   ;; for CLJS 1.9.542 which did not include
@@ -832,7 +831,7 @@ Options:
                      :form any?)
         :ret nil?)
 (defn expound
-  "Given a `spec` and a `form`, either prints a success message or prints a human-readable explanation."
+  "Given a `spec` and a `form`, either prints a success message or a human-readable error message."
   [spec form]
   (print (expound-str spec form)))
 
@@ -848,9 +847,9 @@ Options:
 
 #?(:clj
    (defmacro def
-     "Define a spec with an optional error message.
+     "Define a spec with an optional `error-message`.
 
-Replaces `clojure.spec.alpha/def` but optionally takes a human-readable `error-message` (will only be used for predicates) e.g. 'should be a string'."
+  Replaces `clojure.spec.alpha/def` but optionally takes a human-readable `error-message` (will only be used for predicates) e.g. 'should be a string'."
      ([k spec-form]
       `(s/def ~k ~spec-form))
      ([k spec-form error-message]
@@ -859,19 +858,27 @@ Replaces `clojure.spec.alpha/def` but optionally takes a human-readable `error-m
            (defmsg '~k ~error-message)
            (s/def ~k ~spec-form))))))
 
-(defn explain-result [check-result]
+(defn explain-result
+  "Given a result from `clojure.spec.test.alpha/check`, prints a summary of the result."
+  [check-result]
   (when (= s/*explain-out* s/explain-printer)
     (throw (ex-info "Cannot print check results with default printer. Use 'set!' or 'binding' to use Expound printer." {})))
   (s/*explain-out* check-result))
 
-(defn explain-result-str [check-result]
+(defn explain-result-str
+  "Given a result from `clojure.spec.test.alpha/check`, returns a string summarizing the result."
+  [check-result]
   (with-out-str (explain-result check-result)))
 
-(defn explain-results [check-results]
+(defn explain-results
+  "Given a sequence of results from `clojure.spec.test.alpha/check`, prints a summary of the results."
+  [check-results]
   (doseq [check-result (butlast check-results)]
     (explain-result check-result)
     (print "\n\n"))
   (explain-result (last check-results)))
 
-(defn explain-results-str [check-results]
+(defn explain-results-str
+  "Given a sequence of results from `clojure.spec.test.alpha/check`, returns a string summarizing the results."
+  [check-results]
   (with-out-str (explain-results check-results)))
