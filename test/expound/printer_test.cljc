@@ -17,14 +17,13 @@
   test-utils/check-spec-assertions
   test-utils/instrument-all)
 
+(defn example-fn [])
+
 (deftest pprint-fn
   (is (= "string?"
          (printer/pprint-fn (::s/spec (s/explain-data string? 1)))))
-  ;; Instrumenting a function wraps it in an anonymous function,
-  ;; which makes the following test fail, so unstrument it first
-  (st/unstrument `expound/expound)
-  (is (= "expound.alpha/expound"
-         (printer/pprint-fn expound/expound)))
+  (is (= "expound.printer-test/example-fn"
+         (printer/pprint-fn example-fn)))
   (is (= "<anonymous function>"
          (printer/pprint-fn #(inc (inc %)))))
   (is (= "<anonymous function>"

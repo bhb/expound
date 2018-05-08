@@ -850,7 +850,7 @@ Options:
    (defmacro def
      "Define a spec with an optional error message.
 
-This is a replacement for `clojure.spec.alpha/def` but optionally takes a human-readable `error-message` (will only be used for predicates) e.g. 'should be a string'."
+Replaces `clojure.spec.alpha/def` but optionally takes a human-readable `error-message` (will only be used for predicates) e.g. 'should be a string'."
      ([k spec-form]
       `(s/def ~k ~spec-form))
      ([k spec-form error-message]
