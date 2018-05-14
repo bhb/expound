@@ -202,10 +202,14 @@
     1
 
     (and (vector? x) (vector? y))
-    (first (filter #(not= 0 %) (map compare-path-segment x y)))
+    (->> (map compare-path-segment x y)
+         (remove #{0})
+         first)
 
     :else
     (compare x y)))
 
 (defn compare-paths [path1 path2]
-  (first (filter #(not= 0 %) (map compare-path-segment path1 path2))))
+  (->> (map compare-path-segment path1 path2)
+       (remove #{0})
+       first))

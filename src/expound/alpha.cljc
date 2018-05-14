@@ -159,12 +159,15 @@
     value))
 
 (defn ^:private preds [problems]
-  (string/join "\n\nor\n\n" (distinct (map (fn [problem]
-                                             (printer/indent
-                                              (ansi/color
-                                               (pr-pred (:pred problem)
-                                                        (:spec problem))
-                                               :good-pred))) problems))))
+  (->> problems
+       (map (fn [problem]
+              (printer/indent
+               (ansi/color
+                (pr-pred (:pred problem)
+                         (:spec problem))
+                :good-pred))))
+       distinct
+       (string/join "\n\nor\n\n")))
 
 (declare error-message)
 
@@ -180,22 +183,20 @@
                             (fn [{:keys [expound/via pred]}]
                               (spec-w-error-message? via pred))
                             problems)]
-    (string/join
-     "\n\nor\n\n"
-     (remove nil?
-             (conj (keep
-                    (fn [{:keys [expound/via]}]
-                      (let [last-spec (last via)]
-                        (if (qualified-keyword? last-spec)
-                          (ansi/color (error-message last-spec) :good)
-                          nil)))
-                    with-msg)
-                   (when (seq no-msgs)
-                     (printer/format
-                      "should satisfy
+    (->> (when (seq no-msgs)
+           (printer/format
+            "should satisfy
 
 %s"
-                      (preds no-msgs))))))))
+            (preds no-msgs)))
+         (conj (keep (fn [{:keys [expound/via]}]
+                       (let [last-spec (last via)]
+                         (if (qualified-keyword? last-spec)
+                           (ansi/color (error-message last-spec) :good)
+                           nil)))
+                     with-msg))
+         (remove nil?)
+         (string/join "\n\nor\n\n"))))
 
 (defn ^:private label
   ([size]
@@ -206,7 +207,9 @@
    (ansi/color
     (let [prefix (str label-str label-str " " s " ")
           chars-left (- size (count prefix))]
-      (str prefix (apply str (repeat chars-left label-str))))
+      (->> (repeat chars-left label-str)
+           (apply str)
+           (str prefix)))
     :header)))
 
 (def ^:private header-label (partial label header-size))
@@ -336,7 +339,11 @@
     (printer/format
      "should be%s: %s"
      (if (= 1 (count combined-set)) "" " one of")
-     (ansi/color (string/join ", " (map #(ansi/color % :good) (sort (map #(str "" (pr-str %) "") combined-set))))
+     (ansi/color (->> combined-set
+                      (map #(str "" (pr-str %) ""))
+                      (sort)
+                      (map #(ansi/color % :good))
+                      (string/join ", "))
                  :good))))
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]

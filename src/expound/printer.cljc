@@ -240,6 +240,7 @@
    (indent indent-level indent-level s))
   ([first-line-indent rest-lines-indent s]
    (let [[line & lines] (string/split-lines (str s))]
-     (string/join "\n"
-                  (into [(str (apply str (repeat first-line-indent " ")) line)]
-                        (map #(str (apply str (repeat rest-lines-indent " ")) %) lines))))))
+     (->> lines
+          (map #(str (apply str (repeat rest-lines-indent " ")) %))
+          (into [(str (apply str (repeat first-line-indent " ")) line)])
+          (string/join "\n")))))
