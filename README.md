@@ -43,6 +43,8 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ## Usage
 
+[API Docs](https://bhb.github.io/expound/index.html)
+
 ```
 > brew install clojure
 > clj -Sdeps '{:deps {friendly {:git/url "https://gist.github.com/bhb/2686b023d074ac052dbc21f12f324f18" :sha "9bd01f28522a0083c6a7428a871aa5fbb8070d1d"}}}' -m friendly
@@ -244,7 +246,7 @@ Create a custom printer by changing the following options e.g.
 | name | spec |  default | description |
 |------|------|----------|-------------|
 | `:show-valid-values?` | `boolean?` | `false` | If `false`, replaces valid values with `...` (example below) |
-| `:value-str-fn` | `ifn?` | provided function | Function to print bad value (example below) |
+| `:value-str-fn` | `ifn?` | provided function | Function to print bad values (example below) |
 | `:print-specs?` | `boolean?` | `true` | If true, display "Relevant specs" section. Otherwise, omit that section. |
 | `:theme` | `#{:figwheel-theme :none}` | `:none` | Enables color theme. |
 

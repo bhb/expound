@@ -13,28 +13,28 @@
 (def max-spec-str-width 100)
 (def anon-fn-str "<anonymous function>")
 
-(s/def :spec/spec-conjunction
+(s/def :expound.spec/spec-conjunction
   (s/cat
    :op #{'or 'and}
-   :specs (s/+ :spec/kw-or-conjunction)))
-(s/def :spec/kw-or-conjunction
+   :specs (s/+ :expound.spec/kw-or-conjunction)))
+(s/def :expound.spec/kw-or-conjunction
   (s/or
    :kw qualified-keyword?
-   :conj :spec/spec-conjunction))
-(s/def :spec/key-spec
+   :conj :expound.spec/spec-conjunction))
+(s/def :expound.spec/key-spec
   (s/cat :keys #{'clojure.spec.alpha/keys
                  'cljs.spec.alpha/keys}
          :clauses (s/*
                    (s/cat :qualifier #{:req-un :req :opt-un :opt}
-                          :specs (s/coll-of :spec/kw-or-conjunction)))))
-(s/def :spec/contains-key-pred (s/or
-                                :simple (s/cat
-                                         :contains #{`contains? 'contains?}
-                                         :arg #{'%}
-                                         :kw keyword?)
-                                :compound (s/cat
-                                           :op #{`or `and}
-                                           :clauses (s/+ :spec/contains-key-pred))))
+                          :specs (s/coll-of :expound.spec/kw-or-conjunction)))))
+(s/def :expound.spec/contains-key-pred (s/or
+                                        :simple (s/cat
+                                                 :contains #{`contains? 'contains?}
+                                                 :arg #{'%}
+                                                 :kw keyword?)
+                                        :compound (s/cat
+                                                   :op #{`or `and}
+                                                   :clauses (s/+ :expound.spec/contains-key-pred))))
 
 ;;;; private
 
@@ -48,7 +48,7 @@
 
 (defn specs-from-form [via]
   (let [form (some-> via last s/form)
-        conformed (s/conform :spec/key-spec form)]
+        conformed (s/conform :expound.spec/key-spec form)]
     ;; The containing spec might not be
     ;; a simple 'keys' call, in which case we give up
     (if (and form
@@ -112,7 +112,7 @@
            (map summarize-key-clause (:clauses match)))))
 
 (defn missing-key [form]
-  (let [[branch match] (s/conform :spec/contains-key-pred (nth form 2))]
+  (let [[branch match] (s/conform :expound.spec/contains-key-pred (nth form 2))]
     (case branch
       :simple
       (:kw match)

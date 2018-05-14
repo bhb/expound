@@ -11,7 +11,6 @@ META-INF/maven/expound/expound/pom.properties
 expound/
 expound/util.cljc
 expound/paths.cljc
-expound/core.clj
 expound/alpha.cljc
 expound/problems.cljc
 expound/printer.cljc
