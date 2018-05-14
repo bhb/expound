@@ -66,23 +66,23 @@
 (defn key->spec [keys problems]
   (doseq [p problems]
     (assert (some? (:expound/via p)) util/assert-message))
-  (let [vias (map :expound/via problems)]
-    (let [specs (if (every? qualified-keyword? keys)
-                  keys
-                  (if-let [specs (apply set/union (map specs-from-form vias))]
-                    specs
-                    keys))]
-      (reduce
-       (fn [m k]
-         (assoc m
+  (let [vias (map :expound/via problems)
+        specs (if (every? qualified-keyword? keys)
+                keys
+                (if-let [specs (apply set/union (map specs-from-form vias))]
+                  specs
+                  keys))]
+    (reduce
+     (fn [m k]
+       (assoc m
+              k
+              (if (qualified-keyword? k)
                 k
-                (if (qualified-keyword? k)
-                  k
-                  (->> specs
-                       (filter #(= (name k) (name %)))
-                       first))))
-       {}
-       keys))))
+                (->> specs
+                     (filter #(= (name k) (name %)))
+                     first))))
+     {}
+     keys)))
 
 (defn expand-spec [spec]
   (let [!seen-specs (atom #{})]
