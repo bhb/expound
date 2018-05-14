@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Added
+- Specs and docstrings for public API
+- Codox site for documentation
+
 ## [0.6.0] - 2018-04-26
 
 ### Fixed
