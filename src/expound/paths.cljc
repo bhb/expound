@@ -187,6 +187,8 @@
                        :in' in'}))
       res)))
 
+(declare compare-paths)
+
 (defn compare-path-segment [x y]
   (cond
     (and (int? x) (kvps? y))
@@ -202,9 +204,7 @@
     1
 
     (and (vector? x) (vector? y))
-    (->> (map compare-path-segment x y)
-         (remove #{0})
-         first)
+    (compare-paths x y)
 
     :else
     (compare x y)))
