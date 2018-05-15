@@ -9,7 +9,8 @@
             #?(:cljs [goog.string])
             [expound.printer :as printer]
             [expound.util :as util]
-            [expound.ansi :as ansi]))
+            [expound.ansi :as ansi]
+            [clojure.spec.gen.alpha :as gen]))
 
 ;;;;;; registry ;;;;;;
 
@@ -38,6 +39,14 @@
                            :pred ifn?
                            :kw qualified-keyword?
                            :spec s/spec?))
+
+;; TODO - make real anonymous function here
+(s/def :expound/msg-fn ifn? #_(s/fspec
+                               :args (s/cat
+                                      :sp (s/with-gen s/spec?
+                                            #(gen/elements [string? int? keyword?]))
+                                      :problem :expound.spec/problem)
+                               :ret string?))
 
 ;;;;;; themes ;;;;;;
 
@@ -189,10 +198,13 @@
 
 %s"
             (preds no-msgs)))
-         (conj (keep (fn [{:keys [expound/via]}]
+         (conj (keep (fn [{:keys [expound/via] :as problem}]
                        (let [last-spec (last via)]
                          (if (qualified-keyword? last-spec)
-                           (ansi/color (error-message last-spec) :good)
+                           (if (ifn? (error-message last-spec))
+                             (let [f (error-message last-spec)]
+                               (ansi/color (f problem) :good))
+                             (ansi/color (error-message last-spec) :good))
                            nil)))
                      with-msg))
          (remove nil?)
@@ -771,7 +783,7 @@ returned an invalid value.
         (print-check-result data)
 
         :else
-        (str "Unknown data:\n\n" data)))))
+        (throw (ex-info "Unknown data:\n\n" {:data data}))))))
 
 #?(:clj
    (defn ^:private ns-qualify
@@ -786,9 +798,10 @@ returned an invalid value.
 
 (s/fdef error-message
         :args (s/cat :k qualified-keyword?)
-        :ret (s/nilable string?))
+        :ret (s/nilable (s/or :s string?
+                              :f :expound/msg-fn)))
 (defn error-message
-  "Given a spec named `k`, return its human-readable error message."
+  "Given a spec named `k`, return its human-readable error message (or function which returns a human-readable error message)."
   [k]
   (get @registry-ref k))
 
@@ -844,7 +857,8 @@ returned an invalid value.
 
 (s/fdef defmsg
         :args (s/cat :k qualified-keyword?
-                     :error-message string?)
+                     :error-message (s/or :s string?
+                                          :f :expound/msg-fn))
         :ret nil?)
 (defn defmsg
   "Associates the spec named `k` with `error-message`."
