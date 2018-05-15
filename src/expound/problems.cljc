@@ -37,11 +37,10 @@
       ::relevant
 
       (and (map? form) (paths/kps? k))
-      (assoc
-       (dissoc displayed-form
-               (:key k))
-       (summary-form show-valid-values? (:key k) rst)
-       ::irrelevant)
+      (-> displayed-form
+          (dissoc (:key k))
+          (assoc (summary-form show-valid-values? (:key k) rst)
+                 ::irrelevant))
 
       (and (map? form) (paths/kvps? k))
       (recur show-valid-values? (nth (seq form) (:idx k)) rst)
