@@ -36,17 +36,18 @@
                                        :expound.printer/theme]))
 (s/def :expound.spec/spec (s/or
                            :set set?
-                           :pred ifn?
+                           :pred (s/with-gen ifn?
+                                   #(gen/elements [boolean? string? int? keyword? symbol?]))
                            :kw qualified-keyword?
-                           :spec s/spec?))
+                           :spec (s/with-gen s/spec?
+                                   #(gen/elements
+                                     (for [pr [boolean? string? int? keyword? symbol?]]
+                                       (s/spec pr))))))
 
-;; TODO - make real anonymous function here
-(s/def :expound/msg-fn ifn? #_(s/fspec
-                               :args (s/cat
-                                      :sp (s/with-gen s/spec?
-                                            #(gen/elements [string? int? keyword?]))
-                                      :problem :expound.spec/problem)
-                               :ret string?))
+(s/def :expound/msg-fn (s/fspec
+                        :args (s/cat
+                               :problem :expound.spec/problem)
+                        :ret string?))
 
 ;;;;;; themes ;;;;;;
 
