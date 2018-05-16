@@ -7,6 +7,9 @@ All notable changes to this project will be documented in this file. This change
 - Specs and docstrings for public API
 - Codox site for documentation
 
+### Changed
+- [The "error-message" arg to `def` can now be a string or a function that returns a string](https://github.com/bhb/expound/issues/74)
+
 ## [0.6.0] - 2018-04-26
 
 ### Fixed
