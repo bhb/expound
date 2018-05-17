@@ -5,6 +5,7 @@
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.set :as set]
+            [clojure.walk :as walk]
             #?(:cljs [goog.string.format])
             #?(:cljs [goog.string])
             [expound.printer :as printer]
@@ -319,6 +320,46 @@
            (str "\n\n" table)
            nil))))
 
+;; TODO - maybe just return these values in an easy to destructure map
+(defn problem-parts [problem opts]
+  (let [type (:expound.spec.problem/type problem)
+        spec-name nil ;; TODO - fix
+        val (:val problem)
+        in (:expound/in problem)
+        path (:expound/path problem)
+        problems [problem]
+        form (:expound/form problem)]
+    {:type type
+     :spec-name spec-name
+     :val val
+     :path path
+     :in in
+     :problems problems
+     :form form}))
+
+(defn expected-str2 [problems opts]
+  (let [problem (first problems)
+        {:keys [type spec-name val in]} (problem-parts problem opts)]
+    (expected-str type spec-name val in problems opts)))
+
+;; TODO - rename to :problem/value-group
+(defmethod problem-group-str :value-group [_type spec-name val path problems opts]
+  (let [problem (first problems)
+        subproblems (:problems problem)
+        {:keys [form in]} (problem-parts (first subproblems) opts)
+        grouped-subproblems (vals (group-by :expound.spec.problem/type subproblems))]
+    (printer/format
+     "%s
+
+%s
+
+%s"
+     (header-label "Spec failed")
+     (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name form in (problems/value-in form in))))
+     (string/join
+      "\n\nor\n\n"
+      (map #(expected-str2 % opts) grouped-subproblems)))))
+
 (defmethod expected-str :problem/missing-key [_type spec-name val path problems opts]
   (explain-missing-keys problems))
 
@@ -379,12 +420,14 @@
     (catch #?(:cljs :default
               :clj Exception) e coll)))
 
+;; TODO - move to problems namespace: this is problems/type
 (defn ^:private problem-type [failure problem]
   (cond
     (get-method problem-group-str (:expound.spec.problem/type problem))
     (:expound.spec.problem/type problem)
 
     (insufficient-input? failure problem)
+    ;; FIXME - make this namespaced to expound
     :problem/insufficient-input
 
     (extra-input? failure problem)
@@ -417,13 +460,83 @@
     :else
     :problem/unknown))
 
+;;; TODO clean up
+(defn ^:private lcs [[x & xs] [y & ys]]
+  (cond
+    (or (= x nil) (= y nil)) nil
+    (= x y) (vec (cons x (lcs xs ys)))
+    :else []))
+
+(defn ^:private lcs1 [& paths]
+  (reduce
+   (fn [xs ys]
+     (lcs xs ys))
+   paths))
+
+(defn ^:private alternation [grp1 grp2]
+  (let [xs (:path-prefix grp1)
+        ys (:path-prefix grp2)
+        prefix (lcs1 xs ys)]
+    (if (and
+         (not (empty? prefix))
+         (some? prefix)
+         (not= prefix xs)
+         (not= prefix ys))
+      grp1
+      nil)))
+
+(defn ^:private alt-group [grp1 grp2]
+  {:expound.spec.problem/type :alt-group
+   :path-prefix (lcs1 (:path-prefix grp1)
+                      (:path-prefix grp2))
+   :problems (into (:problems grp1) (:problems grp2))})
+
+(defn ^:private lift-singleton-groups [groups]
+  (walk/postwalk
+   (fn [form]
+     (if (and (map? form)
+              (= :value-group (:expound.spec.problem/type form))
+              (= 1 (count (:problems form))))
+       (first (:problems form))
+       form))
+   groups))
+
+(defn ^:private grouped-problems1 [problems]
+  (let [grouped-by-in-path (->> problems
+                                (group-by :expound/in)
+                                vals
+                                (map (fn [grp]
+                                       (if (= 1 (count grp))
+                                         {:expound.spec.problem/type :value-group
+                                          :path-prefix (:expound/path (first grp))
+                                          :problems grp}
+                                         {:expound.spec.problem/type :value-group
+                                          :path-prefix (apply lcs1 (map :expound/path grp))
+                                          :problems grp}))))]
+
+    (->> grouped-by-in-path
+         (reduce
+          (fn [grps group]
+            (if-let [old-group (some #(alternation % group) grps)]
+              (-> grps
+                  (disj old-group)
+                  (conj (alt-group
+                         old-group
+                         group)))
+              (conj grps group)))
+          #{})
+         lift-singleton-groups)))
+
 (defn ^:private grouped-and-sorted-problems [failure problems]
+  ;; TODO - remove failure here, we don't rely on problem type
   (->> problems
        (group-by (juxt :expound/in (partial problem-type failure)))
        ;; We attempt to sort the problems by path, but it's not feasible to sort in
        ;; all cases, since paths could contain arbitrary user-defined data structures.
        ;; If there is an error, we just give up on sorting.
        (safe-sort-by first paths/compare-paths)))
+
+(declare annotate-1*) ;; TODO - remove
 
 (defmethod expected-str :problem/insufficient-input [_type spec-name val path problems opts]
   (let [problem (first problems)]
@@ -434,10 +547,18 @@
        "")
      (let [failure nil
            non-matching-value [:expound/value-that-should-never-match]
-           new-problems (grouped-and-sorted-problems failure (map #(dissoc % :reason) problems))]
+           ;; TODO - simplify
+           new-problems (grouped-and-sorted-problems failure
+                                                     (annotate-1*
+                                                      failure
+                                                      (map #(dissoc % :reason)
+                                                           (map
+                                                            #(dissoc % :expound.spec.problem/type)
+                                                            problems))))]
        (string/join "\n\nor "
-                    (for [[[in type] problems'] new-problems]
-                      (expected-str type :expound/no-spec-name non-matching-value in problems' opts)))))))
+                    (for [[[_delete_me_in _delete_me_type] problems'] new-problems]
+                      (let [in (-> problems' first :expound/in)]
+                        (expected-str (-> problems' first :expound.spec.problem/type) :expound/no-spec-name non-matching-value in problems' opts))))))))
 
 (defmethod problem-group-str :problem/insufficient-input [_type spec-name val path problems opts]
   (printer/format
@@ -617,17 +738,42 @@ returned an invalid value.
     (-> ed ::s/problems first :path first)
     nil))
 
+(defn ^:private annotate-1* [failure problems]
+  (map
+   #(assoc %
+           :expound.spec.problem/type
+           (problem-type failure %))
+   problems))
+
+;; TODO - roll into problems/annotate
+(defn ^:private annotate-1 [failure explain-data]
+  (update
+   explain-data
+   :expound/problems
+   (fn [problems]
+     (annotate-1* failure problems))))
+
 (defn ^:private print-explain-data [opts explain-data]
   (if-not explain-data
     "Success!\n"
-    (let [{:keys [::s/fn ::s/failure]} explain-data
+    (let [{::s/keys [fn failure]} explain-data
           explain-data' (problems/annotate explain-data)
+          ;; TODO - collapse into annotate
+          explain-data' (annotate-1 (::s/failure explain-data')
+                                    explain-data')
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           caller (:expound/caller explain-data')
           form (:expound/form explain-data')
+          ;; TODO - remove
           problems (->> explain-data'
                         :expound/problems
-                        (problems/leaf-only)
-                        (grouped-and-sorted-problems (::s/failure explain-data)))]
+                        ;;(problems/leaf-only) ;; TODO - remove this, I think
+                        (grouped-and-sorted-problems (::s/failure explain-data)))
+
+          problems1 (->> explain-data'
+                         :expound/problems
+                         grouped-problems1
+                         (safe-sort-by :expound/in paths/compare-paths))]
 
       (printer/no-trailing-whitespace
        (str
@@ -636,12 +782,21 @@ returned an invalid value.
          "%s%s
 %s %s %s\n"
          (apply str
-                (for [[[in type] probs] problems]
+                (for [prob problems1]
                   (str
-                   (problem-group-str type (spec-name explain-data) form in probs opts)
+                   (problem-group-str (-> prob :expound.spec.problem/type)
+                                      (spec-name explain-data)
+                                      form
+                                      (-> prob :expound/in)
+                                      [prob]
+                                      opts)
                    "\n\n"
                    (let [s (if (:print-specs? opts)
-                             (relevant-specs probs)
+                             (relevant-specs (:expound/problems
+                                              explain-data')
+                                             #_(concat
+                                                [probs]
+                                                (:problems probs)))
                              "")]
                      (if (empty? s)
                        s
