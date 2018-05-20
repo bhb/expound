@@ -2695,3 +2695,309 @@ should satisfy
 ")
          (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
            (readable-ansi (s/explain-str :colorized-output/strings ["" :a ""]))))))
+
+(s/def ::spec-name (s/with-gen
+                     qualified-keyword?
+                     #(gen/let [kw gen/keyword]
+                        (keyword (str "expound-generated-spec/" (name kw))))))
+
+(s/def ::fn-spec (s/with-gen
+                   (s/or
+                    :sym symbol?
+                    :anon (s/cat :fn #{`fn `fn*}
+                                 :args-list (s/coll-of any? :kind vector?)
+                                 :body (s/* any?))
+                    :form (s/cat :comp #{`comp `partial}
+                                 :args (s/+ any?)))
+                   #(gen/return `any?)))
+
+(s/def ::pred-spec
+  (s/with-gen
+    ::fn-spec
+    #(gen/elements
+      [`any?
+       `boolean?
+       `bytes?
+       `double?
+       `ident?
+       `indexed?
+       `int?
+       `keyword?
+       `map?
+       `nat-int?
+       `neg-int?
+       `pos-int?
+       `qualified-ident?
+       `qualified-keyword?
+       `qualified-symbol?
+       `seqable?
+       `simple-ident?
+       `simple-keyword?
+       `simple-symbol?
+       `string?
+       `symbol?
+       `uri?
+       `uuid?
+       `vector?])))
+
+(s/def ::and-spec (s/cat
+                   :and #{`s/and}
+                   :branches (s/+
+                              ::spec)))
+
+(s/def ::or-spec (s/cat
+                  :or #{`s/or}
+                  :branches (s/+
+                             (s/cat
+                              :kw keyword?
+                              :spec ::spec))))
+
+(s/def ::set-spec (s/coll-of
+                   any?
+                   :kind set?))
+
+(s/def ::spec (s/or
+               :amp ::amp-spec
+               :alt ::alt-spec
+               :and ::and-spec
+               :cat ::cat-spec
+               :coll ::coll-spec
+               :defined-spec ::defined-spec
+               :every ::every-spec
+               :fspec ::fspec-spec
+               :keys ::keys-spec
+               :map ::map-of-spec
+               :merge ::merge-spec
+               :multi ::multispec-spec
+               :nilable ::nilable-spec
+               :or ::or-spec
+               :regex-unary ::regex-unary-spec
+               :set ::set-spec
+               :simple ::pred-spec
+               :spec-wrapper (s/cat :wrapper #{`s/spec} :spec ::spec)
+               :conformer (s/cat
+                           :conformer #{`s/conformer}
+                           :f ::fn-spec
+                           :unf ::fn-spec)
+               :with-gen (s/cat
+                          :with-gen #{`s/with-gen}
+                          :spec ::spec
+                          :f ::fn-spec)
+               :tuple-spec ::tuple-spec))
+
+(s/def ::every-opts (s/*
+                     (s/alt
+                      :kind (s/cat
+                             :k #{:kind}
+                             :v #{nil
+                                  vector? set? map? list?
+                                  `vector? `set? `map? `list?})
+                      :count (s/cat
+                              :k #{:count}
+                              :v (s/nilable nat-int?))
+                      :min-count (s/cat
+                                  :k #{:min-count}
+                                  :v (s/nilable nat-int?))
+                      :max-count (s/cat
+                                  :k #{:max-count}
+                                  :v (s/nilable nat-int?))
+                      :distinct (s/cat
+                                 :k #{:distinct}
+                                 :v (s/nilable boolean?))
+                      :into (s/cat
+                             :k #{:into}
+                             :v (s/or :coll #{[] {} #{}}
+                                      :list #{'()})))))
+
+(s/def ::every-spec (s/cat
+                     :every #{`s/every}
+                     :spec ::spec
+                     :opts ::every-opts))
+
+(s/def ::coll-spec (s/cat
+                    :coll-of #{`s/coll-of}
+                    :spec (s/spec ::spec)
+                    :opts ::every-opts))
+
+(s/def ::map-of-spec (s/cat
+                      :map-of #{`s/map-of}
+                      :k ::spec
+                      :w ::spec
+                      :opts ::every-opts))
+
+(s/def ::nilable-spec (s/cat
+                       :nilable #{`s/nilable}
+                       :spec ::spec))
+
+(s/def ::defined-spec (s/with-gen
+                        ::spec-name
+                        #(do
+                           ;; ensure there is at least one defined spec
+                           (s/def :expound-generated-spec/base any?)
+                           (gen/elements
+                            (filter
+                             (fn [k] (= "expound-generated-spec" (namespace k)))
+                             (keys (s/registry)))))))
+
+(s/def ::name-combo
+  (s/or
+   :one ::defined-spec
+   :combo (s/cat
+           :operator #{'and 'or}
+           :operands
+           (s/+
+            ::name-combo))))
+
+(s/def ::keys-spec (s/cat
+                    :keys #{`s/keys `s/keys*}
+
+                    :reqs (s/*
+                           (s/cat
+                            :op #{:req :req-un}
+                            :names (s/coll-of
+                                    ::name-combo
+                                    :kind vector?)))
+                    :opts (s/*
+                           (s/cat
+                            :op #{:opt :opt-un}
+                            :names (s/coll-of
+                                    ::defined-spec
+                                    :kind vector?)))))
+
+(s/def ::amp-spec
+  (s/cat :op #{`s/&}
+         :spec ::spec
+         :preds (s/*
+                 (s/with-gen
+                   (s/or :pred ::pred-spec
+                         :defined ::defined-spec)
+                   #(gen/return [`any?])))))
+
+(s/def ::alt-spec
+  (s/cat :op #{`s/alt}
+         :key-pred-forms (s/+
+                          (s/cat
+                           :key keyword?
+                           :pred (s/spec ::spec)))))
+
+(s/def ::regex-unary-spec
+  (s/cat :op #{`s/+ `s/* `s/?} :pred (s/spec ::spec)))
+
+(s/def ::cat-pred-spec
+  (s/or
+   :spec (s/spec ::spec)
+   :regex-unary ::regex-unary-spec
+   :amp ::amp-spec
+   :alt ::alt-spec))
+
+(defmulti fake-multimethod :fake-tag)
+
+(s/def ::multispec-spec
+  (s/cat
+   :mult-spec #{`s/multi-spec}
+   :mm (s/with-gen
+         symbol?
+         #(gen/return `fake-multimethod))
+   :tag (s/with-gen
+          (s/or :sym symbol?
+                :k keyword?)
+          #(gen/return :fake-tag))))
+
+(s/def ::cat-spec (s/cat
+                   :cat #{`s/cat}
+                   :key-pred-forms
+                   (s/*
+                    (s/cat
+                     :key keyword?
+                     :pred ::cat-pred-spec))))
+
+(s/def ::fspec-spec (s/cat
+                     :cat #{`s/fspec}
+                     :args (s/cat
+                            :args #{:args}
+                            :spec ::spec)
+                     :ret (s/?
+                           (s/cat
+                            :ret #{:ret}
+                            :spec ::spec))
+                     :fn (s/?
+                          (s/cat
+                           :fn #{:fn}
+                           :spec (s/nilable ::spec)))))
+
+(s/def ::tuple-spec (s/cat
+                     :tuple #{`s/tuple}
+                     :preds (s/+
+                             ::spec)))
+
+(s/def ::merge-spec (s/cat
+                     :merge #{`s/merge}
+                     :pred-forms (s/* ::spec)))
+
+(s/def ::spec-def (s/cat
+                   :def #{`s/def}
+                   :name ::spec-name
+                   :spec (s/spec ::spec)))
+
+(s/def ::spec-defs (s/coll-of ::spec-def
+                              :min-count 1))
+
+#?(:clj (deftest eval-gen-test
+          ;; TODO - get spec to generate specs by adding generators
+          #_(checking
+             "expound returns string"
+             10
+             [spec-defs (s/gen ::spec-defs)
+              form gen/any-printable]
+             (s/def :expound-generated-spec/base any?)
+             (doseq [spec-def spec-defs]
+               (eval spec-def))
+             #_(is (string?
+                    (expound/expound-str (second (last spec-defs)) form)))
+             (prn [:bhb (expound/expound-str (second (last spec-defs)) form)])
+
+             (is (not
+                  (clojure.string/includes?
+                   (expound/expound-str (second (last spec-defs)) form)
+                   "contain keys")))
+           ;; Get access to private atom in clojure.spec
+             (def spec-reg (deref #'s/registry-ref))
+             (doseq [k (filter
+                        (fn [k] (= "expound-generated-spec" (namespace k)))
+                        (keys (s/registry)))]
+               (swap! spec-reg dissoc k)))))
+
+(deftest clean-registry
+  (testing "only base spec remains"
+    (is (<= (count (filter
+                    (fn [k] (= "expound-generated-spec" (namespace k)))
+                    (keys (s/registry))))
+            1)
+        (str "Found leftover specs: " (vec (filter
+                                            (fn [k] (= "expound-generated-spec" (namespace k)))
+                                            (keys (s/registry))))))))
+
+(deftest valid-spec-spec
+  (checking
+   "spec for specs validates against real specs"
+   100
+   [sp (gen/elements
+        (topo-sort
+         (remove
+          (fn [k]
+            (string/includes? (pr-str (s/form (s/get-spec k))) "clojure.core.specs.alpha/quotable"))
+          (filter
+           (fn [k] (or
+                    (string/starts-with? (namespace k) "clojure")
+                    (string/starts-with? (namespace k) "expound")
+                    (string/starts-with? (namespace k) "onyx")
+                    (string/starts-with? (namespace k) "ring")))
+           (keys (s/registry))))))]
+   (is (s/valid? ::spec (s/form (s/get-spec sp)))
+       (str
+        "Spec name: " sp "\n"
+        "Error: "
+        (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true
+                                                           :print-specs? false
+                                                           :theme :figwheel-theme})]
+          (s/explain-str ::spec (s/form (s/get-spec sp))))))))
