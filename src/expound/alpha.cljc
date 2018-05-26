@@ -303,8 +303,8 @@
      (pr-str retag)
      (pr-str (if retag (retag (problems/value-in val path)) nil)))))
 
-(defmulti ^:private problem-group-str (fn [type spec-name _val _path _problems _opts] type))
-(defmulti ^:private expected-str (fn [type  spec-name _val _path _problems _opts] type))
+(defmulti ^:no-doc problem-group-str (fn [type spec-name _val _path _problems _opts] type))
+(defmulti ^:no-doc expected-str (fn [type  spec-name _val _path _problems _opts] type))
 
 (defn ^:private explain-missing-keys [problems]
   (let [missing-keys (map #(printer/missing-key (:pred %)) problems)]
@@ -381,6 +381,9 @@
 
 (defn ^:private problem-type [failure problem]
   (cond
+    (:expound.spec.problem/type problem)
+    (:expound.spec.problem/type problem)
+
     (insufficient-input? failure problem)
     :problem/insufficient-input
 
