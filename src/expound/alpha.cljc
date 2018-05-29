@@ -755,10 +755,12 @@ returned an invalid value.
 (defn ^:private printer-str [opts data]
   (let [opts' (merge {:show-valid-values? false
                       :print-specs? true}
-                     opts)]
+                     opts)
+        enable-color? (or (not= :none (get opts :theme :none))
+                          ansi/*enable-color*)]
     (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))
-              ansi/*enable-color* (not= :none (get opts :theme :none))
-              ansi/*print-styles* (case (get opts :theme :none)
+              ansi/*enable-color* enable-color?
+              ansi/*print-styles* (case (get opts :theme (if enable-color? :figwheel-theme :none))
                                     :figwheel-theme
                                     figwheel-theme
 
