@@ -2695,3 +2695,49 @@ should satisfy
 ")
          (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
            (readable-ansi (s/explain-str :colorized-output/strings ["" :a ""]))))))
+
+(defmethod expound/problem-group-str ::test-problem1 [_type spec-name val path problems opts]
+  "fake-problem-group-str")
+
+(defmethod expound/problem-group-str ::test-problem2 [type spec-name val path problems opts]
+  (str "fake-problem-group-str\n"
+       (expound/expected-str type spec-name val path problems opts)))
+
+(defmethod expound/expected-str ::test-problem2 [_type spec-name val path problems opts]
+  "fake-expected-str")
+
+(deftest extensibility-test
+  (testing "can overwrite entire message"
+    (let [printer-str #'expound/printer-str
+          ed (assoc-in (s/explain-data int? "")
+                       [::s/problems 0 :expound.spec.problem/type]
+                       ::test-problem1)]
+
+      (is (= "fake-problem-group-str\n\n-------------------------\nDetected 1 error\n"
+             (printer-str {:print-specs? false} ed)))))
+  (testing "can overwrite 'expected' str"
+    (let [printer-str #'expound/printer-str
+          ed (assoc-in (s/explain-data int? "")
+                       [::s/problems 0 :expound.spec.problem/type]
+                       ::test-problem2)]
+
+      (is (= "fake-problem-group-str\nfake-expected-str\n\n-------------------------\nDetected 1 error\n"
+             (printer-str {:print-specs? false} ed)))))
+  (testing "if type has no mm implemented, behavior is normal expound behavior"
+    (let [printer-str #'expound/printer-str
+          ed (assoc-in (s/explain-data int? "")
+                       [::s/problems 0 :expound.spec.problem/type]
+                       ::test-problem3)]
+
+      (is (= "-- Spec failed --------------------
+
+  \"\"
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 1 error
+"
+             (printer-str {:print-specs? false} ed))))))
