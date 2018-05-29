@@ -1,11 +1,15 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
-## [Unreleased]
+## [0.7.0] - 2018-05-28
+
+### Fixed
+- [Use existing value of `ansi/*enable-color*`](https://github.com/bhb/expound/pull/98)
 
 ### Added
 - Specs and docstrings for public API
 - Codox site for documentation
+- [3rd-party libraries can extend Expound by setting `:expound.spec.problem/type` on each `clojure.spec` problem and declaring a `defmethod` to implement custom printing](https://github.com/bhb/expound/pull/97/)
 
 ## [0.6.0] - 2018-04-26
 
