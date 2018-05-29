@@ -381,7 +381,7 @@
 
 (defn ^:private problem-type [failure problem]
   (cond
-    (:expound.spec.problem/type problem)
+    (get-method problem-group-str (:expound.spec.problem/type problem))
     (:expound.spec.problem/type problem)
 
     (insufficient-input? failure problem)
