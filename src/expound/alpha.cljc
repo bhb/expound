@@ -303,8 +303,8 @@
      (pr-str retag)
      (pr-str (if retag (retag (problems/value-in val path)) nil)))))
 
-(defmulti ^:private problem-group-str (fn [type spec-name _val _path _problems _opts] type))
-(defmulti ^:private expected-str (fn [type  spec-name _val _path _problems _opts] type))
+(defmulti ^:no-doc problem-group-str (fn [type spec-name _val _path _problems _opts] type))
+(defmulti ^:no-doc expected-str (fn [type  spec-name _val _path _problems _opts] type))
 
 (defn ^:private explain-missing-keys [problems]
   (let [missing-keys (map #(printer/missing-key (:pred %)) problems)]
@@ -381,6 +381,9 @@
 
 (defn ^:private problem-type [failure problem]
   (cond
+    (get-method problem-group-str (:expound.spec.problem/type problem))
+    (:expound.spec.problem/type problem)
+
     (insufficient-input? failure problem)
     :problem/insufficient-input
 
@@ -752,10 +755,12 @@ returned an invalid value.
 (defn ^:private printer-str [opts data]
   (let [opts' (merge {:show-valid-values? false
                       :print-specs? true}
-                     opts)]
+                     opts)
+        enable-color? (or (not= :none (get opts :theme :none))
+                          ansi/*enable-color*)]
     (binding [*value-str-fn* (get opts :value-str-fn (partial value-in-context opts'))
-              ansi/*enable-color* (not= :none (get opts :theme :none))
-              ansi/*print-styles* (case (get opts :theme :none)
+              ansi/*enable-color* enable-color?
+              ansi/*print-styles* (case (get opts :theme (if enable-color? :figwheel-theme :none))
                                     :figwheel-theme
                                     figwheel-theme
 

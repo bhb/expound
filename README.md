@@ -31,11 +31,11 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ### Leiningen/Boot
 
-`[expound "0.6.0"]`
+`[expound "0.7.0"]`
 
 #### deps.edn
 
-`expound {:mvn/version "0.6.0"}`
+`expound {:mvn/version "0.7.0"}`
 
 ### Lumo
 
@@ -47,7 +47,7 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ```
 > brew install clojure
-> clj -Sdeps '{:deps {friendly {:git/url "https://gist.github.com/bhb/2686b023d074ac052dbc21f12f324f18" :sha "9bd01f28522a0083c6a7428a871aa5fbb8070d1d"}}}' -m friendly
+> clj -Sdeps '{:deps {friendly {:git/url "https://gist.github.com/bhb/2686b023d074ac052dbc21f12f324f18" :sha "bb5806bd655d743f3b48b36ce83c0085a8d7c54a"}}}' -m friendly
 user=> (require '[expound.alpha :as expound])
 nil
 user=> (expound/expound string? 1)

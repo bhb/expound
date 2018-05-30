@@ -34,11 +34,11 @@ or
 
 ### clojars
 
-`lein deploy clojars`
+Double check version is changed in `project.clj` and `lein deploy clojars`
 
 ### NPM
 
-`npm publish --access=public`
+Double check version is changed in `package.json` and `npm publish --access=public`
 
 ## Generating docs
 
