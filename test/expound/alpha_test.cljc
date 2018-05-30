@@ -2871,7 +2871,7 @@ should satisfy
                  (s/with-gen
                    (s/or :pred ::pred-spec
                          :defined ::defined-spec)
-                   #(gen/return [`any?])))))
+                   #(gen/return `any?)))))
 
 (s/def ::alt-spec
   (s/cat :op #{`s/alt}
@@ -2942,29 +2942,35 @@ should satisfy
 (s/def ::spec-defs (s/coll-of ::spec-def
                               :min-count 1))
 
-#?(:clj (deftest eval-gen-test
-          #_(checking
-             "expound returns string"
-             10
-             [spec-defs (s/gen ::spec-defs)
-              form gen/any-printable]
-             (s/def :expound-generated-spec/base any?)
-             (doseq [spec-def spec-defs]
-               (eval spec-def))
-             #_(is (string?
-                    (expound/expound-str (second (last spec-defs)) form)))
-             (prn [:bhb (expound/expound-str (second (last spec-defs)) form)])
+(deftest spec-specs-can-generate
+  (doseq [spec-spec (filter keyword? (topo-sort (filter #(= "expound.alpha-test" (namespace %))
+                                                        (keys (s/registry)))))]
+    (is
+     (doall (s/exercise spec-spec 10))
+     (str "Failed to generate examples for spec " spec-spec))))
 
-             (is (not
+#?(:clj (deftest eval-gen-test
+          (checking
+           "expound returns string"
+           100
+           [spec-defs (s/gen ::spec-defs)
+            form gen/any-printable]
+           (s/def :expound-generated-spec/base any?)
+           (doseq [spec-def spec-defs]
+             (eval spec-def))
+           (is (string?
+                (expound/expound-str (second (last spec-defs)) form)))
+             ;; TODO - restore to ensure I can catch issues
+           #_(is (not
                   (clojure.string/includes?
                    (expound/expound-str (second (last spec-defs)) form)
-                   "contain keys")))
+                   "should be")))
            ;; Get access to private atom in clojure.spec
-             (def spec-reg (deref #'s/registry-ref))
-             (doseq [k (filter
-                        (fn [k] (= "expound-generated-spec" (namespace k)))
-                        (keys (s/registry)))]
-               (swap! spec-reg dissoc k)))))
+           (def spec-reg (deref #'s/registry-ref))
+           (doseq [k (filter
+                      (fn [k] (= "expound-generated-spec" (namespace k)))
+                      (keys (s/registry)))]
+             (swap! spec-reg dissoc k)))))
 
 (deftest clean-registry
   (testing "only base spec remains"
@@ -2979,7 +2985,7 @@ should satisfy
 (deftest valid-spec-spec
   (checking
    "spec for specs validates against real specs"
-   100
+   30
    [sp (gen/elements
         (topo-sort
          (remove

@@ -82,7 +82,7 @@
                                   [org.clojure/core.specs.alpha "0.1.24"]
                                   [io.aviso/pretty "0.1.34"]
                                   [vvvvalvalval/scope-capture "0.1.4"]
-                                  [org.clojure/test.check "0.9.0"]
+                                  [org.clojure/test.check "0.10.0-alpha3"]
                                   [metosin/spec-tools "0.6.1"]
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
@@ -97,7 +97,7 @@
                    ;; need to add the compliled assets to the :clean-targets
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
-             :test-common {:dependencies [[org.clojure/test.check "0.9.0"]
+             :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [org.clojure/tools.namespace "0.2.11"] ; solves https://github.com/jakemcc/lein-test-refresh/issues/39
                                           [com.gfredericks/test.chuck "0.2.8"]
                                           [orchestra "2017.11.12-1"]
