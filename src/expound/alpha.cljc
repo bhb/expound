@@ -46,6 +46,7 @@
 
 (s/def :expound/msg-fn (s/fspec
                         :args (s/cat
+                               :old-msg string?
                                :problem :expound.spec/problem)
                         :ret string?))
 
@@ -168,14 +169,16 @@
      value)
     value))
 
+(defn ^:private pred [problem]
+  (printer/indent
+   (ansi/color
+    (pr-pred (:pred problem)
+             (:spec problem))
+    :good-pred)))
+
 (defn ^:private preds [problems]
   (->> problems
-       (map (fn [problem]
-              (printer/indent
-               (ansi/color
-                (pr-pred (:pred problem)
-                         (:spec problem))
-                :good-pred))))
+       (map pred)
        distinct
        (string/join "\n\nor\n\n")))
 
@@ -192,19 +195,17 @@
   (let [[with-msg no-msgs] ((juxt filter remove)
                             (fn [{:keys [expound/via pred]}]
                               (spec-w-error-message? via pred))
-                            problems)]
+                            problems)
+        template "should satisfy\n\n%s"]
     (->> (when (seq no-msgs)
-           (printer/format
-            "should satisfy
-
-%s"
-            (preds no-msgs)))
+           (printer/format template (preds no-msgs)))
          (conj (keep (fn [{:keys [expound/via] :as problem}]
-                       (let [last-spec (last via)]
+                       (let [last-spec (last via)
+                             default-msg (printer/format template (pred problem))]
                          (if (qualified-keyword? last-spec)
                            (if (ifn? (error-message last-spec))
                              (let [f (error-message last-spec)]
-                               (ansi/color (f problem) :good))
+                               (ansi/color (f default-msg problem) :good))
                              (ansi/color (error-message last-spec) :good))
                            nil)))
                      with-msg))
