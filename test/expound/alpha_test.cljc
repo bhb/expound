@@ -22,7 +22,7 @@
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
-(def num-tests 10)
+(def num-tests 5)
 
 (use-fixtures :once
   test-utils/check-spec-assertions
