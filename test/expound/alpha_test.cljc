@@ -24,7 +24,7 @@
 
 (def num-tests 10)
 
-(use-fixtures :each
+(use-fixtures :once
   test-utils/check-spec-assertions
   test-utils/instrument-all)
 
@@ -1724,7 +1724,10 @@ Detected 1 error\n"
        #?(:cljs :default :clj Exception)
        #"\"Key must be integer\"\n\nshould be one of: \"Extra input\", \"Insufficient input\", \"no method"
        (binding [s/*explain-out* expound/printer]
-         (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) "Key must be integer")))))
+         (try
+           (s/check-asserts true)
+           (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) "Key must be integer")
+           (finally (s/check-asserts false)))))))
 
 (defn inline-specs [keyword]
   (walk/postwalk
@@ -1783,7 +1786,11 @@ Detected 1 error\n"
                  #?(:cljs :default :clj Exception)
                  (re-pattern (java.util.regex.Pattern/quote expected-err-msg))
                  (binding [s/*explain-out* expound/printer]
-                   (s/assert spec form)))
+                   (try
+                     (s/check-asserts true)
+                     (s/assert spec form)
+                     (finally
+                       (s/check-asserts false)))))
                 (str "Expected: " expected-err-msg))))))))
 
 (deftest test-mutate
@@ -2651,10 +2658,11 @@ should contain an :args spec
            [sym-to-check (gen/elements (st/checkable-syms))]
           ;; Just confirm an error is not thrown
            (is (string?
-                (expound/explain-results-str
-                 (orch.st/with-instrument-disabled
-                   (st/check sym-to-check
-                             {:clojure.spec.test.check/opts {:num-tests 10}}))))
+                (binding [s/*explain-out* expound/printer]
+                  (expound/explain-results-str
+                   (orch.st/with-instrument-disabled
+                     (st/check sym-to-check
+                               {:clojure.spec.test.check/opts {:num-tests 10}})))))
                (str "Failed to check " sym-to-check)))))
 
 (s/def :colorized-output/strings (s/coll-of string?))
