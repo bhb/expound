@@ -9,6 +9,7 @@
             [clojure.string :as string]
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [clojure.test.check.generators :as gen]
+            [com.gfredericks.test.chuck :as chuck]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [com.gfredericks.test.chuck.properties :as properties]
             [com.stuartsierra.dependency :as deps]
@@ -21,9 +22,9 @@
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
-(def num-tests 30)
+(def num-tests 10)
 
-(use-fixtures :once
+(use-fixtures :each
   test-utils/check-spec-assertions
   test-utils/instrument-all)
 
@@ -1047,7 +1048,7 @@ Detected 1 error\n")
 (deftest generated-simple-spec
   (checking
    "simple spec"
-   num-tests
+   (chuck/times num-tests)
    [simple-spec simple-spec-gen
     :let [sp-form (s/form simple-spec)]
     form gen/any-printable]
@@ -1056,7 +1057,7 @@ Detected 1 error\n")
 (deftest generated-coll-of-specs
   (checking
    "'coll-of' spec"
-   num-tests
+   (chuck/times num-tests)
    [simple-spec simple-spec-gen
     every-args (s/gen :specs/every-args)
     :let [spec (apply-coll-of simple-spec every-args)]
@@ -1067,7 +1068,7 @@ Detected 1 error\n")
 (deftest generated-and-specs
   (checking
    "'and' spec"
-   num-tests
+   (chuck/times num-tests)
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
     :let [spec (s/and simple-spec1 simple-spec2)]
@@ -1078,7 +1079,7 @@ Detected 1 error\n")
 (deftest generated-or-specs
   (checking
    "'or' spec"
-   num-tests
+   (chuck/times num-tests)
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
     :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
@@ -1089,7 +1090,7 @@ Detected 1 error\n")
 (deftest generated-map-of-specs
   (checking
    "'map-of' spec"
-   num-tests
+   (chuck/times num-tests)
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
     simple-spec3 simple-spec-gen
@@ -1188,7 +1189,7 @@ Detected 1 error\n")
   (deftest generated-data-specs
     (checking
      "generated data specs"
-     num-tests
+     (chuck/times num-tests)
      [data-spec (s/gen :expound.ds/spec)
       form any-printable-wo-nan
       prefix (s/gen qualified-keyword?)
@@ -1740,7 +1741,7 @@ Detected 1 error\n"
       ;; At 50, it might find a bug in failures for the
       ;; :ring/handler spec, but keep it plugged in, since it
       ;; takes a long time to shrink
-      num-tests
+      (chuck/times num-tests)
       [spec spec-gen
        form gen/any-printable]
       ;; Can't reliably test fspecs until
@@ -1760,7 +1761,7 @@ Detected 1 error\n"
    (deftest assert-on-real-spec-tests
      (checking
       "for any real-world spec and any data, assert returns an error that matches explain-str"
-      num-tests
+      (chuck/times num-tests)
       [spec spec-gen
        form gen/any-printable]
       ;; Can't reliably test fspecs until
@@ -1788,7 +1789,7 @@ Detected 1 error\n"
 (deftest test-mutate
   (checking
    "mutation alters data structure"
-   num-tests
+   (chuck/times num-tests)
    [form gen/any-printable
     mutate-path (gen/vector gen/pos-int 1 10)]
    (is (not= form
@@ -1801,7 +1802,7 @@ Detected 1 error\n"
    #_(deftest real-spec-tests-mutated-valid-value
        (checking
         "for any real-world spec and any mutated valid data, explain-str returns a string"
-        num-tests
+        (chuck/times num-tests)
         [spec spec-gen
          mutate-path (gen/vector gen/pos-int)]
         (when-not (some
@@ -2174,7 +2175,7 @@ Detected 1 error\n"
    (deftest form-containing-incomparables
      (checking
       "for any value including NaN, or Infinity, expound returns a string"
-      num-tests
+      (chuck/times num-tests)
       [form (gen/frequency
              [[1 (gen/elements
                   [Double/NaN
@@ -2192,7 +2193,7 @@ Detected 1 error\n"
    (deftest form-containing-incomparables
      (checking
       "for any value including NaN, or Infinity, expound returns a string"
-      num-tests
+      (chuck/times num-tests)
       [form (gen/frequency
              [[1 (gen/elements
                   [js/NaN
@@ -2646,14 +2647,15 @@ should contain an :args spec
 #?(:clj (deftest explain-results-gen
           (checking
            "all functions can be checked and printed"
-           num-tests
+           (chuck/times num-tests)
            [sym-to-check (gen/elements (st/checkable-syms))]
           ;; Just confirm an error is not thrown
            (is (string?
                 (expound/explain-results-str
                  (orch.st/with-instrument-disabled
                    (st/check sym-to-check
-                             {:clojure.spec.test.check/opts {:num-tests 10}}))))))))
+                             {:clojure.spec.test.check/opts {:num-tests 10}}))))
+               (str "Failed to check " sym-to-check)))))
 
 (s/def :colorized-output/strings (s/coll-of string?))
 (deftest colorized-output
@@ -2942,35 +2944,43 @@ should satisfy
 (s/def ::spec-defs (s/coll-of ::spec-def
                               :min-count 1))
 
+(defn exercise-count [spec]
+  (case spec
+    (::spec-def ::fspec-spec ::regex-unary-spec ::spec-defs ::alt-spec) 1
+
+    (::cat-spec ::merge-spec ::and-spec ::every-spec ::spec ::coll-spec ::map-of-spec ::or-spec ::tuple-spec ::keys-spec) 2
+
+    4))
+
 (deftest spec-specs-can-generate
   (doseq [spec-spec (filter keyword? (topo-sort (filter #(= "expound.alpha-test" (namespace %))
                                                         (keys (s/registry)))))]
     (is
-     (doall (s/exercise spec-spec 10))
+     (doall (s/exercise spec-spec (exercise-count spec-spec)))
      (str "Failed to generate examples for spec " spec-spec))))
 
 #?(:clj (deftest eval-gen-test
-          (checking
-           "expound returns string"
-           100
-           [spec-defs (s/gen ::spec-defs)
-            form gen/any-printable]
-           (s/def :expound-generated-spec/base any?)
-           (doseq [spec-def spec-defs]
-             (eval spec-def))
-           (is (string?
-                (expound/expound-str (second (last spec-defs)) form)))
+          #_(checking
+             "expound returns string"
+             (chuck/times num-tests)
+             [spec-defs (s/gen ::spec-defs)
+              form gen/any-printable]
+             (s/def :expound-generated-spec/base any?)
+             (doseq [spec-def spec-defs]
+               (eval spec-def))
+             (is (string?
+                  (expound/expound-str (second (last spec-defs)) form)))
              ;; TODO - restore to ensure I can catch issues
-           #_(is (not
-                  (clojure.string/includes?
-                   (expound/expound-str (second (last spec-defs)) form)
-                   "should be")))
+             #_(is (not
+                    (clojure.string/includes?
+                     (expound/expound-str (second (last spec-defs)) form)
+                     "should be")))
            ;; Get access to private atom in clojure.spec
-           (def spec-reg (deref #'s/registry-ref))
-           (doseq [k (filter
-                      (fn [k] (= "expound-generated-spec" (namespace k)))
-                      (keys (s/registry)))]
-             (swap! spec-reg dissoc k)))))
+             (def spec-reg (deref #'s/registry-ref))
+             (doseq [k (filter
+                        (fn [k] (= "expound-generated-spec" (namespace k)))
+                        (keys (s/registry)))]
+               (swap! spec-reg dissoc k)))))
 
 (deftest clean-registry
   (testing "only base spec remains"
@@ -2985,7 +2995,7 @@ should satisfy
 (deftest valid-spec-spec
   (checking
    "spec for specs validates against real specs"
-   30
+   (chuck/times num-tests)
    [sp (gen/elements
         (topo-sort
          (remove

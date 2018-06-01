@@ -32,6 +32,9 @@
                            :optimizations :none
                            :verbose true
                            :compiler-stats true}}]}
+  :eftest {:multithread? false
+           :test-warn-time 750
+           :capture-output? false}
   :figwheel {;; :http-server-root "public" ;; default and assumes "resources"
              :server-port 3446 ;; default is 3449
 
@@ -88,7 +91,8 @@
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.12.7.0"] ; to test specs
                                   [com.gfredericks/test.chuck "0.2.8"]]
-                   :plugins [[io.aviso/pretty "0.1.34"]]
+                   :plugins [[io.aviso/pretty "0.1.34"]
+                             [lein-eftest "0.5.2"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
                    ;; for CIDER
