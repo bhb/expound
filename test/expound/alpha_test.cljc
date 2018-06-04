@@ -2655,8 +2655,15 @@ should contain an :args spec
           (checking
            "all functions can be checked and printed"
            (chuck/times num-tests)
-           [sym-to-check (gen/elements (st/checkable-syms))]
-          ;; Just confirm an error is not thrown
+           [sym-to-check (gen/elements (remove
+                                        ;; these functions print to stdout, but return
+                                        ;; nothing
+                                        #{`expound/explain-results
+                                          `expound/explain-result
+                                          `expound/expound
+                                          `expound/printer}
+                                        (st/checkable-syms)))]
+           ;; Just confirm an error is not thrown
            (is (string?
                 (binding [s/*explain-out* expound/printer]
                   (expound/explain-results-str

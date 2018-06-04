@@ -783,7 +783,7 @@ returned an invalid value.
         (print-check-result data)
 
         :else
-        (str "Unknown data:\n\n" data)))))
+        (throw (ex-info  "Unknown data:\n\n" {:data data}))))))
 
 #?(:clj
    (defn ^:private ns-qualify
