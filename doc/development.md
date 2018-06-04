@@ -34,6 +34,10 @@ or (to see which tests are slow)
 
 `lein with-profile +test-common eftest`
 
+or (if you want to save a second or two)
+
+`clj -Atest`
+
 ## Release
 
 ### clojars
