@@ -7,6 +7,7 @@
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as st]
             [clojure.string :as string]
+            [clojure.set :as set]
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [clojure.test.check.generators :as gen]
             [com.gfredericks.test.chuck :as chuck]
@@ -19,6 +20,8 @@
             [clojure.walk :as walk]
             [spec-tools.data-spec :as ds]
             [expound.ansi :as ansi]
+            [clojure.test.check.random :as random]
+            [clojure.test.check.rose-tree :as rose]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -2769,9 +2772,17 @@ should satisfy
                               :kw keyword?
                               :spec ::spec))))
 
-(s/def ::set-spec (s/coll-of
-                   any?
-                   :kind set?))
+(s/def ::set-spec (s/with-gen
+                    (s/coll-of
+                     any?
+                     :kind set?)
+                    #(s/gen (s/coll-of
+                             (s/or
+                              :s string?
+                              :i int?
+                              :b boolean?
+                              :k keyword?)
+                             :kind set?))))
 
 (s/def ::spec (s/or
                :amp ::amp-spec
@@ -2779,7 +2790,7 @@ should satisfy
                :and ::and-spec
                :cat ::cat-spec
                :coll ::coll-spec
-               :defined-spec ::defined-spec
+               :defined-spec ::spec-name
                :every ::every-spec
                :fspec ::fspec-spec
                :keys ::keys-spec
@@ -2846,19 +2857,9 @@ should satisfy
                        :nilable #{`s/nilable}
                        :spec ::spec))
 
-(s/def ::defined-spec (s/with-gen
-                        ::spec-name
-                        #(do
-                           ;; ensure there is at least one defined spec
-                           (s/def :expound-generated-spec/base any?)
-                           (gen/elements
-                            (filter
-                             (fn [k] (= "expound-generated-spec" (namespace k)))
-                             (keys (s/registry)))))))
-
 (s/def ::name-combo
   (s/or
-   :one ::defined-spec
+   :one ::spec-name
    :combo (s/cat
            :operator #{'and 'or}
            :operands
@@ -2878,7 +2879,7 @@ should satisfy
                            (s/cat
                             :op #{:opt :opt-un}
                             :names (s/coll-of
-                                    ::defined-spec
+                                    ::spec-name
                                     :kind vector?)))))
 
 (s/def ::amp-spec
@@ -2887,7 +2888,7 @@ should satisfy
          :preds (s/*
                  (s/with-gen
                    (s/or :pred ::pred-spec
-                         :defined ::defined-spec)
+                         :defined ::spec-name)
                    #(gen/return `any?)))))
 
 (s/def ::alt-spec
@@ -2957,7 +2958,8 @@ should satisfy
                    :spec (s/spec ::spec)))
 
 (s/def ::spec-defs (s/coll-of ::spec-def
-                              :min-count 1))
+                              :min-count 1
+                              :gen-max 3))
 
 (defn exercise-count [spec]
   (case spec
@@ -2974,28 +2976,98 @@ should satisfy
      (doall (s/exercise spec-spec (exercise-count spec-spec)))
      (str "Failed to generate examples for spec " spec-spec))))
 
+(defn sample-seq
+  "Return a sequence of realized values from `generator`."
+  [generator seed]
+  (s/assert some? generator)
+  (let [max-size 1
+        r (if seed
+            (random/make-random seed)
+            (random/make-random))
+        size-seq (gen/make-size-range-seq max-size)]
+    (map #(rose/root (gen/call-gen generator %1 %2))
+         (gen/lazy-random-states r)
+         size-seq)))
+
+(defn missing-specs [spec-defs]
+  (let [defined (set (map second spec-defs))
+        used (set
+              (filter
+               #(and (qualified-keyword? %)
+                     (= "expound-generated-spec" (namespace %)))
+               (tree-seq coll? seq spec-defs)))]
+    (set/difference used defined)))
+
 #?(:clj (deftest eval-gen-test
-          #_(checking
+          (binding [s/*recursion-limit* 2]
+            (checking
              "expound returns string"
-             (chuck/times num-tests)
+             5 ;; Hard-code at 5, since generating specs explodes in size quite quickly
              [spec-defs (s/gen ::spec-defs)
-              form gen/any-printable]
-             (s/def :expound-generated-spec/base any?)
-             (doseq [spec-def spec-defs]
-               (eval spec-def))
-             (is (string?
-                  (expound/expound-str (second (last spec-defs)) form)))
-             ;; TODO - restore to ensure I can catch issues
-             #_(is (not
-                    (clojure.string/includes?
-                     (expound/expound-str (second (last spec-defs)) form)
-                     "should be")))
-           ;; Get access to private atom in clojure.spec
-             (def spec-reg (deref #'s/registry-ref))
-             (doseq [k (filter
-                        (fn [k] (= "expound-generated-spec" (namespace k)))
-                        (keys (s/registry)))]
-               (swap! spec-reg dissoc k)))))
+              pred-specs (gen/vector (s/gen ::pred-spec) 5)
+              seed (s/gen pos-int?)
+              ;;:let [spec (second (last spec-defs))]
+              ;;valid-form (s/gen spec)
+              mutate-path (gen/vector gen/pos-int)
+              ;; :let [
+              ;;       ]
+              other-form gen/any-printable]
+             (try
+               (doseq [[spec-name spec] (map vector (missing-specs spec-defs) (cycle pred-specs))]
+                 (eval `(s/def ~spec-name ~spec)))
+
+               (doseq [spec-def spec-defs]
+                 (eval spec-def))
+
+               (let [spec (second (last spec-defs))
+                     form (last (last spec-defs))
+                     valid-form (if (or
+                                     (some
+                                      #{;; because of https://dev.clojure.org/jira/browse/CLJ-2152
+                                           ;; we can't accurately analyze forms under an '&' spec
+                                        "clojure.spec.alpha/&"
+                                        "clojure.spec.alpha/fspec"
+                                        "clojure.spec.alpha/multi-spec"
+                                        "clojure.spec.alpha/with-gen"}
+                                      (map str (tree-seq coll? identity form)))
+
+                                     (some
+                                      #{;; because of https://dev.clojure.org/jira/browse/CLJ-2152
+                                           ;; we can't accurately analyze forms under an '&' spec
+                                        "clojure.spec.alpha/&"
+                                        "clojure.spec.alpha/fspec"
+                                        "clojure.spec.alpha/multi-spec"
+                                        "clojure.spec.alpha/with-gen"}
+                                      (->> spec
+                                           inline-specs
+                                           (tree-seq coll? identity)
+                                           (map str))))
+                                  other-form
+                                  (first (sample-seq (s/gen spec) seed)))
+                     invalid-form (mutate valid-form mutate-path)]
+                 (try
+
+                   (is (string?
+                        (expound/expound-str spec invalid-form)))
+                   (is (not
+                        (clojure.string/includes?
+                         (expound/expound-str (second (last spec-defs)) invalid-form)
+                         "should contain keys")))
+                   (catch Exception e
+                     (is (or
+                          (string/includes?
+                           (:cause (Throwable->map e))
+                           "Method code too large!")
+                          (string/includes?
+                           (:cause (Throwable->map e))
+                           "Cannot convert path."))))))
+               (finally
+                 ;; Get access to private atom in clojure.spec
+                 (def spec-reg (deref #'s/registry-ref))
+                 (doseq [k (filter
+                            (fn [k] (= "expound-generated-spec" (namespace k)))
+                            (keys (s/registry)))]
+                   (swap! spec-reg dissoc k))))))))
 
 (deftest clean-registry
   (testing "only base spec remains"
