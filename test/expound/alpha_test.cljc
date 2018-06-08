@@ -2391,7 +2391,7 @@ Detected 1 error
 
 (s/fdef results-str-fn1
         :args (s/cat :x nat-int? :y nat-int?)
-        :ret pos-int?)
+        :ret pos?)
 (defn results-str-fn1 [x y]
   (+' x y))
 
@@ -2460,7 +2460,7 @@ returned an invalid value.
 
 should satisfy
 
-  pos-int?
+  pos?
 
 -------------------------
 Detected 1 error
