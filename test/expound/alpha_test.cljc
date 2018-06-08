@@ -2393,7 +2393,7 @@ Detected 1 error
         :args (s/cat :x nat-int? :y nat-int?)
         :ret pos-int?)
 (defn results-str-fn1 [x y]
-  (+ x y))
+  (+' x y))
 
 (s/fdef results-str-fn2
         :args (s/cat :x nat-int? :y nat-int?)
@@ -2775,7 +2775,8 @@ should satisfy
 (s/def ::set-spec (s/with-gen
                     (s/coll-of
                      any?
-                     :kind set?)
+                     :kind set?
+                     :min-count 1)
                     #(s/gen (s/coll-of
                              (s/or
                               :s string?
@@ -3006,61 +3007,47 @@ should satisfy
              [spec-defs (s/gen ::spec-defs)
               pred-specs (gen/vector (s/gen ::pred-spec) 5)
               seed (s/gen pos-int?)
-              ;;:let [spec (second (last spec-defs))]
-              ;;valid-form (s/gen spec)
-              mutate-path (gen/vector gen/pos-int)
-              ;; :let [
-              ;;       ]
-              other-form gen/any-printable]
+              mutate-path (gen/vector gen/pos-int)]
              (try
                (doseq [[spec-name spec] (map vector (missing-specs spec-defs) (cycle pred-specs))]
                  (eval `(s/def ~spec-name ~spec)))
-
                (doseq [spec-def spec-defs]
                  (eval spec-def))
 
                (let [spec (second (last spec-defs))
                      form (last (last spec-defs))
-                     valid-form (if (or
-                                     (some
-                                      #{;; because of https://dev.clojure.org/jira/browse/CLJ-2152
-                                           ;; we can't accurately analyze forms under an '&' spec
-                                        "clojure.spec.alpha/&"
-                                        "clojure.spec.alpha/fspec"
-                                        "clojure.spec.alpha/multi-spec"
-                                        "clojure.spec.alpha/with-gen"}
-                                      (map str (tree-seq coll? identity form)))
-
-                                     (some
-                                      #{;; because of https://dev.clojure.org/jira/browse/CLJ-2152
-                                           ;; we can't accurately analyze forms under an '&' spec
-                                        "clojure.spec.alpha/&"
-                                        "clojure.spec.alpha/fspec"
-                                        "clojure.spec.alpha/multi-spec"
-                                        "clojure.spec.alpha/with-gen"}
-                                      (->> spec
-                                           inline-specs
-                                           (tree-seq coll? identity)
-                                           (map str))))
-                                  other-form
-                                  (first (sample-seq (s/gen spec) seed)))
-                     invalid-form (mutate valid-form mutate-path)]
-                 (try
-
-                   (is (string?
-                        (expound/expound-str spec invalid-form)))
-                   (is (not
-                        (clojure.string/includes?
-                         (expound/expound-str (second (last spec-defs)) invalid-form)
-                         "should contain keys")))
-                   (catch Exception e
-                     (is (or
-                          (string/includes?
-                           (:cause (Throwable->map e))
-                           "Method code too large!")
-                          (string/includes?
-                           (:cause (Throwable->map e))
-                           "Cannot convert path."))))))
+                     disallowed #{;; because of https://dev.clojure.org/jira/browse/CLJ-2152
+                                  ;; we can't accurately analyze forms under an '&' spec
+                                  "clojure.spec.alpha/&"
+                                  "clojure.spec.alpha/fspec"
+                                  "clojure.spec.alpha/multi-spec"
+                                  "clojure.spec.alpha/with-gen"}]
+                 (when-not (or (some
+                                disallowed
+                                (map str (tree-seq coll? identity form)))
+                               (some
+                                disallowed
+                                (->> spec
+                                     inline-specs
+                                     (tree-seq coll? identity)
+                                     (map str))))
+                   (let [valid-form (first (sample-seq (s/gen spec) seed))
+                         invalid-form (mutate valid-form mutate-path)]
+                     (try
+                       (is (string?
+                            (expound/expound-str spec invalid-form)))
+                       (is (not
+                            (clojure.string/includes?
+                             (expound/expound-str (second (last spec-defs)) invalid-form)
+                             "should contain keys")))
+                       (catch Exception e
+                         (is (or
+                              (string/includes?
+                               (:cause (Throwable->map e))
+                               "Method code too large!")
+                              (string/includes?
+                               (:cause (Throwable->map e))
+                               "Cannot convert path."))))))))
                (finally
                  ;; Get access to private atom in clojure.spec
                  (def spec-reg (deref #'s/registry-ref))
