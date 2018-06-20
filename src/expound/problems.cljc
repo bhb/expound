@@ -108,18 +108,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn leaf-only
-  "Given a collection of problems, returns only those problems with data on the 'leaves' of the data"
-  [problems]
-  (let [paths-to-data (into #{} (map :expound/in problems))]
-    (remove
-     (fn [problem]
-       (some
-        (fn [path]
-          (paths/prefix-path? (:expound/in problem) path))
-        paths-to-data))
-     problems)))
-
 (defn annotate [explain-data]
   (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure ::s/spec]} explain-data
         caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
@@ -185,4 +173,3 @@
                                                    :pointer)))]
     ;;highlighted-line
     (printer/no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))
-

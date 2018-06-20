@@ -530,15 +530,6 @@
           #{})
          lift-singleton-groups)))
 
-(defn ^:private grouped-and-sorted-problems [failure problems]
-  ;; TODO - remove failure here, we don't rely on problem type
-  (->> problems
-       (group-by (juxt :expound/in (partial problem-type failure)))
-       ;; We attempt to sort the problems by path, but it's not feasible to sort in
-       ;; all cases, since paths could contain arbitrary user-defined data structures.
-       ;; If there is an error, we just give up on sorting.
-       (safe-sort-by first paths/compare-paths)))
-
 (declare annotate-1*) ;; TODO - remove
 
 (defmethod expected-str :problem/insufficient-input [_type spec-name val path problems opts]
@@ -550,18 +541,15 @@
        "")
      (let [failure nil
            non-matching-value [:expound/value-that-should-never-match]
-           ;; TODO - simplify
-           new-problems (grouped-and-sorted-problems failure
-                                                     (annotate-1*
-                                                      failure
-                                                      (map #(dissoc % :reason)
-                                                           (map
-                                                            #(dissoc % :expound.spec.problem/type)
-                                                            problems))))]
-       (string/join "\n\nor "
-                    (for [[[_delete_me_in _delete_me_type] problems'] new-problems]
-                      (let [in (-> problems' first :expound/in)]
-                        (expected-str (-> problems' first :expound.spec.problem/type) :expound/no-spec-name non-matching-value in problems' opts))))))))
+           problems1 (grouped-problems1 (annotate-1*
+                                         failure
+                                         (map #(dissoc % :reason)
+                                              (map
+                                               #(dissoc % :expound.spec.problem/type)
+                                               problems))))]
+       (apply str (for [prob problems1]
+                    (let [in (-> prob :expound/in)]
+                      (expected-str (-> prob :expound.spec.problem/type) :expound/no-spec-name non-matching-value in [prob] opts))))))))
 
 (defmethod problem-group-str :problem/insufficient-input [_type spec-name val path problems opts]
   (printer/format
@@ -741,6 +729,7 @@ returned an invalid value.
     (-> ed ::s/problems first :path first)
     nil))
 
+;; TODO - I can't remove this until I resolve usage below
 (defn ^:private annotate-1* [failure problems]
   (map
    #(assoc %
@@ -748,27 +737,32 @@ returned an invalid value.
            (problem-type failure %))
    problems))
 
+;; TODO - cannot move annotate-1 into problems until
+;; I can move problem-type in
 ;; TODO - roll into problems/annotate
-(defn ^:private annotate-1 [failure explain-data]
-  (update
-   explain-data
-   :expound/problems
-   (fn [problems]
-     (annotate-1* failure problems))))
+(defn ^:private annotate-1 [explain-data]
+  (let [failure (::s/failure explain-data)]
+    (update
+     explain-data
+     :expound/problems
+     (fn [problems]
+       (map
+        #(assoc %
+                :expound.spec.problem/type
+                (problem-type failure %))
+        problems)))))
 
 (defn ^:private print-explain-data [opts explain-data]
   (if-not explain-data
     "Success!\n"
-    (let [{::s/keys [fn failure]} explain-data
+    (let [{::s/keys [failure]} explain-data
           explain-data' (problems/annotate explain-data)
           ;; TODO - collapse into annotate
-          explain-data' (annotate-1 (::s/failure explain-data')
-                                    explain-data')
+          explain-data' (annotate-1 explain-data')
           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
           ;; TODO - grab everything with let binding
           caller (:expound/caller explain-data')
           form (:expound/form explain-data')
-          ;;problems (:expound/problems explain-data')
           problems1 (->> explain-data'
                          :expound/problems
                          grouped-problems1
@@ -778,13 +772,12 @@ returned an invalid value.
        (str
         (ansi/color (instrumentation-info failure caller) :none)
         (printer/format
-         "%s%s
-%s %s %s\n"
+         "%s%s\n%s %s %s\n"
          (apply str
                 (for [prob problems1]
                   (str
                    (problem-group-str (-> prob :expound.spec.problem/type)
-                                      (spec-name explain-data)
+                                      (spec-name explain-data')
                                       form
                                       (-> prob :expound/in)
                                       [prob]
@@ -792,10 +785,7 @@ returned an invalid value.
                    "\n\n"
                    (let [s (if (:print-specs? opts)
                              (relevant-specs (:expound/problems
-                                              explain-data')
-                                             #_(concat
-                                                [probs]
-                                                (:problems probs)))
+                                              explain-data'))
                              "")]
                      (if (empty? s)
                        s
