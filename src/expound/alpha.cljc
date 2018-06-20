@@ -540,12 +540,10 @@
        "")
      (let [failure nil
            non-matching-value [:expound/value-that-should-never-match]
-           problems (groups (annotate-1*
-                             failure
-                             (map #(dissoc % :reason)
-                                  (map
-                                   #(dissoc % :expound.spec.problem/type)
-                                   problems))))]
+           problems (->> problems
+                         (map #(dissoc % :expound.spec.problem/type :reason))
+                         (annotate-1* failure)
+                         groups)]
        (apply str (for [prob problems]
                     (let [in (-> prob :expound/in)]
                       (expected-str (-> prob :expound.spec.problem/type) :expound/no-spec-name non-matching-value in [prob] opts))))))))
@@ -754,19 +752,14 @@ returned an invalid value.
 (defn ^:private print-explain-data [opts explain-data]
   (if-not explain-data
     "Success!\n"
-    (let [{::s/keys [failure]} explain-data
-          explain-data' (problems/annotate explain-data)
-          ;; TODO - collapse into annotate
-          explain-data' (annotate-1 explain-data')
-          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-          ;; TODO - grab everything with let binding
-          caller (:expound/caller explain-data')
-          form (:expound/form explain-data')
+    (let [;; TODO - collapse into annotate
+          explain-data' (annotate-1 (problems/annotate explain-data))
+          {:expound/keys [caller form]
+           ::s/keys [failure]} explain-data'
           problems (->> explain-data'
                         :expound/problems
                         groups
                         (safe-sort-by :expound/in paths/compare-paths))]
-
       (printer/no-trailing-whitespace
        (str
         (ansi/color (instrumentation-info failure caller) :none)
