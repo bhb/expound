@@ -342,8 +342,7 @@
         {:keys [type spec-name val in]} (problem-parts problem opts)]
     (expected-str type spec-name val in problems opts)))
 
-;; TODO - rename to :problem/value-group
-(defmethod problem-group-str :value-group [_type spec-name val path problems opts]
+(defmethod problem-group-str :problem/value-group [_type spec-name val path problems opts]
   (let [problem (first problems)
         subproblems (:problems problem)
         {:keys [form in]} (problem-parts (first subproblems) opts)
@@ -498,24 +497,24 @@
   (walk/postwalk
    (fn [form]
      (if (and (map? form)
-              (= :value-group (:expound.spec.problem/type form))
+              (= :problem/value-group (:expound.spec.problem/type form))
               (= 1 (count (:problems form))))
        (first (:problems form))
        form))
    groups))
 
-(defn ^:private grouped-problems1 [problems]
+(defn ^:private groups [problems]
   (let [grouped-by-in-path (->> problems
                                 (group-by :expound/in)
                                 vals
                                 (map (fn [grp]
                                        (if (= 1 (count grp))
-                                         {:expound.spec.problem/type :value-group
-                                          :path-prefix (:expound/path (first grp))
-                                          :problems grp}
-                                         {:expound.spec.problem/type :value-group
-                                          :path-prefix (apply lcs1 (map :expound/path grp))
-                                          :problems grp}))))]
+                                         {:expound.spec.problem/type :problem/value-group
+                                          :path-prefix               (:expound/path (first grp))
+                                          :problems                  grp}
+                                         {:expound.spec.problem/type :problem/value-group
+                                          :path-prefix               (apply lcs1 (map :expound/path grp))
+                                          :problems                  grp}))))]
 
     (->> grouped-by-in-path
          (reduce
@@ -541,13 +540,13 @@
        "")
      (let [failure nil
            non-matching-value [:expound/value-that-should-never-match]
-           problems1 (grouped-problems1 (annotate-1*
-                                         failure
-                                         (map #(dissoc % :reason)
-                                              (map
-                                               #(dissoc % :expound.spec.problem/type)
-                                               problems))))]
-       (apply str (for [prob problems1]
+           problems (groups (annotate-1*
+                             failure
+                             (map #(dissoc % :reason)
+                                  (map
+                                   #(dissoc % :expound.spec.problem/type)
+                                   problems))))]
+       (apply str (for [prob problems]
                     (let [in (-> prob :expound/in)]
                       (expected-str (-> prob :expound.spec.problem/type) :expound/no-spec-name non-matching-value in [prob] opts))))))))
 
@@ -763,10 +762,10 @@ returned an invalid value.
           ;; TODO - grab everything with let binding
           caller (:expound/caller explain-data')
           form (:expound/form explain-data')
-          problems1 (->> explain-data'
-                         :expound/problems
-                         grouped-problems1
-                         (safe-sort-by :expound/in paths/compare-paths))]
+          problems (->> explain-data'
+                        :expound/problems
+                        groups
+                        (safe-sort-by :expound/in paths/compare-paths))]
 
       (printer/no-trailing-whitespace
        (str
@@ -774,7 +773,7 @@ returned an invalid value.
         (printer/format
          "%s%s\n%s %s %s\n"
          (apply str
-                (for [prob problems1]
+                (for [prob problems]
                   (str
                    (problem-group-str (-> prob :expound.spec.problem/type)
                                       (spec-name explain-data')
@@ -792,8 +791,8 @@ returned an invalid value.
                        (str s "\n\n"))))))
          (ansi/color (section-label) :footer)
          (ansi/color "Detected" :footer)
-         (ansi/color (count problems1) :footer)
-         (ansi/color (if (= 1 (count problems1)) "error" "errors") :footer)))))))
+         (ansi/color (count problems) :footer)
+         (ansi/color (if (= 1 (count problems)) "error" "errors") :footer)))))))
 
 (defn ^:private minimal-fspec [form]
   (let [fspec-sp (s/cat
