@@ -421,6 +421,9 @@
               :clj Exception) e coll)))
 
 ;; TODO - move to problems namespace: this is problems/type
+;; but first, we need to clean up usages so we can pass in
+;; (get-method problem-group-str (:expound.spec.problem/type problem))
+;; cleanly as arg
 (defn ^:private problem-type [failure problem]
   (cond
     (get-method problem-group-str (:expound.spec.problem/type problem))
@@ -762,14 +765,10 @@ returned an invalid value.
           explain-data' (annotate-1 (::s/failure explain-data')
                                     explain-data')
           ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;; TODO - grab everything with let binding
           caller (:expound/caller explain-data')
           form (:expound/form explain-data')
-          ;; TODO - remove
-          problems (->> explain-data'
-                        :expound/problems
-                        ;;(problems/leaf-only) ;; TODO - remove this, I think
-                        (grouped-and-sorted-problems (::s/failure explain-data)))
-
+          ;;problems (:expound/problems explain-data')
           problems1 (->> explain-data'
                          :expound/problems
                          grouped-problems1
@@ -803,8 +802,8 @@ returned an invalid value.
                        (str s "\n\n"))))))
          (ansi/color (section-label) :footer)
          (ansi/color "Detected" :footer)
-         (ansi/color (count problems) :footer)
-         (ansi/color (if (= 1 (count problems)) "error" "errors") :footer)))))))
+         (ansi/color (count problems1) :footer)
+         (ansi/color (if (= 1 (count problems1)) "error" "errors") :footer)))))))
 
 (defn ^:private minimal-fspec [form]
   (let [fspec-sp (s/cat

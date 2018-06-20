@@ -174,7 +174,7 @@ should satisfy
   (pf.spec.alpha/nilable :set-based-spec/tag)
 
 -------------------------
-Detected 2 errors\n")
+Detected 1 error\n")
            (expound/expound-str :set-based-spec/nilable-tag :baz))))
   (testing "single element spec"
     (is (= (pf "-- Spec failed --------------------
@@ -918,7 +918,7 @@ should satisfy
    :cat-wrapped-in-or-spec/kv)
 
 -------------------------
-Detected 2 errors\n")
+Detected 1 error\n")
          (expound/expound-str :cat-wrapped-in-or-spec/kv-or-string {"foo" "hi"}))))
 
 (s/def :map-of-spec/name string?)
