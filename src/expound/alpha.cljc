@@ -186,9 +186,7 @@
                             problems)]
     (->> (when (seq no-msgs)
            (printer/format
-            "should satisfy
-
-%s"
+            "should satisfy\n\n%s"
             (preds no-msgs)))
          (conj (keep (fn [{:keys [expound/via]}]
                        (let [last-spec (last via)]
@@ -221,9 +219,7 @@
     (if (string/blank? sp-str)
       ""
       (printer/format
-       "%s
-
-%s"
+       "%s\n\n%s"
        (section-label "Relevant specs")
        sp-str))))
 
@@ -321,7 +317,7 @@
            nil))))
 
 ;; TODO - maybe just return these values in an easy to destructure map
-(defn problem-parts [problem opts]
+(defn ^:private problem-parts [problem opts]
   (let [type (:expound.spec.problem/type problem)
         spec-name nil ;; TODO - fix
         val (:val problem)
@@ -337,42 +333,43 @@
      :problems problems
      :form form}))
 
-(defn expected-str2 [problems opts]
+;; TODO private
+(defn ^:private expected-str2 [problems opts]
   (let [problem (first problems)
         {:keys [type spec-name val in]} (problem-parts problem opts)]
     (expected-str type spec-name val in problems opts)))
+
+(def ^:private format-str "%s\n\n%s\n\n%s")
+(defn ^:private format-err [header spec-name form in expected]
+  (printer/format
+   format-str
+   (header-label header)
+   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name form in (problems/value-in form in))))
+   expected))
 
 (defmethod problem-group-str :problem/value-group [_type spec-name val path problems opts]
   (let [problem (first problems)
         subproblems (:problems problem)
         {:keys [form in]} (problem-parts (first subproblems) opts)
         grouped-subproblems (vals (group-by :expound.spec.problem/type subproblems))]
-    (printer/format
-     "%s
-
-%s
-
-%s"
-     (header-label "Spec failed")
-     (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name form in (problems/value-in form in))))
-     (string/join
-      "\n\nor\n\n"
-      (map #(expected-str2 % opts) grouped-subproblems)))))
+    (format-err "Spec failed"
+                spec-name
+                form
+                in
+                (string/join
+                 "\n\nor\n\n"
+                 (map #(expected-str2 % opts) grouped-subproblems)))))
 
 (defmethod expected-str :problem/missing-key [_type spec-name val path problems opts]
   (explain-missing-keys problems))
 
 (defmethod problem-group-str :problem/missing-key [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
-  (printer/format
-   "%s
-
-%s
-
-%s"
-   (header-label "Spec failed")
-   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (expected-str _type spec-name val path problems opts)))
+  (format-err "Spec failed"
+              spec-name
+              val
+              path
+              (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/not-in-set [_type _spec-name _val _path problems _opts]
   (let [combined-set (apply set/union (map :pred problems))]
@@ -388,15 +385,11 @@
 
 (defmethod problem-group-str :problem/not-in-set [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
-  (printer/format
-   "%s
-
-%s
-
-%s"
-   (header-label "Spec failed")
-   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (expected-str _type spec-name val path problems opts)))
+  (format-err "Spec failed"
+              spec-name
+              val
+              path
+              (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/missing-spec [_type spec-name val path problems opts]
   (->> problems
@@ -404,10 +397,9 @@
        (string/join "\n")))
 
 (defmethod problem-group-str :problem/missing-spec [_type spec-name val path problems opts]
+  ;; TODO - fix when I figure out how to to format this consistent
   (printer/format
-   "%s
-
-%s"
+   "%s\n\n%s"
    (header-label "Missing spec")
    (expected-str _type spec-name val path problems opts)))
 
@@ -549,30 +541,22 @@
                       (expected-str (-> prob :expound.spec.problem/type) :expound/no-spec-name non-matching-value in [prob] opts))))))))
 
 (defmethod problem-group-str :problem/insufficient-input [_type spec-name val path problems opts]
-  (printer/format
-   "%s
-
-%s
-
-%s"
-   (header-label "Syntax error")
-   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (expected-str _type spec-name val path problems opts)))
+  (format-err "Syntax error"
+              spec-name
+              val
+              path
+              (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/extra-input [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   "has extra input")
 
 (defmethod problem-group-str :problem/extra-input [_type spec-name val path problems opts]
-  (printer/format
-   "%s
-
-%s
-
-%s"
-   (header-label "Syntax error")
-   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
-   (expected-str _type spec-name val path problems opts)))
+  (format-err "Syntax error"
+              spec-name
+              val
+              path
+              (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/fspec-exception-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
@@ -589,37 +573,27 @@ with args:
      (printer/indent (string/join ", " (:val problem))))))
 
 (defmethod problem-group-str :problem/fspec-exception-failure [_type spec-name val path problems opts]
-  (printer/format
-   "%s
-
-%s
-
-%s"
-   (header-label "Exception")
-   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+  (format-err
+   "Exception"
+   spec-name
+   val
+   path
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/fspec-ret-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
-     "returned an invalid value
-
-%s
-
-%s"
+     "returned an invalid value\n\n%s\n\n%s"
      (ansi/color (printer/indent (pr-str (:val problem))) :bad-value)
      (predicate-errors problems))))
 
 (defmethod problem-group-str :problem/fspec-ret-failure [_type spec-name val path problems opts]
-  (printer/format
-   "%s
-
-%s
-
-%s"
-   (header-label "Function spec failed")
-   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+  (format-err
+   "Function spec failed"
+   spec-name
+   val
+   path
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
@@ -638,14 +612,11 @@ should satisfy
 
 (defmethod problem-group-str :problem/fspec-fn-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
-  (printer/format
-   "%s
-
-%s
-
-%s"
-   (header-label "Function spec failed")
-   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+  (format-err
+   "Function spec failed"
+   spec-name
+   val
+   path
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :problem/check-fn-failure [_type spec-name val path problems opts]
@@ -665,11 +636,7 @@ should satisfy
 (defmethod problem-group-str :problem/check-fn-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (printer/format
-   "%s
-
-%s
-
-%s"
+   format-str
    (header-label "Function spec failed")
    (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
    (expected-str _type spec-name val path problems opts)))
@@ -700,14 +667,11 @@ returned an invalid value.
 
 (defmethod problem-group-str :problem/unknown [_type spec-name val path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
-  (printer/format
-   "%s
-
-%s
-
-%s"
-   (header-label (str "Spec failed"))
-   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))
+  (format-err
+   "Spec failed"
+   spec-name
+   val
+   path
    (expected-str _type spec-name val path problems opts)))
 
 (defn ^:private instrumentation-info [failure caller]
@@ -715,8 +679,7 @@ returned an invalid value.
   ;; not include failure or caller info, so
   ;; if these are null, print a placeholder
   (if (= :instrument failure)
-    (printer/format "%s:%s
-\n"
+    (printer/format "%s:%s\n\n"
                     (:file caller "<filename missing>")
                     (:line caller "<line number missing>"))
     ""))
