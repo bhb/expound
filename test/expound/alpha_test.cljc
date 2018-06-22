@@ -818,9 +818,28 @@ Detected 1 error\n")
 (s/def :recursive-spec/children (s/coll-of (s/nilable :recursive-spec/el) :kind vector?))
 
 (deftest recursive-spec
-  ;; TODO - implement alt-group for this
-  #_(testing "only shows problem with data at 'leaves' (not problems with all parents in tree)"
-      (is (= (pf "-- Spec failed --------------------
+  (testing "only shows problem with data at 'leaves' (not problems with all parents in tree)"
+    (is (= (pf
+            "-- Spec failed --------------------
+
+  {:tag ..., :children [{:tag :group, :children [{:tag :group, :props {:on-tap {}}}]}]}
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+should satisfy
+
+  nil?
+
+or value
+
+  {:tag ...,
+   :children [{:tag ..., :children [{:tag :group, :props {:on-tap {}}}]}]}
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+should satisfy
+
+  nil?
+
+or value
 
   {:tag ...,
    :children
@@ -833,51 +852,15 @@ should satisfy
 
   vector?
 
--- Relevant specs -------
-
-%s
-
 -------------------------
-Detected 1 error\n"
-                 #?(:cljs ":recursive-spec/on-tap:
-  (cljs.spec.alpha/coll-of cljs.core/map? :kind cljs.core/vector?)
-:recursive-spec/props:
-  (cljs.spec.alpha/keys :opt-un [:recursive-spec/on-tap])
-:recursive-spec/children:
-  (cljs.spec.alpha/coll-of
-   (cljs.spec.alpha/nilable :recursive-spec/el)
-   :kind
-   cljs.core/vector?)
-:recursive-spec/el:
-  (cljs.spec.alpha/keys
-   :req-un
-   [:recursive-spec/tag]
-   :opt-un
-   [:recursive-spec/props :recursive-spec/children])"
-                    :clj ":recursive-spec/on-tap:
-  (clojure.spec.alpha/coll-of
-   clojure.core/map?
-   :kind
-   clojure.core/vector?)
-:recursive-spec/props:
-  (clojure.spec.alpha/keys :opt-un [:recursive-spec/on-tap])
-:recursive-spec/children:
-  (clojure.spec.alpha/coll-of
-   (clojure.spec.alpha/nilable :recursive-spec/el)
-   :kind
-   clojure.core/vector?)
-:recursive-spec/el:
-  (clojure.spec.alpha/keys
-   :req-un
-   [:recursive-spec/tag]
-   :opt-un
-   [:recursive-spec/props :recursive-spec/children])"))
-             (expound/expound-str
+Detected 1 error\n")
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str
               :recursive-spec/el
               {:tag :group
                :children [{:tag :group
                            :children [{:tag :group
-                                       :props {:on-tap {}}}]}]})))))
+                                       :props {:on-tap {}}}]}]}))))))
 
 (s/def :cat-wrapped-in-or-spec/kv (s/and
                                    sequential?
@@ -1629,23 +1612,118 @@ Detected 1 error
     (deps/graph)
     specs)))
 
-;; TODO - what about nested ORs?
+(s/def :alt-spec/int-alt-str (s/alt :int int? :string string?))
 
-(s/def :alt-spec/int-or-str (s/alt :int int? :string string?))
-#_(deftest alt-spec
-  ;: FAILING TEST
-  ;; HERE - this should mention the other way to solve this:
-  ;; change "1" -> 1 OR change ["1"] to 1
-    (is (= "<FIXME>"
-           (let [seq-of-ints (s/cat :i int?)
-                 sp (s/cat :bs (clojure.spec.alpha/alt :one seq-of-ints
-                                                       :many (clojure.spec.alpha/+ seq-of-ints)))]
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str
-                sp
-                [["1"]])))))
+(deftest alt-spec
+  (testing "alternatives at different paths in spec"
+    (s/def :alt-spec/one-many-int (s/cat :bs (s/alt :one int?
+                                                    :many (s/spec (s/+ int?)))))
+    (is (= (pf "-- Spec failed --------------------
 
-    (is (=  (pf "-- Spec failed --------------------
+  [[\"1\"]]
+   ^^^^^
+
+should satisfy
+
+  int?
+
+or value
+
+  [[\"1\"]]
+    ^^^
+
+should satisfy
+
+  int?
+
+-- Relevant specs -------
+
+:alt-spec/one-many-int:
+  (pf.spec.alpha/cat
+   :bs
+   (pf.spec.alpha/alt
+    :one
+    pf.core/int?
+    :many
+    (pf.spec.alpha/spec (pf.spec.alpha/+ pf.core/int?))))
+
+-------------------------
+Detected 1 error\n")
+           (binding [s/*explain-out* (expound/custom-printer {})]
+             (s/explain-str
+              :alt-spec/one-many-int
+              [["1"]]))))
+    (s/def :alt-spec/one-many-int-or-str (s/cat :bs (s/alt :one :alt-spec/int-alt-str
+                                                           :many (s/spec (s/+ :alt-spec/int-alt-str)))))
+    (is (= "-- Spec failed --------------------
+
+  [[:one]]
+   ^^^^^^
+
+should satisfy
+
+  int?
+
+or
+
+  string?
+
+or value
+
+  [[:one]]
+    ^^^^
+
+should satisfy
+
+  int?
+
+or
+
+  string?
+
+-------------------------
+Detected 1 error\n"
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str
+              :alt-spec/one-many-int-or-str
+              [[:one]]))))
+    (s/def :alt-spec/int-or-str (s/or :i int?
+                                      :s string?))
+    (s/def :alt-spec/one-many-int-or-str (s/cat :bs (s/alt :one :alt-spec/int-or-str
+                                                           :many (s/spec (s/+ :alt-spec/int-or-str)))))
+    (is (= "-- Spec failed --------------------
+
+  [[:one]]
+   ^^^^^^
+
+should satisfy
+
+  int?
+
+or
+
+  string?
+
+or value
+
+  [[:one]]
+    ^^^^
+
+should satisfy
+
+  int?
+
+or
+
+  string?
+
+-------------------------
+Detected 1 error\n"
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str
+              :alt-spec/one-many-int-or-str
+              [[:one]])))))
+  (is (=  (pf "-- Spec failed --------------------
 
   [:hi]
    ^^^
@@ -1660,18 +1738,18 @@ or
 
 -- Relevant specs -------
 
-:alt-spec/int-or-str:
+:alt-spec/int-alt-str:
   %s
 
 -------------------------
 Detected 1 error\n"
-                #?(:clj "(clojure.spec.alpha/alt
+              #?(:clj "(clojure.spec.alpha/alt
    :int
    clojure.core/int?
    :string
    clojure.core/string?)"
-                   :cljs "(cljs.spec.alpha/alt :int cljs.core/int? :string cljs.core/string?)"))
-            (expound/expound-str :alt-spec/int-or-str [:hi]))))
+                 :cljs "(cljs.spec.alpha/alt :int cljs.core/int? :string cljs.core/string?)"))
+          (expound/expound-str :alt-spec/int-alt-str [:hi]))))
 
 #?(:clj
    (def spec-gen (gen/elements (->> (s/registry)
@@ -2303,8 +2381,6 @@ Detected 1 error\n")
 ;; is missing a method for value
 
 ;;  (:animal/type {:pet/type :fish}) ; => nil
-
-
   #_(testing "multispec combined with s/or"
       (is (= (pf "-- Missing spec -------------------
 
@@ -2797,12 +2873,3 @@ should satisfy
 Detected 1 error
 "
              (printer-str {:print-specs? false} ed))))))
-
-;; TODO - rename
-#_(deftest foobar
-    (is (= ""
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? true})]
-             (s/explain-str
-              (:args (s/get-spec `defn))
-              `(~'foo (~'arg1 ~'arg2) ~'arg3))))))
-
