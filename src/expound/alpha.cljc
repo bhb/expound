@@ -1108,25 +1108,3 @@ returned an invalid value.
   "Given a sequence of results from `clojure.spec.test.alpha/check`, returns a string summarizing the results."
   [check-results]
   (with-out-str (explain-results check-results)))
-
-(comment
-  (defmulti pet :pet/type)
-  (defmethod pet :dog [_]
-    (s/keys))
-  (defmethod pet :cat [_]
-    (s/keys))
-
-  (defmulti animal :animal/type)
-  (defmethod animal :dog [_]
-    (s/keys))
-  (defmethod animal :cat [_]
-    (s/keys))
-
-  (s/def :multispec-in-compound-spec/pet1 (s/and
-                                           map?
-                                           (s/multi-spec pet :pet/type)))
-
-  (s/def :multispec-in-compound-spec/pet2 (s/or
-                                           :map1 (s/multi-spec pet :pet/type)
-                                           :map2 (s/multi-spec animal :animal/type)))
-  (expound :multispec-in-compound-spec/pet2 {:pet/type :fish}))
