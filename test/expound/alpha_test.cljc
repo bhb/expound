@@ -2393,7 +2393,8 @@ Detected 1 error
         :args (s/cat :x nat-int? :y nat-int?)
         :ret pos?)
 (defn results-str-fn1 [x y]
-  (+' x y))
+  #?(:clj (+' x y)
+     :cljs (+ x y)))
 
 (s/fdef results-str-fn2
         :args (s/cat :x nat-int? :y nat-int?)
@@ -2958,9 +2959,9 @@ should satisfy
                    :name ::spec-name
                    :spec (s/spec ::spec)))
 
-(s/def ::spec-defs (s/coll-of ::spec-def
-                              :min-count 1
-                              :gen-max 3))
+#?(:clj (s/def ::spec-defs (s/coll-of ::spec-def
+                                      :min-count 1
+                                      :gen-max 3)))
 
 (defn exercise-count [spec]
   (case spec
