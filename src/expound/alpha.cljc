@@ -10,7 +10,8 @@
             #?(:cljs [goog.string])
             [expound.printer :as printer]
             [expound.util :as util]
-            [expound.ansi :as ansi]))
+            [expound.ansi :as ansi]
+            [clojure.spec.gen.alpha :as gen]))
 
 ;;;;;; registry ;;;;;;
 
@@ -26,7 +27,8 @@
 (s/def :expound.spec/problems (s/coll-of :expound.spec/problem))
 
 (s/def :expound.printer/show-valid-values? boolean?)
-(s/def :expound.printer/value-str-fn ifn?)
+(s/def :expound.printer/value-str-fn (s/with-gen ifn?
+                                       #(gen/return (fn [_ _ _ _] "NOT IMPLEMENTED"))))
 (s/def :expound.printer/print-specs? boolean?)
 (s/def :expound.printer/theme #{:figwheel-theme :none})
 (s/def :expound.printer/opts (s/keys
@@ -34,11 +36,16 @@
                                        :expound.printer/value-str-fn
                                        :expound.printer/print-specs?
                                        :expound.printer/theme]))
+
 (s/def :expound.spec/spec (s/or
                            :set set?
-                           :pred ifn?
+                           :pred (s/with-gen ifn?
+                                   #(gen/elements [boolean? string? int? keyword? symbol?]))
                            :kw qualified-keyword?
-                           :spec s/spec?))
+                           :spec (s/with-gen s/spec?
+                                   #(gen/elements
+                                     (for [pr [boolean? string? int? keyword? symbol?]]
+                                       (s/spec pr))))))
 
 ;;;;;; themes ;;;;;;
 
@@ -978,7 +985,7 @@ returned an invalid value.
         (print-check-result data)
 
         :else
-        (str "Unknown data:\n\n" data)))))
+        (throw (ex-info  "Unknown data:\n\n" {:data data}))))))
 
 #?(:clj
    (defn ^:private ns-qualify
