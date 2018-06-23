@@ -577,11 +577,16 @@
   (walk/postwalk
    (fn [form]
      (if (and (map? form)
-              (= :problem/value-group (:expound.spec.problem/type form))
+              (contains? #{:problem/alt-group
+                           :problem/value-group} (:expound.spec.problem/type form))
               (= 1 (count (:problems form))))
        (first (:problems form))
        form))
    groups))
+
+;; TODO - private
+(defn remove-vec [v x]
+  (vec (remove #{x} v)))
 
 (defn ^:private groups [problems]
   (let [grouped-by-in-path (->> problems
@@ -601,12 +606,13 @@
           (fn [grps group]
             (if-let [old-group (some #(alternation % group) grps)]
               (-> grps
-                  (disj old-group)
+                  (remove-vec old-group)
                   (conj (alt-group
                          old-group
                          group)))
               (conj grps group)))
-          #{})
+          [])
+         ;;sort-subproblems
          lift-singleton-groups)))
 
 (declare annotate-1*) ;; TODO - remove
@@ -827,8 +833,7 @@ returned an invalid value.
            ::s/keys [failure]} explain-data'
           problems (->> explain-data'
                         :expound/problems
-                        groups
-                        (safe-sort-by :expound/in paths/compare-paths))]
+                        groups)]
       (printer/no-trailing-whitespace
        (str
         (ansi/color (instrumentation-info failure caller) :none)
@@ -1111,3 +1116,4 @@ returned an invalid value.
   "Given a sequence of results from `clojure.spec.test.alpha/check`, returns a string summarizing the results."
   [check-results]
   (with-out-str (explain-results check-results)))
+

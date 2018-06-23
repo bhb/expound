@@ -2970,7 +2970,10 @@ should satisfy
                       :into (s/cat
                              :k #{:into}
                              :v (s/or :coll #{[] {} #{}}
-                                      :list #{'()})))))
+                                      :list #{'()}))
+                      :gen-max (s/cat
+                                :k #{:gen-max}
+                                :v nat-int?))))
 
 (s/def ::every-spec (s/cat
                      :every #{`s/every}
@@ -3137,60 +3140,60 @@ should satisfy
           ;; FIXME - this is a useful test but not 100% reliable yet
           ;; so I'm disabling to get this PR in
           #_(binding [s/*recursion-limit* 2]
-            (checking
-             "expound returns string"
-             5 ;; Hard-code at 5, since generating specs explodes in size quite quickly
-             [spec-defs (s/gen ::spec-defs)
-              pred-specs (gen/vector (s/gen ::pred-spec) 5)
-              seed (s/gen pos-int?)
-              mutate-path (gen/vector gen/pos-int)]
-             (try
-               (doseq [[spec-name spec] (map vector (missing-specs spec-defs) (cycle pred-specs))]
-                 (eval `(s/def ~spec-name ~spec)))
-               (doseq [spec-def spec-defs]
-                 (eval spec-def))
+              (checking
+               "expound returns string"
+               5 ;; Hard-code at 5, since generating specs explodes in size quite quickly
+               [spec-defs (s/gen ::spec-defs)
+                pred-specs (gen/vector (s/gen ::pred-spec) 5)
+                seed (s/gen pos-int?)
+                mutate-path (gen/vector gen/pos-int)]
+               (try
+                 (doseq [[spec-name spec] (map vector (missing-specs spec-defs) (cycle pred-specs))]
+                   (eval `(s/def ~spec-name ~spec)))
+                 (doseq [spec-def spec-defs]
+                   (eval spec-def))
 
-               (let [spec (second (last spec-defs))
-                     form (last (last spec-defs))
-                     disallowed #{;; because of https://dev.clojure.org/jira/browse/CLJ-2152
+                 (let [spec (second (last spec-defs))
+                       form (last (last spec-defs))
+                       disallowed #{;; because of https://dev.clojure.org/jira/browse/CLJ-2152
                                   ;; we can't accurately analyze forms under an '&' spec
-                                  "clojure.spec.alpha/&"
-                                  "clojure.spec.alpha/fspec"
-                                  "clojure.spec.alpha/multi-spec"
-                                  "clojure.spec.alpha/with-gen"}]
-                 (when-not (or (some
-                                disallowed
-                                (map str (tree-seq coll? identity form)))
-                               (some
-                                disallowed
-                                (->> spec
-                                     inline-specs
-                                     (tree-seq coll? identity)
-                                     (map str))))
-                   (let [valid-form (first (sample-seq (s/gen spec) seed))
-                         invalid-form (mutate valid-form mutate-path)]
-                     (try
-                       (is (string?
-                            (expound/expound-str spec invalid-form)))
-                       (is (not
-                            (clojure.string/includes?
-                             (expound/expound-str (second (last spec-defs)) invalid-form)
-                             "should contain keys")))
-                       (catch Exception e
-                         (is (or
-                              (string/includes?
-                               (:cause (Throwable->map e))
-                               "Method code too large!")
-                              (string/includes?
-                               (:cause (Throwable->map e))
-                               "Cannot convert path."))))))))
-               (finally
+                                    "clojure.spec.alpha/&"
+                                    "clojure.spec.alpha/fspec"
+                                    "clojure.spec.alpha/multi-spec"
+                                    "clojure.spec.alpha/with-gen"}]
+                   (when-not (or (some
+                                  disallowed
+                                  (map str (tree-seq coll? identity form)))
+                                 (some
+                                  disallowed
+                                  (->> spec
+                                       inline-specs
+                                       (tree-seq coll? identity)
+                                       (map str))))
+                     (let [valid-form (first (sample-seq (s/gen spec) seed))
+                           invalid-form (mutate valid-form mutate-path)]
+                       (try
+                         (is (string?
+                              (expound/expound-str spec invalid-form)))
+                         (is (not
+                              (clojure.string/includes?
+                               (expound/expound-str (second (last spec-defs)) invalid-form)
+                               "should contain keys")))
+                         (catch Exception e
+                           (is (or
+                                (string/includes?
+                                 (:cause (Throwable->map e))
+                                 "Method code too large!")
+                                (string/includes?
+                                 (:cause (Throwable->map e))
+                                 "Cannot convert path."))))))))
+                 (finally
                  ;; Get access to private atom in clojure.spec
-                 (def spec-reg (deref #'s/registry-ref))
-                 (doseq [k (filter
-                            (fn [k] (= "expound-generated-spec" (namespace k)))
-                            (keys (s/registry)))]
-                   (swap! spec-reg dissoc k))))))))
+                   (def spec-reg (deref #'s/registry-ref))
+                   (doseq [k (filter
+                              (fn [k] (= "expound-generated-spec" (namespace k)))
+                              (keys (s/registry)))]
+                     (swap! spec-reg dissoc k))))))))
 
 (deftest clean-registry
   (testing "only base spec remains"
