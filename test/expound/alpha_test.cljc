@@ -748,10 +748,11 @@ Cannot find spec for
 
    {}
 
+with
+
  Spec multimethod:      `expound.alpha-test/el-type`
  Dispatch function:     `:multi-spec/el-type`
  Dispatch value:        `nil`
-
 
 -- Relevant specs -------
 
@@ -771,10 +772,11 @@ Cannot find spec for
 
    {:multi-spec/el-type :image}
 
+with
+
  Spec multimethod:      `expound.alpha-test/el-type`
  Dispatch function:     `:multi-spec/el-type`
  Dispatch value:        `:image`
-
 
 -- Relevant specs -------
 
@@ -2343,10 +2345,11 @@ Cannot find spec for
 
    {:pet/type :fish}
 
+with
+
  Spec multimethod:      `expound.alpha-test/pet`
  Dispatch function:     `:pet/type`
  Dispatch value:        `:fish`
-
 
 -- Relevant specs -------
 
@@ -2358,48 +2361,46 @@ Cannot find spec for
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet1 {:pet/type :fish}))))
-  ;; TODO restore, just thinking about correct description
-  ;; maybe something like....
-;;;;;;;;;;;;;;;;;;;
+  ;; FIXME - improve this, maybe something like:
+  ;;;;;;;;;;;;;;;;;;;
 
-;;   {:pet/type :fish}  
+  ;;   {:pet/type :fish}  
 
-;; should be described by a spec multimethod, but
+  ;; should be described by a spec multimethod, but
 
-;;   expound.alpha-test/pet
+  ;;   expound.alpha-test/pet
 
-;; is missing a method for value
+  ;; is missing a method for value
 
-;;   (:pet/type {:pet/type :fish}) ; => :fish
+  ;;   (:pet/type {:pet/type :fish}) ; => :fish
 
-;; or 
+  ;; or 
 
-;; should be described by a spec multimethod, but
+  ;; should be described by a spec multimethod, but
 
-;;   expound.alpha-test/pet
+  ;;   expound.alpha-test/pet
 
-;; is missing a method for value
+  ;; is missing a method for value
 
-;;  (:animal/type {:pet/type :fish}) ; => nil
-  #_(testing "multispec combined with s/or"
-      (is (= (pf "-- Missing spec -------------------
+  ;;  (:animal/type {:pet/type :fish}) ; => nil
+  (testing "multispec combined with s/or"
+    (is (= (pf "-- Missing spec -------------------
 
 Cannot find spec for
 
    {:pet/type :fish}
+
+with
 
  Spec multimethod:      `expound.alpha-test/pet`
  Dispatch function:     `:pet/type`
  Dispatch value:        `:fish`
 
-Cannot find spec for
-
-   {:pet/type :fish}
+or with
 
  Spec multimethod:      `expound.alpha-test/animal`
  Dispatch function:     `:animal/type`
  Dispatch value:        `nil`
-
 
 -- Relevant specs -------
 
@@ -2412,7 +2413,7 @@ Cannot find spec for
 
 -------------------------
 Detected 1 error\n")
-             (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
+           (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
 
 (expound/def :predicate-messages/string string? "should be a string")
 (expound/def :predicate-messages/vector vector? "should be a vector")
