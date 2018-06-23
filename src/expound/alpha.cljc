@@ -1,7 +1,6 @@
 (ns expound.alpha
   "Functions to print human-readable errors for clojure.spec"
-  (:require [expound.paths :as paths]
-            [expound.problems :as problems]
+  (:require [expound.problems :as problems]
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.set :as set]
@@ -325,23 +324,21 @@
 ;; TODO - move to new namespace
 (defn ^:private problem-parts [problem opts]
   (let [type (:expound.spec.problem/type problem)
-        spec-name nil ;; TODO - fix
         val (:val problem)
         in (:expound/in problem)
         path (:expound/path problem)
         problems [problem]
         form (:expound/form problem)]
     {:type type
-     :spec-name spec-name
      :val val
      :path path
      :in in
      :problems problems
      :form form}))
 
-(defn ^:private expected-str2 [problems opts]
+(defn ^:private expected-str2 [spec-name problems opts]
   (let [problem (first problems)
-        {:keys [type spec-name form in]} (problem-parts problem opts)]
+        {:keys [type form in]} (problem-parts problem opts)]
     (expected-str type spec-name form in problems opts)))
 
 (def ^:private format-str "%s\n\n%s\n\n%s")
@@ -359,7 +356,7 @@
         grouped-subproblems (vals (group-by :expound.spec.problem/type subproblems))]
     (string/join
      "\n\nor\n\n"
-     (map #(expected-str2 % opts) grouped-subproblems))))
+     (map #(expected-str2 spec-name % opts) grouped-subproblems))))
 
 ;; TODO - namespace to expound
 (defmethod value-str :expound.problem/value-group [type spec-name val path problems opts]
@@ -414,7 +411,7 @@
          (printer/format
           "%s\n\n%s"
           (value-str type spec-name form in [problem] opts)
-          (expected-str2 [problem] opts)))))))
+          (expected-str2 spec-name [problem] opts)))))))
 
 (defmethod problem-group-str :expound.problem/alt-group [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
@@ -611,7 +608,6 @@
                          group)))
               (conj grps group)))
           [])
-         ;;sort-subproblems
          lift-singleton-groups)))
 
 (declare annotate-1*) ;; TODO - remove
