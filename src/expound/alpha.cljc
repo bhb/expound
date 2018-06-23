@@ -304,6 +304,24 @@
 (defmulti ^:no-doc expected-str (fn [type  spec-name _val _path _problems _opts] type))
 (defmulti ^:no-doc value-str (fn [type  spec-name _val _path _problems _opts] type))
 
+(defn ^:private expected-str* [spec-name problems opts]
+  (let [problem (first problems)
+        {:expound/keys [form in]} problem
+        type (:expound.spec.problem/type problem)]
+    (expected-str type spec-name form in problems opts)))
+
+(defn ^:private value-str* [spec-name problems opts]
+  (let [problem (first problems)
+        {:expound/keys [form in]} problem
+        type (:expound.spec.problem/type problem)]
+    (value-str type spec-name form in problems opts)))
+
+(defn ^:private problem-group-str* [spec-name problems opts]
+  (let [problem (first problems)
+        {:expound/keys [form in]} problem
+        type (:expound.spec.problem/type problem)]
+    (problem-group-str type spec-name form in problems opts)))
+
 (defmethod value-str :default [_type spec-name val path problems opts]
   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))))
 
@@ -320,27 +338,6 @@
            (str "\n\n" table)
            nil))))
 
-;; TODO - maybe just return these values in an easy to destructure map
-;; TODO - move to new namespace
-(defn ^:private problem-parts [problem opts]
-  (let [type (:expound.spec.problem/type problem)
-        val (:val problem)
-        in (:expound/in problem)
-        path (:expound/path problem)
-        problems [problem]
-        form (:expound/form problem)]
-    {:type type
-     :val val
-     :path path
-     :in in
-     :problems problems
-     :form form}))
-
-(defn ^:private expected-str2 [spec-name problems opts]
-  (let [problem (first problems)
-        {:keys [type form in]} (problem-parts problem opts)]
-    (expected-str type spec-name form in problems opts)))
-
 (def ^:private format-str "%s\n\n%s\n\n%s")
 
 (defn ^:private format-err [header type spec-name form in problems opts expected]
@@ -356,15 +353,13 @@
         grouped-subproblems (vals (group-by :expound.spec.problem/type subproblems))]
     (string/join
      "\n\nor\n\n"
-     (map #(expected-str2 spec-name % opts) grouped-subproblems))))
+     (map #(expected-str* spec-name % opts) grouped-subproblems))))
 
-;; TODO - namespace to expound
 (defmethod value-str :expound.problem/value-group [type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)
-        subproblems (:problems problem)
-        {:keys [form in type]} (problem-parts (first subproblems) opts)]
-    (value-str type spec-name form in subproblems opts)))
+        subproblems (:problems problem)]
+    (value-str* spec-name subproblems opts)))
 
 (defn ^:private header [type]
   (case type
@@ -375,11 +370,10 @@
 
 ;; TODO - try a few different names here
 (defmethod problem-group-str :expound.problem/value-group [type spec-name val path problems opts]
-  ;; TODO - assert singleton
+  (s/assert ::singleton problems)
   (let [problem (first problems)
         subproblems (:problems problem)
-        {:keys [form in]} (problem-parts (first subproblems) opts)]
-    ;; TODO use better header
+        {:expound/keys [form in]} (first subproblems)]
     (format-err (-> subproblems first :expound.spec.problem/type header)
                 type
                 spec-name
@@ -389,29 +383,15 @@
                 opts
                 (expected-str type spec-name val path problems opts))))
 
-;; TODO - use this wrapper more
-;; TODO - rename
-;; TODO - private
-(defn problem-group-str-wrapper [problem opts]
-  (let [{:keys [type spec-name in form]} (problem-parts problem opts)]
-    (problem-group-str
-     type
-     spec-name
-     form
-     in
-     [problem]
-     opts)))
-
 (defmethod expected-str :expound.problem/alt-group [type spec-name val path problems opts]
   (let [subproblems (:problems (first problems))]
     (string/join
      "\n\nor value\n\n"
      (for [problem subproblems]
-       (let [{:keys [form in type]} (problem-parts problem opts)]
-         (printer/format
-          "%s\n\n%s"
-          (value-str type spec-name form in [problem] opts)
-          (expected-str2 spec-name [problem] opts)))))))
+       (printer/format
+        "%s\n\n%s"
+        (value-str* spec-name [problem] opts)
+        (expected-str* spec-name [problem] opts))))))
 
 (defmethod problem-group-str :expound.problem/alt-group [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
@@ -534,6 +514,7 @@
     (= x y) (vec (cons x (lcs xs ys)))
     :else []))
 
+;; TODO - rename
 (defn ^:private lcs1 [& paths]
   (reduce
    (fn [xs ys]
@@ -559,15 +540,15 @@
 (defn ^:private alt-group [grp1 grp2]
   {:expound.spec.problem/type :expound.problem/alt-group
    :path-prefix               (lcs1 (:path-prefix grp1)
-                      (:path-prefix grp2))
+                                    (:path-prefix grp2))
    :problems                  (into
-              (if (= :expound.problem/alt-group (:expound.spec.problem/type grp1))
-                (:problems grp1)
-                [grp1])
+                               (if (= :expound.problem/alt-group (:expound.spec.problem/type grp1))
+                                 (:problems grp1)
+                                 [grp1])
 
-              (if (= :expound.problem/alt-group (:expound.spec.problem/type grp2))
-                (:problems grp2)
-                [grp2]))})
+                               (if (= :expound.problem/alt-group (:expound.spec.problem/type grp2))
+                                 (:problems grp2)
+                                 [grp2]))})
 
 (defn ^:private lift-singleton-groups [groups]
   (walk/postwalk
@@ -580,8 +561,7 @@
        form))
    groups))
 
-;; TODO - private
-(defn remove-vec [v x]
+(defn ^:private remove-vec [v x]
   (vec (remove #{x} v)))
 
 (defn ^:private groups [problems]
