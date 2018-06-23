@@ -322,7 +322,7 @@
            nil))))
 
 ;; TODO - maybe just return these values in an easy to destructure map
-;; TODo - move to new namespace
+;; TODO - move to new namespace
 (defn ^:private problem-parts [problem opts]
   (let [type (:expound.spec.problem/type problem)
         spec-name nil ;; TODO - fix
@@ -347,17 +347,12 @@
 (def ^:private format-str "%s\n\n%s\n\n%s")
 
 (defn ^:private format-err [header type spec-name form in problems opts expected]
-  ;; TODO remove
-  (s/assert qualified-keyword? type)
   (printer/format
    format-str
    (header-label header)
-   ;; TODO - use new multimethod?
    (value-str type spec-name form in problems opts)
-   #_(show-spec-name spec-name (printer/indent (*value-str-fn* spec-name form in (problems/value-in form in))))
    expected))
 
-;; HERE ---
 (defmethod expected-str :problem/value-group [_type spec-name val path problems opts]
   (let [problem (first problems)
         subproblems (:problems problem)
@@ -366,8 +361,9 @@
      "\n\nor\n\n"
      (map #(expected-str2 % opts) grouped-subproblems))))
 
+;; TODO - namespace to expound
 (defmethod value-str :problem/value-group [type spec-name val path problems opts]
-  ;; TODO - assert singleton
+  (s/assert ::singleton problems)
   (let [problem (first problems)
         subproblems (:problems problem)
         {:keys [form in type]} (problem-parts (first subproblems) opts)]
@@ -421,7 +417,7 @@
           (expected-str2 [problem] opts)))))))
 
 (defmethod problem-group-str :problem/alt-group [_type spec-name val path problems opts]
-  ;; TODO - assert singleton problems
+  (s/assert ::singleton problems)
   (printer/format
    "%s\n\n%s"
    (header-label "Spec failed")
