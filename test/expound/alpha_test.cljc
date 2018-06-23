@@ -7,8 +7,10 @@
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as st]
             [clojure.string :as string]
+            [clojure.set :as set]
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [clojure.test.check.generators :as gen]
+            [com.gfredericks.test.chuck :as chuck]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [com.gfredericks.test.chuck.properties :as properties]
             [com.stuartsierra.dependency :as deps]
@@ -18,10 +20,12 @@
             [clojure.walk :as walk]
             [spec-tools.data-spec :as ds]
             [expound.ansi :as ansi]
+            [clojure.test.check.random :as random]
+            [clojure.test.check.rose-tree :as rose]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
-(def num-tests 30)
+(def num-tests 5)
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -1047,7 +1051,7 @@ Detected 1 error\n")
 (deftest generated-simple-spec
   (checking
    "simple spec"
-   num-tests
+   (chuck/times num-tests)
    [simple-spec simple-spec-gen
     :let [sp-form (s/form simple-spec)]
     form gen/any-printable]
@@ -1056,7 +1060,7 @@ Detected 1 error\n")
 (deftest generated-coll-of-specs
   (checking
    "'coll-of' spec"
-   num-tests
+   (chuck/times num-tests)
    [simple-spec simple-spec-gen
     every-args (s/gen :specs/every-args)
     :let [spec (apply-coll-of simple-spec every-args)]
@@ -1067,7 +1071,7 @@ Detected 1 error\n")
 (deftest generated-and-specs
   (checking
    "'and' spec"
-   num-tests
+   (chuck/times num-tests)
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
     :let [spec (s/and simple-spec1 simple-spec2)]
@@ -1078,7 +1082,7 @@ Detected 1 error\n")
 (deftest generated-or-specs
   (checking
    "'or' spec"
-   num-tests
+   (chuck/times num-tests)
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
     :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
@@ -1089,7 +1093,7 @@ Detected 1 error\n")
 (deftest generated-map-of-specs
   (checking
    "'map-of' spec"
-   num-tests
+   (chuck/times num-tests)
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
     simple-spec3 simple-spec-gen
@@ -1188,7 +1192,7 @@ Detected 1 error\n")
   (deftest generated-data-specs
     (checking
      "generated data specs"
-     num-tests
+     (chuck/times num-tests)
      [data-spec (s/gen :expound.ds/spec)
       form any-printable-wo-nan
       prefix (s/gen qualified-keyword?)
@@ -1723,7 +1727,10 @@ Detected 1 error\n"
        #?(:cljs :default :clj Exception)
        #"\"Key must be integer\"\n\nshould be one of: \"Extra input\", \"Insufficient input\", \"no method"
        (binding [s/*explain-out* expound/printer]
-         (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) "Key must be integer")))))
+         (try
+           (s/check-asserts true)
+           (s/assert (s/nilable #{"Insufficient input" "Extra input" "no method"}) "Key must be integer")
+           (finally (s/check-asserts false)))))))
 
 (defn inline-specs [keyword]
   (walk/postwalk
@@ -1740,7 +1747,7 @@ Detected 1 error\n"
       ;; At 50, it might find a bug in failures for the
       ;; :ring/handler spec, but keep it plugged in, since it
       ;; takes a long time to shrink
-      num-tests
+      (chuck/times num-tests)
       [spec spec-gen
        form gen/any-printable]
       ;; Can't reliably test fspecs until
@@ -1760,7 +1767,7 @@ Detected 1 error\n"
    (deftest assert-on-real-spec-tests
      (checking
       "for any real-world spec and any data, assert returns an error that matches explain-str"
-      num-tests
+      (chuck/times num-tests)
       [spec spec-gen
        form gen/any-printable]
       ;; Can't reliably test fspecs until
@@ -1782,13 +1789,17 @@ Detected 1 error\n"
                  #?(:cljs :default :clj Exception)
                  (re-pattern (java.util.regex.Pattern/quote expected-err-msg))
                  (binding [s/*explain-out* expound/printer]
-                   (s/assert spec form)))
+                   (try
+                     (s/check-asserts true)
+                     (s/assert spec form)
+                     (finally
+                       (s/check-asserts false)))))
                 (str "Expected: " expected-err-msg))))))))
 
 (deftest test-mutate
   (checking
    "mutation alters data structure"
-   num-tests
+   (chuck/times num-tests)
    [form gen/any-printable
     mutate-path (gen/vector gen/pos-int 1 10)]
    (is (not= form
@@ -1801,7 +1812,7 @@ Detected 1 error\n"
    #_(deftest real-spec-tests-mutated-valid-value
        (checking
         "for any real-world spec and any mutated valid data, explain-str returns a string"
-        num-tests
+        (chuck/times num-tests)
         [spec spec-gen
          mutate-path (gen/vector gen/pos-int)]
         (when-not (some
@@ -2174,7 +2185,7 @@ Detected 1 error\n"
    (deftest form-containing-incomparables
      (checking
       "for any value including NaN, or Infinity, expound returns a string"
-      num-tests
+      (chuck/times num-tests)
       [form (gen/frequency
              [[1 (gen/elements
                   [Double/NaN
@@ -2192,7 +2203,7 @@ Detected 1 error\n"
    (deftest form-containing-incomparables
      (checking
       "for any value including NaN, or Infinity, expound returns a string"
-      num-tests
+      (chuck/times num-tests)
       [form (gen/frequency
              [[1 (gen/elements
                   [js/NaN
@@ -2380,9 +2391,10 @@ Detected 1 error
 
 (s/fdef results-str-fn1
         :args (s/cat :x nat-int? :y nat-int?)
-        :ret pos-int?)
+        :ret pos?)
 (defn results-str-fn1 [x y]
-  (+ x y))
+  #?(:clj (+' x y)
+     :cljs (+ x y)))
 
 (s/fdef results-str-fn2
         :args (s/cat :x nat-int? :y nat-int?)
@@ -2449,7 +2461,7 @@ returned an invalid value.
 
 should satisfy
 
-  pos-int?
+  pos?
 
 -------------------------
 Detected 1 error
@@ -2646,14 +2658,23 @@ should contain an :args spec
 #?(:clj (deftest explain-results-gen
           (checking
            "all functions can be checked and printed"
-           num-tests
-           [sym-to-check (gen/elements (st/checkable-syms))]
-          ;; Just confirm an error is not thrown
+           (chuck/times num-tests)
+           [sym-to-check (gen/elements (remove
+                                        ;; these functions print to stdout, but return
+                                        ;; nothing
+                                        #{`expound/explain-results
+                                          `expound/explain-result
+                                          `expound/expound
+                                          `expound/printer}
+                                        (st/checkable-syms)))]
+           ;; Just confirm an error is not thrown
            (is (string?
-                (expound/explain-results-str
-                 (orch.st/with-instrument-disabled
-                   (st/check sym-to-check
-                             {:clojure.spec.test.check/opts {:num-tests 10}}))))))))
+                (binding [s/*explain-out* expound/printer]
+                  (expound/explain-results-str
+                   (orch.st/with-instrument-disabled
+                     (st/check sym-to-check
+                               {:clojure.spec.test.check/opts {:num-tests 10}})))))
+               (str "Failed to check " sym-to-check)))))
 
 (s/def :colorized-output/strings (s/coll-of string?))
 (deftest colorized-output
@@ -2695,6 +2716,383 @@ should satisfy
 ")
          (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
            (readable-ansi (s/explain-str :colorized-output/strings ["" :a ""]))))))
+
+(s/def ::spec-name (s/with-gen
+                     qualified-keyword?
+                     #(gen/let [kw gen/keyword]
+                        (keyword (str "expound-generated-spec/" (name kw))))))
+
+(s/def ::fn-spec (s/with-gen
+                   (s/or
+                    :sym symbol?
+                    :anon (s/cat :fn #{`fn `fn*}
+                                 :args-list (s/coll-of any? :kind vector?)
+                                 :body (s/* any?))
+                    :form (s/cat :comp #{`comp `partial}
+                                 :args (s/+ any?)))
+                   #(gen/return `any?)))
+
+(s/def ::pred-spec
+  (s/with-gen
+    ::fn-spec
+    #(gen/elements
+      [`any?
+       `boolean?
+       `bytes?
+       `double?
+       `ident?
+       `indexed?
+       `int?
+       `keyword?
+       `map?
+       `nat-int?
+       `neg-int?
+       `pos-int?
+       `qualified-ident?
+       `qualified-keyword?
+       `qualified-symbol?
+       `seqable?
+       `simple-ident?
+       `simple-keyword?
+       `simple-symbol?
+       `string?
+       `symbol?
+       `uri?
+       `uuid?
+       `vector?])))
+
+(s/def ::and-spec (s/cat
+                   :and #{`s/and}
+                   :branches (s/+
+                              ::spec)))
+
+(s/def ::or-spec (s/cat
+                  :or #{`s/or}
+                  :branches (s/+
+                             (s/cat
+                              :kw keyword?
+                              :spec ::spec))))
+
+(s/def ::set-spec (s/with-gen
+                    (s/coll-of
+                     any?
+                     :kind set?
+                     :min-count 1)
+                    #(s/gen (s/coll-of
+                             (s/or
+                              :s string?
+                              :i int?
+                              :b boolean?
+                              :k keyword?)
+                             :kind set?))))
+
+(s/def ::spec (s/or
+               :amp ::amp-spec
+               :alt ::alt-spec
+               :and ::and-spec
+               :cat ::cat-spec
+               :coll ::coll-spec
+               :defined-spec ::spec-name
+               :every ::every-spec
+               :fspec ::fspec-spec
+               :keys ::keys-spec
+               :map ::map-of-spec
+               :merge ::merge-spec
+               :multi ::multispec-spec
+               :nilable ::nilable-spec
+               :or ::or-spec
+               :regex-unary ::regex-unary-spec
+               :set ::set-spec
+               :simple ::pred-spec
+               :spec-wrapper (s/cat :wrapper #{`s/spec} :spec ::spec)
+               :conformer (s/cat
+                           :conformer #{`s/conformer}
+                           :f ::fn-spec
+                           :unf ::fn-spec)
+               :with-gen (s/cat
+                          :with-gen #{`s/with-gen}
+                          :spec ::spec
+                          :f ::fn-spec)
+               :tuple-spec ::tuple-spec))
+
+(s/def ::every-opts (s/*
+                     (s/alt
+                      :kind (s/cat
+                             :k #{:kind}
+                             :v #{nil
+                                  vector? set? map? list?
+                                  `vector? `set? `map? `list?})
+                      :count (s/cat
+                              :k #{:count}
+                              :v (s/nilable nat-int?))
+                      :min-count (s/cat
+                                  :k #{:min-count}
+                                  :v (s/nilable nat-int?))
+                      :max-count (s/cat
+                                  :k #{:max-count}
+                                  :v (s/nilable nat-int?))
+                      :distinct (s/cat
+                                 :k #{:distinct}
+                                 :v (s/nilable boolean?))
+                      :into (s/cat
+                             :k #{:into}
+                             :v (s/or :coll #{[] {} #{}}
+                                      :list #{'()})))))
+
+(s/def ::every-spec (s/cat
+                     :every #{`s/every}
+                     :spec ::spec
+                     :opts ::every-opts))
+
+(s/def ::coll-spec (s/cat
+                    :coll-of #{`s/coll-of}
+                    :spec (s/spec ::spec)
+                    :opts ::every-opts))
+
+(s/def ::map-of-spec (s/cat
+                      :map-of #{`s/map-of}
+                      :k ::spec
+                      :w ::spec
+                      :opts ::every-opts))
+
+(s/def ::nilable-spec (s/cat
+                       :nilable #{`s/nilable}
+                       :spec ::spec))
+
+(s/def ::name-combo
+  (s/or
+   :one ::spec-name
+   :combo (s/cat
+           :operator #{'and 'or}
+           :operands
+           (s/+
+            ::name-combo))))
+
+(s/def ::keys-spec (s/cat
+                    :keys #{`s/keys `s/keys*}
+
+                    :reqs (s/*
+                           (s/cat
+                            :op #{:req :req-un}
+                            :names (s/coll-of
+                                    ::name-combo
+                                    :kind vector?)))
+                    :opts (s/*
+                           (s/cat
+                            :op #{:opt :opt-un}
+                            :names (s/coll-of
+                                    ::spec-name
+                                    :kind vector?)))))
+
+(s/def ::amp-spec
+  (s/cat :op #{`s/&}
+         :spec ::spec
+         :preds (s/*
+                 (s/with-gen
+                   (s/or :pred ::pred-spec
+                         :defined ::spec-name)
+                   #(gen/return `any?)))))
+
+(s/def ::alt-spec
+  (s/cat :op #{`s/alt}
+         :key-pred-forms (s/+
+                          (s/cat
+                           :key keyword?
+                           :pred (s/spec ::spec)))))
+
+(s/def ::regex-unary-spec
+  (s/cat :op #{`s/+ `s/* `s/?} :pred (s/spec ::spec)))
+
+(s/def ::cat-pred-spec
+  (s/or
+   :spec (s/spec ::spec)
+   :regex-unary ::regex-unary-spec
+   :amp ::amp-spec
+   :alt ::alt-spec))
+
+(defmulti fake-multimethod :fake-tag)
+
+(s/def ::multispec-spec
+  (s/cat
+   :mult-spec #{`s/multi-spec}
+   :mm (s/with-gen
+         symbol?
+         #(gen/return `fake-multimethod))
+   :tag (s/with-gen
+          (s/or :sym symbol?
+                :k keyword?)
+          #(gen/return :fake-tag))))
+
+(s/def ::cat-spec (s/cat
+                   :cat #{`s/cat}
+                   :key-pred-forms
+                   (s/*
+                    (s/cat
+                     :key keyword?
+                     :pred ::cat-pred-spec))))
+
+(s/def ::fspec-spec (s/cat
+                     :cat #{`s/fspec}
+                     :args (s/cat
+                            :args #{:args}
+                            :spec ::spec)
+                     :ret (s/?
+                           (s/cat
+                            :ret #{:ret}
+                            :spec ::spec))
+                     :fn (s/?
+                          (s/cat
+                           :fn #{:fn}
+                           :spec (s/nilable ::spec)))))
+
+(s/def ::tuple-spec (s/cat
+                     :tuple #{`s/tuple}
+                     :preds (s/+
+                             ::spec)))
+
+(s/def ::merge-spec (s/cat
+                     :merge #{`s/merge}
+                     :pred-forms (s/* ::spec)))
+
+(s/def ::spec-def (s/cat
+                   :def #{`s/def}
+                   :name ::spec-name
+                   :spec (s/spec ::spec)))
+
+#?(:clj (s/def ::spec-defs (s/coll-of ::spec-def
+                                      :min-count 1
+                                      :gen-max 3)))
+
+(defn exercise-count [spec]
+  (case spec
+    (::spec-def ::fspec-spec ::regex-unary-spec ::spec-defs ::alt-spec) 1
+
+    (::cat-spec ::merge-spec ::and-spec ::every-spec ::spec ::coll-spec ::map-of-spec ::or-spec ::tuple-spec ::keys-spec) 2
+
+    4))
+
+(deftest spec-specs-can-generate
+  (doseq [spec-spec (filter keyword? (topo-sort (filter #(= "expound.alpha-test" (namespace %))
+                                                        (keys (s/registry)))))]
+    (is
+     (doall (s/exercise spec-spec (exercise-count spec-spec)))
+     (str "Failed to generate examples for spec " spec-spec))))
+
+(defn sample-seq
+  "Return a sequence of realized values from `generator`."
+  [generator seed]
+  (s/assert some? generator)
+  (let [max-size 1
+        r (if seed
+            (random/make-random seed)
+            (random/make-random))
+        size-seq (gen/make-size-range-seq max-size)]
+    (map #(rose/root (gen/call-gen generator %1 %2))
+         (gen/lazy-random-states r)
+         size-seq)))
+
+(defn missing-specs [spec-defs]
+  (let [defined (set (map second spec-defs))
+        used (set
+              (filter
+               #(and (qualified-keyword? %)
+                     (= "expound-generated-spec" (namespace %)))
+               (tree-seq coll? seq spec-defs)))]
+    (set/difference used defined)))
+
+#?(:clj (deftest eval-gen-test
+          ;; FIXME - this is a useful test but not 100% reliable yet
+          ;; so I'm disabling to get this PR in
+          #_(binding [s/*recursion-limit* 2]
+            (checking
+             "expound returns string"
+             5 ;; Hard-code at 5, since generating specs explodes in size quite quickly
+             [spec-defs (s/gen ::spec-defs)
+              pred-specs (gen/vector (s/gen ::pred-spec) 5)
+              seed (s/gen pos-int?)
+              mutate-path (gen/vector gen/pos-int)]
+             (try
+               (doseq [[spec-name spec] (map vector (missing-specs spec-defs) (cycle pred-specs))]
+                 (eval `(s/def ~spec-name ~spec)))
+               (doseq [spec-def spec-defs]
+                 (eval spec-def))
+
+               (let [spec (second (last spec-defs))
+                     form (last (last spec-defs))
+                     disallowed #{;; because of https://dev.clojure.org/jira/browse/CLJ-2152
+                                  ;; we can't accurately analyze forms under an '&' spec
+                                  "clojure.spec.alpha/&"
+                                  "clojure.spec.alpha/fspec"
+                                  "clojure.spec.alpha/multi-spec"
+                                  "clojure.spec.alpha/with-gen"}]
+                 (when-not (or (some
+                                disallowed
+                                (map str (tree-seq coll? identity form)))
+                               (some
+                                disallowed
+                                (->> spec
+                                     inline-specs
+                                     (tree-seq coll? identity)
+                                     (map str))))
+                   (let [valid-form (first (sample-seq (s/gen spec) seed))
+                         invalid-form (mutate valid-form mutate-path)]
+                     (try
+                       (is (string?
+                            (expound/expound-str spec invalid-form)))
+                       (is (not
+                            (clojure.string/includes?
+                             (expound/expound-str (second (last spec-defs)) invalid-form)
+                             "should contain keys")))
+                       (catch Exception e
+                         (is (or
+                              (string/includes?
+                               (:cause (Throwable->map e))
+                               "Method code too large!")
+                              (string/includes?
+                               (:cause (Throwable->map e))
+                               "Cannot convert path."))))))))
+               (finally
+                 ;; Get access to private atom in clojure.spec
+                 (def spec-reg (deref #'s/registry-ref))
+                 (doseq [k (filter
+                            (fn [k] (= "expound-generated-spec" (namespace k)))
+                            (keys (s/registry)))]
+                   (swap! spec-reg dissoc k))))))))
+
+(deftest clean-registry
+  (testing "only base spec remains"
+    (is (<= (count (filter
+                    (fn [k] (= "expound-generated-spec" (namespace k)))
+                    (keys (s/registry))))
+            1)
+        (str "Found leftover specs: " (vec (filter
+                                            (fn [k] (= "expound-generated-spec" (namespace k)))
+                                            (keys (s/registry))))))))
+
+(deftest valid-spec-spec
+  (checking
+   "spec for specs validates against real specs"
+   (chuck/times num-tests)
+   [sp (gen/elements
+        (topo-sort
+         (remove
+          (fn [k]
+            (string/includes? (pr-str (s/form (s/get-spec k))) "clojure.core.specs.alpha/quotable"))
+          (filter
+           (fn [k] (or
+                    (string/starts-with? (namespace k) "clojure")
+                    (string/starts-with? (namespace k) "expound")
+                    (string/starts-with? (namespace k) "onyx")
+                    (string/starts-with? (namespace k) "ring")))
+           (keys (s/registry))))))]
+   (is (s/valid? ::spec (s/form (s/get-spec sp)))
+       (str
+        "Spec name: " sp "\n"
+        "Error: "
+        (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true
+                                                           :print-specs? false
+                                                           :theme :figwheel-theme})]
+          (s/explain-str ::spec (s/form (s/get-spec sp))))))))
 
 (defmethod expound/problem-group-str ::test-problem1 [_type spec-name val path problems opts]
   "fake-problem-group-str")
