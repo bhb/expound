@@ -1,6 +1,14 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [Unreleased]
+
+### Fixed
+- [Bug with printing alternatives in 'or' or 'alt' specs](https://github.com/bhb/expound/issues/73)
+
+### Changed
+- If a problem has a value for `:expound.spec.problem/type` key, `expound.alpha/problem-group-str` must be implemented for that value or Expound will throw an error.
+
 ## [0.7.0] - 2018-05-28
 
 ### Fixed

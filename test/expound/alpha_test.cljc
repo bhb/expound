@@ -10,14 +10,15 @@
             [clojure.set :as set]
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [clojure.test.check.generators :as gen]
+            [clojure.walk :as walk]
             [com.gfredericks.test.chuck :as chuck]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [com.gfredericks.test.chuck.properties :as properties]
             [com.stuartsierra.dependency :as deps]
             [expound.alpha :as expound]
+            [expound.ansi :as ansi]
             [expound.printer :as printer]
             [expound.test-utils :as test-utils]
-            [clojure.walk :as walk]
             [spec-tools.data-spec :as ds]
             [expound.ansi :as ansi]
             [clojure.test.check.random :as random]
@@ -156,13 +157,18 @@ should be one of: :one, :two
 Detected 1 error\n")
            (expound/expound-str :set-based-spec/one-or-two [:three]))))
 
-  ;; FIXME - we should fix nilable and or specs better so they are clearly grouped
   (testing "nilable version"
     (is (= (pf "-- Spec failed --------------------
 
   :baz
 
 should be one of: :bar, :foo
+
+or
+
+should satisfy
+
+  nil?
 
 -- Relevant specs -------
 
@@ -171,23 +177,9 @@ should be one of: :bar, :foo
 :set-based-spec/nilable-tag:
   (pf.spec.alpha/nilable :set-based-spec/tag)
 
--- Spec failed --------------------
-
-  :baz
-
-should satisfy
-
-  nil?
-
--- Relevant specs -------
-
-:set-based-spec/nilable-tag:
-  (pf.spec.alpha/nilable :set-based-spec/tag)
-
 -------------------------
-Detected 2 errors\n")
+Detected 1 error\n")
            (expound/expound-str :set-based-spec/nilable-tag :baz))))
-
   (testing "single element spec"
     (is (= (pf "-- Spec failed --------------------
 
@@ -759,10 +751,11 @@ Cannot find spec for
 
    {}
 
+with
+
  Spec multimethod:      `expound.alpha-test/el-type`
  Dispatch function:     `:multi-spec/el-type`
  Dispatch value:        `nil`
-
 
 -- Relevant specs -------
 
@@ -782,10 +775,11 @@ Cannot find spec for
 
    {:multi-spec/el-type :image}
 
+with
+
  Spec multimethod:      `expound.alpha-test/el-type`
  Dispatch function:     `:multi-spec/el-type`
  Dispatch value:        `:image`
-
 
 -- Relevant specs -------
 
@@ -830,7 +824,27 @@ Detected 1 error\n")
 
 (deftest recursive-spec
   (testing "only shows problem with data at 'leaves' (not problems with all parents in tree)"
-    (is (= (pf "-- Spec failed --------------------
+    (is (= (pf
+            "-- Spec failed --------------------
+
+  {:tag ..., :children [{:tag :group, :children [{:tag :group, :props {:on-tap {}}}]}]}
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+should satisfy
+
+  nil?
+
+or value
+
+  {:tag ...,
+   :children [{:tag ..., :children [{:tag :group, :props {:on-tap {}}}]}]}
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+should satisfy
+
+  nil?
+
+or value
 
   {:tag ...,
    :children
@@ -843,51 +857,15 @@ should satisfy
 
   vector?
 
--- Relevant specs -------
-
-%s
-
 -------------------------
-Detected 1 error\n"
-               #?(:cljs ":recursive-spec/on-tap:
-  (cljs.spec.alpha/coll-of cljs.core/map? :kind cljs.core/vector?)
-:recursive-spec/props:
-  (cljs.spec.alpha/keys :opt-un [:recursive-spec/on-tap])
-:recursive-spec/children:
-  (cljs.spec.alpha/coll-of
-   (cljs.spec.alpha/nilable :recursive-spec/el)
-   :kind
-   cljs.core/vector?)
-:recursive-spec/el:
-  (cljs.spec.alpha/keys
-   :req-un
-   [:recursive-spec/tag]
-   :opt-un
-   [:recursive-spec/props :recursive-spec/children])"
-                  :clj ":recursive-spec/on-tap:
-  (clojure.spec.alpha/coll-of
-   clojure.core/map?
-   :kind
-   clojure.core/vector?)
-:recursive-spec/props:
-  (clojure.spec.alpha/keys :opt-un [:recursive-spec/on-tap])
-:recursive-spec/children:
-  (clojure.spec.alpha/coll-of
-   (clojure.spec.alpha/nilable :recursive-spec/el)
-   :kind
-   clojure.core/vector?)
-:recursive-spec/el:
-  (clojure.spec.alpha/keys
-   :req-un
-   [:recursive-spec/tag]
-   :opt-un
-   [:recursive-spec/props :recursive-spec/children])"))
-           (expound/expound-str
-            :recursive-spec/el
-            {:tag :group
-             :children [{:tag :group
-                         :children [{:tag :group
-                                     :props {:on-tap {}}}]}]})))))
+Detected 1 error\n")
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str
+              :recursive-spec/el
+              {:tag :group
+               :children [{:tag :group
+                           :children [{:tag :group
+                                       :props {:on-tap {}}}]}]}))))))
 
 (s/def :cat-wrapped-in-or-spec/kv (s/and
                                    sequential?
@@ -898,7 +876,6 @@ Detected 1 error\n"
                                              :kv :cat-wrapped-in-or-spec/kv))
 
 (deftest cat-wrapped-in-or-spec
-  ;; FIXME - make multiple types of specs on the same value display as single error
   (is (= (pf "-- Spec failed --------------------
 
   {\"foo\" \"hi\"}
@@ -909,18 +886,7 @@ should contain key: :cat-wrapped-in-or-spec/type
 |------------------------------+----------|
 | :cat-wrapped-in-or-spec/type | #{:text} |
 
--- Relevant specs -------
-
-:cat-wrapped-in-or-spec/kv-or-string:
-  (pf.spec.alpha/or
-   :map
-   (pf.spec.alpha/keys :req [:cat-wrapped-in-or-spec/type])
-   :kv
-   :cat-wrapped-in-or-spec/kv)
-
--- Spec failed --------------------
-
-  {\"foo\" \"hi\"}
+or
 
 should satisfy
 
@@ -940,7 +906,7 @@ should satisfy
    :cat-wrapped-in-or-spec/kv)
 
 -------------------------
-Detected 2 errors\n")
+Detected 1 error\n")
          (expound/expound-str :cat-wrapped-in-or-spec/kv-or-string {"foo" "hi"}))))
 
 (s/def :map-of-spec/name string?)
@@ -1081,14 +1047,50 @@ Detected 1 error\n")
 
 (deftest generated-or-specs
   (checking
-   "'or' spec"
+   "'or' spec generates string"
    (chuck/times num-tests)
    [simple-spec1 simple-spec-gen
     simple-spec2 simple-spec-gen
-    :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
-    :let [sp-form (s/form spec)]
+    :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)
+          sp-form (s/form spec)]
     form gen/any-printable]
-   (is (string? (expound/expound-str spec form)))))
+   (is (string? (expound/expound-str spec form))))
+  (checking
+   "nested 'or' spec reports on all problems"
+   (chuck/times num-tests)
+   [simple-specs (gen/vector-distinct
+                  (gen/elements [:specs/string
+                                 :specs/vector
+                                 :specs/int
+                                 :specs/boolean
+                                 :specs/keyword
+                                 :specs/map
+                                 :specs/symbol
+                                 :specs/pos-int
+                                 :specs/neg-int
+                                 :specs/zero])
+                  {:num-elements 4})
+    :let [[simple-spec1
+           simple-spec2
+           simple-spec3
+           simple-spec4] simple-specs
+          spec (s/or :or1
+                     (s/or :or1.1
+                           simple-spec1
+                           :or1.2
+                           simple-spec2)
+                     :or2
+                     (s/or :or2.1
+                           simple-spec3
+                           :or2.2
+                           simple-spec4))
+          sp-form (s/form spec)]
+    form gen/any-printable]
+   (let [ed (s/explain-data spec form)]
+     (when-not (zero? (count (::s/problems ed)))
+       (is (= (dec (count (::s/problems ed)))
+              (count (re-seq #"\bor\b" (expound/expound-str spec form))))
+           (str "Failed to print out all problems\nspec: " sp-form "\nproblems: " (printer/pprint-str (::s/problems ed)) "\nmessage: " (expound/expound-str spec form)))))))
 
 (deftest generated-map-of-specs
   (checking
@@ -1615,8 +1617,117 @@ Detected 1 error
     (deps/graph)
     specs)))
 
-(s/def :alt-spec/int-or-str (s/alt :int int? :string string?))
+(s/def :alt-spec/int-alt-str (s/alt :int int? :string string?))
+
 (deftest alt-spec
+  (testing "alternatives at different paths in spec"
+    (s/def :alt-spec/one-many-int (s/cat :bs (s/alt :one int?
+                                                    :many (s/spec (s/+ int?)))))
+    (is (= (pf "-- Spec failed --------------------
+
+  [[\"1\"]]
+   ^^^^^
+
+should satisfy
+
+  int?
+
+or value
+
+  [[\"1\"]]
+    ^^^
+
+should satisfy
+
+  int?
+
+-- Relevant specs -------
+
+:alt-spec/one-many-int:
+  (pf.spec.alpha/cat
+   :bs
+   (pf.spec.alpha/alt
+    :one
+    pf.core/int?
+    :many
+    (pf.spec.alpha/spec (pf.spec.alpha/+ pf.core/int?))))
+
+-------------------------
+Detected 1 error\n")
+           (binding [s/*explain-out* (expound/custom-printer {})]
+             (s/explain-str
+              :alt-spec/one-many-int
+              [["1"]]))))
+    (s/def :alt-spec/one-many-int-or-str (s/cat :bs (s/alt :one :alt-spec/int-alt-str
+                                                           :many (s/spec (s/+ :alt-spec/int-alt-str)))))
+    (is (= "-- Spec failed --------------------
+
+  [[:one]]
+   ^^^^^^
+
+should satisfy
+
+  int?
+
+or
+
+  string?
+
+or value
+
+  [[:one]]
+    ^^^^
+
+should satisfy
+
+  int?
+
+or
+
+  string?
+
+-------------------------
+Detected 1 error\n"
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str
+              :alt-spec/one-many-int-or-str
+              [[:one]]))))
+    (s/def :alt-spec/int-or-str (s/or :i int?
+                                      :s string?))
+    (s/def :alt-spec/one-many-int-or-str (s/cat :bs (s/alt :one :alt-spec/int-or-str
+                                                           :many (s/spec (s/+ :alt-spec/int-or-str)))))
+    (is (= "-- Spec failed --------------------
+
+  [[:one]]
+   ^^^^^^
+
+should satisfy
+
+  int?
+
+or
+
+  string?
+
+or value
+
+  [[:one]]
+    ^^^^
+
+should satisfy
+
+  int?
+
+or
+
+  string?
+
+-------------------------
+Detected 1 error\n"
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str
+              :alt-spec/one-many-int-or-str
+              [[:one]])))))
   (is (=  (pf "-- Spec failed --------------------
 
   [:hi]
@@ -1632,7 +1743,7 @@ or
 
 -- Relevant specs -------
 
-:alt-spec/int-or-str:
+:alt-spec/int-alt-str:
   %s
 
 -------------------------
@@ -1643,7 +1754,7 @@ Detected 1 error\n"
    :string
    clojure.core/string?)"
                  :cljs "(cljs.spec.alpha/alt :int cljs.core/int? :string cljs.core/string?)"))
-          (expound/expound-str :alt-spec/int-or-str [:hi]))))
+          (expound/expound-str :alt-spec/int-alt-str [:hi]))))
 
 #?(:clj
    (def spec-gen (gen/elements (->> (s/registry)
@@ -1806,11 +1917,10 @@ Detected 1 error\n"
              (mutate form mutate-path)))))
 
 #?(:clj
-   1
-   ;; FIXME - we need to use generate mutated value, instead
-   ;; of adding randomness to test
-   #_(deftest real-spec-tests-mutated-valid-value
-       (checking
+   (deftest real-spec-tests-mutated-valid-value
+     ;; FIXME - we need to use generate mutated value, instead
+     ;; of adding randomness to test
+     #_(checking
         "for any real-world spec and any mutated valid data, explain-str returns a string"
         (chuck/times num-tests)
         [spec spec-gen
@@ -2245,10 +2355,11 @@ Cannot find spec for
 
    {:pet/type :fish}
 
+with
+
  Spec multimethod:      `expound.alpha-test/pet`
  Dispatch function:     `:pet/type`
  Dispatch value:        `:fish`
-
 
 -- Relevant specs -------
 
@@ -2260,6 +2371,28 @@ Cannot find spec for
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet1 {:pet/type :fish}))))
+  ;; FIXME - improve this, maybe something like:
+  ;;;;;;;;;;;;;;;;;;;
+
+  ;;   {:pet/type :fish}  
+
+  ;; should be described by a spec multimethod, but
+
+  ;;   expound.alpha-test/pet
+
+  ;; is missing a method for value
+
+  ;;   (:pet/type {:pet/type :fish}) ; => :fish
+
+  ;; or 
+
+  ;; should be described by a spec multimethod, but
+
+  ;;   expound.alpha-test/pet
+
+  ;; is missing a method for value
+
+  ;;  (:animal/type {:pet/type :fish}) ; => nil
   (testing "multispec combined with s/or"
     (is (= (pf "-- Missing spec -------------------
 
@@ -2267,18 +2400,17 @@ Cannot find spec for
 
    {:pet/type :fish}
 
+with
+
  Spec multimethod:      `expound.alpha-test/pet`
  Dispatch function:     `:pet/type`
  Dispatch value:        `:fish`
 
-Cannot find spec for
-
-   {:pet/type :fish}
+or with
 
  Spec multimethod:      `expound.alpha-test/animal`
  Dispatch function:     `:animal/type`
  Dispatch value:        `nil`
-
 
 -- Relevant specs -------
 
@@ -2837,7 +2969,10 @@ should satisfy
                       :into (s/cat
                              :k #{:into}
                              :v (s/or :coll #{[] {} #{}}
-                                      :list #{'()})))))
+                                      :list #{'()}))
+                      :gen-max (s/cat
+                                :k #{:gen-max}
+                                :v nat-int?))))
 
 (s/def ::every-spec (s/cat
                      :every #{`s/every}
@@ -3004,60 +3139,60 @@ should satisfy
           ;; FIXME - this is a useful test but not 100% reliable yet
           ;; so I'm disabling to get this PR in
           #_(binding [s/*recursion-limit* 2]
-            (checking
-             "expound returns string"
-             5 ;; Hard-code at 5, since generating specs explodes in size quite quickly
-             [spec-defs (s/gen ::spec-defs)
-              pred-specs (gen/vector (s/gen ::pred-spec) 5)
-              seed (s/gen pos-int?)
-              mutate-path (gen/vector gen/pos-int)]
-             (try
-               (doseq [[spec-name spec] (map vector (missing-specs spec-defs) (cycle pred-specs))]
-                 (eval `(s/def ~spec-name ~spec)))
-               (doseq [spec-def spec-defs]
-                 (eval spec-def))
+              (checking
+               "expound returns string"
+               5 ;; Hard-code at 5, since generating specs explodes in size quite quickly
+               [spec-defs (s/gen ::spec-defs)
+                pred-specs (gen/vector (s/gen ::pred-spec) 5)
+                seed (s/gen pos-int?)
+                mutate-path (gen/vector gen/pos-int)]
+               (try
+                 (doseq [[spec-name spec] (map vector (missing-specs spec-defs) (cycle pred-specs))]
+                   (eval `(s/def ~spec-name ~spec)))
+                 (doseq [spec-def spec-defs]
+                   (eval spec-def))
 
-               (let [spec (second (last spec-defs))
-                     form (last (last spec-defs))
-                     disallowed #{;; because of https://dev.clojure.org/jira/browse/CLJ-2152
+                 (let [spec (second (last spec-defs))
+                       form (last (last spec-defs))
+                       disallowed #{;; because of https://dev.clojure.org/jira/browse/CLJ-2152
                                   ;; we can't accurately analyze forms under an '&' spec
-                                  "clojure.spec.alpha/&"
-                                  "clojure.spec.alpha/fspec"
-                                  "clojure.spec.alpha/multi-spec"
-                                  "clojure.spec.alpha/with-gen"}]
-                 (when-not (or (some
-                                disallowed
-                                (map str (tree-seq coll? identity form)))
-                               (some
-                                disallowed
-                                (->> spec
-                                     inline-specs
-                                     (tree-seq coll? identity)
-                                     (map str))))
-                   (let [valid-form (first (sample-seq (s/gen spec) seed))
-                         invalid-form (mutate valid-form mutate-path)]
-                     (try
-                       (is (string?
-                            (expound/expound-str spec invalid-form)))
-                       (is (not
-                            (clojure.string/includes?
-                             (expound/expound-str (second (last spec-defs)) invalid-form)
-                             "should contain keys")))
-                       (catch Exception e
-                         (is (or
-                              (string/includes?
-                               (:cause (Throwable->map e))
-                               "Method code too large!")
-                              (string/includes?
-                               (:cause (Throwable->map e))
-                               "Cannot convert path."))))))))
-               (finally
+                                    "clojure.spec.alpha/&"
+                                    "clojure.spec.alpha/fspec"
+                                    "clojure.spec.alpha/multi-spec"
+                                    "clojure.spec.alpha/with-gen"}]
+                   (when-not (or (some
+                                  disallowed
+                                  (map str (tree-seq coll? identity form)))
+                                 (some
+                                  disallowed
+                                  (->> spec
+                                       inline-specs
+                                       (tree-seq coll? identity)
+                                       (map str))))
+                     (let [valid-form (first (sample-seq (s/gen spec) seed))
+                           invalid-form (mutate valid-form mutate-path)]
+                       (try
+                         (is (string?
+                              (expound/expound-str spec invalid-form)))
+                         (is (not
+                              (clojure.string/includes?
+                               (expound/expound-str (second (last spec-defs)) invalid-form)
+                               "should contain keys")))
+                         (catch Exception e
+                           (is (or
+                                (string/includes?
+                                 (:cause (Throwable->map e))
+                                 "Method code too large!")
+                                (string/includes?
+                                 (:cause (Throwable->map e))
+                                 "Cannot convert path."))))))))
+                 (finally
                  ;; Get access to private atom in clojure.spec
-                 (def spec-reg (deref #'s/registry-ref))
-                 (doseq [k (filter
-                            (fn [k] (= "expound-generated-spec" (namespace k)))
-                            (keys (s/registry)))]
-                   (swap! spec-reg dissoc k))))))))
+                   (def spec-reg (deref #'s/registry-ref))
+                   (doseq [k (filter
+                              (fn [k] (= "expound-generated-spec" (namespace k)))
+                              (keys (s/registry)))]
+                     (swap! spec-reg dissoc k))))))))
 
 (deftest clean-registry
   (testing "only base spec remains"
@@ -3121,21 +3256,13 @@ should satisfy
 
       (is (= "fake-problem-group-str\nfake-expected-str\n\n-------------------------\nDetected 1 error\n"
              (printer-str {:print-specs? false} ed)))))
-  (testing "if type has no mm implemented, behavior is normal expound behavior"
+  (testing "if type has no mm implemented, throw an error"
     (let [printer-str #'expound/printer-str
           ed (assoc-in (s/explain-data int? "")
                        [::s/problems 0 :expound.spec.problem/type]
                        ::test-problem3)]
 
-      (is (= "-- Spec failed --------------------
-
-  \"\"
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error
-"
-             (printer-str {:print-specs? false} ed))))))
+      (is (thrown-with-msg?
+           #?(:cljs :default :clj Exception)
+           #"No method in multimethod"
+           (printer-str {:print-specs? false} ed))))))
