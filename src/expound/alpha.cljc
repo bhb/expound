@@ -503,7 +503,7 @@
   (let [problem (first problems)]
     (printer/format
      "should have additional elements. The next element%s %s"
-     (if-some [el-name (first (:expound/path problem))]
+     (if-some [el-name (last (:expound/path problem))]
        (str " \"" (pr-str el-name) "\"")
        "")
      (let [failure nil
@@ -974,4 +974,3 @@ returned an invalid value.
   "Given a sequence of results from `clojure.spec.test.alpha/check`, returns a string summarizing the results."
   [check-results]
   (with-out-str (explain-results check-results)))
-
