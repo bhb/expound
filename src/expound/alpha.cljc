@@ -347,7 +347,7 @@
    (value-str type spec-name form in problems opts)
    expected))
 
-(defmethod expected-str :expound.problem/value-group [_type spec-name val path problems opts]
+(defmethod expected-str :expound.problem-group/one-value [_type spec-name val path problems opts]
   (let [problem (first problems)
         subproblems (:problems problem)
         grouped-subproblems (vals (group-by :expound.spec.problem/type subproblems))]
@@ -355,7 +355,7 @@
      "\n\nor\n\n"
      (map #(expected-str* spec-name % opts) grouped-subproblems))))
 
-(defmethod value-str :expound.problem/value-group [type spec-name val path problems opts]
+(defmethod value-str :expound.problem-group/one-value [type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)
         subproblems (:problems problem)]
@@ -368,8 +368,7 @@
 
     "Spec failed"))
 
-;; TODO - try a few different names here
-(defmethod problem-group-str :expound.problem/value-group [type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem-group/one-value [type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)
         subproblems (:problems problem)
@@ -383,7 +382,7 @@
                 opts
                 (expected-str type spec-name val path problems opts))))
 
-(defmethod expected-str :expound.problem/alt-group [type spec-name val path problems opts]
+(defmethod expected-str :expound.problem-group/many-values [type spec-name val path problems opts]
   (let [subproblems (:problems (first problems))]
     (string/join
      "\n\nor value\n\n"
@@ -393,7 +392,7 @@
         (value-str* spec-name [problem] opts)
         (expected-str* spec-name [problem] opts))))))
 
-(defmethod problem-group-str :expound.problem/alt-group [_type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem-group/many-values [_type spec-name val path problems opts]
   (s/assert ::singleton problems)
   (printer/format
    "%s\n\n%s"
@@ -528,25 +527,25 @@
     (if (and
          (not (empty? prefix))
          (some? prefix)
-         (if (= :expound.problem/alt-group (:expound.spec.problem/type grp1))
+         (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp1))
            true
            (not= prefix xs))
-         (if (= :expound.problem/alt-group (:expound.spec.problem/type grp2))
+         (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp2))
            true
            (not= prefix ys)))
       grp1
       nil)))
 
-(defn ^:private alt-group [grp1 grp2]
-  {:expound.spec.problem/type :expound.problem/alt-group
+(defn ^:private problem-group [grp1 grp2]
+  {:expound.spec.problem/type :expound.problem-group/many-values
    :path-prefix               (lcs1 (:path-prefix grp1)
                                     (:path-prefix grp2))
    :problems                  (into
-                               (if (= :expound.problem/alt-group (:expound.spec.problem/type grp1))
+                               (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp1))
                                  (:problems grp1)
                                  [grp1])
 
-                               (if (= :expound.problem/alt-group (:expound.spec.problem/type grp2))
+                               (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp2))
                                  (:problems grp2)
                                  [grp2]))})
 
@@ -554,8 +553,8 @@
   (walk/postwalk
    (fn [form]
      (if (and (map? form)
-              (contains? #{:expound.problem/alt-group
-                           :expound.problem/value-group} (:expound.spec.problem/type form))
+              (contains? #{:expound.problem-group/many-values
+                           :expound.problem-group/one-value} (:expound.spec.problem/type form))
               (= 1 (count (:problems form))))
        (first (:problems form))
        form))
@@ -570,11 +569,11 @@
                                 vals
                                 (map (fn [grp]
                                        (if (= 1 (count grp))
-                                         {:expound.spec.problem/type :expound.problem/value-group
+                                         {:expound.spec.problem/type :expound.problem-group/one-value
 
                                           :path-prefix               (:expound/path (first grp))
                                           :problems                  grp}
-                                         {:expound.spec.problem/type :expound.problem/value-group
+                                         {:expound.spec.problem/type :expound.problem-group/one-value
                                           :path-prefix               (apply lcs1 (map :expound/path grp))
                                           :problems                  grp}))))]
     (->> grouped-by-in-path
@@ -583,7 +582,7 @@
             (if-let [old-group (some #(alternation % group) grps)]
               (-> grps
                   (remove-vec old-group)
-                  (conj (alt-group
+                  (conj (problem-group
                          old-group
                          group)))
               (conj grps group)))
