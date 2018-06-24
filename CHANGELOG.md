@@ -5,6 +5,7 @@ All notable changes to this project will be documented in this file. This change
 
 ### Fixed
 - [Bug with printing alternatives in 'or' or 'alt' specs](https://github.com/bhb/expound/issues/73)
+- [Bug with missing elements in `cat` specs](https://github.com/bhb/expound/issues/79)
 
 ### Changed
 - If a problem has a value for `:expound.spec.problem/type` key, `expound.alpha/problem-group-str` must be implemented for that value or Expound will throw an error.
