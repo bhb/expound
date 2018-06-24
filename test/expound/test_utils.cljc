@@ -27,11 +27,10 @@
   (s/check-asserts false))
 
 (defn instrument-all [test-fn]
-  ;; TODO - bug w/ instrumentation????
-  #_(set! s/*explain-out* (expound/custom-printer {:theme :figwheel-theme}))
-  #_(st/instrument)
+  (set! s/*explain-out* (expound/custom-printer {:theme :figwheel-theme}))
+  (st/instrument)
   (test-fn)
-  #_(st/unstrument))
+  (st/unstrument))
 
 (defn contains-nan? [x]
   (boolean (some util/nan? (tree-seq coll? identity x))))
