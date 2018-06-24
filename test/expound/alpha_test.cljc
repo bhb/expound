@@ -3266,3 +3266,9 @@ should satisfy
            #?(:cljs :default :clj Exception)
            #"No method in multimethod"
            (printer-str {:print-specs? false} ed))))))
+
+(deftest macroexpansion-errors
+  (is (thrown-with-msg?
+       #?(:cljs :default :clj Exception)
+       #"should have additional elements. The next element \"\:init\-expr\" should satisfy"
+       (macroexpand `(let [~'a] 2)))))
