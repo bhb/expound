@@ -506,24 +506,22 @@
     :else
     :expound.problem/unknown))
 
-;;; TODO clean up
-(defn ^:private lcs [[x & xs] [y & ys]]
+(defn ^:private lcs* [[x & xs] [y & ys]]
   (cond
     (or (= x nil) (= y nil)) nil
-    (= x y) (vec (cons x (lcs xs ys)))
+    (= x y) (vec (cons x (lcs* xs ys)))
     :else []))
 
-;; TODO - rename
-(defn ^:private lcs1 [& paths]
+(defn ^:private lcs [& paths]
   (reduce
    (fn [xs ys]
-     (lcs xs ys))
+     (lcs* xs ys))
    paths))
 
 (defn ^:private alternation [grp1 grp2]
   (let [xs (:path-prefix grp1)
         ys (:path-prefix grp2)
-        prefix (lcs1 xs ys)]
+        prefix (lcs xs ys)]
     (if (and
          (not (empty? prefix))
          (some? prefix)
@@ -538,8 +536,8 @@
 
 (defn ^:private problem-group [grp1 grp2]
   {:expound.spec.problem/type :expound.problem-group/many-values
-   :path-prefix               (lcs1 (:path-prefix grp1)
-                                    (:path-prefix grp2))
+   :path-prefix               (lcs (:path-prefix grp1)
+                                   (:path-prefix grp2))
    :problems                  (into
                                (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp1))
                                  (:problems grp1)
@@ -574,7 +572,7 @@
                                           :path-prefix               (:expound/path (first grp))
                                           :problems                  grp}
                                          {:expound.spec.problem/type :expound.problem-group/one-value
-                                          :path-prefix               (apply lcs1 (map :expound/path grp))
+                                          :path-prefix               (apply lcs (map :expound/path grp))
                                           :problems                  grp}))))]
     (->> grouped-by-in-path
          (reduce
