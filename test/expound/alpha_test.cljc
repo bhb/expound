@@ -476,7 +476,6 @@ Detected 1 error\n"
 (s/def :cat-spec/alt (s/+ :cat-spec/alt*))
 (s/def :cat-spec/alt-inline (s/+ (s/alt :s string? :i int?)))
 (s/def :cat-spec/any (s/cat :x (s/+ any?))) ;; Not a useful spec, but worth testing
-;; HERE - need to figure out inner call to groups stuff for cat-spec
 (deftest cat-spec
   (testing "too few elements"
     (is (= (pf "-- Syntax error -------------------

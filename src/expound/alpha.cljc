@@ -109,10 +109,6 @@
      (printer/indent (printer/pprint-str (s/form spec))))
     (printer/pprint-str (s/form spec))))
 
-(defn ^:private multi-spec-parts [spec-form]
-  (let [[_multi-spec mm retag] spec-form]
-    {:mm mm :retag retag}))
-
 ;; via is different when using asserts
 (defn ^:private spec+via [problem]
   (let [{:keys [via spec]} problem]
@@ -232,6 +228,10 @@
        "%s\n\n%s"
        (section-label "Relevant specs")
        sp-str))))
+
+(defn ^:private multi-spec-parts [spec-form]
+  (let [[_multi-spec mm retag] spec-form]
+    {:mm mm :retag retag}))
 
 (defn ^:private multi-spec [pred spec]
   (->> (s/form spec)

@@ -258,11 +258,6 @@
     (-> explain-data
         (assoc :expound/form form
                :expound/caller caller
-               :expound/problems problems')
-        #_(update :expound/problems
-                  (fn [problems]
-                    (map
-
-                     problems))))))
+               :expound/problems problems'))))
 
 (def type ptype)
