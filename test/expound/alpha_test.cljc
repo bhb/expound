@@ -1058,7 +1058,7 @@ Detected 1 error\n")
    (is (string? (expound/expound-str spec form))))
   (checking
    "nested 'or' spec reports on all problems"
-   10
+   (chuck/times num-tests)
    [simple-specs (gen/vector-distinct
                   (gen/elements [:specs/string
                                  :specs/vector
@@ -3257,21 +3257,13 @@ should satisfy
 
       (is (= "fake-problem-group-str\nfake-expected-str\n\n-------------------------\nDetected 1 error\n"
              (printer-str {:print-specs? false} ed)))))
-  (testing "if type has no mm implemented, behavior is normal expound behavior"
+  (testing "if type has no mm implemented, throw an error"
     (let [printer-str #'expound/printer-str
           ed (assoc-in (s/explain-data int? "")
                        [::s/problems 0 :expound.spec.problem/type]
                        ::test-problem3)]
 
-      (is (= "-- Spec failed --------------------
-
-  \"\"
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error
-"
-             (printer-str {:print-specs? false} ed))))))
+      (is (thrown-with-msg?
+           #?(:cljs :default :clj Exception)
+           #"No method in multimethod"
+           (printer-str {:print-specs? false} ed))))))

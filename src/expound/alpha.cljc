@@ -109,6 +109,10 @@
      (printer/indent (printer/pprint-str (s/form spec))))
     (printer/pprint-str (s/form spec))))
 
+(defn ^:private multi-spec-parts [spec-form]
+  (let [[_multi-spec mm retag] spec-form]
+    {:mm mm :retag retag}))
+
 ;; via is different when using asserts
 (defn ^:private spec+via [problem]
   (let [{:keys [via spec]} problem]
@@ -228,56 +232,6 @@
        "%s\n\n%s"
        (section-label "Relevant specs")
        sp-str))))
-
-(defn ^:private multi-spec-parts [spec-form]
-  (let [[_multi-spec mm retag] spec-form]
-    {:mm mm :retag retag}))
-
-(defn ^:private missing-spec? [_failure problem]
-  (= "no method" (:reason problem)))
-
-(defn ^:private not-in-set? [_failure problem]
-  (set? (:pred problem)))
-
-(defn ^:private fspec-exception-failure? [failure problem]
-  (and (not= :instrument failure)
-       (not= :check-failed failure)
-       (= '(apply fn) (:pred problem))))
-
-(defn ^:private fspec-ret-failure? [failure problem]
-  (and
-   (not= :instrument failure)
-   (not= :check-failed failure)
-   (= :ret (first (:path problem)))))
-
-(defn ^:private fspec-fn-failure? [failure problem]
-  (and
-   (not= :instrument failure)
-   (not= :check-failed failure)
-   (= :fn (first (:path problem)))))
-
-(defn ^:private check-ret-failure? [failure problem]
-  (and
-   (= :check-failed failure)
-   (= :ret (first (:path problem)))))
-
-(defn ^:private check-fn-failure? [failure problem]
-  (and (= :check-failed failure)
-       (= :fn (first (:path problem)))))
-
-(defn ^:private missing-key? [_failure problem]
-  (let [pred (:pred problem)]
-    (and (seq? pred)
-         (< 2 (count pred))
-         (s/valid?
-          :expound.spec/contains-key-pred
-          (nth pred 2)))))
-
-(defn ^:private insufficient-input? [_failure problem]
-  (contains? #{"Insufficient input"} (:reason problem)))
-
-(defn ^:private extra-input? [_failure problem]
-  (contains? #{"Extra input"} (:reason problem)))
 
 (defn ^:private multi-spec [pred spec]
   (->> (s/form spec)
@@ -464,48 +418,6 @@
     (catch #?(:cljs :default
               :clj Exception) e coll)))
 
-;; TODO - move to problems namespace: this is problems/type
-;; but first, we need to clean up usages so we can pass in
-;; (get-method problem-group-str (:expound.spec.problem/type problem))
-;; cleanly as arg
-(defn ^:private problem-type [failure problem]
-  (cond
-    (get-method problem-group-str (:expound.spec.problem/type problem))
-    (:expound.spec.problem/type problem)
-
-    (insufficient-input? failure problem)
-    :expound.problem/insufficient-input
-
-    (extra-input? failure problem)
-    :expound.problem/extra-input
-
-    (not-in-set? failure problem)
-    :expound.problem/not-in-set
-
-    (missing-key? failure problem)
-    :expound.problem/missing-key
-
-    (missing-spec? failure problem)
-    :expound.problem/missing-spec
-
-    (fspec-exception-failure? failure problem)
-    :expound.problem/fspec-exception-failure
-
-    (fspec-ret-failure? failure problem)
-    :expound.problem/fspec-ret-failure
-
-    (fspec-fn-failure? failure problem)
-    :expound.problem/fspec-fn-failure
-
-    (check-ret-failure? failure problem)
-    :expound.problem/check-ret-failure
-
-    (check-fn-failure? failure problem)
-    :expound.problem/check-fn-failure
-
-    :else
-    :expound.problem/unknown))
-
 (defn ^:private lcs* [[x & xs] [y & ys]]
   (cond
     (or (= x nil) (= y nil)) nil
@@ -587,8 +499,6 @@
           [])
          lift-singleton-groups)))
 
-(declare annotate-1*) ;; TODO - remove
-
 (defmethod expected-str :expound.problem/insufficient-input [_type spec-name val path problems opts]
   (let [problem (first problems)]
     (printer/format
@@ -600,7 +510,7 @@
            non-matching-value [:expound/value-that-should-never-match]
            problems (->> problems
                          (map #(dissoc % :expound.spec.problem/type :reason))
-                         (annotate-1* failure)
+                         (map #(assoc % :expound.spec.problem/type (problems/type failure %)))
                          groups)]
        (apply str (for [prob problems]
                     (let [in (-> prob :expound/in)]
@@ -773,34 +683,10 @@ returned an invalid value.
     (-> ed ::s/problems first :path first)
     nil))
 
-;; TODO - I can't remove this until I resolve usage below
-(defn ^:private annotate-1* [failure problems]
-  (map
-   #(assoc %
-           :expound.spec.problem/type
-           (problem-type failure %))
-   problems))
-
-;; TODO - cannot move annotate-1 into problems until
-;; I can move problem-type in
-;; TODO - roll into problems/annotate
-(defn ^:private annotate-1 [explain-data]
-  (let [failure (::s/failure explain-data)]
-    (update
-     explain-data
-     :expound/problems
-     (fn [problems]
-       (map
-        #(assoc %
-                :expound.spec.problem/type
-                (problem-type failure %))
-        problems)))))
-
 (defn ^:private print-explain-data [opts explain-data]
   (if-not explain-data
     "Success!\n"
-    (let [;; TODO - collapse into annotate
-          explain-data' (annotate-1 (problems/annotate explain-data))
+    (let [explain-data' (problems/annotate explain-data)
           {:expound/keys [caller form]
            ::s/keys [failure]} explain-data'
           problems (->> explain-data'
