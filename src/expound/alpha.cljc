@@ -551,7 +551,9 @@
 with args:
 
 %s"
-     (printer/indent (pr-str (:reason problem)))
+     (printer/indent (if (string? (:reason problem))
+                       (str "\"" (:reason problem) "\"")
+                       (pr-str (:reason problem))))
      (printer/indent (string/join ", " (:val problem))))))
 
 (defmethod problem-group-str :expound.problem/fspec-exception-failure [type spec-name val path problems opts]
