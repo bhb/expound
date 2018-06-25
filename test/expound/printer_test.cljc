@@ -4,23 +4,37 @@
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [expound.alpha :as expound]
             [expound.printer :as printer]
-            [expound.test-utils :as test-utils]))
+            #?(:cljs
+               [clojure.spec.test.alpha :as st]
+               ;; FIXME
+               ;; orchestra is supposed to work with cljs but
+               ;; it isn't working for me right now
+               #_[orchestra-cljs.spec.test :as st]
+               :clj [orchestra.spec.test :as st])
+            [expound.test-utils :as test-utils :refer [contains-nan?]]))
 
 (use-fixtures :once
   test-utils/check-spec-assertions
   test-utils/instrument-all)
 
+(defn example-fn [])
+
 (deftest pprint-fn
   (is (= "string?"
          (printer/pprint-fn (::s/spec (s/explain-data string? 1)))))
-  (is (= "expound.alpha/expound"
-         (printer/pprint-fn expound/expound)))
+  (is (= "expound.printer-test/example-fn"
+         (printer/pprint-fn example-fn)))
   (is (= "<anonymous function>"
-         (printer/pprint-fn #(inc %))))
+         (printer/pprint-fn #(inc (inc %)))))
   (is (= "<anonymous function>"
          (printer/pprint-fn (constantly true))))
   (is (= "<anonymous function>"
-         (printer/pprint-fn (comp vec str)))))
+         (printer/pprint-fn (comp vec str))))
+  (is (= "expound.test-utils/instrument-all"
+         (printer/pprint-fn test-utils/instrument-all)))
+
+  (is (= "expound.test-utils/contains-nan?"
+         (printer/pprint-fn contains-nan?))))
 
 (s/def :print-spec-keys/field1 string?)
 (s/def :print-spec-keys/field2 (s/coll-of :print-spec-keys/field1))
@@ -50,15 +64,15 @@
               (s/explain-data
                :print-spec-keys/key-spec
                {}))))))
-  (is (= nil
-         (printer/print-spec-keys
-          (map #(copy-key % :via :expound/via)
-               (::s/problems
-                (s/explain-data
-                 (s/keys
-                  :req [:print-spec-keys/field1]
-                  :req-un [:print-spec-keys/field2])
-                 {}))))))
+  (is (nil?
+       (printer/print-spec-keys
+        (map #(copy-key % :via :expound/via)
+             (::s/problems
+              (s/explain-data
+               (s/keys
+                :req [:print-spec-keys/field1]
+                :req-un [:print-spec-keys/field2])
+               {}))))))
 
   (is (=
        "|                     key |    spec |

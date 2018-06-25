@@ -2,11 +2,68 @@
 
 Expound formats `clojure.spec` error messages in a way that is optimized for humans to read.
 
+For example, Expound will replace a Spec error message like:
+
+```
+val: {} fails spec: :example/place predicate: (contains? % :city)
+val: {} fails spec: :example/place predicate: (contains? % :state)
+:clojure.spec.alpha/spec  :example/place
+:clojure.spec.alpha/value  {}
+```
+
+with
+
+```
+-- Spec failed --------------------
+
+ {}
+
+should contain keys: `:city`,`:state`
+```
+
 Expound is in alpha while `clojure.spec` is in alpha.
+
+## Installation
+
+[![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
+
+### Quick start
+
+### Leiningen/Boot
+
+`[expound "0.7.1"]`
+
+#### deps.edn
+
+`expound {:mvn/version "0.7.1"}`
+
+### Lumo
+
+`npm install @bbrinck/expound`
 
 ## Usage
 
-[![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
+[API Docs](https://bhb.github.io/expound/index.html)
+
+```
+> brew install clojure
+> clj -Sdeps '{:deps {friendly {:git/url "https://gist.github.com/bhb/2686b023d074ac052dbc21f12f324f18" :sha "bb5806bd655d743f3b48b36ce83c0085a8d7c54a"}}}' -m friendly
+user=> (require '[expound.alpha :as expound])
+nil
+user=> (expound/expound string? 1)
+nil
+-- Spec failed --------------------
+
+  1
+
+should satisfy
+
+  string?
+
+-------------------------
+Detected 1 error
+user=>
+```
 
 ### `expound`
 
@@ -21,35 +78,6 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 (s/def :example.place/city string?)
 (s/def :example.place/state string?)
 (s/def :example/place (s/keys :req-un [:example.place/city :example.place/state]))
-
-(s/explain :example/place {})
-;; val: {} fails spec: :example/place predicate: (contains? % :city)
-;; val: {} fails spec: :example/place predicate: (contains? % :state)
-;; :clojure.spec.alpha/spec  :example/place
-;; :clojure.spec.alpha/value  {}
-
-(expound/expound :example/place {})
-;; -- Spec failed --------------------
-
-;;   {}
-
-;; should contain keys: `:city`,`:state`
-
-;; -- Relevant specs -------
-
-;; :example/place:
-;;   (clojure.spec.alpha/keys
-;;    :req-un
-;;    [:example.place/city :example.place/state])
-
-;; -------------------------
-;; Detected 1 error
-
-(s/explain :example/place {:city "Denver", :state :CO})
-;; In: [:state] val: :CO fails spec: :example.place/state at: [:state] predicate: string?
-;; :clojure.spec.alpha/spec  :example/place
-;; :clojure.spec.alpha/value  {:city "Denver", :state :CO}
-
 (expound/expound :example/place {:city "Denver", :state :CO})
 ;; -- Spec failed --------------------
 
@@ -118,8 +146,112 @@ If you are enabling Expound in a non-REPL environment, remember that `set!` will
 
 [Using `set!` will also not work within an uberjar](https://github.com/bhb/expound/issues/19).
 
+### Printing results for `check`
 
-### Configuring the printer
+The Expound printer can print results from `clojure.spec.test.alpha/check`
+
+```clojure
+(require '[expound.alpha :as expound]
+         '[clojure.spec.test.alpha :as st]
+         '[clojure.spec.alpha :as s]
+         '[clojure.test.check])
+
+(s/fdef ranged-rand
+  :args (s/and (s/cat :start int? :end int?)
+               #(< (:start %) (:end %)))
+  :ret int?
+  :fn (s/and #(>= (:ret %) (-> % :args :start))
+             #(< (:ret %) (-> % :args :end))))
+(defn ranged-rand
+  "Returns random int in range start <= rand < end"
+  [start end]
+  (+ start (long (rand (- start end)))))
+
+(set! s/*explain-out* expound/printer)
+(expound/explain-results (st/check `ranged-rand))
+;;== Checked user/ranged-rand =================
+;;
+;;-- Function spec failed -----------
+;;
+;;  (user/ranged-rand -3 0)
+;;
+;;failed spec. Function arguments and return value
+;;
+;;  {:args {:start -3, :end 0}, :ret -5}
+;;
+;;should satisfy
+;;
+;;  (fn
+;;   [%]
+;;   (>= (:ret %) (-> % :args :start)))
+```
+
+### Error messages for predicates
+
+#### Adding error messages
+
+If a value fails to satisfy a predicate, Expound will print the name of the function (or `<anonymous function>` if the function has no name). To improve the error message, you can use `expound.alpha/def` to add a human-readable error message to the spec.
+
+```clojure
+(def email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$")
+
+(expound/def :example/email (s/and string? #(re-matches email-regex %)) "should be a valid email address")
+
+(expound/expound :example/email "sally@")
+
+;; -- Spec failed --------------------
+;;
+;;   "sally@"
+;;
+;; should be a valid email address
+```
+
+If you prefer to use `clojure.spec.alpha/def`, you can still add a message using `expound.alpha/defmsg`:
+
+```clojure
+(s/def :ex/name string?)
+(expound/defmsg :ex/name "should be a string")
+(expound/expound :ex/name :bob)
+;; -- Spec failed --------------------
+;;
+;; :bob
+;;
+;; should be a string
+
+```
+
+#### Built-in predicates with error messages
+
+Expound provides a default set of type-like predicates with error messages. For example:
+
+```clojure
+(expound/expound :expound.specs/pos-int -1)
+;; -- Spec failed --------------------
+;;
+;; -1
+;;
+;; should be a positive integer
+```
+
+You can see the full list of available specs with `expound.specs/public-specs`.
+
+### Printer options
+
+Create a custom printer by changing the following options e.g.
+
+```clojure
+(set! s/*explain-out* (expound/custom-printer {:show-valid-values? true :print-specs? false :theme :figwheel-theme}))
+```
+
+| name | spec |  default | description |
+|------|------|----------|-------------|
+| `:show-valid-values?` | `boolean?` | `false` | If `false`, replaces valid values with `...` (example below) |
+| `:value-str-fn` | `ifn?` | provided function | Function to print bad values (example below) |
+| `:print-specs?` | `boolean?` | `true` | If true, display "Relevant specs" section. Otherwise, omit that section. |
+| `:theme` | `#{:figwheel-theme :none}` | `:none` | Enables color theme. |
+
+
+#### `:show-valid-values?`
 
 By default, `printer` will omit valid values and replace them with `...`
 
@@ -153,7 +285,9 @@ You can configure Expound to show valid values:
 ;;   string?
 ```
 
-You can even provide your own function to display the invalid value.
+##### `:value-str-fn`
+
+You can provide your own function to display the invalid value.
 
 ```clojure
 ;; Your implementation should meet the following spec:
@@ -250,8 +384,6 @@ Use [Orchestra](https://github.com/jeaye/orchestra) with Expound to get human-op
 ;;
 ;; string?
 ;;
-;;
-;;
 ;; -------------------------
 ;; Detected 1 error
 ```
@@ -259,7 +391,7 @@ Use [Orchestra](https://github.com/jeaye/orchestra) with Expound to get human-op
 
 Expound will not give helpful errors (and in some cases, will throw an exception) if you use conformers to transform values. Although using conformers in this way is fairly common, my understanding is that this is not an [intended use case](https://dev.clojure.org/jira/browse/CLJ-2116).
 
-If you want to use Expound with conformers, you'll need to write a custom printer. See "Configuring the printer" above.
+If you want to use Expound with conformers, you'll need to write a custom printer. See "Printer options" above.
 
 ## Related work
 
@@ -274,6 +406,9 @@ If you want to use Expound with conformers, you'll need to write a custom printe
 * Error messages in [Figwheel](https://github.com/bhauman/lein-figwheel), in particular the config error messages generated from [strictly-specking](https://github.com/bhauman/strictly-specking)
 * [Clojure Error Message Catalog](https://github.com/yogthos/clojure-error-message-catalog)
 * [The Usability of beginner-oriented Clojure error messages](http://wiki.science.ru.nl/tfpie/images/6/6e/TFPIE16-slides-emachkasova.pdf)
+* ["Illuminated Macros" - Chris Houser / Jonathan Claggett](https://www.youtube.com/watch?v=o75g9ZRoLaw)
+* [seqex](https://github.com/jclaggett/seqex)
+* ["Improving Clojure's Error Messages with Grammars" - Colin Fleming](https://www.youtube.com/watch?v=kt4haSH2xcs)
 
 ## Contributing
 
@@ -283,6 +418,6 @@ If you are working on the code, please read the [Development Guide](doc/developm
 
 ## License
 
-Copyright © 2017 Ben Brinckerhoff
+Copyright © 2017-2018 Ben Brinckerhoff
 
 Distributed under the Eclipse Public License version 1.0, just like Clojure.

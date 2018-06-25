@@ -3,6 +3,43 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.7.1] - 2018-06-25
+
+### Fixed
+- [Bug with printing alternatives in 'or' or 'alt' specs](https://github.com/bhb/expound/issues/73)
+- [Bug with missing elements in `cat` specs](https://github.com/bhb/expound/issues/79)
+
+### Changed
+- If a problem has a value for `:expound.spec.problem/type` key, `expound.alpha/problem-group-str` must be implemented for that value or Expound will throw an error.
+
+## [0.7.0] - 2018-05-28
+
+### Fixed
+- [Use existing value of `ansi/*enable-color*`](https://github.com/bhb/expound/pull/98)
+
+### Added
+- Specs and docstrings for public API
+- Codox site for documentation
+- [3rd-party libraries can extend Expound by setting `:expound.spec.problem/type` on each `clojure.spec` problem and declaring a `defmethod` to implement custom printing](https://github.com/bhb/expound/pull/97/)
+
+## [0.6.0] - 2018-04-26
+
+### Fixed
+- Bug with extra whitespace when "Revelant specs" are not printed
+
+### Added
+- [Optional colorized output i.e. "themes"](https://github.com/bhb/expound/issues/44)
+- [`explain-results` and `explain-results-str` functions print human-optimized output for `clojure.spec.test.alpha/check` results](https://github.com/bhb/expound/issues/72)
+
+## [0.5.0] - 2018-02-06
+
+### Fixed
+- [Bug with displaying errors for `s/or` specs](https://github.com/bhb/expound/issues/64)
+- Bug where "should be one of..." values didn't display correctly
+
+### Added
+- Optional error messages for predicates
+
 ## [0.4.0] - 2017-12-16
 
 ### Fixed
@@ -83,7 +120,11 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/bhb/expound/compare/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/bhb/expound/compare/v0.6.0...v0.7.0
+[0.6.0]: https://github.com/bhb/expound/compare/v0.5.0...v0.6.0
+[0.5.0]: https://github.com/bhb/expound/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/bhb/expound/compare/v0.3.4...v0.4.0
 [0.3.4]: https://github.com/bhb/expound/compare/v0.3.3...v0.3.4
 [0.3.3]: https://github.com/bhb/expound/compare/v0.3.2...v0.3.3

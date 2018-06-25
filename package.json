@@ -1,4 +1,27 @@
 {
+  "name": "@bbrinck/expound",
+  "version": "0.7.1",
+  "description": "Human-optimized error messages for clojure.spec",
+  "author": {
+    "name": "Ben Brinckerhoff",
+    "email": "ben@bbrinck.com",
+    "url": "http://bbrinck.com"
+  },
+  "homepage": "https://github.com/bhb/expound",
+  "license": "EPL-1.0",
+  "directories": {
+    "lib": "src"
+  },
+  "files": [
+    "src/*"
+  ],
+  "keywords": [
+    "clojurescript",
+    "clojure",
+    "cljs",
+    "cljc",
+    "self-host"
+  ],
   "devDependencies": {
     "karma": "^1.7.0",
     "karma-chrome-launcher": "^2.2.0",

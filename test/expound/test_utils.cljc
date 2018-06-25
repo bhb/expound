@@ -2,6 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             #?(:cljs
                [clojure.spec.test.alpha :as st]
+               ;; FIXME
                ;; orchestra is supposed to work with cljs but
                ;; it isn't working for me right now
                #_[orchestra-cljs.spec.test :as st]
@@ -26,7 +27,7 @@
   (s/check-asserts false))
 
 (defn instrument-all [test-fn]
-  (set! s/*explain-out* expound/printer)
+  (set! s/*explain-out* (expound/custom-printer {:theme :figwheel-theme}))
   (st/instrument)
   (test-fn)
   (st/unstrument))

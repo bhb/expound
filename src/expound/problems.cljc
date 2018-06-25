@@ -3,7 +3,9 @@
             [clojure.spec.alpha :as s]
             [clojure.walk :as walk]
             [clojure.string :as string]
-            [expound.printer :as printer]))
+            [expound.printer :as printer]
+            [expound.ansi :as ansi])
+  (:refer-clojure :exclude [type]))
 
 (defn blank-form [form]
   (cond
@@ -24,7 +26,7 @@
     ::irrelevant))
 
 (s/fdef summary-form
-        :args (s/cat :show-valid-valids? boolean?
+        :args (s/cat :show-valid-values? boolean?
                      :form any?
                      :highlighted-path :expound/path))
 (defn summary-form [show-valid-values? form in]
@@ -36,11 +38,10 @@
       ::relevant
 
       (and (map? form) (paths/kps? k))
-      (assoc
-       (dissoc displayed-form
-               (:key k))
-       (summary-form show-valid-values? (:key k) rst)
-       ::irrelevant)
+      (-> displayed-form
+          (dissoc (:key k))
+          (assoc (summary-form show-valid-values? (:key k) rst)
+                 ::irrelevant))
 
       (and (map? form) (paths/kvps? k))
       (recur show-valid-values? (nth (seq form) (:idx k)) rst)
@@ -106,39 +107,91 @@
     (assoc problem :expound/via (:via problem))
     (assoc problem :expound/via (into [spec] (:via problem)))))
 
+(defn ^:private missing-spec? [_failure problem]
+  (= "no method" (:reason problem)))
+
+(defn ^:private not-in-set? [_failure problem]
+  (set? (:pred problem)))
+
+(defn ^:private fspec-exception-failure? [failure problem]
+  (and (not= :instrument failure)
+       (not= :check-failed failure)
+       (= '(apply fn) (:pred problem))))
+
+(defn ^:private fspec-ret-failure? [failure problem]
+  (and
+   (not= :instrument failure)
+   (not= :check-failed failure)
+   (= :ret (first (:path problem)))))
+
+(defn ^:private fspec-fn-failure? [failure problem]
+  (and
+   (not= :instrument failure)
+   (not= :check-failed failure)
+   (= :fn (first (:path problem)))))
+
+(defn ^:private check-ret-failure? [failure problem]
+  (and
+   (= :check-failed failure)
+   (= :ret (first (:path problem)))))
+
+(defn ^:private check-fn-failure? [failure problem]
+  (and (= :check-failed failure)
+       (= :fn (first (:path problem)))))
+
+(defn ^:private missing-key? [_failure problem]
+  (let [pred (:pred problem)]
+    (and (seq? pred)
+         (< 2 (count pred))
+         (s/valid?
+          :expound.spec/contains-key-pred
+          (nth pred 2)))))
+
+(defn ^:private insufficient-input? [_failure problem]
+  (contains? #{"Insufficient input"} (:reason problem)))
+
+(defn ^:private extra-input? [_failure problem]
+  (contains? #{"Extra input"} (:reason problem)))
+
+(defn ^:private ptype [failure problem]
+  (cond
+    (:expound.spec.problem/type problem)
+    (:expound.spec.problem/type problem)
+
+    (insufficient-input? failure problem)
+    :expound.problem/insufficient-input
+
+    (extra-input? failure problem)
+    :expound.problem/extra-input
+
+    (not-in-set? failure problem)
+    :expound.problem/not-in-set
+
+    (missing-key? failure problem)
+    :expound.problem/missing-key
+
+    (missing-spec? failure problem)
+    :expound.problem/missing-spec
+
+    (fspec-exception-failure? failure problem)
+    :expound.problem/fspec-exception-failure
+
+    (fspec-ret-failure? failure problem)
+    :expound.problem/fspec-ret-failure
+
+    (fspec-fn-failure? failure problem)
+    :expound.problem/fspec-fn-failure
+
+    (check-ret-failure? failure problem)
+    :expound.problem/check-ret-failure
+
+    (check-fn-failure? failure problem)
+    :expound.problem/check-fn-failure
+
+    :else
+    :expound.problem/unknown))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn leaf-only
-  "Given a collection of problems, returns only those problems with data on the 'leaves' of the data"
-  [problems]
-  (let [paths-to-data (into #{} (map :expound/in problems))]
-    (remove
-     (fn [problem]
-       (some
-        (fn [path]
-          (paths/prefix-path? (:expound/in problem) path))
-        paths-to-data))
-     problems)))
-
-(defn annotate [explain-data]
-  (let [{:keys [::s/problems ::s/value ::s/args ::s/ret ::s/fn ::s/failure ::s/spec]} explain-data
-        caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
-        form (if (not= :instrument failure)
-               value
-               (cond
-                 (contains? explain-data ::s/ret) ret
-                 (contains? explain-data ::s/fn) fn
-                 (contains? explain-data ::s/args) args))
-        problems' (map (comp (partial adjust-in form)
-                             (partial adjust-path failure)
-                             (partial add-spec spec)
-                             (partial fix-via spec)
-                             #(assoc % :expound/form form))
-                       problems)]
-    (assoc explain-data
-           :expound/form form
-           :expound/caller caller
-           :expound/problems problems')))
 
 (defn value-in
   "Similar to get-in, but works with paths that reference map keys"
@@ -180,8 +233,31 @@
         highlighted-line (-> line
                              (string/replace (re-pattern relevant) (escape-replacement
                                                                     (re-pattern relevant)
-                                                                    (printer/indent 0 (count prefix) (printer/pprint-str value-at-path))))
-                             (str "\n" (highlight-line prefix (printer/pprint-str value-at-path))))]
+                                                                    (printer/indent 0 (count prefix) (ansi/color (printer/pprint-str value-at-path) :bad-value))))
+                             (str "\n" (ansi/color (highlight-line prefix (printer/pprint-str value-at-path))
+                                                   :pointer)))]
     ;;highlighted-line
     (printer/no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))
 
+(defn annotate [explain-data]
+  (let [{::s/keys [problems value args ret fn failure spec]} explain-data
+        caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))
+        form (if (not= :instrument failure)
+               value
+               (cond
+                 (contains? explain-data ::s/ret) ret
+                 (contains? explain-data ::s/fn) fn
+                 (contains? explain-data ::s/args) args))
+        problems' (map (comp (partial adjust-in form)
+                             (partial adjust-path failure)
+                             (partial add-spec spec)
+                             (partial fix-via spec)
+                             #(assoc % :expound/form form)
+                             #(assoc % :expound.spec.problem/type (ptype failure %)))
+                       problems)]
+    (-> explain-data
+        (assoc :expound/form form
+               :expound/caller caller
+               :expound/problems problems'))))
+
+(def type ptype)

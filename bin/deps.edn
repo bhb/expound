@@ -1,0 +1,5 @@
+{:deps
+ {expound/expound {:local/root ".."}
+  orchestra {:mvn/version "0.3.0"}
+  org.clojure/test.check {:mvn/version "0.9.0"}
+  }}

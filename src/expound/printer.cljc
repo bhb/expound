@@ -3,6 +3,9 @@
             [clojure.spec.alpha :as s]
             [clojure.pprint :as pprint]
             [clojure.walk :as walk]
+            [clojure.set :as set]
+            [expound.util :as util]
+            [expound.ansi :as ansi]
             #?(:clj [clojure.main :as clojure.main]))
   (:refer-clojure :exclude [format]))
 
@@ -10,28 +13,28 @@
 (def max-spec-str-width 100)
 (def anon-fn-str "<anonymous function>")
 
-(s/def :spec/spec-conjunction
+(s/def :expound.spec/spec-conjunction
   (s/cat
    :op #{'or 'and}
-   :specs (s/+ :spec/kw-or-conjunction)))
-(s/def :spec/kw-or-conjunction
+   :specs (s/+ :expound.spec/kw-or-conjunction)))
+(s/def :expound.spec/kw-or-conjunction
   (s/or
    :kw qualified-keyword?
-   :conj :spec/spec-conjunction))
-(s/def :spec/key-spec
+   :conj :expound.spec/spec-conjunction))
+(s/def :expound.spec/key-spec
   (s/cat :keys #{'clojure.spec.alpha/keys
                  'cljs.spec.alpha/keys}
          :clauses (s/*
                    (s/cat :qualifier #{:req-un :req :opt-un :opt}
-                          :specs (s/coll-of :spec/kw-or-conjunction)))))
-(s/def :spec/contains-key-pred (s/or
-                                :simple (s/cat
-                                         :contains #{`contains? 'contains?}
-                                         :arg #{'%}
-                                         :kw keyword?)
-                                :compound (s/cat
-                                           :op #{`or `and}
-                                           :clauses (s/+ :spec/contains-key-pred))))
+                          :specs (s/coll-of :expound.spec/kw-or-conjunction)))))
+(s/def :expound.spec/contains-key-pred (s/or
+                                        :simple (s/cat
+                                                 :contains #{`contains? 'contains?}
+                                                 :arg #{'%}
+                                                 :kw keyword?)
+                                        :compound (s/cat
+                                                   :op #{`or `and}
+                                                   :clauses (s/+ :expound.spec/contains-key-pred))))
 
 ;;;; private
 
@@ -43,39 +46,43 @@
 (defn singleton? [xs]
   (= 1 (count xs)))
 
+(defn specs-from-form [via]
+  (let [form (some-> via last s/form)
+        conformed (s/conform :expound.spec/key-spec form)]
+    ;; The containing spec might not be
+    ;; a simple 'keys' call, in which case we give up
+    (if (and form
+             (not= ::s/invalid conformed))
+      (->> (:clauses conformed)
+           (map :specs)
+           (tree-seq coll? seq)
+           (filter
+            (fn [x]
+              (and (vector? x) (= :kw (first x)))))
+           (map second)
+           set)
+      [])))
+
 (defn key->spec [keys problems]
-  (assert (apply = (map :expound/via problems)))
   (doseq [p problems]
-    (assert (some? (:expound/via p))))
-  (let [via (:expound/via (first problems))
-        form (some-> via last s/form)]
-    (let [specs (if (every? qualified-keyword? keys)
-                  keys
-                  (let [conformed (s/conform :spec/key-spec form)]
-                    ;; The spec might containing spec might not be
-                    ;; a simple 'keys' call, in which case we give up
-                    (if (and form
-                             (not= ::s/invalid conformed))
-                      (->> (:clauses conformed)
-                           (map :specs)
-                           (tree-seq coll? seq)
-                           (filter
-                            (fn [x]
-                              (and (vector? x) (= :kw (first x)))))
-                           (map second)
-                           set)
-                      keys)))]
-      (reduce
-       (fn [m k]
-         (assoc m
+    (assert (some? (:expound/via p)) util/assert-message))
+  (let [vias (map :expound/via problems)
+        specs (if (every? qualified-keyword? keys)
+                keys
+                (if-let [specs (apply set/union (map specs-from-form vias))]
+                  specs
+                  keys))]
+    (reduce
+     (fn [m k]
+       (assoc m
+              k
+              (if (qualified-keyword? k)
                 k
-                (if (qualified-keyword? k)
-                  k
-                  (->> specs
-                       (filter #(= (name k) (name %)))
-                       first))))
-       {}
-       keys))))
+                (->> specs
+                     (filter #(= (name k) (name %)))
+                     first))))
+     {}
+     keys)))
 
 (defn expand-spec [spec]
   (let [!seen-specs (atom #{})]
@@ -105,7 +112,7 @@
            (map summarize-key-clause (:clauses match)))))
 
 (defn missing-key [form]
-  (let [[branch match] (s/conform :spec/contains-key-pred (nth form 2))]
+  (let [[branch match] (s/conform :expound.spec/contains-key-pred (nth form 2))]
     (case branch
       :simple
       (:kw match)
@@ -191,16 +198,16 @@
            string/trim))))
 
 (defn print-missing-keys [problems]
-  (let [keys-clauses (map (comp missing-key :pred) problems)]
+  (let [keys-clauses (distinct (map (comp missing-key :pred) problems))]
     (if (every? keyword? keys-clauses)
-      (string/join ", " (sort (map #(str "`" % "`") keys-clauses)))
+      (string/join ", " (map #(ansi/color % :correct-key) (sort keys-clauses)))
       (str "\n\n"
-           (pprint-str
-            (if (singleton? keys-clauses)
-              (first keys-clauses)
-              (apply list
-                     'and
-                     keys-clauses)))))))
+           (ansi/color (pprint-str
+                        (if (singleton? keys-clauses)
+                          (first keys-clauses)
+                          (apply list
+                                 'and
+                                 keys-clauses))) :correct-key)))))
 
 (s/fdef no-trailing-whitespace
         :args (s/cat :s string?)
@@ -233,7 +240,7 @@
    (indent indent-level indent-level s))
   ([first-line-indent rest-lines-indent s]
    (let [[line & lines] (string/split-lines (str s))]
-     (string/join "\n"
-                  (into [(str (apply str (repeat first-line-indent " ")) line)]
-                        (map #(str (apply str (repeat rest-lines-indent " ")) %) lines))))))
-
+     (->> lines
+          (map #(str (apply str (repeat rest-lines-indent " ")) %))
+          (into [(str (apply str (repeat first-line-indent " ")) line)])
+          (string/join "\n")))))
