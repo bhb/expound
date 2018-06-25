@@ -1621,6 +1621,31 @@ Detected 1 error
 
 (deftest alt-spec
   (testing "alternatives at different paths in spec"
+    (is (= "-- Spec failed --------------------
+
+  [\"foo\"]
+
+should satisfy
+
+  int?
+
+or value
+
+  [\"foo\"]
+   ^^^^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 1 error\n"
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str
+              (s/or
+               :i int?
+               :seq (s/cat :x1 int? :x2 int?))
+              ["foo"]))))
     (s/def :alt-spec/one-many-int (s/cat :bs (s/alt :one int?
                                                     :many (s/spec (s/+ int?)))))
     (is (= (pf "-- Spec failed --------------------
@@ -3155,7 +3180,7 @@ should satisfy
                  (let [spec (second (last spec-defs))
                        form (last (last spec-defs))
                        disallowed #{;; because of https://dev.clojure.org/jira/browse/CLJ-2152
-                                  ;; we can't accurately analyze forms under an '&' spec
+                                    ;; we can't accurately analyze forms under an '&' spec
                                     "clojure.spec.alpha/&"
                                     "clojure.spec.alpha/fspec"
                                     "clojure.spec.alpha/multi-spec"

@@ -435,7 +435,6 @@
         ys (:path-prefix grp2)
         prefix (lcs xs ys)]
     (if (and
-         (not (empty? prefix))
          (some? prefix)
          (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp1))
            true
