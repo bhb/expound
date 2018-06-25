@@ -1,3 +1,5 @@
-{:known-macros [clojure.spec.alpha/fdef]
+{:known-macros [clojure.spec.alpha/fdef 
+                com.gfredericks.test.chuck.clojure-test/checking
+                clojure.test.check.generators/let]
  :rules {:if-without-else true}
  :ignored-unused-namespaces [clojure.core.specs.alpha]}

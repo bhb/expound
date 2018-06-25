@@ -1,6 +1,17 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
+## [Unreleased]
+
+## [0.7.1] - 2018-06-25
+
+### Fixed
+- [Bug with printing alternatives in 'or' or 'alt' specs](https://github.com/bhb/expound/issues/73)
+- [Bug with missing elements in `cat` specs](https://github.com/bhb/expound/issues/79)
+
+### Changed
+- If a problem has a value for `:expound.spec.problem/type` key, `expound.alpha/problem-group-str` must be implemented for that value or Expound will throw an error.
+
 ## [0.7.0] - 2018-05-28
 
 ### Fixed
@@ -109,7 +120,8 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/bhb/expound/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/bhb/expound/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/bhb/expound/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/bhb/expound/compare/v0.4.0...v0.5.0

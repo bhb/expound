@@ -1,4 +1,4 @@
-(defproject expound "0.7.1-SNAPSHOT"
+(defproject expound "0.7.1"
   :description "Human-optimized error messages for clojure.spec"
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
@@ -32,6 +32,9 @@
                            :optimizations :none
                            :verbose true
                            :compiler-stats true}}]}
+  :eftest {:multithread? false
+           :test-warn-time 750
+           :capture-output? false}
   :figwheel {;; :http-server-root "public" ;; default and assumes "resources"
              :server-port 3446 ;; default is 3449
 
@@ -82,9 +85,14 @@
                                   [org.clojure/core.specs.alpha "0.1.24"]
                                   [io.aviso/pretty "0.1.34"]
                                   [vvvvalvalval/scope-capture "0.1.4"]
-                                  [org.clojure/test.check "0.9.0"]
-                                  [metosin/spec-tools "0.6.1"]]
-                   :plugins [[io.aviso/pretty "0.1.34"]]
+                                  [org.clojure/test.check "0.10.0-alpha3"]
+                                  [metosin/spec-tools "0.6.1"]
+                                  [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
+                                  [ring/ring-spec "0.0.4"] ; to test specs
+                                  [org.onyxplatform/onyx-spec "0.12.7.0"] ; to test specs
+                                  [com.gfredericks/test.chuck "0.2.8"]]
+                   :plugins [[io.aviso/pretty "0.1.34"]
+                             [lein-eftest "0.5.2"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
                    ;; for CIDER
@@ -93,7 +101,7 @@
                    ;; need to add the compliled assets to the :clean-targets
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
-             :test-common {:dependencies [[org.clojure/test.check "0.9.0"]
+             :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [org.clojure/tools.namespace "0.2.11"] ; solves https://github.com/jakemcc/lein-test-refresh/issues/39
                                           [com.gfredericks/test.chuck "0.2.8"]
                                           [orchestra "2017.11.12-1"]
