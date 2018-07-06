@@ -23,6 +23,8 @@ should contain keys: `:city`,`:state`
 
 Expound is in alpha while `clojure.spec` is in alpha.
 
+**Expound depends on projects supported by [Clojurists Together](https://www.clojuriststogether.org/). If you find this project useful, please consider making a monthly donation to Clojurists Together (or ask your employer to do so).**
+
 ## Installation
 
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
