@@ -61,7 +61,7 @@
               (and (vector? x) (= :kw (first x)))))
            (map second)
            set)
-      [])))
+      #{})))
 
 (defn key->spec [keys problems]
   (doseq [p problems]
