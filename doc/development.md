@@ -47,7 +47,3 @@ Double check version is changed in `project.clj` and `lein deploy clojars`
 ### NPM
 
 Double check version is changed in `package.json` and `npm publish --access=public`
-
-## Generating docs
-
-`lein codox`
