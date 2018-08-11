@@ -43,7 +43,7 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ## Usage
 
-[API Docs](https://bhb.github.io/expound/index.html)
+[![cljdoc badge](https://cljdoc.xyz/badge/expound/expound)](https://cljdoc.xyz/d/expound/expound/CURRENT)
 
 ```
 > brew install clojure
