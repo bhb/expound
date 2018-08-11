@@ -28,7 +28,7 @@
 (ex/def ::uuid uuid? "should be a UUID")
 (ex/def ::vec vector? "should be a vector")
 
-(def public-specs
+(def ^:no-doc public-specs
   [::bool #?(:clj ::bytes) ::double ::ident ::indexed ::int ::kw
    ::map ::nat-int ::neg-int ::pos-int ::qualified-ident
    ::qualified-kw ::qualified-sym ::seqable ::simple-ident
