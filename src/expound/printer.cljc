@@ -1,4 +1,4 @@
-(ns expound.printer
+(ns ^:no-doc expound.printer
   (:require [clojure.string :as string]
             [clojure.spec.alpha :as s]
             [clojure.pprint :as pprint]

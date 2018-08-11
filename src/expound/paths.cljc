@@ -1,4 +1,4 @@
-(ns expound.paths
+(ns ^:no-doc expound.paths
   (:require [clojure.spec.alpha :as s]
             [expound.util :as util]))
 
