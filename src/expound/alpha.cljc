@@ -873,10 +873,10 @@ returned an invalid value.
   "Returns a printer.
 
   Options:
-   :show-valid-values? - if false, replaces valid values with \"...\"
-   :value-str-fn       - function to print bad values
-   :print-specs?       - if true, display \"Relevant specs\" section. Otherwise, omit that section.
-   :theme               - enables color theme. Possible values: :figwheel-theme, :none"
+   - `:show-valid-values?` - if false, replaces valid values with \"...\"
+   - `:value-str-fn`       - function to print bad values
+   - `:print-specs?`       - if true, display \"Relevant specs\" section. Otherwise, omit that section.
+   - `:theme`               - enables color theme. Possible values: `:figwheel-theme`, `:none`"
   [opts]
   (fn [explain-data]
     (print (printer-str opts explain-data))))
@@ -930,7 +930,7 @@ returned an invalid value.
    (defmacro def
      "Define a spec with an optional `error-message`.
 
-  Replaces `clojure.spec.alpha/def` but optionally takes a human-readable `error-message` (will only be used for predicates) e.g. 'should be a string'."
+  Replaces `clojure.spec.alpha/def` but optionally takes a human-readable `error-message` (will only be used for predicates) e.g. \"should be a string\"."
      ([k spec-form]
       `(s/def ~k ~spec-form))
      ([k spec-form error-message]
