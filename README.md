@@ -1,5 +1,8 @@
 # Expound
 
+[![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
+[![cljdoc badge](https://cljdoc.xyz/badge/expound/expound)](https://cljdoc.xyz/d/expound/expound/CURRENT)
+
 Expound formats `clojure.spec` error messages in a way that is optimized for humans to read.
 
 For example, Expound will replace a Spec error message like:
@@ -25,10 +28,6 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ## Installation
 
-[![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
-
-### Quick start
-
 ### Leiningen/Boot
 
 `[expound "0.7.1"]`
@@ -43,7 +42,7 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ## Usage
 
-[![cljdoc badge](https://cljdoc.xyz/badge/expound/expound)](https://cljdoc.xyz/d/expound/expound/CURRENT)
+[API docs](https://cljdoc.xyz/d/expound/expound/CURRENT)
 
 ```
 > brew install clojure
