@@ -2,6 +2,7 @@
 
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
 [![cljdoc badge](https://cljdoc.xyz/badge/expound/expound)](https://cljdoc.xyz/d/expound/expound/CURRENT)
+[![CircleCI](https://circleci.com/gh/bhb/expound.svg?style=svg)](https://circleci.com/gh/bhb/expound)
 
 Expound formats `clojure.spec` error messages in a way that is optimized for humans to read.
 
