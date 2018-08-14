@@ -2008,25 +2008,52 @@ Detected 1 error\n"
    ; re-use previous sequence spec
    :conformers-test/string-AB-seq))
 
+;; TODO 
 (deftest conformers-test
   ;; Example from http://cjohansen.no/a-unified-specification/
-  (testing "conform string to int"
-    (is (string?
-         (expound/expound-str :conformers-test/number "123a"))))
-  ;; Example from https://github.com/bhb/expound/issues/15#issuecomment-326838879
-  (testing "conform maps"
-    (is (string? (expound/expound-str :conformers-test/query {})))
-    (is (thrown-with-msg?
-         #?(:cljs :default :clj Exception)
-         #".*Cannot convert path.*conformers.*"
-         (expound/expound-str :conformers-test/query {:conformers-test.query/id :conformers-test/lookup-user
-                                                      :conformers-test.query/params {}}))))
-  ;; Minified example based on https://github.com/bhb/expound/issues/15
-  (testing "conform string to seq"
-    (is (thrown-with-msg?
-         #?(:cljs :default :clj Exception)
-         #".*Cannot find path segment in form.*conformers.*"
-         (expound/expound-str :conformers-test/string-AB "AC")))))
+  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+    (testing "conform string to int"
+      (is (string?
+           (s/explain-str :conformers-test/number "123a"))))
+    ;; Example from https://github.com/bhb/expound/issues/15#issuecomment-326838879
+    (testing "conform maps"
+      (is (string? (s/explain-str :conformers-test/query {})))
+      (is (= "-- Spec failed --------------------
+
+  {:conformers-test.query/id ...,
+   :conformers-test.query/params {}}
+                                 ^^
+
+when conformed as
+
+  #:conformers-test.query{:id :conformers-test/lookup-user}
+
+should contain key: :user/id
+
+|      key |    spec |
+|----------+---------|
+| :user/id | string? |
+
+-------------------------
+Detected 1 error\n"
+             (s/explain-str :conformers-test/query {:conformers-test.query/id :conformers-test/lookup-user
+                                                    :conformers-test.query/params {}}))))
+    ;; Minified example based on https://github.com/bhb/expound/issues/15
+    (testing "conform string to seq"
+      (is (= "-- Spec failed --------------------
+
+  \"AC\"
+    ^
+
+when conformed as
+
+  \\C
+
+should be: \\B
+
+-------------------------
+Detected 1 error\n"
+             (s/explain-str :conformers-test/string-AB "AC"))))))
 
 (s/def :duplicate-preds/str-or-str (s/or
                                     ;; Use anonymous functions to assure
@@ -3297,3 +3324,31 @@ should satisfy
                #?(:cljs :default :clj Exception)
                #"should have additional elements. The next element \"\:init\-expr\" should satisfy"
                (macroexpand '(clojure.core/let [a] 2))))))
+
+;; TODO - combined with conformers-test above
+;; TODO - need a test for case where we truly cannot find
+;; original value
+(deftest conformed-values
+  (testing "s/cat"
+    (s/def :conformed-values/sorted-pair (s/and (s/cat :x int? :y int?) #(< (-> % :x) (-> % :y))))
+    (is (= "-- Spec failed --------------------
+
+  [1 0]
+
+when conformed as
+
+  {:x 1, :y 0}
+
+should satisfy
+
+  (fn
+   [%]
+   (< (-> % :x) (-> % :y)))
+
+-------------------------
+Detected 1 error\n"
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str :conformed-values/sorted-pair [1 0])))))
+  (testing "custom conformers") ; TODO
+  (testing "ambiguous value") ; TODO
+)

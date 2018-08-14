@@ -177,14 +177,21 @@
                     br4
                     ::not-found))))))))))
 
+(defn get-in-compatible? [path]
+  (<= (count (map nat-int? path)) 1))
+
+;; TODO - remove
+;; 1. if path is unambigious (is it ever?), then just unform value at path, print unformed and conformed value
+;; 2. if it is not, and IF value is uniquely present in the whoel value and IF there is an unformer, unform val, print unformed and conformed value
+;; 3. if you can't do either, print out explanation - can't find unformed value and link to doc in github (ask for votes for unambiguous value).
+;; 4. maybe doc is a FAQ that also includes something about set!
+
 (defn in-with-kps [form val in in']
   (let [res (in-with-kps* form val in in')]
     (if (= ::not-found res)
-      (throw (ex-info "Cannot convert path. This can be caused by using conformers to transform values, which is not supported in Expound"
-                      {:form form
-                       :val val
-                       :in in
-                       :in' in'}))
+      (if (get-in-compatible? in)
+        in
+        ::invalid-path)
       res)))
 
 (declare compare-paths)

@@ -91,7 +91,7 @@
     (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value))
     (if (= form value)
       (binding [*print-namespace-maps* false] (ansi/color (printer/pprint-str value) :bad-value))
-      ;; It's silly to reconstruct a fake "problem"
+      ;; FIXME: It's silly to reconstruct a fake "problem"
       ;; after I've deconstructed it, but I'm not yet ready
       ;; to break the API for value-in-context BUT
       ;; I do want to test that a problems-based API
@@ -242,7 +242,7 @@
                      (= pred (second %))))
        first))
 
-(defn ^:private no-method [spec-name val path problem]
+(defn ^:private no-method [_spec-name val path problem]
   (let [sp (s/spec (last (:expound/via problem)))
         {:keys [mm retag]} (multi-spec-parts
                             (multi-spec (:pred problem) sp))]
@@ -254,9 +254,9 @@
      (pr-str retag)
      (pr-str (if retag (retag (problems/value-in val path)) nil)))))
 
-(defmulti ^:no-doc problem-group-str (fn [type spec-name _val _path _problems _opts] type))
-(defmulti ^:no-doc expected-str (fn [type  spec-name _val _path _problems _opts] type))
-(defmulti ^:no-doc value-str (fn [type  spec-name _val _path _problems _opts] type))
+(defmulti ^:no-doc problem-group-str (fn [type _spec-name _val _path _problems _opts] type))
+(defmulti ^:no-doc expected-str (fn [type  _spec-name _val _path _problems _opts] type))
+(defmulti ^:no-doc value-str (fn [type _spec-name _val _path _problems _opts] type))
 
 (defn ^:private expected-str* [spec-name problems opts]
   (let [problem (first problems)
@@ -276,8 +276,29 @@
         type (:expound.spec.problem/type problem)]
     (problem-group-str type spec-name form in problems opts)))
 
+;; FIXME - when I decide to break compatibility for value-str-fn, maybe
+;; make it show conform/unformed value
+;; TODO - rename
+(defn ^:private value-and-conformed-value [show-conformed? problems spec-name val path]
+  (let [conformed-val (-> problems first :val)]
+    (printer/format
+     "%s%s"
+     (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+     (if show-conformed?
+       (let [conformed-val (-> problems first :val)]
+         (if (= conformed-val #_val (problems/value-in val path))
+           ""
+           ;; TODO - colorization?
+           ;; HERE - this won't work for syntax errors where the
+           ;; next element is missing because spec lists the missing value as '()
+           (printer/format
+            "\n\nwhen conformed as\n\n%s"
+            (printer/indent (pr-str conformed-val)))))
+       ""))))
+
 (defmethod value-str :default [_type spec-name val path problems opts]
-  (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))))
+  ;; TODO - perhaps lift this to formatter that displays value
+  (show-spec-name spec-name (value-and-conformed-value true problems spec-name val path)))
 
 (defn ^:private explain-missing-keys [problems]
   (let [missing-keys (map #(printer/missing-key (:pred %)) problems)]
@@ -584,6 +605,29 @@ with args:
    problems
    opts
    (expected-str type spec-name val path problems opts)))
+
+(defmethod value-str :expound.problem/insufficient-input [_type spec-name val path problems opts]
+  ;; TODO - convert to map of options?
+  (show-spec-name spec-name (value-and-conformed-value false problems spec-name val path)))
+
+(defmethod value-str :expound.problem/extra-input [_type spec-name val path problems opts]
+  ;; TODO - convert to map of options?
+  (show-spec-name spec-name (value-and-conformed-value false problems spec-name val path)))
+
+(defmethod value-str :expound.problem/fspec-fn-failure [_type spec-name val path problems opts]
+  ;; TODO - convert to map of options?
+  (show-spec-name spec-name (value-and-conformed-value false problems spec-name val path)))
+
+;; TODO - reorg
+(defmethod value-str :expound.problem/fspec-exception-failure [_type spec-name val path problems opts]
+  ;; TODO - convert to map of options?
+  (show-spec-name spec-name (value-and-conformed-value false problems spec-name val path)))
+
+;; TODO - reorg
+(defmethod value-str :expound.problem/fspec-ret-failure [_type spec-name val path problems opts]
+  ;; TODO - convert to map of options?
+  (show-spec-name spec-name (value-and-conformed-value false problems spec-name val path))
+  (value-and-conformed-value false problems spec-name val path))
 
 (defmethod expected-str :expound.problem/fspec-fn-failure [_type spec-name val path problems opts]
   (s/assert ::singleton problems)

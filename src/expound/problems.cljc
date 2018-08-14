@@ -4,7 +4,8 @@
             [clojure.walk :as walk]
             [clojure.string :as string]
             [expound.printer :as printer]
-            [expound.ansi :as ansi])
+            [expound.ansi :as ansi]
+            [clojure.string :as str])
   (:refer-clojure :exclude [type]))
 
 (defn blank-form [form]
@@ -65,6 +66,8 @@
       (into '() (-> displayed-form
                     vec
                     (assoc k (summary-form show-valid-values? (nth (seq form) k) rst))))
+      (and (int? k) (string? form))
+      (str/join (assoc (vec form) k ::relevant))
 
       :else
       (throw (ex-info "Cannot find path segment in form. This can be caused by using conformers to transform values, which is not supported in Expound"
@@ -210,6 +213,9 @@
       (associative? form)
       (recur (get form k) rst)
 
+      (and (int? k) (string? form))
+      (str (get form k))
+
       (and (int? k) (seqable? form))
       (recur (nth (seq form) k) rst))))
 
@@ -219,13 +225,29 @@
             (string/re-quote-replacement s))
      :cljs (string/replace s #"\$" "$$$$")))
 
+;; TODO - rename
+(defn ^:private displayed-value [form in]
+  (let [v (value-in form in)]
+    (cond
+      ;; If there is no parent value, just return the value
+      (empty? in)
+      (printer/pprint-str v)
+
+      (let [parent (value-in form (butlast in))]
+        (string? parent))
+      (str v)
+
+      :else
+      (printer/pprint-str v))))
+
+;; TODO - refactor for readability
 (defn highlighted-value
   "Given a problem, returns a pretty printed
    string that highlights the problem value"
   [opts problem]
   (let [{:keys [:expound/form :expound/in]} problem
         {:keys [show-valid-values?] :or {show-valid-values? false}} opts
-        value-at-path (value-in form in)
+        v (displayed-value form in)
         relevant (str "(" ::relevant "|(" ::kv-relevant "\\s+" ::kv-relevant "))")
         regex (re-pattern (str "(.*)" relevant ".*"))
         s (binding [*print-namespace-maps* false] (printer/pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form show-valid-values? form in))))
@@ -233,8 +255,8 @@
         highlighted-line (-> line
                              (string/replace (re-pattern relevant) (escape-replacement
                                                                     (re-pattern relevant)
-                                                                    (printer/indent 0 (count prefix) (ansi/color (printer/pprint-str value-at-path) :bad-value))))
-                             (str "\n" (ansi/color (highlight-line prefix (printer/pprint-str value-at-path))
+                                                                    (printer/indent 0 (count prefix) (ansi/color v :bad-value))))
+                             (str "\n" (ansi/color (highlight-line prefix v)
                                                    :pointer)))]
     ;;highlighted-line
     (printer/no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))
