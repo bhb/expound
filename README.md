@@ -150,7 +150,7 @@ If you are enabling Expound in a non-REPL environment, remember that `set!` will
 
 ### Printing results for `check`
 
-The Expound printer can print results from `clojure.spec.test.alpha/check`
+Unfortunately, at the moment the vanilla `cljs.spec.test.alpha/summarize-results` does not use `*explain-out*`. The good news is that Expound provides a custom `explain-results` function instead, so that you can print results from `clojure.spec.test.alpha/check`
 
 ```clojure
 (require '[expound.alpha :as expound]
