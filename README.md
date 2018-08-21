@@ -150,7 +150,7 @@ If you are enabling Expound in a non-REPL environment, remember that `set!` will
 
 ### Printing results for `check`
 
-Unfortunately, at the moment the vanilla `cljs.spec.test.alpha/summarize-results` does not use `*explain-out*`. The good news is that Expound provides a custom `explain-results` function instead, so that you can print results from `clojure.spec.test.alpha/check`
+Re-binding `s/*explain-out*` has no effect on the results of `cljs.spec.test.alpha/summarize-results`, but Expound provides the function `expound/explain-results` to print the results from `clojure.spec.test.alpha/check`.
 
 ```clojure
 (require '[expound.alpha :as expound]
@@ -351,8 +351,6 @@ Clojure test allows you to declare a custom multi-method for its `clojure.test/r
 ;; run tests, (stest/instrument) either here or in the individual test files.
 (run-tests 'pkg.namespace-test)
 ```
-
-The above has been tested in `lumo` so it is self-host ClojureScript compatible.
 
 ### Using Orchestra
 
