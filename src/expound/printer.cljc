@@ -6,7 +6,7 @@
             [clojure.set :as set]
             [expound.util :as util]
             [expound.ansi :as ansi]
-            #?(:clj [clojure.main :as clojure.main]))
+            #?(:clj [clojure.main :as main]))
   (:refer-clojure :exclude [format]))
 
 (def indent-level 2)
@@ -140,8 +140,8 @@
            (if (re-matches #"^fn__\d+\@.*$" f-n)
              anon-fn-str
              (str
-              (clojure.main/demunge ns-n) "/"
-              (clojure.main/demunge f-n))))
+              (main/demunge ns-n) "/"
+              (main/demunge f-n))))
          :cljs
          (let [fn-parts (string/split (second (re-find
                                                #"object\[([^\( \]]+).*(\n|\])?"
