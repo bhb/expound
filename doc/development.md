@@ -38,6 +38,10 @@ or (if you want to save a second or two)
 
 `clj -Atest`
 
+## Readability tools
+
+`./bin/inconsistent-aliases` shows namespace aliases that are different across the codebase.
+
 ## Release
 
 ### clojars
