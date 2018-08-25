@@ -12,7 +12,8 @@
             [lein-cljfmt "0.5.7"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.15"]
-            [lein-codox "0.10.3"]]
+            [lein-codox "0.10.3"]
+            [lein-hiera "1.0.0"]]
   :codox {:output-path "docs"
           :source-paths ["src"]
           :namespaces [expound.alpha]

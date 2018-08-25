@@ -1,0 +1,20 @@
+#!/usr/bin/env lumo
+
+(require '[clojure.string :as string])
+
+(def process (js/require "child_process"))
+
+(process.exec
+ "ack -ho '\\[.*:as.*\\]' src | sort  | uniq"
+ (fn [err stdout stderr]
+   (let [msgs (->> stdout
+                   string/split-lines
+                   (group-by (fn [s]
+                               (second (re-find #"\[(.*) :as" s))))
+                   (filter (fn [[k v]]
+                             (< 1 (count v))))
+                   (map (fn [[k v]]
+                          (str k " has multiple aliases:\n"
+                               (string/join ", " v)))))]
+     (doseq [msg msgs]
+       (println msg)))))

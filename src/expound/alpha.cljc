@@ -270,12 +270,6 @@
         type (:expound.spec.problem/type problem)]
     (value-str type spec-name form in problems opts)))
 
-(defn ^:private problem-group-str* [spec-name problems opts]
-  (let [problem (first problems)
-        {:expound/keys [form in]} problem
-        type (:expound.spec.problem/type problem)]
-    (problem-group-str type spec-name form in problems opts)))
-
 (defmethod value-str :default [_type spec-name val path problems opts]
   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))))
 
@@ -409,14 +403,6 @@
    (header-label "Missing spec")
    (value-str type spec-name val path problems opts)
    (expected-str type spec-name val path problems opts)))
-
-(defn ^:private safe-sort-by
-  "Same as sort-by, but if an error is raised, returns the original unsorted collection"
-  [key-fn comp coll]
-  (try
-    (sort-by key-fn comp coll)
-    (catch #?(:cljs :default
-              :clj Exception) e coll)))
 
 (defn ^:private lcs* [[x & xs] [y & ys]]
   (cond
