@@ -398,6 +398,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
+               ;; TODO - these are identical (?)
                #?(:cljs "(fn [%] (pos? (count %)))"
                   :clj "(fn [%] (pos? (count %)))"))
            (expound/expound-str :and-spec/name ""))))
@@ -2011,7 +2012,8 @@ Detected 1 error\n"
 ;; TODO 
 (deftest conformers-test
   ;; Example from http://cjohansen.no/a-unified-specification/
-  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})
+            *print-namespace-maps* false]
     (testing "conform string to int"
       (is (string?
            (s/explain-str :conformers-test/number "123a"))))
@@ -2026,7 +2028,7 @@ Detected 1 error\n"
 
 when conformed as
 
-  #:conformers-test.query{:id :conformers-test/lookup-user}
+  {:conformers-test.query/id :conformers-test/lookup-user}
 
 should contain key: :user/id
 
@@ -2040,7 +2042,9 @@ Detected 1 error\n"
                                                     :conformers-test.query/params {}}))))
     ;; Minified example based on https://github.com/bhb/expound/issues/15
     (testing "conform string to seq"
-      (is (= "-- Spec failed --------------------
+      (is (= #?(;; clojurescript doesn't have a character type
+                :cljs "-- Spec failed --------------------\n\n  \"AC\"\n    ^\n\nshould be: \"B\"\n\n-------------------------\nDetected 1 error\n"
+                :clj "-- Spec failed --------------------
 
   \"AC\"
     ^
@@ -2052,7 +2056,7 @@ when conformed as
 should be: \\B
 
 -------------------------
-Detected 1 error\n"
+Detected 1 error\n")
              (s/explain-str :conformers-test/string-AB "AC"))))))
 
 (s/def :duplicate-preds/str-or-str (s/or
@@ -3331,7 +3335,7 @@ should satisfy
 (deftest conformed-values
   (testing "s/cat"
     (s/def :conformed-values/sorted-pair (s/and (s/cat :x int? :y int?) #(< (-> % :x) (-> % :y))))
-    (is (= "-- Spec failed --------------------
+    (is (= (pf "-- Spec failed --------------------
 
   [1 0]
 
@@ -3341,12 +3345,14 @@ when conformed as
 
 should satisfy
 
-  (fn
-   [%]
-   (< (-> % :x) (-> % :y)))
+  %s
 
 -------------------------
 Detected 1 error\n"
+               #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
+                  :clj "(fn
+   [%]
+   (< (-> % :x) (-> % :y)))"))
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
              (s/explain-str :conformed-values/sorted-pair [1 0])))))
   (testing "custom conformers") ; TODO

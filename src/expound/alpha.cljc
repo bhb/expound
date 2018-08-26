@@ -284,9 +284,10 @@
     (printer/format
      "%s%s"
      (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+
      (if show-conformed?
        (let [conformed-val (-> problems first :val)]
-         (if (= conformed-val #_val (problems/value-in val path))
+         (if (= conformed-val (problems/value-in val path))
            ""
            ;; TODO - colorization?
            ;; HERE - this won't work for syntax errors where the

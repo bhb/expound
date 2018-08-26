@@ -84,13 +84,14 @@
                                   [orchestra "2017.11.12-1"]
                                   [org.clojure/core.specs.alpha "0.1.24"]
                                   [io.aviso/pretty "0.1.34"]
-                                  [vvvvalvalval/scope-capture "0.1.4"]
+                                  [vvvvalvalval/scope-capture "0.3.1"]
                                   [org.clojure/test.check "0.10.0-alpha3"]
                                   [metosin/spec-tools "0.6.1"]
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.12.7.0"] ; to test specs
                                   [com.gfredericks/test.chuck "0.2.8"]]
+                   :injections [(require 'sc.api)]
                    :plugins [[io.aviso/pretty "0.1.34"]
                              [lein-eftest "0.5.2"]]
                    ;; need to add dev source path here to get user.clj loaded
