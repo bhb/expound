@@ -1,5 +1,5 @@
 (ns expound.alpha
-  "Functions to print human-readable errors for clojure.spec"
+  "Generates human-readable errors for `clojure.spec`"
   (:require [expound.problems :as problems]
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
@@ -859,9 +859,9 @@ returned an invalid value.
   "Returns a printer.
 
   Options:
-   - `:show-valid-values?` - if false, replaces valid values with \"...\"
+   - `:show-valid-values?` - if `false`, replaces valid values with \"...\"
    - `:value-str-fn`       - function to print bad values
-   - `:print-specs?`       - if true, display \"Relevant specs\" section. Otherwise, omit that section.
+   - `:print-specs?`       - if `true`, display \"Relevant specs\" section. Otherwise, omit that section.
    - `:theme`               - enables color theme. Possible values: `:figwheel-theme`, `:none`"
   [opts]
   (fn [explain-data]
