@@ -27,6 +27,8 @@ should contain keys: `:city`,`:state`
 
 Expound is in alpha while `clojure.spec` is in alpha.
 
+**Expound depends on projects supported by [Clojurists Together](https://www.clojuriststogether.org/). If you find this project useful, please consider making a monthly donation to Clojurists Together (or ask your employer to do so).**
+
 ## Installation
 
 ### Leiningen/Boot
@@ -412,7 +414,7 @@ If you want to use Expound with conformers, you'll need to write a custom printe
 
 ## Contributing
 
-Pull requests are welcome, although please open an issue first to discuss the proposed change. I'm also on [clojurians Slack](http://clojurians.net/) as @bbrinck if you have questions.
+Pull requests are welcome, although please open an issue first to discuss the proposed change. I also answer questions on the #expound channel on [clojurians Slack](http://clojurians.net/).
 
 If you are working on the code, please read the [Development Guide](doc/development.md)
 
