@@ -103,6 +103,7 @@ jobs:
       - run: sudo bin/install-node && npm install
       - run: lein clean && lein with-profile test-web,clj-1.9.0-alpha19,cljs-1.9.562 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,clj-1.9.0-alpha19,cljs-1.9.946 cljsbuild once test && bin/tests
+      - run: lein clean && lein with-profile test-web,clj-1.9.0,cljs-1.10.238 cljsbuild once test && bin/tests
 
   test_clj_old:
     docker:
