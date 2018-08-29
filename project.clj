@@ -104,14 +104,14 @@
                                                      :target-path]}
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [org.clojure/tools.namespace "0.2.11"] ; solves https://github.com/jakemcc/lein-test-refresh/issues/39
-                                          [com.gfredericks/test.chuck "0.2.8"]
+                                          [com.gfredericks/test.chuck "0.2.9"]
                                           [orchestra "2017.11.12-1"]
                                           [org.clojure/core.specs.alpha "0.1.24"]
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.4"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.12.7.0"] ; to test specs
-                                          [vvvvalvalval/scope-capture "0.1.4"]
+                                          [vvvvalvalval/scope-capture "0.3.1"]
                                           [metosin/spec-tools "0.6.1"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
