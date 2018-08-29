@@ -177,8 +177,18 @@
                     br4
                     ::not-found))))))))))
 
+;; TODO - this should also support keywords
 (defn get-in-compatible? [path]
   (<= (count (map nat-int? path)) 1))
+
+;; TODO - rename
+(defn get-in-1 [form path not-found]
+  (let [child (get-in form path not-found)
+        parent (get-in form (butlast path) not-found)]
+    (if (and (string? parent)
+             (char? child))
+      not-found
+      child)))
 
 ;; TODO - remove
 ;; 1. if path is unambigious (is it ever?), then just unform value at path, print unformed and conformed value
@@ -189,9 +199,8 @@
 (defn in-with-kps [form val in in']
   (let [res (in-with-kps* form val in in')]
     (if (= ::not-found res)
-      (if (get-in-compatible? in)
-        in
-        ::invalid-path)
+      ;; TODO - maybe just return keyword instead of path?
+      [::not-found-path in]
       res)))
 
 (declare compare-paths)

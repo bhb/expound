@@ -10,7 +10,9 @@
             [expound.printer :as printer]
             [expound.util :as util]
             [expound.ansi :as ansi]
-            [clojure.spec.gen.alpha :as gen]))
+            [clojure.spec.gen.alpha :as gen]
+            ;; TODO - why does this refer to paths directly?
+            [expound.paths :as paths]))
 
 ;;;;;; registry ;;;;;;
 
@@ -87,19 +89,47 @@
    that helps the user understand where that path is located
    in the form"
   [opts spec-name form path value]
+  ;; TODO - refactor
   (if (= :fn spec-name)
-    (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value))
+    (printer/indent (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value)))
+    ;; TODO - refactor to lift binding
+    ;; TODO - refactor to cond
     (if (= form value)
-      (binding [*print-namespace-maps* false] (ansi/color (printer/pprint-str value) :bad-value))
-      ;; FIXME: It's silly to reconstruct a fake "problem"
-      ;; after I've deconstructed it, but I'm not yet ready
-      ;; to break the API for value-in-context BUT
-      ;; I do want to test that a problems-based API
-      ;; is useful.
-      ;; See https://github.com/bhb/expound#configuring-the-printer
-      (problems/highlighted-value opts
-                                  {:expound/form form
-                                   :expound/in path}))))
+      (printer/indent (binding [*print-namespace-maps* false] (ansi/color (printer/pprint-str value) :bad-value)))
+      (let [[fst rst] path]
+        (if (not= fst ::paths/not-found-path)
+          ;; FIXME: It's silly to reconstruct a fake "problem"
+          ;; after I've deconstructed it, but I'm not yet ready
+          ;; to break the API for value-in-context BUT
+          ;; I do want to test that a problems-based API
+          ;; is useful.
+          ;; See https://github.com/bhb/expound#configuring-the-printer
+          (printer/indent (problems/highlighted-value opts
+                                                      {:expound/form form
+                                                       :expound/in path
+                                                       :expound/value value}))
+
+          (if (and
+               (paths/get-in-compatible? rst)
+               (not= ::not-found (paths/get-in-1 form rst ::not-found)))
+            (let [;;value (paths/get-in-1 form rst ::not-found)
+]
+
+              ;; FIXME: It's silly to reconstruct a fake "problem"
+              ;; after I've deconstructed it, but I'm not yet ready
+              ;; to break the API for value-in-context BUT
+              ;; I do want to test that a problems-based API
+              ;; is useful.
+              ;; See https://github.com/bhb/expound#configuring-the-printer
+              ;; TODO - dedupe
+              ;;(sc.api/spy)
+              (printer/indent (problems/highlighted-value opts
+                                                          {:expound/form form
+                                                           :expound/in rst
+                                                           :expound/value value})))
+            (printer/format
+             "Part of the value\n\n%s"
+             (printer/indent (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value))))))))))
 
 (defn ^:private spec-str [spec]
   (if (keyword? spec)
@@ -276,6 +306,21 @@
         type (:expound.spec.problem/type problem)]
     (problem-group-str type spec-name form in problems opts)))
 
+;; a path may be converted into something we can use and find the inner value
+;; or it may not, and so value-in WON'T be able to handle it, because
+;; value-in expects a certain type of path
+;; third-party libs like spell-spec expect to be able to call value-in
+;; directly with an expound-path, so ideally value-in would be able to handle
+;; this broader type of path, but what's a sensible return value when you give
+;; it a path that doesn't map to a value? some error value that itself must
+;; be handled?
+
+;; perhaps a back-compat way to deal with it is to make value-in return
+;; a ::not-found value but in my implementation of the handler just use
+;; val/path directly to figure out a strategy to print in value-in-context
+;; .... hmmm
+;;
+
 ;; FIXME - when I decide to break compatibility for value-str-fn, maybe
 ;; make it show conform/unformed value
 ;; TODO - rename
@@ -283,8 +328,8 @@
   (let [conformed-val (-> problems first :val)]
     (printer/format
      "%s%s"
-     (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
-
+     (*value-str-fn* spec-name val path
+                     (problems/value-in val path))
      (if show-conformed?
        (let [conformed-val (-> problems first :val)]
          (if (= conformed-val (problems/value-in val path))
@@ -422,8 +467,8 @@
   (printer/format
    "Cannot find spec for
 
- %s"
-   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))))
+%s"
+   (show-spec-name spec-name (*value-str-fn* spec-name val path (problems/value-in val path)))))
 
 (defmethod problem-group-str :expound.problem/missing-spec [type spec-name val path problems opts]
   (printer/format
@@ -696,7 +741,7 @@ returned an invalid value.
 
    (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
 
-   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
+   (*value-str-fn* spec-name val path (problems/value-in val path))
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :expound.problem/unknown [_type spec-name val path problems opts]

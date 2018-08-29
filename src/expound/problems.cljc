@@ -4,8 +4,7 @@
             [clojure.walk :as walk]
             [clojure.string :as string]
             [expound.printer :as printer]
-            [expound.ansi :as ansi]
-            [clojure.string :as str])
+            [expound.ansi :as ansi])
   (:refer-clojure :exclude [type]))
 
 (defn blank-form [form]
@@ -67,7 +66,7 @@
                     vec
                     (assoc k (summary-form show-valid-values? (nth (seq form) k) rst))))
       (and (int? k) (string? form))
-      (str/join (assoc (vec form) k ::relevant))
+      (string/join (assoc (vec form) k ::relevant))
 
       :else
       (throw (ex-info "Cannot find path segment in form. This can be caused by using conformers to transform values, which is not supported in Expound"
@@ -86,7 +85,24 @@
   ;; https://dev.clojure.org/jira/browse/CLJ-2192 or
   ;; https://dev.clojure.org/jira/browse/CLJ-2258 are fixed
   (try
-    (assoc problem :expound/in (paths/in-with-kps form (:val problem) (:in problem) []))
+    ;; TODO - rename
+    (let [in1 (paths/in-with-kps form (:val problem) (:in problem) [])
+          ;;_ (prn [:bhb.in1 in1])
+          in' (if (not= :expound.paths/not-found-path (first in1))
+                in1
+                (try
+                  (paths/in-with-kps form
+                                     (s/unform (last (:via problem)) (:val problem))
+                                     (:in problem) [])
+                  ;; TODO - test CLJS
+                  (catch #?(:cljs :default
+                            :clj java.lang.IllegalStateException) e
+                    in1)))]
+      ;; TODO - remember to update this when I remove special 'not-found' paths
+
+
+      (assoc problem :expound/in in'))
+
     (catch #?(:cljs :default
               :clj Exception) e
       (if (or
@@ -196,6 +212,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; TODO - change to handle special paths like [::not-found path]
 (defn value-in
   "Similar to get-in, but works with paths that reference map keys"
   [form in]
@@ -213,10 +230,8 @@
       (associative? form)
       (recur (get form k) rst)
 
-      (and (int? k) (string? form))
-      (str (get form k))
-
-      (and (int? k) (seqable? form))
+      (and (int? k)
+           (seqable? form))
       (recur (nth (seq form) k) rst))))
 
 (defn escape-replacement [pattern s]
