@@ -9,7 +9,7 @@
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
   :plugins [[com.jakemccrary/lein-test-refresh "0.23.0"]
-            [lein-cljfmt "0.5.7"]
+            [lein-cljfmt "0.6.0"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.16"]
             [lein-codox "0.10.3"]
