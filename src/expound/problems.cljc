@@ -1,4 +1,4 @@
-(ns expound.problems
+(ns ^:no-doc expound.problems
   (:require [expound.paths :as paths]
             [clojure.spec.alpha :as s]
             [clojure.walk :as walk]
