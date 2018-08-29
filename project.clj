@@ -83,7 +83,7 @@
                                   [figwheel-sidecar "0.5.16"]
                                   [com.cemerick/piggieback "0.2.2"]
                                   [orchestra "2018.08.19-1"]
-                                  [org.clojure/core.specs.alpha "0.1.24"]
+                                  [org.clojure/core.specs.alpha "0.2.36"]
                                   [io.aviso/pretty "0.1.34"]
                                   [vvvvalvalval/scope-capture "0.3.1"]
                                   [org.clojure/test.check "0.10.0-alpha3"]
@@ -106,7 +106,7 @@
                                           [org.clojure/tools.namespace "0.2.11"] ; solves https://github.com/jakemcc/lein-test-refresh/issues/39
                                           [com.gfredericks/test.chuck "0.2.9"]
                                           [orchestra "2018.08.19-1"]
-                                          [org.clojure/core.specs.alpha "0.1.24"]
+                                          [org.clojure/core.specs.alpha "0.2.36"]
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.4"] ; to test specs
