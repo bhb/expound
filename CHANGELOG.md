@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Changed
+- Use [cljdoc](https://cljdoc.xyz/) for [API docs](https://cljdoc.xyz/d/expound/expound)
+
 ## [0.7.1] - 2018-06-25
 
 ### Fixed
