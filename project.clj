@@ -8,10 +8,10 @@
                  [org.clojure/spec.alpha "0.1.143" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
-  :plugins [[com.jakemccrary/lein-test-refresh "0.22.0"]
+  :plugins [[com.jakemccrary/lein-test-refresh "0.23.0"]
             [lein-cljfmt "0.5.7"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
-            [lein-figwheel "0.5.15"]
+            [lein-figwheel "0.5.16"]
             [lein-codox "0.10.3"]
             [lein-hiera "1.0.0"]]
   :codox {:output-path "docs"
@@ -80,7 +80,7 @@
              ;; :server-logfile false
 }
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
-                                  [figwheel-sidecar "0.5.15"]
+                                  [figwheel-sidecar "0.5.16"]
                                   [com.cemerick/piggieback "0.2.2"]
                                   [orchestra "2017.11.12-1"]
                                   [org.clojure/core.specs.alpha "0.1.24"]
@@ -91,7 +91,7 @@
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.12.7.0"] ; to test specs
-                                  [com.gfredericks/test.chuck "0.2.8"]]
+                                  [com.gfredericks/test.chuck "0.2.9"]]
                    :plugins [[io.aviso/pretty "0.1.34"]
                              [lein-eftest "0.5.2"]]
                    ;; need to add dev source path here to get user.clj loaded
@@ -115,7 +115,7 @@
                                           [metosin/spec-tools "0.6.1"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
-                         :dependencies [[figwheel-sidecar "0.5.15"]
+                         :dependencies [[figwheel-sidecar "0.5.16"]
                                         [karma-reporter "2.1.2"]]}]
              :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
              :clj-1.9.0-alpha19 {:dependencies [[org.clojure/clojure "1.9.0-alpha19"]]}
