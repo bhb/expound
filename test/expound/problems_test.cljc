@@ -121,13 +121,13 @@
   (is (= "[... 0]\n     ^"
          (problems/highlighted-value
           {}
-          (second
+          (first
            (:expound/problems
             (problems/annotate
              (s/explain-data
               (clojure.spec.alpha/alt :a int?
                                       :b (clojure.spec.alpha/spec (clojure.spec.alpha/cat :c int?)))
-              {1 0}))))))))
+              [1 0]))))))))
 
 (deftest highlighted-value-on-coll-of
   ;; sets
