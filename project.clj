@@ -6,7 +6,7 @@
   :scm {:name "git" :url "https://github.com/bhb/expound"}
   :dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
                  [org.clojure/clojurescript "1.10.339" :scope "provided"]
-                 [org.clojure/spec.alpha "0.1.143" :scope "provided"]]
+                 [org.clojure/spec.alpha "0.2.168" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
   :plugins [[com.jakemccrary/lein-test-refresh "0.23.0"]
