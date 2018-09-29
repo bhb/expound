@@ -3,7 +3,12 @@
             [clojure.spec.alpha :as s]
             [expound.problems :as problems]
             [expound.test-utils :as test-utils]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            [com.gfredericks.test.chuck.clojure-test :refer [checking]]
+            [clojure.test.check.generators :as gen]
+            [com.gfredericks.test.chuck :as chuck]
+            [expound.paths :as paths] ;; TODO - remove
+))
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -226,3 +231,26 @@
              :expound/problems
              first
              (select-keys [:expound/in :val :reason])))))
+
+(def num-tests 5)
+
+(defn nth-value [form i]
+  (let [seq (remove map-entry? (tree-seq coll? seq form))]
+    (nth seq (mod i (count seq)))))
+
+;; TODO - move to paths
+(deftest paths-to-value-test
+  (checking
+   "value-in is inverse of paths-to-value"
+   #_(chuck/times num-tests)
+   200
+   [form gen/any-printable
+    i gen/pos-int
+    :let [x (nth-value form i)
+          paths (paths/paths-to-value form x [] [])]]
+   (is (not (empty? paths)))
+   (doseq [path paths]
+     (is (= x
+            (problems/value-in form
+                               path))))))
+

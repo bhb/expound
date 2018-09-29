@@ -2277,20 +2277,16 @@ Detected 1 error
     (testing "spec defined with keys*"
       (is (= "-- Spec failed --------------------
 
-Part of the value
-
-  [:age 30 :name :Stan]
-
-when conformed as
-
-  :Stan
+  [... ... ... :Stan]
+               ^^^^^
 
 should satisfy
 
   string?
 
 -------------------------
-Detected 1 error\n"
+Detected 1 error
+"
              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
                (s/explain-str :conformers-test/person [:age 30 :name :Stan])))))
 
@@ -3589,4 +3585,3 @@ should satisfy
                #?(:cljs :default :clj Exception)
                #"should have additional elements. The next element \"\:init\-expr\" should satisfy"
                (macroexpand '(clojure.core/let [a] 2))))))
-

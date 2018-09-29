@@ -177,9 +177,33 @@
                     br4
                     ::not-found))))))))))
 
-;; TODO - this should also support keywords
-(defn get-in-compatible? [path]
-  (<= (count (map nat-int? path)) 1))
+(defn paths-to-value [form val path paths]
+  (cond
+    (= form val)
+    (conj paths path)
+
+    (sequential? form)
+    (reduce
+     (fn [ps [x i]]
+       (paths-to-value x val (conj path i) ps))
+     paths
+     (map vector form (range)))
+
+    (map? form) (reduce
+                 (fn [ps [k v]]
+                   (->> ps
+                        (paths-to-value k val (conj path (->KeyPathSegment k)))
+                        (paths-to-value v val (conj path k))))
+                 paths
+                 form)
+    ;; TODO - collapse with above
+    (set? form) (reduce
+                 (fn [ps [x i]]
+                   (paths-to-value x val (conj path i) ps))
+                 paths
+                 (map vector (seq form) (range)))
+
+    :else paths))
 
 ;; TODO - rename
 (defn get-in-1 [form path not-found]
@@ -229,3 +253,6 @@
   (->> (map compare-path-segment path1 path2)
        (remove #{0})
        first))
+
+(defn kps [k]
+  (->KeyPathSegment k))
