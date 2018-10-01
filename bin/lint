@@ -1,0 +1,17 @@
+#!/usr/bin/env lumo
+
+(def process (js/require "child_process"))
+
+(require '[clojure.string :as string])
+
+(process.exec
+  "git ls-files src | xargs joker --lint"
+  (fn [err stdout stderr]
+    (let [msgs (->> stderr
+                    string/split-lines
+                    (remove (fn [s]
+                              (or
+                               (re-find #"Unable to resolve symbol: \*print-namespace-maps\*" s)
+                               (re-find #"unused binding: _" s)))))]
+      (doseq [msg msgs]
+        (println msg)))))

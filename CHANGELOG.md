@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Changed
+- Use [cljdoc](https://cljdoc.xyz/) for [API docs](https://cljdoc.xyz/d/expound/expound)
+- `clojure.spec` dependency updated to 0.2.168
+
 ## [0.7.1] - 2018-06-25
 
 ### Fixed

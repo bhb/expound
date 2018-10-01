@@ -38,6 +38,14 @@ or (if you want to save a second or two)
 
 `clj -Atest`
 
+## Readability and linting
+
+`./bin/inconsistent-aliases` shows namespace aliases that are different across the codebase.
+
+`./bin/lint` lints the code with `joker`
+
+`lein hiera` generates a graph of namespace dependencies
+
 ## Release
 
 ### clojars
@@ -47,7 +55,3 @@ Double check version is changed in `project.clj` and `lein deploy clojars`
 ### NPM
 
 Double check version is changed in `package.json` and `npm publish --access=public`
-
-## Generating docs
-
-`lein codox`

@@ -1,4 +1,4 @@
-(ns expound.problems
+(ns ^:no-doc expound.problems
   (:require [expound.paths :as paths]
             [clojure.spec.alpha :as s]
             [clojure.walk :as walk]
@@ -289,8 +289,8 @@
                value
                (cond
                  (contains? explain-data ::s/ret) ret
-                 (contains? explain-data ::s/fn) fn
-                 (contains? explain-data ::s/args) args))
+                 (contains? explain-data ::s/args) args
+                 (contains? explain-data ::s/fn) fn))
         problems' (map (comp (partial adjust-in form)
                              (partial adjust-path failure)
                              (partial add-spec spec)

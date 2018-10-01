@@ -3,16 +3,17 @@
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :scm {:name "git" :url "https://github.com/bhb/expound"}
   :dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.10.238" :scope "provided"]
-                 [org.clojure/spec.alpha "0.1.143" :scope "provided"]]
+                 [org.clojure/clojurescript "1.10.339" :scope "provided"]
+                 [org.clojure/spec.alpha "0.2.168" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
-  :plugins [[com.jakemccrary/lein-test-refresh "0.22.0"]
-            [lein-cljfmt "0.5.7"]
+  :plugins [[com.jakemccrary/lein-test-refresh "0.23.0"]
+            [lein-cljfmt "0.6.0"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
-            [lein-figwheel "0.5.15"]
-            [lein-codox "0.10.3"]]
+            [lein-figwheel "0.5.16"]
+            [lein-hiera "1.0.0"]]
   :codox {:output-path "docs"
           :source-paths ["src"]
           :namespaces [expound.alpha]
@@ -79,18 +80,18 @@
              ;; :server-logfile false
 }
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
-                                  [figwheel-sidecar "0.5.15"]
+                                  [figwheel-sidecar "0.5.16"]
                                   [com.cemerick/piggieback "0.2.2"]
-                                  [orchestra "2017.11.12-1"]
-                                  [org.clojure/core.specs.alpha "0.1.24"]
+                                  [orchestra "2018.08.19-1"]
+                                  [org.clojure/core.specs.alpha "0.2.36"]
                                   [io.aviso/pretty "0.1.34"]
                                   [vvvvalvalval/scope-capture "0.3.1"]
                                   [org.clojure/test.check "0.10.0-alpha3"]
-                                  [metosin/spec-tools "0.6.1"]
+                                  [metosin/spec-tools "0.7.1"]
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
-                                  [org.onyxplatform/onyx-spec "0.12.7.0"] ; to test specs
-                                  [com.gfredericks/test.chuck "0.2.8"]]
+                                  [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
+                                  [com.gfredericks/test.chuck "0.2.9"]]
                    :injections [(require 'sc.api)]
                    :plugins [[io.aviso/pretty "0.1.34"]
                              [lein-eftest "0.5.2"]]
@@ -104,24 +105,25 @@
                                                      :target-path]}
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [org.clojure/tools.namespace "0.2.11"] ; solves https://github.com/jakemcc/lein-test-refresh/issues/39
-                                          [com.gfredericks/test.chuck "0.2.8"]
-                                          [orchestra "2017.11.12-1"]
-                                          [org.clojure/core.specs.alpha "0.1.24"]
+                                          [com.gfredericks/test.chuck "0.2.9"]
+                                          [orchestra "2018.08.19-1"]
+                                          [org.clojure/core.specs.alpha "0.2.36"]
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.4"] ; to test specs
-                                          [org.onyxplatform/onyx-spec "0.12.7.0"] ; to test specs
-                                          [vvvvalvalval/scope-capture "0.1.4"]
-                                          [metosin/spec-tools "0.6.1"]]}
+                                          [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
+                                          [vvvvalvalval/scope-capture "0.3.1"]
+                                          [metosin/spec-tools "0.7.1"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
-                         :dependencies [[figwheel-sidecar "0.5.15"]
-                                        [karma-reporter "2.1.2"]]}]
+                         :dependencies [[figwheel-sidecar "0.5.16"]
+                                        [karma-reporter "3.1.0"]]}]
              :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
              :clj-1.9.0-alpha19 {:dependencies [[org.clojure/clojure "1.9.0-alpha19"]]}
              :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :cljs-1.9.562 {:dependencies [[org.clojure/clojurescript "1.9.562"]]}
-             :cljs-1.9.946 {:dependencies  [[org.clojure/clojurescript "1.9.946"]]}}
+             :cljs-1.9.946 {:dependencies  [[org.clojure/clojurescript "1.9.946"]]}
+             :cljs-1.10.238 {:dependencies  [[org.clojure/clojurescript "1.10.238"]]}}
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
                               ["with-profile" "test-web" "cljsbuild" "once" "test"]
