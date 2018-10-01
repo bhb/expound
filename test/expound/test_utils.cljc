@@ -10,7 +10,8 @@
             [expound.alpha :as expound]
             [clojure.test :as ct]
             [com.gfredericks.test.chuck.clojure-test :as chuck]
-            [expound.util :as util]))
+            [expound.util :as util]
+            [clojure.test.check.generators :as gen]))
 
 ;; test.chuck defines a reporter for the shrunk results, but only for the
 ;; default reporter (:cljs.test/default). Since karma uses its own reporter,
@@ -34,3 +35,9 @@
 
 (defn contains-nan? [x]
   (boolean (some util/nan? (tree-seq coll? identity x))))
+
+(def any-printable-wo-nan (gen/such-that (complement contains-nan?)
+
+                                         gen/any-printable))
+
+

@@ -10,6 +10,8 @@
             [expound.paths :as paths] ;; TODO - remove
 ))
 
+(def num-tests 100)
+
 (use-fixtures :once
   test-utils/check-spec-assertions
   test-utils/instrument-all)
@@ -232,25 +234,25 @@
              first
              (select-keys [:expound/in :val :reason])))))
 
-(def num-tests 5)
+;; 1.9.562 doesn't implement map-entry?
+(when-not (= *clojurescript-version* "1.9.562")
+  (defn nth-value [form i]
+    (let [seq (remove map-entry? (tree-seq coll? seq form))]
+      (nth seq (mod i (count seq))))))
 
-(defn nth-value [form i]
-  (let [seq (remove map-entry? (tree-seq coll? seq form))]
-    (nth seq (mod i (count seq)))))
-
-;; TODO - move to paths
-(deftest paths-to-value-test
-  (checking
-   "value-in is inverse of paths-to-value"
-   #_(chuck/times num-tests)
-   200
-   [form gen/any-printable
-    i gen/pos-int
-    :let [x (nth-value form i)
-          paths (paths/paths-to-value form x [] [])]]
-   (is (not (empty? paths)))
-   (doseq [path paths]
-     (is (= x
-            (problems/value-in form
-                               path))))))
+(when-not (= *clojurescript-version* "1.9.562")
+  ;; TODO - move to paths
+  (deftest paths-to-value-test
+    (checking
+     "value-in is inverse of paths-to-value"
+     (chuck/times num-tests)
+     [form test-utils/any-printable-wo-nan
+      i gen/pos-int
+      :let [x (nth-value form i)
+            paths (paths/paths-to-value form x [] [])]]
+     (is (not (empty? paths)))
+     (doseq [path paths]
+       (is (= x
+              (problems/value-in form
+                                 path)))))))
 

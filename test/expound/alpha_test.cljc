@@ -36,8 +36,6 @@
 (s/def :trigger/materialize any?)
 (s/def :flow/short-circuit any?)
 
-(def any-printable-wo-nan (gen/such-that (complement test-utils/contains-nan?) gen/any-printable))
-
 (defn pf
   "Fixes platform-specific namespaces and also formats using printf syntax"
   [s & args]
@@ -1101,7 +1099,7 @@ Detected 1 error\n")
     every-args2 (s/gen :specs/every-args)
     :let [spec (apply-map-of simple-spec1 (apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)
           sp-form (s/form spec)]
-    form any-printable-wo-nan]
+    form test-utils/any-printable-wo-nan]
    (is (string? (expound/expound-str spec form)))))
 
 (s/def :expound.ds/spec-key (s/or :kw keyword?
@@ -1194,7 +1192,7 @@ Detected 1 error\n")
      "generated data specs"
      (chuck/times num-tests)
      [data-spec (s/gen :expound.ds/spec)
-      form any-printable-wo-nan
+      form test-utils/any-printable-wo-nan
       prefix (s/gen qualified-keyword?)
       :let [gen-spec (ds/spec prefix (real-spec data-spec))]]
      (is (string? (expound/expound-str gen-spec form))))))
