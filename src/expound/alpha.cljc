@@ -323,12 +323,9 @@
        (let [conformed-val (-> problems first :val)]
          (if (= conformed-val (problems/value-in val path))
            ""
-           ;; TODO - colorization?
-           ;; HERE - this won't work for syntax errors where the
-           ;; next element is missing because spec lists the missing value as '()
            (printer/format
             "\n\nwhen conformed as\n\n%s"
-            (printer/indent (pr-str conformed-val)))))
+            (printer/indent (ansi/color (pr-str conformed-val) :bad-value)))))
        ""))))
 
 (defmethod value-str :default [_type spec-name val path problems opts]
