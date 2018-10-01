@@ -2050,8 +2050,6 @@ should be: \\B
 -------------------------
 Detected 1 error\n")
              (s/explain-str :conformers-test/string-AB "AC"))))
-    ;; TODO - need a test for case where we truly cannot find
-    ;; original value
     (testing "s/cat"
       (s/def :conformers-test/sorted-pair (s/and (s/cat :x int? :y int?) #(< (-> % :x) (-> % :y))))
       (is (= (pf "-- Spec failed --------------------
@@ -2255,21 +2253,7 @@ Detected 1 error
     (s/def :conformers-test/age pos-int?)
     (s/def :conformers-test/person (s/keys* :req-un [:conformers-test/name
                                                      :conformers-test/age]))
-    ;;
-
-    ;; TODO - instead of "some part of the value", just say:
-    ;;;;;;;;;;;;;;;;;;
-    ;; In value:
-    ;; BIG VALUE
-    ;; ;;;
-    ;; small value
-    ;; should 
-
-    ;;;;;;;;;;;;;;;;;;;
-    ;; TODO - this looks bad that the value says
-    ;; when conformed as :Stan - it's the same as the real value
-
-    ;; I think this could be made better once
+    ;; FIXME: Implementation could be simpler once
     ;; https://dev.clojure.org/jira/browse/CLJ-2406 is fixed
     (testing "spec defined with keys*"
       (is (= "-- Spec failed --------------------
@@ -2308,8 +2292,7 @@ Detected 1 error
 "
              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
                (s/explain-str (s/map-of :conformers-test/sorted-pair any?) {[0 1] [1 0]
-                                                                            [1 0] [1 0]}))))) ; TODO - an example would be using (s/cat) in a key for a map
-))
+                                                                            [1 0] [1 0]})))))))
 
 (s/def :duplicate-preds/str-or-str (s/or
                                     ;; Use anonymous functions to assure
