@@ -295,12 +295,6 @@
         type (:expound.spec.problem/type problem)]
     (value-str type spec-name form in problems opts)))
 
-(defn ^:private problem-group-str* [spec-name problems opts]
-  (let [problem (first problems)
-        {:expound/keys [form in]} problem
-        type (:expound.spec.problem/type problem)]
-    (problem-group-str type spec-name form in problems opts)))
-
 ;; a path may be converted into something we can use and find the inner value
 ;; or it may not, and so value-in WON'T be able to handle it, because
 ;; value-in expects a certain type of path
