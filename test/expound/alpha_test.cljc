@@ -2162,44 +2162,44 @@ Detected 1 error\n"
                                                               ::s/invalid))
                                               keyword?))
     (testing "coercion"
-      (is (= "-- Spec failed --------------------
+      (is (= (pf "-- Spec failed --------------------
 
   nil
 
 should satisfy
 
-  (clojure.spec.alpha/conformer
+  (pf.spec.alpha/conformer
    (fn
-    [%]
+    [%%]
     (if
-     (string? %)
-     (keyword %)
-     :clojure.spec.alpha/invalid)))
+     (string? %%)
+     (keyword %%)
+     :pf.spec.alpha/invalid)))
 
 -------------------------
 Detected 1 error
-"
+")
              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
                (s/explain-str :conformers-test/coerced-kw nil))))
 
-      (is (= "-- Spec failed --------------------
+      (is (= (pf "-- Spec failed --------------------
 
   [... ... ... 0]
                ^
 
 should satisfy
 
-  (clojure.spec.alpha/conformer
+  (pf.spec.alpha/conformer
    (fn
-    [%]
+    [%%]
     (if
-     (string? %)
-     (keyword %)
-     :clojure.spec.alpha/invalid)))
+     (string? %%)
+     (keyword %%)
+     :pf.spec.alpha/invalid)))
 
 -------------------------
 Detected 1 error
-"
+")
              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
                (s/explain-str (s/coll-of :conformers-test/coerced-kw) ["a" "b" "c" 0])))))
     ;; Also not recommended
@@ -2208,44 +2208,44 @@ Detected 1 error
                                                            ::s/invalid)
                                                         name) keyword?))
     (testing "coercion with unformer"
-      (is (= "-- Spec failed --------------------
+      (is (= (pf "-- Spec failed --------------------
 
   nil
 
 should satisfy
 
-  (clojure.spec.alpha/conformer
+  (pf.spec.alpha/conformer
    (fn
-    [%]
+    [%%]
     (if
-     (string? %)
-     (keyword %)
-     :clojure.spec.alpha/invalid)))
+     (string? %%)
+     (keyword %%)
+     :pf.spec.alpha/invalid)))
 
 -------------------------
 Detected 1 error
-"
+")
              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
                (s/explain-str :conformers-test/coerced-kw nil))))
 
-      (is (= "-- Spec failed --------------------
+      (is (= (pf "-- Spec failed --------------------
 
   [... ... ... 0]
                ^
 
 should satisfy
 
-  (clojure.spec.alpha/conformer
+  (pf.spec.alpha/conformer
    (fn
-    [%]
+    [%%]
     (if
-     (string? %)
-     (keyword %)
-     :clojure.spec.alpha/invalid)))
+     (string? %%)
+     (keyword %%)
+     :pf.spec.alpha/invalid)))
 
 -------------------------
 Detected 1 error
-"
+")
              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
                (s/explain-str (s/coll-of :conformers-test/coerced-kw) ["a" "b" "c" 0])))))
 
@@ -2272,7 +2272,7 @@ Detected 1 error
                (s/explain-str :conformers-test/person [:age 30 :name :Stan])))))
 
     (testing "ambiguous value"
-      (is (= "-- Spec failed --------------------
+      (is (= (pf "-- Spec failed --------------------
 
   {[0 1] ..., [1 0] ...}
               ^^^^^
@@ -2283,13 +2283,15 @@ when conformed as
 
 should satisfy
 
-  (fn
-   [%]
-   (< (-> % :x) (-> % :y)))
+  %s
 
 -------------------------
 Detected 1 error
 "
+                 #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
+                    :clj "(fn
+   [%]
+   (< (-> % :x) (-> % :y)))"))
              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
                (s/explain-str (s/map-of :conformers-test/sorted-pair any?) {[0 1] [1 0]
                                                                             [1 0] [1 0]})))))))
