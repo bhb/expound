@@ -387,7 +387,7 @@ Detected 1 error
 
 should satisfy
 
-  %s
+  (fn [%%] (pos? (count %%)))
 
 -- Relevant specs -------
 
@@ -397,10 +397,7 @@ should satisfy
    (pf.core/fn [%%] (pf.core/pos? (pf.core/count %%))))
 
 -------------------------
-Detected 1 error\n"
-               ;; TODO - these are identical (?)
-               #?(:cljs "(fn [%] (pos? (count %)))"
-                  :clj "(fn [%] (pos? (count %)))"))
+Detected 1 error\n")
            (expound/expound-str :and-spec/name ""))))
 
   (testing "shows both failures in order"

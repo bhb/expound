@@ -90,8 +90,6 @@
     ;; 1. Find the normal value
     ;; 2. If value is unique, just find that, ignoring the 'in' path
     ;; 3. Find the unformed value (if there is an unformer)
-
-
     (let [in1 (paths/in-with-kps form (:val problem) (:in problem) [])
           in' (if (not= :expound.paths/not-found-path (first in1))
                 in1
@@ -109,10 +107,7 @@
                                 :clj java.lang.IllegalStateException) e
                         in1)))))]
       ;; TODO - remember to update this when I remove special 'not-found' paths
-
-
       (assoc problem :expound/in in'))
-
     (catch #?(:cljs :default
               :clj Exception) e
       (if (or
