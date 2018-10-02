@@ -91,7 +91,7 @@
     ;; 2. If value is unique, just find that, ignoring the 'in' path
     ;; 3. Find the unformed value (if there is an unformer)
     (let [in1 (paths/in-with-kps form (:val problem) (:in problem) [])
-          in' (if (not= :expound.paths/not-found-path (first in1))
+          in' (if (not= ::paths/not-found-path (first in1))
                 in1
                 ;; TODO - rename
                 (let [paths (paths/paths-to-value form (:val problem) [] [])]
@@ -101,12 +101,10 @@
                       (paths/in-with-kps form
                                          (s/unform (last (:via problem)) (:val problem))
                                          (:in problem) [])
-                    ;; TODO - test CLJS
                     ;; The unform fails if there is no unformer
                       (catch #?(:cljs :default
                                 :clj java.lang.IllegalStateException) e
                         in1)))))]
-      ;; TODO - remember to update this when I remove special 'not-found' paths
       (assoc problem :expound/in in'))
     (catch #?(:cljs :default
               :clj Exception) e
