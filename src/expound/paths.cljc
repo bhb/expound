@@ -196,7 +196,8 @@
                         (paths-to-value v val (conj path k))))
                  paths
                  form)
-    ;; TODO - collapse with above
+
+    ;; TODO - collapse with above (sequential)
     (set? form) (reduce
                  (fn [ps [x i]]
                    (paths-to-value x val (conj path i) ps))
@@ -204,21 +205,6 @@
                  (map vector (seq form) (range)))
 
     :else paths))
-
-;; TODO - rename
-(defn get-in-1 [form path not-found]
-  (let [child (get-in form path not-found)
-        parent (get-in form (butlast path) not-found)]
-    (if (and (string? parent)
-             (char? child))
-      not-found
-      child)))
-
-;; TODO - remove
-;; 1. if path is unambigious (is it ever?), then just unform value at path, print unformed and conformed value
-;; 2. if it is not, and IF value is uniquely present in the whoel value and IF there is an unformer, unform val, print unformed and conformed value
-;; 3. if you can't do either, print out explanation - can't find unformed value and link to doc in github (ask for votes for unambiguous value).
-;; 4. maybe doc is a FAQ that also includes something about set!
 
 (defn in-with-kps [form val in in']
   (let [res (in-with-kps* form val in in')]

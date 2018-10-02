@@ -235,12 +235,12 @@
              (select-keys [:expound/in :val :reason])))))
 
 ;; map-entry? introduced in CLJS 1.10.238
-(when-not #?(:clj false :cljs (contains? #{"1.9.562" "1.9.946"} *clojurescript-version* ))
+(when-not #?(:clj false :cljs (contains? #{"1.9.562" "1.9.946"} *clojurescript-version*))
   (defn nth-value [form i]
     (let [seq (remove map-entry? (tree-seq coll? seq form))]
       (nth seq (mod i (count seq))))))
 
-(when-not #?(:clj false :cljs (contains? #{"1.9.562" "1.9.946"} *clojurescript-version* ))
+(when-not #?(:clj false :cljs (contains? #{"1.9.562" "1.9.946"} *clojurescript-version*))
   ;; TODO - move to paths
   (deftest paths-to-value-test
     (checking

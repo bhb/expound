@@ -37,7 +37,4 @@
   (boolean (some util/nan? (tree-seq coll? identity x))))
 
 (def any-printable-wo-nan (gen/such-that (complement contains-nan?)
-
                                          gen/any-printable))
-
-

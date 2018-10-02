@@ -2016,9 +2016,9 @@ Detected 1 error\n"
       (is (string? (s/explain-str :conformers-test/query {})))
       (is (= "-- Spec failed --------------------
 
-  {:conformers-test.query/id ...,
-   :conformers-test.query/params {}}
-                                 ^^
+Part of the value
+
+  {:conformers-test.query/id :conformers-test/lookup-user, :conformers-test.query/params {}}
 
 when conformed as
 
@@ -2269,7 +2269,6 @@ Detected 1 error
              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
                (s/explain-str :conformers-test/person [:age 30 :name :Stan])))))
 
-
     (testing "spec defined with keys* and copies of bad value elsewhere in the data"
       (is (= "-- Spec failed --------------------
 
@@ -2291,7 +2290,6 @@ Detected 1 error\n"
                (s/explain-str (s/tuple
                                keyword?
                                :conformers-test/person) [:Stan [:age 30 :name :Stan]])))))
-    
 
     (testing "ambiguous value"
       (is (= (pf "-- Spec failed --------------------

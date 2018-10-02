@@ -109,22 +109,9 @@
                                                        :expound/in path
                                                        :expound/value value}))
 
-          (if (not= ::not-found (paths/get-in-1 form rst ::not-found))
-            ;; FIXME: It's silly to reconstruct a fake "problem"
-            ;; after I've deconstructed it, but I'm not yet ready
-            ;; to break the API for value-in-context BUT
-            ;; I do want to test that a problems-based API
-            ;; is useful.
-            ;; See https://github.com/bhb/expound#configuring-the-printer
-            ;; TODO - dedupe
-            ;;(sc.api/spy)
-            (printer/indent (problems/highlighted-value opts
-                                                        {:expound/form form
-                                                         :expound/in rst
-                                                         :expound/value value}))
-            (printer/format
-             "Part of the value\n\n%s"
-             (printer/indent (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value))))))))))
+          (printer/format
+           "Part of the value\n\n%s"
+           (printer/indent (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value)))))))))
 
 (defn ^:private spec-str [spec]
   (if (keyword? spec)
