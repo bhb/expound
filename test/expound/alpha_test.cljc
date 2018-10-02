@@ -2269,6 +2269,30 @@ Detected 1 error
              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
                (s/explain-str :conformers-test/person [:age 30 :name :Stan])))))
 
+
+    (testing "spec defined with keys* and copies of bad value elsewhere in the data"
+      (is (= "-- Spec failed --------------------
+
+Part of the value
+
+  [:Stan [:age 30 :name :Stan]]
+
+when conformed as
+
+  :Stan
+
+should satisfy
+
+  string?
+
+-------------------------
+Detected 1 error\n"
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str (s/tuple
+                               keyword?
+                               :conformers-test/person) [:Stan [:age 30 :name :Stan]])))))
+    
+
     (testing "ambiguous value"
       (is (= (pf "-- Spec failed --------------------
 
