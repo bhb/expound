@@ -234,25 +234,20 @@
              first
              (select-keys [:expound/in :val :reason])))))
 
-;; map-entry? introduced in CLJS 1.10.238
-(when-not #?(:clj false :cljs (contains? #{"1.9.562" "1.9.946"} *clojurescript-version*))
-  (defn nth-value [form i]
-    (let [seq (remove map-entry? (tree-seq coll? seq form))]
-      (nth seq (mod i (count seq))))))
+(defn nth-value [form i]
+  (let [seq (remove map-entry? (tree-seq coll? seq form))]
+    (nth seq (mod i (count seq)))))
 
-(when-not #?(:clj false :cljs (contains? #{"1.9.562" "1.9.946"} *clojurescript-version*))
-  ;; TODO - move to paths
-  (deftest paths-to-value-test
-    (checking
-     "value-in is inverse of paths-to-value"
-     (chuck/times num-tests)
-     [form test-utils/any-printable-wo-nan
-      i gen/pos-int
-      :let [x (nth-value form i)
-            paths (paths/paths-to-value form x [] [])]]
-     (is (not (empty? paths)))
-     (doseq [path paths]
-       (is (= x
-              (problems/value-in form
-                                 path)))))))
-
+(deftest paths-to-value-test
+  (checking
+   "value-in is inverse of paths-to-value"
+   (chuck/times num-tests)
+   [form test-utils/any-printable-wo-nan
+    i gen/pos-int
+    :let [x (nth-value form i)
+          paths (paths/paths-to-value form x [] [])]]
+   (is (not (empty? paths)))
+   (doseq [path paths]
+     (is (= x
+            (problems/value-in form
+                               path))))))

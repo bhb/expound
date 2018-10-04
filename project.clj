@@ -121,8 +121,6 @@
              :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
              :clj-1.9.0-alpha19 {:dependencies [[org.clojure/clojure "1.9.0-alpha19"]]}
              :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]]}
-             :cljs-1.9.562 {:dependencies [[org.clojure/clojurescript "1.9.562"]]}
-             :cljs-1.9.946 {:dependencies  [[org.clojure/clojurescript "1.9.946"]]}
              :cljs-1.10.238 {:dependencies  [[org.clojure/clojurescript "1.10.238"]]}}
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
