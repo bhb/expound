@@ -91,7 +91,7 @@
     ;; 2. If value is unique, just find that, ignoring the 'in' path
     ;; 3. Find the unformed value (if there is an unformer)
     (let [in1 (paths/in-with-kps form (:val problem) (:in problem) [])
-          in' (if (not= ::paths/not-found-path (first in1))
+          in' (if (not= ::paths/not-found-path in1)
                 in1
                 ;; TODO - rename
                 (let [paths (paths/paths-to-value form (:val problem) [] [])]

@@ -96,22 +96,21 @@
     ;; TODO - refactor to cond
     (if (= form value)
       (printer/indent (binding [*print-namespace-maps* false] (ansi/color (printer/pprint-str value) :bad-value)))
-      (let [[fst rst] path]
-        (if (not= fst ::paths/not-found-path)
-          ;; FIXME: It's silly to reconstruct a fake "problem"
-          ;; after I've deconstructed it, but I'm not yet ready
-          ;; to break the API for value-in-context BUT
-          ;; I do want to test that a problems-based API
-          ;; is useful.
-          ;; See https://github.com/bhb/expound#configuring-the-printer
-          (printer/indent (problems/highlighted-value opts
-                                                      {:expound/form form
-                                                       :expound/in path
-                                                       :expound/value value}))
+      (if (not= path ::paths/not-found-path)
+        ;; FIXME: It's silly to reconstruct a fake "problem"
+        ;; after I've deconstructed it, but I'm not yet ready
+        ;; to break the API for value-in-context BUT
+        ;; I do want to test that a problems-based API
+        ;; is useful.
+        ;; See https://github.com/bhb/expound#configuring-the-printer
+        (printer/indent (problems/highlighted-value opts
+                                                    {:expound/form form
+                                                     :expound/in path
+                                                     :expound/value value}))
 
-          (printer/format
-           "Part of the value\n\n%s"
-           (printer/indent (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value)))))))))
+        (printer/format
+         "Part of the value\n\n%s"
+         (printer/indent (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value))))))))
 
 (defn ^:private spec-str [spec]
   (if (keyword? spec)
@@ -302,14 +301,23 @@
 ;; TODO - rename
 (defn ^:private value-and-conformed-value [problems spec-name val path opts]
   (let [{:keys [show-conformed?]} opts
-        conformed-val (-> problems first :val)]
+        ;; TODO - rename
+        problem-val (if (= ::paths/not-found-path path)
+                      ;; This isn't used by default
+                      ;; because value-in-context will look at
+                      ;; path and only print form, but anyone
+                      ;; who provides their own *value-str-fn*
+                      ;; could use this
+                      ::no-value-found
+                      (problems/value-in val path))]
+
     (printer/format
      "%s%s"
      (*value-str-fn* spec-name val path
-                     (problems/value-in val path))
+                     problem-val)
      (if show-conformed?
        (let [conformed-val (-> problems first :val)]
-         (if (= conformed-val (problems/value-in val path))
+         (if (= conformed-val problem-val)
            ""
            (printer/format
             "\n\nwhen conformed as\n\n%s"

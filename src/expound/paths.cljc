@@ -4,7 +4,9 @@
 
 ;;;;;; specs ;;;;;;
 
-(s/def :expound/path sequential?)
+(s/def :expound/path (s/or
+                      :not-found #{::not-found-path}
+                      :found sequential?))
 
 ;;;;;; types ;;;;;;
 
@@ -209,8 +211,7 @@
 (defn in-with-kps [form val in in']
   (let [res (in-with-kps* form val in in')]
     (if (= ::not-found res)
-      ;; TODO - maybe just return keyword instead of path?
-      [::not-found-path in]
+      ::not-found-path
       res)))
 
 (declare compare-paths)
