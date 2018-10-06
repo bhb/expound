@@ -80,39 +80,51 @@
     (printer/indent (count (str prefix))
                     (apply str (repeat max-width "^")))))
 
+
+;; =======
+;;     ;; HERE --------------- we used to try/catch
+;;                                         ; and try a differnet approach BUT now we need to check for
+;;     ;; NOT FOUND
+;;     (assoc problem :expound/in (paths/in-with-kps form (:val problem) (:in problem) []))
+;; >>>>>>> Stashed changes
+
+;; can simplify when 
+;; https://dev.clojure.org/jira/browse/CLJ-2192 or
+;; https://dev.clojure.org/jira/browse/CLJ-2258 are fixed
+
+
 (defn- adjust-in [form problem]
-  ;; Remove try/catch when
-  ;; https://dev.clojure.org/jira/browse/CLJ-2192 or
-  ;; https://dev.clojure.org/jira/browse/CLJ-2258 are fixed
-  (try
-    ;; TODO - rename
-    ;; Three strategies for finding the value
-    ;; 1. Find the normal value
-    ;; 2. If value is unique, just find that, ignoring the 'in' path
-    ;; 3. Find the unformed value (if there is an unformer)
-    (let [in1 (paths/in-with-kps form (:val problem) (:in problem) [])
-          in' (if (not= ::paths/not-found-path in1)
-                in1
-                ;; TODO - rename
-                (let [paths (paths/paths-to-value form (:val problem) [] [])]
-                  (if (= 1 (count paths))
-                    (first paths)
-                    (try
-                      (paths/in-with-kps form
-                                         (s/unform (last (:via problem)) (:val problem))
-                                         (:in problem) [])
+  ;; TODO - rename
+  ;; Three strategies for finding the value
+  ;; 1. Find the normal value
+  ;; 2. If value is unique, just find that, ignoring the 'in' path
+  ;; 3. Find the unformed value (if there is an unformer)
+  (let [in1 (paths/in-with-kps form (:val problem) (:in problem) [])
+        ;; TODO - rename
+        in' (if (not= ::paths/not-found-path in1)
+              in1
+              ;; TODO - rename
+              (let [paths (paths/paths-to-value form (:val problem) [] [])]
+                (if (= 1 (count paths))
+                  (first paths)
+                  (try
+                    (paths/in-with-kps form
+                                       (s/unform (last (:via problem)) (:val problem))
+                                       (:in problem) [])
                     ;; The unform fails if there is no unformer
-                      (catch #?(:cljs :default
-                                :clj java.lang.IllegalStateException) e
-                        in1)))))]
-      (assoc problem :expound/in in'))
-    (catch #?(:cljs :default
-              :clj Exception) e
+                    (catch #?(:cljs :default
+                              :clj java.lang.IllegalArgumentException) _e
+                      in1)
+                    (catch #?(:cljs :default
+                              :clj java.lang.IllegalStateException) _e
+                      in1)))))]
+    (if (not= ::paths/not-found-path in')
+      (assoc problem :expound/in in')
       (if (or
            (= '(apply fn) (:pred problem))
            (#{:ret} (first (:path problem))))
         (assoc problem :expound/in (:in problem))
-        (throw e)))))
+        (assoc problem :expound/in in')))))
 
 (defn- adjust-path [failure problem]
   (assoc problem :expound/path

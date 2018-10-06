@@ -241,5 +241,6 @@
        (remove #{0})
        first))
 
+;; TODO - remove
 (defn kps [k]
   (->KeyPathSegment k))

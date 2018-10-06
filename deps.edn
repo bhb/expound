@@ -11,6 +11,7 @@
                                ring/ring-spec {:mvn/version "0.0.4"} ; to test specs
                                org.onyxplatform/onyx-spec {:mvn/version "0.12.7.0"} ; to test specs
                                vvvvalvalval/scope-capture {:mvn/version "0.1.4"}
-                               metosin/spec-tools {:mvn/version "0.6.1"}}
+                               metosin/spec-tools {:mvn/version "0.6.1"}
+                               com.bhauman/spell-spec {:mvn/version "0.1.1"}}
                   :main-opts ["-m" "cognitect.test-runner"]}}
 }
