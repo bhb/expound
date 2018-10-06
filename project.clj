@@ -112,7 +112,8 @@
                                           [ring/ring-spec "0.0.4"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                           [vvvvalvalval/scope-capture "0.3.1"]
-                                          [metosin/spec-tools "0.7.1"]]}
+                                          [metosin/spec-tools "0.7.1"]
+                                          [com.bhauman/spell-spec "0.1.1"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.16"]
