@@ -71,6 +71,7 @@ jobs:
       - run: TEST_CHECK_FACTOR=20 lein with-profile test-common test
       - run: lein with-profile +test-common eftest
       - run: lein clean && lein with-profile test-web cljsbuild once test && bin/tests
+      - run: bin/golden_master_test.sh
       - run: lein jar && diff -u <(jar tf target/*.jar | sort) <(cat expected-jar-contents.txt | sort)
 
   test_cljs_old:
