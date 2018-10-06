@@ -65,6 +65,7 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
+      - run: sudo apt-get install clojure
       - run: bin/install-chrome
       - run: sudo bin/install-node && npm install
       - run: lein check
