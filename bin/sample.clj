@@ -340,6 +340,5 @@
 
   (expound/explain-result (st/check-fn `resultsf-str-fn1 (s/spec `results-str-fn2))))
 
-
 (go (= "--check-results" (first *command-line-args*)))
 (shutdown-agents)

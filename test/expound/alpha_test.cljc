@@ -3293,7 +3293,15 @@ should satisfy
            (printer-str {:print-specs? false} ed))))))
 
 #?(:clj (deftest macroexpansion-errors
-          (is (thrown-with-msg?
-               #?(:cljs :default :clj Exception)
-               #"should have additional elements. The next element \"\:init\-expr\" should satisfy"
-               (macroexpand '(clojure.core/let [a] 2))))))
+          (try
+            (macroexpand '(clojure.core/let [a] 2))
+            (is false "error should already have been thrown")
+            (catch clojure.lang.Compiler$CompilerException e
+              (is (string/includes?
+                   (.getMessage e)
+                   "Syntax error macroexpanding clojure.core/let"))
+              (is (string/includes?
+                   (.getMessage (.getCause e))
+
+
+                   "should have additional elements. The next element \":init-expr\" should satisfy"))))))
