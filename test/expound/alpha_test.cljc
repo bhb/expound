@@ -3297,11 +3297,19 @@ should satisfy
             (macroexpand '(clojure.core/let [a] 2))
             (is false "error should already have been thrown")
             (catch clojure.lang.Compiler$CompilerException e
-              (is (string/includes?
-                   (.getMessage e)
-                   "Syntax error macroexpanding clojure.core/let"))
-              (is (string/includes?
-                   (.getMessage (.getCause e))
+              (let [{:keys [minor]} *clojure-version*]
+                (if (= 10 minor)
+                  (do
+                    (is (string/includes?
+                         (.getMessage e)
+                         "Syntax error macroexpanding clojure.core/let"))
+                    (is (string/includes?
+                         (.getMessage (.getCause e))
+
+                         "should have additional elements. The next element \":init-expr\" should satisfy")))
+
+                  (is (string/includes?
+                       (.getMessage e)
 
 
-                   "should have additional elements. The next element \":init-expr\" should satisfy"))))))
+                       "should have additional elements. The next element \":init-expr\" should satisfy"))))))))
