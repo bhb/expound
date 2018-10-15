@@ -952,7 +952,7 @@ returned an invalid value.
   (doseq [check-result (butlast check-results)]
     (explain-result check-result)
     (print "\n\n"))
-  (explain-result (last check-results)))
+  (expain-result (last check-results)))
 
 (s/fdef explain-results-str
         :args (s/cat :check-results (s/coll-of (s/nilable map?)))
