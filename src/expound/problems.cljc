@@ -314,3 +314,6 @@
                :expound/problems problems'))))
 
 (def type ptype)
+
+(defn not-found-path? [path]
+  (= ::paths/not-found-path path))

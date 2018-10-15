@@ -10,9 +10,7 @@
             [expound.printer :as printer]
             [expound.util :as util]
             [expound.ansi :as ansi]
-            [clojure.spec.gen.alpha :as gen]
-            ;; TODO - why does this refer to paths directly?
-            [expound.paths :as paths]))
+            [clojure.spec.gen.alpha :as gen]))
 
 ;;;;;; registry ;;;;;;
 
@@ -96,7 +94,7 @@
     ;; TODO - refactor to cond
     (if (= form value)
       (printer/indent (binding [*print-namespace-maps* false] (ansi/color (printer/pprint-str value) :bad-value)))
-      (if (not= path ::paths/not-found-path)
+      (if (not (problems/not-found-path? path))
         ;; FIXME: It's silly to reconstruct a fake "problem"
         ;; after I've deconstructed it, but I'm not yet ready
         ;; to break the API for value-in-context BUT
@@ -302,7 +300,7 @@
 (defn ^:private value-and-conformed-value [problems spec-name val path opts]
   (let [{:keys [show-conformed?]} opts
         ;; TODO - rename
-        problem-val (if (= ::paths/not-found-path path)
+        problem-val (if (problems/not-found-path? path)
                       ;; This isn't used by default
                       ;; because value-in-context will look at
                       ;; path and only print form, but anyone
