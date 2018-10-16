@@ -6,8 +6,7 @@
             [expound.test-utils :as test-utils]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [clojure.test.check.generators :as gen]
-            [com.gfredericks.test.chuck :as chuck]
-            ))
+            [com.gfredericks.test.chuck :as chuck]))
 
 (def num-tests 100)
 
@@ -40,5 +39,5 @@
    (doseq [path paths]
      (is (= x
             (paths/value-in form
-                               path))))))
+                            path))))))
 

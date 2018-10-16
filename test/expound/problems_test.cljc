@@ -2,10 +2,7 @@
   (:require [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [clojure.spec.alpha :as s]
             [expound.problems :as problems]
-            [expound.test-utils :as test-utils]
-            
-            
-))
+            [expound.test-utils :as test-utils]))
 
 (use-fixtures :once
   test-utils/check-spec-assertions
