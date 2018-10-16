@@ -240,7 +240,3 @@
   (->> (map compare-path-segment path1 path2)
        (remove #{0})
        first))
-
-;; TODO - remove
-(defn kps [k]
-  (->KeyPathSegment k))
