@@ -10,7 +10,8 @@
             [expound.printer :as printer]
             [expound.util :as util]
             [expound.ansi :as ansi]
-            [clojure.spec.gen.alpha :as gen]))
+            [clojure.spec.gen.alpha :as gen]
+            [expound.paths :as paths]))
 
 ;;;;;; registry ;;;;;;
 
@@ -94,7 +95,7 @@
     ;; TODO - refactor to cond
     (if (= form value)
       (printer/indent (binding [*print-namespace-maps* false] (ansi/color (printer/pprint-str value) :bad-value)))
-      (if (not (problems/not-found-path? path))
+      (if (not (paths/not-found-path? path))
         ;; FIXME: It's silly to reconstruct a fake "problem"
         ;; after I've deconstructed it, but I'm not yet ready
         ;; to break the API for value-in-context BUT
@@ -261,7 +262,7 @@
  Dispatch value:        `%s`"
      (pr-str mm)
      (pr-str retag)
-     (pr-str (if retag (retag (problems/value-in val path)) nil)))))
+     (pr-str (if retag (retag (paths/value-in val path)) nil)))))
 
 (defmulti ^:no-doc problem-group-str (fn [type _spec-name _val _path _problems _opts] type))
 (defmulti ^:no-doc expected-str (fn [type  _spec-name _val _path _problems _opts] type))
@@ -300,14 +301,16 @@
 (defn ^:private value-and-conformed-value [problems spec-name val path opts]
   (let [{:keys [show-conformed?]} opts
         ;; TODO - rename
-        problem-val (if (problems/not-found-path? path)
+        problem-val (if (paths/not-found-path? path)
                       ;; This isn't used by default
                       ;; because value-in-context will look at
                       ;; path and only print form, but anyone
                       ;; who provides their own *value-str-fn*
                       ;; could use this
                       ::no-value-found
-                      (problems/value-in val path))]
+                      ;; TODO - maybe this problem val should be annotated to problem so we don't
+                      ;; need to check path at this level
+                      (paths/value-in val path))]
 
     (printer/format
      "%s%s"
@@ -447,7 +450,7 @@
    "Cannot find spec for
 
 %s"
-   (show-spec-name spec-name (*value-str-fn* spec-name val path (problems/value-in val path)))))
+   (show-spec-name spec-name (*value-str-fn* spec-name val path (paths/value-in val path)))))
 
 (defmethod problem-group-str :expound.problem/missing-spec [type spec-name val path problems opts]
   (printer/format
@@ -704,7 +707,7 @@ returned an invalid value.
 
    (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
 
-   (*value-str-fn* spec-name val path (problems/value-in val path))
+   (*value-str-fn* spec-name val path (paths/value-in val path))
    (expected-str _type spec-name val path problems opts)))
 
 (defmethod expected-str :expound.problem/unknown [_type spec-name val path problems opts]

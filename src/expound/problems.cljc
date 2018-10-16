@@ -227,29 +227,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;
 
-;; TODO - change to handle special paths like [::not-found path]
-;; TODO - should this be in paths namespace?
-(defn value-in
-  "Similar to get-in, but works with paths that reference map keys"
-  [form in]
-  (let [[k & rst] in]
-    (cond
-      (empty? in)
-      form
-
-      (and (map? form) (paths/kps? k))
-      (recur (:key k) rst)
-
-      (and (map? form) (paths/kvps? k))
-      (recur (nth (seq form) (:idx k)) rst)
-
-      (associative? form)
-      (recur (get form k) rst)
-
-      (and (int? k)
-           (seqable? form))
-      (recur (nth (seq form) k) rst))))
-
 (defn escape-replacement [pattern s]
   #?(:clj (if (string? pattern)
             s
@@ -258,13 +235,13 @@
 
 ;; TODO - rename
 (defn ^:private displayed-value [form in]
-  (let [v (value-in form in)]
+  (let [v (paths/value-in form in)]
     (cond
       ;; If there is no parent value, just return the value
       (empty? in)
       (printer/pprint-str v)
 
-      (let [parent (value-in form (butlast in))]
+      (let [parent (paths/value-in form (butlast in))]
         (string? parent))
       (str v)
 
@@ -314,6 +291,3 @@
                :expound/problems problems'))))
 
 (def type ptype)
-
-(defn not-found-path? [path]
-  (= ::paths/not-found-path path))

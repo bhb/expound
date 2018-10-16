@@ -234,3 +234,27 @@
   (->> (map compare-path-segment path1 path2)
        (remove #{0})
        first))
+
+(defn value-in
+  "Similar to get-in, but works with paths that reference map keys"
+  [form in]
+  (let [[k & rst] in]
+    (cond
+      (empty? in)
+      form
+
+      (and (map? form) (kps? k))
+      (recur (:key k) rst)
+
+      (and (map? form) (kvps? k))
+      (recur (nth (seq form) (:idx k)) rst)
+
+      (associative? form)
+      (recur (get form k) rst)
+
+      (and (int? k)
+           (seqable? form))
+      (recur (nth (seq form) k) rst))))
+
+(defn not-found-path? [path]
+  (= ::not-found-path path))
