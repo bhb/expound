@@ -184,7 +184,8 @@
     (= form val)
     (conj paths path)
 
-    (sequential? form)
+    (or (sequential? form)
+        (set? form))
     (reduce
      (fn [ps [x i]]
        (paths-to-value x val (conj path i) ps))
@@ -198,13 +199,6 @@
                         (paths-to-value v val (conj path k))))
                  paths
                  form)
-
-    ;; TODO - collapse with above (sequential)
-    (set? form) (reduce
-                 (fn [ps [x i]]
-                   (paths-to-value x val (conj path i) ps))
-                 paths
-                 (map vector (seq form) (range)))
 
     :else paths))
 
