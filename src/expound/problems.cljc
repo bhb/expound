@@ -113,13 +113,17 @@
                 nil))
 
         new-in (cond
-                 in1
+                   ;; TODO - simplify by returning nil?
+                 (and in1
+                      (not= ::paths/not-found-path in1))
                  in1
 
-                 in2
+                 (and in2
+                      (not= ::paths/not-found-path in2))
                  in2
 
-                 in3
+                 (and in3
+                      (not= ::paths/not-found-path in3))
                  in3
 
                  (or (= '(apply fn) (:pred problem))
@@ -130,7 +134,7 @@
                  ::paths/not-found-path)]
     (assoc problem
            :expound/in
-           new-in)))
+           (or new-in ::paths/not-found-path))))
 
 (defn- adjust-path [failure problem]
   (assoc problem :expound/path
