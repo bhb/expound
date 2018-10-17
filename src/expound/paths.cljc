@@ -205,6 +205,7 @@
 (defn in-with-kps [form val in in']
   (let [res (in-with-kps* form val in in')]
     (if (= ::not-found res)
+      ;; TODO - maybe just return nil?
       ::not-found-path
       res)))
 
