@@ -1085,7 +1085,7 @@ Detected 1 error\n")
    (let [ed (s/explain-data spec form)]
      (when-not (zero? (count (::s/problems ed)))
        (is (= (dec (count (::s/problems ed)))
-              (count (re-seq #"\bor\b" (expound/expound-str spec form))))
+              (count (re-seq #"\nor\n" (expound/expound-str spec form))))
            (str "Failed to print out all problems\nspec: " sp-form "\nproblems: " (printer/pprint-str (::s/problems ed)) "\nmessage: " (expound/expound-str spec form)))))))
 
 (deftest generated-map-of-specs
