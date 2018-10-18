@@ -14,6 +14,7 @@
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.16"]
             [lein-hiera "1.0.0"]]
+  ;; TODO - remove
   :codox {:output-path "docs"
           :source-paths ["src"]
           :namespaces [expound.alpha]
@@ -127,4 +128,6 @@
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
                               ["with-profile" "test-web" "cljsbuild" "once" "test"]
-                              ["with-profile" "test-web" "cljsbuild" "auto" "test"]]})
+                              ["with-profile" "test-web" "cljsbuild" "auto" "test"]]}
+  :test-refresh {:refresh-dirs ["src" "test"]
+                 :watch-dirs ["src" "test"]})
