@@ -104,7 +104,6 @@
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
-                                          [org.clojure/tools.namespace "0.2.11"] ; solves https://github.com/jakemcc/lein-test-refresh/issues/39
                                           [com.gfredericks/test.chuck "0.2.9"]
                                           [orchestra "2018.08.19-1"]
                                           [org.clojure/core.specs.alpha "0.2.36"]
