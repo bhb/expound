@@ -14,12 +14,6 @@
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.16"]
             [lein-hiera "1.0.0"]]
-  ;; TODO - remove
-  :codox {:output-path "docs"
-          :source-paths ["src"]
-          :namespaces [expound.alpha]
-          ;; Exclude 'doc' directory, since it's all internal documentation right now.
-          :doc-paths []}
   :cljsbuild {:builds
               [{:id "test"
                 :source-paths ["src" "test"]
