@@ -11,7 +11,27 @@
             [spell-spec.alpha :as spell :refer [warn-keys strict-keys warn-strict-keys]]
             [expound.alpha :as exp]
             [expound.ansi :as ansi]
-            [spell-spec.expound]))
+            [spell-spec.expound :as sp.ex]))
+
+;; copied from
+;; https://github.com/bhauman/spell-spec/blob/48ea2ca544f02b04a73dc42a91aa4876dcc5fc95/src/spell_spec/expound.cljc#L23-L34
+;; because test-refresh doesn't refesh libraries if I set explicit paths and
+;; if I don't restrict the paths, it tries to reload deps in the CLJS build
+
+(defmethod exp/problem-group-str :spell-spec.alpha/misspelled-key [_type spec-name val path problems opts]
+  (sp.ex/exp-formated "Misspelled map key"  _type spec-name val path problems opts))
+
+(defmethod exp/expected-str :spell-spec.alpha/misspelled-key [_type spec-name val path problems opts]
+  (let [{:keys [:spell-spec.alpha/likely-misspelling-of]} (first problems)]
+    (str "should probably be" (sp.ex/format-correction-list likely-misspelling-of))))
+
+(defmethod exp/problem-group-str :spell-spec.alpha/unknown-key [_type spec-name val path problems opts]
+  (sp.ex/exp-formated "Unknown map key"  _type spec-name val path problems opts))
+
+(defmethod exp/expected-str :spell-spec.alpha/unknown-key [_type spec-name val path problems opts]
+  (str "should be" (sp.ex/format-correction-list (-> problems first :pred))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn fetch-warning-output [thunk]
   #?(:clj (binding [*err* (java.io.StringWriter.)]
