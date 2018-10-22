@@ -301,3 +301,8 @@
                :expound/problems problems'))))
 
 (def type ptype)
+
+;; Must keep this function here because
+;; spell-spec uses it
+;; https://github.com/bhauman/spell-spec/blob/48ea2ca544f02b04a73dc42a91aa4876dcc5fc95/src/spell_spec/expound.cljc#L20
+(def value-in paths/value-in)
