@@ -1,5 +1,7 @@
 # Expound
 
+**Starting with version “0.2.176”, `clojure.spec.alpha` changes how specs errors are reported during macroexpansion. If you use Expound to print macro-expansion spec errors (e.g. syntax errors when using `let`, `ns` and `defn`), do not upgrade to  “0.2.176” until your REPL has been upgraded to support the new error format.**
+
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
 [![cljdoc badge](https://cljdoc.xyz/badge/expound/expound)](https://cljdoc.xyz/d/expound/expound/CURRENT)
 [![CircleCI](https://circleci.com/gh/bhb/expound.svg?style=shield)](https://circleci.com/gh/bhb/expound)
@@ -150,7 +152,7 @@ If you are enabling Expound in a non-REPL environment, remember that `set!` will
 
 ### Printing results for `check`
 
-The Expound printer can print results from `clojure.spec.test.alpha/check`
+Re-binding `s/*explain-out*` has no effect on the results of `cljs.spec.test.alpha/summarize-results`, but Expound provides the function `expound/explain-results` to print the results from `clojure.spec.test.alpha/check`.
 
 ```clojure
 (require '[expound.alpha :as expound]
@@ -351,8 +353,6 @@ Clojure test allows you to declare a custom multi-method for its `clojure.test/r
 ;; run tests, (stest/instrument) either here or in the individual test files.
 (run-tests 'pkg.namespace-test)
 ```
-
-The above has been tested in `lumo` so it is self-host ClojureScript compatible.
 
 ### Using Orchestra
 

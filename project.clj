@@ -14,11 +14,6 @@
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.16"]
             [lein-hiera "1.0.0"]]
-  :codox {:output-path "docs"
-          :source-paths ["src"]
-          :namespaces [expound.alpha]
-          ;; Exclude 'doc' directory, since it's all internal documentation right now.
-          :doc-paths []}
   :cljsbuild {:builds
               [{:id "test"
                 :source-paths ["src" "test"]
@@ -104,7 +99,6 @@
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
-                                          [org.clojure/tools.namespace "0.2.11"] ; solves https://github.com/jakemcc/lein-test-refresh/issues/39
                                           [com.gfredericks/test.chuck "0.2.9"]
                                           [orchestra "2018.08.19-1"]
                                           [org.clojure/core.specs.alpha "0.2.36"]
@@ -113,7 +107,8 @@
                                           [ring/ring-spec "0.0.4"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                           [vvvvalvalval/scope-capture "0.3.1"]
-                                          [metosin/spec-tools "0.7.1"]]}
+                                          [metosin/spec-tools "0.7.1"]
+                                          [com.bhauman/spell-spec "0.1.1"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.16"]
@@ -125,4 +120,6 @@
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
                               ["with-profile" "test-web" "cljsbuild" "once" "test"]
-                              ["with-profile" "test-web" "cljsbuild" "auto" "test"]]})
+                              ["with-profile" "test-web" "cljsbuild" "auto" "test"]]}
+  :test-refresh {:refresh-dirs ["src" "test"]
+                 :watch-dirs ["src" "test"]})
