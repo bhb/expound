@@ -2035,19 +2035,23 @@ Detected 1 error\n"
              (s/explain-str :conformers-test/query {:conformers-test.query/id :conformers-test/lookup-user
                                                     :conformers-test.query/params {}}))))
     ;; Minified example based on https://github.com/bhb/expound/issues/15
+    ;; This doesn't look ideal, but really, it's not a good idea to use spec
+    ;; for string parsing, so I'm OK with it
     (testing "conform string to seq"
-      (is (= #?(;; clojurescript doesn't have a character type
-                :cljs "-- Spec failed --------------------\n\n  \"AC\"\n    ^\n\nshould be: \"B\"\n\n-------------------------\nDetected 1 error\n"
-                :clj "-- Spec failed --------------------
+      (is (=
+           ;; clojurescript doesn't have a character type
+           #?(:cljs "-- Spec failed --------------------\n\n  \"A\"C\"\"\n    ^^^\n\nshould be: \"B\"\n\n-------------------------\nDetected 1 error\n"
+              :clj "-- Spec failed --------------------
 
-  \"AC\"
-    ^
+  \"A\\C\"
+    ^^
 
 should be: \\B
 
 -------------------------
-Detected 1 error\n")
-             (s/explain-str :conformers-test/string-AB "AC"))))
+Detected 1 error
+")
+           (s/explain-str :conformers-test/string-AB "AC"))))
     (testing "s/cat"
       (s/def :conformers-test/sorted-pair (s/and (s/cat :x int? :y int?) #(< (-> % :x) (-> % :y))))
       (is (= (pf "-- Spec failed --------------------
@@ -2063,7 +2067,8 @@ should satisfy
   %s
 
 -------------------------
-Detected 1 error\n"
+Detected 1 error
+"
                  #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
                     :clj "(fn
    [%]

@@ -5,7 +5,8 @@
             [expound.printer-test]
             [expound.problems-test]
             [expound.test-utils]
-            [expound.specs-test]))
+            [expound.specs-test]
+            [expound.spell-spec-test]))
 
 (enable-console-print!)
 
