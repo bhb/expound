@@ -280,21 +280,6 @@
         type (:expound.spec.problem/type problem)]
     (value-str type spec-name form in problems opts)))
 
-;; a path may be converted into something we can use and find the inner value
-;; or it may not, and so value-in WON'T be able to handle it, because
-;; value-in expects a certain type of path
-;; third-party libs like spell-spec expect to be able to call value-in
-;; directly with an expound-path, so ideally value-in would be able to handle
-;; this broader type of path, but what's a sensible return value when you give
-;; it a path that doesn't map to a value? some error value that itself must
-;; be handled?
-
-;; perhaps a back-compat way to deal with it is to make value-in return
-;; a ::not-found value but in my implementation of the handler just use
-;; val/path directly to figure out a strategy to print in value-in-context
-;; .... hmmm
-;;
-
 ;; FIXME - when I decide to break compatibility for value-str-fn, maybe
 ;; make it show conform/unformed value
 ;; TODO - rename
