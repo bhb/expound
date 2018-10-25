@@ -280,9 +280,20 @@
         type (:expound.spec.problem/type problem)]
     (value-str type spec-name form in problems opts)))
 
+;; TODO - rename 'problem-val'
+(defn conformed-value [problems problem-val]
+  (let [conformed-val (-> problems first :val)]
+    (if (= conformed-val problem-val)
+      ""
+      (printer/format
+       "\n\nwhen conformed as\n\n%s"
+       (printer/indent (ansi/color (pr-str conformed-val) :bad-value))))))
+
 ;; FIXME - when I decide to break compatibility for value-str-fn, maybe
 ;; make it show conform/unformed value
 ;; TODO - rename
+
+
 (defn ^:private value-and-conformed-value [problems spec-name val path opts]
   (let [{:keys [show-conformed?]} opts
         ;; TODO - rename
@@ -302,12 +313,7 @@
      (*value-str-fn* spec-name val path
                      problem-val)
      (if show-conformed?
-       (let [conformed-val (-> problems first :val)]
-         (if (= conformed-val problem-val)
-           ""
-           (printer/format
-            "\n\nwhen conformed as\n\n%s"
-            (printer/indent (ansi/color (pr-str conformed-val) :bad-value)))))
+       (conformed-value problems problem-val)
        ""))))
 
 (defmethod value-str :default [_type spec-name val path problems opts]
