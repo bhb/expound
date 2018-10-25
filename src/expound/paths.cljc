@@ -4,9 +4,7 @@
 
 ;;;;;; specs ;;;;;;
 
-(s/def :expound/path (s/or
-                      :not-found #{::not-found-path}
-                      :found sequential?))
+(s/def :expound/path (s/nilable sequential?))
 
 ;;;;;; types ;;;;;;
 
@@ -205,8 +203,7 @@
 (defn in-with-kps [form val in in']
   (let [res (in-with-kps* form val in in')]
     (if (= ::not-found res)
-      ;; TODO - maybe just return nil?
-      ::not-found-path
+      nil
       res)))
 
 (declare compare-paths)
@@ -239,23 +236,22 @@
 (defn value-in
   "Similar to get-in, but works with paths that reference map keys"
   [form in]
-  (let [[k & rst] in]
-    (cond
-      (empty? in)
-      form
+  (if (nil? in)
+    form
+    (let [[k & rst] in]
+      (cond
+        (empty? in)
+        form
 
-      (and (map? form) (kps? k))
-      (recur (:key k) rst)
+        (and (map? form) (kps? k))
+        (recur (:key k) rst)
 
-      (and (map? form) (kvps? k))
-      (recur (nth (seq form) (:idx k)) rst)
+        (and (map? form) (kvps? k))
+        (recur (nth (seq form) (:idx k)) rst)
 
-      (associative? form)
-      (recur (get form k) rst)
+        (associative? form)
+        (recur (get form k) rst)
 
-      (and (int? k)
-           (seqable? form))
-      (recur (nth (seq form) k) rst))))
-
-(defn not-found-path? [path]
-  (= ::not-found-path path))
+        (and (int? k)
+             (seqable? form))
+        (recur (nth (seq form) k) rst)))))

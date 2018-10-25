@@ -86,10 +86,7 @@
 (defn- adjust-in [form problem]
   ;; Three strategies for finding the value...
   (let [;; 1. Find the original value
-        in (paths/in-with-kps form (:val problem) (:in problem) [])
-        in1 (if (not= ::paths/not-found-path in)
-              in
-              nil)
+        in1 (paths/in-with-kps form (:val problem) (:in problem) [])
 
         ;; 2. If value is unique, just find that, ignoring the 'in' path
         in2 (let [paths (paths/paths-to-value form (:val problem) [] [])]
@@ -113,17 +110,14 @@
                 nil))
 
         new-in (cond
-                   ;; TODO - simplify by returning nil?
-                 (and in1
-                      (not= ::paths/not-found-path in1))
+
+                 in1
                  in1
 
-                 (and in2
-                      (not= ::paths/not-found-path in2))
+                 in2
                  in2
 
-                 (and in3
-                      (not= ::paths/not-found-path in3))
+                 in3
                  in3
 
                  (or (= '(apply fn) (:pred problem))
@@ -131,10 +125,11 @@
                  (:in problem)
 
                  :else
-                 ::paths/not-found-path)]
+                 nil)]
+
     (assoc problem
            :expound/in
-           (or new-in ::paths/not-found-path))))
+           new-in)))
 
 (defn- adjust-path [failure problem]
   (assoc problem :expound/path
