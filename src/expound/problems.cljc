@@ -109,23 +109,21 @@
                         :clj java.lang.Error) _e
                 nil))
 
-        new-in (cond
+        new-in (cond in1
+                     in1
 
-                 in1
-                 in1
+                     in2
+                     in2
 
-                 in2
-                 in2
+                     in3
+                     in3
 
-                 in3
-                 in3
-
-                 (or (= '(apply fn) (:pred problem))
-                     (#{:ret} (first (:path problem))))
-                 (:in problem)
-
-                 :else
-                 nil)]
+                     (or (= '(apply fn) (:pred problem))
+                         (#{:ret} (first (:path problem))))
+                     (:in problem)
+                     
+                     :else
+                     nil)]
 
     (assoc problem
            :expound/in

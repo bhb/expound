@@ -94,7 +94,7 @@
 
       (= form value)
       (printer/indent (ansi/color (printer/pprint-str value) :bad-value))
-      
+
       ;; FIXME: It's silly to reconstruct a fake "problem"
       ;; after I've deconstructed it, but I'm not yet ready
       ;; to break the API for value-in-context BUT
@@ -103,9 +103,9 @@
       ;; See https://github.com/bhb/expound#configuring-the-printer
       path
       (printer/indent (problems/highlighted-value opts
-                                                    {:expound/form form
-                                                     :expound/in path
-                                                     :expound/value value}))
+                                                  {:expound/form form
+                                                   :expound/in path
+                                                   :expound/value value}))
       :else
       (printer/format
        "Part of the value\n\n%s"
