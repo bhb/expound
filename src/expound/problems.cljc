@@ -238,7 +238,6 @@
             (string/re-quote-replacement s))
      :cljs (string/replace s #"\$" "$$$$")))
 
-;; TODO - refactor for readability
 (defn highlighted-value
   "Given a problem, returns a pretty printed
    string that highlights the problem value"
