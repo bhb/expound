@@ -88,28 +88,29 @@
    that helps the user understand where that path is located
    in the form"
   [opts spec-name form path value]
-  ;; TODO - refactor
-  (if (= :fn spec-name)
-    (printer/indent (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value)))
-    ;; TODO - refactor to lift binding
-    ;; TODO - refactor to cond
-    (if (= form value)
-      (printer/indent (binding [*print-namespace-maps* false] (ansi/color (printer/pprint-str value) :bad-value)))
-      (if path
-        ;; FIXME: It's silly to reconstruct a fake "problem"
-        ;; after I've deconstructed it, but I'm not yet ready
-        ;; to break the API for value-in-context BUT
-        ;; I do want to test that a problems-based API
-        ;; is useful.
-        ;; See https://github.com/bhb/expound#configuring-the-printer
-        (printer/indent (problems/highlighted-value opts
+  (binding [*print-namespace-maps* false]
+    (cond
+      (= :fn spec-name)
+      (printer/indent (ansi/color (pr-str form) :bad-value))
+
+      (= form value)
+      (printer/indent (ansi/color (printer/pprint-str value) :bad-value))
+      
+      ;; FIXME: It's silly to reconstruct a fake "problem"
+      ;; after I've deconstructed it, but I'm not yet ready
+      ;; to break the API for value-in-context BUT
+      ;; I do want to test that a problems-based API
+      ;; is useful.
+      ;; See https://github.com/bhb/expound#configuring-the-printer
+      path
+      (printer/indent (problems/highlighted-value opts
                                                     {:expound/form form
                                                      :expound/in path
                                                      :expound/value value}))
-
-        (printer/format
-         "Part of the value\n\n%s"
-         (printer/indent (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value))))))))
+      :else
+      (printer/format
+       "Part of the value\n\n%s"
+       (printer/indent (ansi/color (pr-str form) :bad-value))))))
 
 (defn ^:private spec-str [spec]
   (if (keyword? spec)
@@ -307,7 +308,6 @@
        (conformed-value problems invalid-value)
        ""))))
 
-;; TODO - rename val -> form
 (defmethod value-str :default [_type spec-name form path problems opts]
   (show-spec-name spec-name (value-and-conformed-value problems spec-name form path {:show-conformed? true})))
 
