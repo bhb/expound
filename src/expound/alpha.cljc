@@ -10,8 +10,7 @@
             [expound.printer :as printer]
             [expound.util :as util]
             [expound.ansi :as ansi]
-            [clojure.spec.gen.alpha :as gen]
-            [expound.paths :as paths]))
+            [clojure.spec.gen.alpha :as gen]))
 
 ;;;;;; registry ;;;;;;
 
@@ -263,7 +262,7 @@
  Dispatch value:        `%s`"
      (pr-str mm)
      (pr-str retag)
-     (pr-str (if retag (retag (paths/value-in form path)) nil)))))
+     (pr-str (if retag (retag (problems/value-in form path)) nil)))))
 
 (defmulti ^:no-doc problem-group-str (fn [type _spec-name _form _path _problems _opts] type))
 (defmulti ^:no-doc expected-str (fn [type  _spec-name _form _path _problems _opts] type))
@@ -300,7 +299,7 @@
                       ;; who provides their own *value-str-fn*
                       ;; could use this
                         ::no-value-found
-                        (paths/value-in form path))]
+                        (problems/value-in form path))]
     (printer/format
      "%s%s"
      (*value-str-fn* spec-name form path invalid-value)
@@ -433,7 +432,7 @@
    "Cannot find spec for
 
 %s"
-   (show-spec-name spec-name (*value-str-fn* spec-name form path (paths/value-in form path)))))
+   (show-spec-name spec-name (*value-str-fn* spec-name form path (problems/value-in form path)))))
 
 (defmethod problem-group-str :expound.problem/missing-spec [type spec-name form path problems opts]
   (printer/format
@@ -690,7 +689,7 @@ returned an invalid value.
 
    (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
 
-   (*value-str-fn* spec-name form path (paths/value-in form path))
+   (*value-str-fn* spec-name form path (problems/value-in form path))
    (expected-str _type spec-name form path problems opts)))
 
 (defmethod expected-str :expound.problem/unknown [_type spec-name form path problems opts]
