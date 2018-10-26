@@ -65,6 +65,7 @@
       (into '() (-> displayed-form
                     vec
                     (assoc k (summary-form show-valid-values? (nth (seq form) k) rst))))
+
       (and (int? k) (string? form))
       (string/join (assoc (vec form) k ::relevant))
 
@@ -121,7 +122,7 @@
                      (or (= '(apply fn) (:pred problem))
                          (#{:ret} (first (:path problem))))
                      (:in problem)
-                     
+
                      :else
                      nil)]
 
