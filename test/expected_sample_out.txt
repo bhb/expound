@@ -587,7 +587,7 @@ should satisfy
 
 Cannot find spec for
 
-   [31m{}[0m
+  [31m{}[0m
 
 with
 
@@ -612,7 +612,7 @@ with
 
 Cannot find spec for
 
-   [31m{:multi-spec/el-type :image}[0m
+  [31m{:multi-spec/el-type :image}[0m
 
 with
 
@@ -1055,15 +1055,15 @@ should satisfy
    :fn
    (clojure.spec.alpha/and
     (fn*
-     [p1__1035#]
+     [p1__1085#]
      (clojure.core/<
-      (:ret p1__1035#)
-      (clojure.core/-> p1__1035# :args :x)))
+      (:ret p1__1085#)
+      (clojure.core/-> p1__1085# :args :x)))
     (fn*
-     [p1__1036#]
+     [p1__1086#]
      (clojure.core/<
-      (:ret p1__1036#)
-      (clojure.core/-> p1__1036# :args :y)))))
+      (:ret p1__1086#)
+      (clojure.core/-> p1__1086# :args :y)))))
 
 [36m-------------------------[0m
 [36mDetected[0m [36m1[0m [36merror[0m
@@ -1097,15 +1097,15 @@ should satisfy
    :fn
    (clojure.spec.alpha/and
     (fn*
-     [p1__1035#]
+     [p1__1085#]
      (clojure.core/<
-      (:ret p1__1035#)
-      (clojure.core/-> p1__1035# :args :x)))
+      (:ret p1__1085#)
+      (clojure.core/-> p1__1085# :args :x)))
     (fn*
-     [p1__1036#]
+     [p1__1086#]
      (clojure.core/<
-      (:ret p1__1036#)
-      (clojure.core/-> p1__1036# :args :y)))))
+      (:ret p1__1086#)
+      (clojure.core/-> p1__1086# :args :y)))))
 
 [36m-------------------------[0m
 [36mDetected[0m [36m1[0m [36merror[0m
@@ -1174,7 +1174,7 @@ with args:
 
 Cannot find spec for
 
-   [31m{:pet/type :fish}[0m
+  [31m{:pet/type :fish}[0m
 
 with
 
@@ -1199,7 +1199,7 @@ with
 
 Cannot find spec for
 
-   [31m{:pet/type :fish}[0m
+  [31m{:pet/type :fish}[0m
 
 with
 
@@ -1364,6 +1364,31 @@ should satisfy
      ret
      (-> % :ret)]
     (< x ret)))[0m
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m[1 0][0m
+
+when conformed as
+
+  [31m{:x 1, :y 0}[0m
+
+should satisfy
+
+  [32m(fn
+   [%]
+   (< (-> % :x) (-> % :y)))[0m
+
+[36m-- Relevant specs -------[0m
+
+:expound.sample/sorted-pair:
+  (clojure.spec.alpha/and
+   (clojure.spec.alpha/cat :x clojure.core/int? :y clojure.core/int?)
+   (clojure.core/fn
+    [%]
+    (clojure.core/< (clojure.core/-> % :x) (clojure.core/-> % :y))))
 
 [36m-------------------------[0m
 [36mDetected[0m [36m1[0m [36merror[0m

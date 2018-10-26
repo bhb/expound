@@ -66,6 +66,9 @@
                     vec
                     (assoc k (summary-form show-valid-values? (nth (seq form) k) rst))))
 
+      (and (int? k) (string? form))
+      (string/join (assoc (vec form) k ::relevant))
+
       :else
       (throw (ex-info "Cannot find path segment in form. This can be caused by using conformers to transform values, which is not supported in Expound"
                       {:form form
@@ -78,19 +81,54 @@
     (printer/indent (count (str prefix))
                     (apply str (repeat max-width "^")))))
 
+;; can simplify when 
+;; https://dev.clojure.org/jira/browse/CLJ-2192 or
+;; https://dev.clojure.org/jira/browse/CLJ-2258 are fixed
 (defn- adjust-in [form problem]
-  ;; Remove try/catch when
-  ;; https://dev.clojure.org/jira/browse/CLJ-2192 or
-  ;; https://dev.clojure.org/jira/browse/CLJ-2258 are fixed
-  (try
-    (assoc problem :expound/in (paths/in-with-kps form (:val problem) (:in problem) []))
-    (catch #?(:cljs :default
-              :clj Exception) e
-      (if (or
-           (= '(apply fn) (:pred problem))
-           (#{:ret} (first (:path problem))))
-        (assoc problem :expound/in (:in problem))
-        (throw e)))))
+  ;; Three strategies for finding the value...
+  (let [;; 1. Find the original value
+        in1 (paths/in-with-kps form (:val problem) (:in problem) [])
+
+        ;; 2. If value is unique, just find that, ignoring the 'in' path
+        in2 (let [paths (paths/paths-to-value form (:val problem) [] [])]
+              (if (= 1 (count paths))
+                (first paths)
+                nil))
+
+        ;; 3. Find the unformed value (if there is an unformer)
+        in3 (try
+              (paths/in-with-kps form
+                                 (s/unform (last (:via problem)) (:val problem))
+                                 (:in problem) [])
+              ;; The unform fails if there is no unformer
+              ;; and the unform function could throw any type of
+              ;; exception (it's provided by user)
+              (catch #?(:cljs :default
+                        :clj java.lang.Exception) _e
+                nil)
+              (catch #?(:cljs :default
+                        :clj java.lang.Error) _e
+                nil))
+
+        new-in (cond in1
+                     in1
+
+                     in2
+                     in2
+
+                     in3
+                     in3
+
+                     (or (= '(apply fn) (:pred problem))
+                         (#{:ret} (first (:path problem))))
+                     (:in problem)
+
+                     :else
+                     nil)]
+
+    (assoc problem
+           :expound/in
+           new-in)))
 
 (defn- adjust-path [failure problem]
   (assoc problem :expound/path
@@ -193,26 +231,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn value-in
-  "Similar to get-in, but works with paths that reference map keys"
-  [form in]
-  (let [[k & rst] in]
-    (cond
-      (empty? in)
-      form
-
-      (and (map? form) (paths/kps? k))
-      (:key k)
-
-      (and (map? form) (paths/kvps? k))
-      (recur (nth (seq form) (:idx k)) rst)
-
-      (associative? form)
-      (recur (get form k) rst)
-
-      (and (int? k) (seqable? form))
-      (recur (nth (seq form) k) rst))))
-
 (defn escape-replacement [pattern s]
   #?(:clj (if (string? pattern)
             s
@@ -225,7 +243,7 @@
   [opts problem]
   (let [{:keys [:expound/form :expound/in]} problem
         {:keys [show-valid-values?] :or {show-valid-values? false}} opts
-        value-at-path (value-in form in)
+        printed-val (printer/pprint-str (paths/value-in form in))
         relevant (str "(" ::relevant "|(" ::kv-relevant "\\s+" ::kv-relevant "))")
         regex (re-pattern (str "(.*)" relevant ".*"))
         s (binding [*print-namespace-maps* false] (printer/pprint-str (walk/prewalk-replace {::irrelevant '...} (summary-form show-valid-values? form in))))
@@ -233,8 +251,8 @@
         highlighted-line (-> line
                              (string/replace (re-pattern relevant) (escape-replacement
                                                                     (re-pattern relevant)
-                                                                    (printer/indent 0 (count prefix) (ansi/color (printer/pprint-str value-at-path) :bad-value))))
-                             (str "\n" (ansi/color (highlight-line prefix (printer/pprint-str value-at-path))
+                                                                    (printer/indent 0 (count prefix) (ansi/color printed-val :bad-value))))
+                             (str "\n" (ansi/color (highlight-line prefix printed-val)
                                                    :pointer)))]
     ;;highlighted-line
     (printer/no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))
@@ -261,3 +279,8 @@
                :expound/problems problems'))))
 
 (def type ptype)
+
+;; Must keep this function here because
+;; spell-spec uses it
+;; https://github.com/bhauman/spell-spec/blob/48ea2ca544f02b04a73dc42a91aa4876dcc5fc95/src/spell_spec/expound.cljc#L20
+(def value-in paths/value-in)

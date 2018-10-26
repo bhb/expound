@@ -338,7 +338,10 @@
   (defn results-str-fn2 [x y]
     (+ x y))
 
-  (expound/explain-result (st/check-fn `resultsf-str-fn1 (s/spec `results-str-fn2))))
+  (expound/explain-result (st/check-fn `resultsf-str-fn1 (s/spec `results-str-fn2)))
+
+  (s/def ::sorted-pair (s/and (s/cat :x int? :y int?) #(< (-> % :x) (-> % :y))))
+  (s/explain ::sorted-pair [1 0]))
 
 
 (go (= "--check-results" (first *command-line-args*)))

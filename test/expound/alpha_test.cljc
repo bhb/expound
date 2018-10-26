@@ -36,8 +36,6 @@
 (s/def :trigger/materialize any?)
 (s/def :flow/short-circuit any?)
 
-(def any-printable-wo-nan (gen/such-that (complement test-utils/contains-nan?) gen/any-printable))
-
 (defn pf
   "Fixes platform-specific namespaces and also formats using printf syntax"
   [s & args]
@@ -387,7 +385,7 @@ Detected 1 error
 
 should satisfy
 
-  %s
+  (fn [%%] (pos? (count %%)))
 
 -- Relevant specs -------
 
@@ -397,9 +395,7 @@ should satisfy
    (pf.core/fn [%%] (pf.core/pos? (pf.core/count %%))))
 
 -------------------------
-Detected 1 error\n"
-               #?(:cljs "(fn [%] (pos? (count %)))"
-                  :clj "(fn [%] (pos? (count %)))"))
+Detected 1 error\n")
            (expound/expound-str :and-spec/name ""))))
 
   (testing "shows both failures in order"
@@ -749,7 +745,7 @@ Detected 1 error\n"
 
 Cannot find spec for
 
-   {}
+  {}
 
 with
 
@@ -773,7 +769,7 @@ Detected 1 error\n")
 
 Cannot find spec for
 
-   {:multi-spec/el-type :image}
+  {:multi-spec/el-type :image}
 
 with
 
@@ -1089,7 +1085,7 @@ Detected 1 error\n")
    (let [ed (s/explain-data spec form)]
      (when-not (zero? (count (::s/problems ed)))
        (is (= (dec (count (::s/problems ed)))
-              (count (re-seq #"\bor\b" (expound/expound-str spec form))))
+              (count (re-seq #"\nor\n" (expound/expound-str spec form))))
            (str "Failed to print out all problems\nspec: " sp-form "\nproblems: " (printer/pprint-str (::s/problems ed)) "\nmessage: " (expound/expound-str spec form)))))))
 
 (deftest generated-map-of-specs
@@ -1103,7 +1099,7 @@ Detected 1 error\n")
     every-args2 (s/gen :specs/every-args)
     :let [spec (apply-map-of simple-spec1 (apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)
           sp-form (s/form spec)]
-    form any-printable-wo-nan]
+    form test-utils/any-printable-wo-nan]
    (is (string? (expound/expound-str spec form)))))
 
 (s/def :expound.ds/spec-key (s/or :kw keyword?
@@ -1196,7 +1192,7 @@ Detected 1 error\n")
      "generated data specs"
      (chuck/times num-tests)
      [data-spec (s/gen :expound.ds/spec)
-      form any-printable-wo-nan
+      form test-utils/any-printable-wo-nan
       prefix (s/gen qualified-keyword?)
       :let [gen-spec (ds/spec prefix (real-spec data-spec))]]
      (is (string? (expound/expound-str gen-spec form))))))
@@ -1591,7 +1587,7 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-           (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (fn [spec-name form path val] "<HIDDEN>")})]
+           (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (fn [spec-name form path val] "  <HIDDEN>")})]
              (s/explain-str :custom-printer/strings ["a" "b" :c]))))))
 
 (defn spec-dependencies [spec]
@@ -2003,30 +1999,327 @@ Detected 1 error\n"
 
 (s/def :conformers-test/string-AB
   (s/and
-   ; conform as sequence (seq function)
+   ;; conform as sequence (seq function)
    (s/conformer seq)
-   ; re-use previous sequence spec
+   ;; re-use previous sequence spec
    :conformers-test/string-AB-seq))
 
 (deftest conformers-test
   ;; Example from http://cjohansen.no/a-unified-specification/
-  (testing "conform string to int"
-    (is (string?
-         (expound/expound-str :conformers-test/number "123a"))))
-  ;; Example from https://github.com/bhb/expound/issues/15#issuecomment-326838879
-  (testing "conform maps"
-    (is (string? (expound/expound-str :conformers-test/query {})))
-    (is (thrown-with-msg?
-         #?(:cljs :default :clj Exception)
-         #".*Cannot convert path.*conformers.*"
-         (expound/expound-str :conformers-test/query {:conformers-test.query/id :conformers-test/lookup-user
-                                                      :conformers-test.query/params {}}))))
-  ;; Minified example based on https://github.com/bhb/expound/issues/15
-  (testing "conform string to seq"
-    (is (thrown-with-msg?
-         #?(:cljs :default :clj Exception)
-         #".*Cannot find path segment in form.*conformers.*"
-         (expound/expound-str :conformers-test/string-AB "AC")))))
+  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})
+            *print-namespace-maps* false]
+    (testing "conform string to int"
+      (is (string?
+           (s/explain-str :conformers-test/number "123a"))))
+    ;; Example from https://github.com/bhb/expound/issues/15#issuecomment-326838879
+    (testing "conform maps"
+      (is (string? (s/explain-str :conformers-test/query {})))
+      (is (= "-- Spec failed --------------------
+
+Part of the value
+
+  {:conformers-test.query/id :conformers-test/lookup-user, :conformers-test.query/params {}}
+
+when conformed as
+
+  {:conformers-test.query/id :conformers-test/lookup-user}
+
+should contain key: :user/id
+
+|      key |    spec |
+|----------+---------|
+| :user/id | string? |
+
+-------------------------
+Detected 1 error\n"
+             (s/explain-str :conformers-test/query {:conformers-test.query/id :conformers-test/lookup-user
+                                                    :conformers-test.query/params {}}))))
+    ;; Minified example based on https://github.com/bhb/expound/issues/15
+    ;; This doesn't look ideal, but really, it's not a good idea to use spec
+    ;; for string parsing, so I'm OK with it
+    (testing "conform string to seq"
+      (is (=
+           ;; clojurescript doesn't have a character type
+           #?(:cljs "-- Spec failed --------------------\n\n  \"A\"C\"\"\n    ^^^\n\nshould be: \"B\"\n\n-------------------------\nDetected 1 error\n"
+              :clj "-- Spec failed --------------------
+
+  \"A\\C\"
+    ^^
+
+should be: \\B
+
+-------------------------
+Detected 1 error
+")
+           (s/explain-str :conformers-test/string-AB "AC"))))
+    (testing "s/cat"
+      (s/def :conformers-test/sorted-pair (s/and (s/cat :x int? :y int?) #(< (-> % :x) (-> % :y))))
+      (is (= (pf "-- Spec failed --------------------
+
+  [1 0]
+
+when conformed as
+
+  {:x 1, :y 0}
+
+should satisfy
+
+  %s
+
+-------------------------
+Detected 1 error
+"
+                 #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
+                    :clj "(fn
+   [%]
+   (< (-> % :x) (-> % :y)))"))
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str :conformers-test/sorted-pair [1 0]))))
+      (is (= (pf "-- Spec failed --------------------
+
+  [... [1 0]]
+       ^^^^^
+
+when conformed as
+
+  {:x 1, :y 0}
+
+should satisfy
+
+  %s
+
+-------------------------
+Detected 1 error\n"
+                 #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
+                    :clj "(fn
+   [%]
+   (< (-> % :x) (-> % :y)))"))
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str (s/coll-of :conformers-test/sorted-pair) [[0 1] [1 0]]))))
+      (is (= (pf "-- Spec failed --------------------
+
+  {:a [1 0]}
+      ^^^^^
+
+when conformed as
+
+  {:x 1, :y 0}
+
+should satisfy
+
+  %s
+
+-------------------------
+Detected 1 error\n"
+                 #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
+                    :clj "(fn
+   [%]
+   (< (-> % :x) (-> % :y)))"))
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str (s/map-of keyword? :conformers-test/sorted-pair) {:a [1 0]}))))
+      (is (= (pf "-- Spec failed --------------------
+
+  [... \"a\"]
+       ^^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 1 error\n")
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str :conformers-test/sorted-pair [1 "a"])))))
+    (testing "conformers that modify path of values"
+      (s/def :conformers-test/vals (s/coll-of (s/and string?
+                                                     #(re-matches #"[A-G]+" %))))
+      (defn parse-csv [s]
+        (map string/upper-case (string/split s #",")))
+      (s/def :conformers-test/csv (s/and string?
+                                         (s/conformer parse-csv)
+                                         :conformers-test/vals))
+      (is (= "-- Spec failed --------------------
+
+Part of the value
+
+  \"abc,def,ghi\"
+
+when conformed as
+
+  \"GHI\"
+
+should satisfy
+
+  (fn [%] (re-matches #\"[A-G]+\" %))
+
+-------------------------
+Detected 1 error\n"
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str :conformers-test/csv "abc,def,ghi")))))
+
+    ;; this is NOT recommended!
+    ;; so I'm not inclined to make this much nicer than
+    ;; the default spec output
+    (s/def :conformers-test/coerced-kw (s/and (s/conformer #(if (string? %)
+                                                              (keyword %)
+                                                              ::s/invalid))
+                                              keyword?))
+    (testing "coercion"
+      (is (= (pf "-- Spec failed --------------------
+
+  nil
+
+should satisfy
+
+  (pf.spec.alpha/conformer
+   (fn
+    [%%]
+    (if
+     (string? %%)
+     (keyword %%)
+     :pf.spec.alpha/invalid)))
+
+-------------------------
+Detected 1 error
+")
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str :conformers-test/coerced-kw nil))))
+
+      (is (= (pf "-- Spec failed --------------------
+
+  [... ... ... 0]
+               ^
+
+should satisfy
+
+  (pf.spec.alpha/conformer
+   (fn
+    [%%]
+    (if
+     (string? %%)
+     (keyword %%)
+     :pf.spec.alpha/invalid)))
+
+-------------------------
+Detected 1 error
+")
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str (s/coll-of :conformers-test/coerced-kw) ["a" "b" "c" 0])))))
+    ;; Also not recommended
+    (s/def :conformers-test/str-kw? (s/and (s/conformer #(if (string? %)
+                                                           (keyword %)
+                                                           ::s/invalid)
+                                                        name) keyword?))
+    (testing "coercion with unformer"
+      (is (= (pf "-- Spec failed --------------------
+
+  nil
+
+should satisfy
+
+  (pf.spec.alpha/conformer
+   (fn
+    [%%]
+    (if
+     (string? %%)
+     (keyword %%)
+     :pf.spec.alpha/invalid)))
+
+-------------------------
+Detected 1 error
+")
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str :conformers-test/coerced-kw nil))))
+
+      (is (= (pf "-- Spec failed --------------------
+
+  [... ... ... 0]
+               ^
+
+should satisfy
+
+  (pf.spec.alpha/conformer
+   (fn
+    [%%]
+    (if
+     (string? %%)
+     (keyword %%)
+     :pf.spec.alpha/invalid)))
+
+-------------------------
+Detected 1 error
+")
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str (s/coll-of :conformers-test/coerced-kw) ["a" "b" "c" 0])))))
+
+    (s/def :conformers-test/name string?)
+    (s/def :conformers-test/age pos-int?)
+    (s/def :conformers-test/person (s/keys* :req-un [:conformers-test/name
+                                                     :conformers-test/age]))
+    ;; FIXME: Implementation could be simpler once
+    ;; https://dev.clojure.org/jira/browse/CLJ-2406 is fixed
+    (testing "spec defined with keys*"
+      (is (= "-- Spec failed --------------------
+
+  [... ... ... :Stan]
+               ^^^^^
+
+should satisfy
+
+  string?
+
+-------------------------
+Detected 1 error
+"
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str :conformers-test/person [:age 30 :name :Stan])))))
+
+    (testing "spec defined with keys* and copies of bad value elsewhere in the data"
+      (is (= "-- Spec failed --------------------
+
+Part of the value
+
+  [:Stan [:age 30 :name :Stan]]
+
+when conformed as
+
+  :Stan
+
+should satisfy
+
+  string?
+
+-------------------------
+Detected 1 error\n"
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str (s/tuple
+                               keyword?
+                               :conformers-test/person) [:Stan [:age 30 :name :Stan]])))))
+
+    (testing "ambiguous value"
+      (is (= (pf "-- Spec failed --------------------
+
+  {[0 1] ..., [1 0] ...}
+              ^^^^^
+
+when conformed as
+
+  {:x 1, :y 0}
+
+should satisfy
+
+  %s
+
+-------------------------
+Detected 1 error
+"
+                 #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
+                    :clj "(fn
+   [%]
+   (< (-> % :x) (-> % :y)))"))
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str (s/map-of :conformers-test/sorted-pair any?) {[0 1] [1 0]
+                                                                            [1 0] [1 0]})))))))
 
 (s/def :duplicate-preds/str-or-str (s/or
                                     ;; Use anonymous functions to assure
@@ -2053,7 +2346,8 @@ should satisfy
    (pf.core/fn [%%] (pf.core/string? %%)))
 
 -------------------------
-Detected 1 error\n")
+Detected 1 error
+")
            (expound/expound-str :duplicate-preds/str-or-str 1)))))
 
 (s/def :fspec-test/div (s/fspec
@@ -2063,7 +2357,8 @@ Detected 1 error\n")
   (assert (not (zero? (/ x y)))))
 
 (defn  until-unsuccessful [f]
-  (let [nil-or-failure #(if (= "Success!\n" %)
+  (let [nil-or-failure #(if (= "Success!
+" %)
                           nil
                           %)]
     (or (nil-or-failure (f))
@@ -2378,7 +2673,7 @@ Detected 1 error\n"
 
 Cannot find spec for
 
-   {:pet/type :fish}
+  {:pet/type :fish}
 
 with
 
@@ -2423,7 +2718,7 @@ Detected 1 error\n")
 
 Cannot find spec for
 
-   {:pet/type :fish}
+  {:pet/type :fish}
 
 with
 
@@ -3200,7 +3495,7 @@ should satisfy
                          (is (string?
                               (expound/expound-str spec invalid-form)))
                          (is (not
-                              (clojure.string/includes?
+                              (string/includes?
                                (expound/expound-str (second (last spec-defs)) invalid-form)
                                "should contain keys")))
                          (catch Exception e

@@ -4,7 +4,7 @@
 
 ;;;;;; specs ;;;;;;
 
-(s/def :expound/path sequential?)
+(s/def :expound/path (s/nilable sequential?))
 
 ;;;;;; types ;;;;;;
 
@@ -177,14 +177,33 @@
                     br4
                     ::not-found))))))))))
 
+(defn paths-to-value [form val path paths]
+  (cond
+    (= form val)
+    (conj paths path)
+
+    (or (sequential? form)
+        (set? form))
+    (reduce
+     (fn [ps [x i]]
+       (paths-to-value x val (conj path i) ps))
+     paths
+     (map vector form (range)))
+
+    (map? form) (reduce
+                 (fn [ps [k v]]
+                   (->> ps
+                        (paths-to-value k val (conj path (->KeyPathSegment k)))
+                        (paths-to-value v val (conj path k))))
+                 paths
+                 form)
+
+    :else paths))
+
 (defn in-with-kps [form val in in']
   (let [res (in-with-kps* form val in in')]
     (if (= ::not-found res)
-      (throw (ex-info "Cannot convert path. This can be caused by using conformers to transform values, which is not supported in Expound"
-                      {:form form
-                       :val val
-                       :in in
-                       :in' in'}))
+      nil
       res)))
 
 (declare compare-paths)
@@ -213,3 +232,26 @@
   (->> (map compare-path-segment path1 path2)
        (remove #{0})
        first))
+
+(defn value-in
+  "Similar to get-in, but works with paths that reference map keys"
+  [form in]
+  (if (nil? in)
+    form
+    (let [[k & rst] in]
+      (cond
+        (empty? in)
+        form
+
+        (and (map? form) (kps? k))
+        (recur (:key k) rst)
+
+        (and (map? form) (kvps? k))
+        (recur (nth (seq form) (:idx k)) rst)
+
+        (associative? form)
+        (recur (get form k) rst)
+
+        (and (int? k)
+             (seqable? form))
+        (recur (nth (seq form) k) rst)))))
