@@ -290,7 +290,7 @@
 
 ;; FIXME - when I decide to break compatibility for value-str-fn, maybe
 ;; make it show conform/unformed value
-(defn ^:private value-and-conformed-value [problems spec-name form path opts]
+(defn ^:private value+conformed-value [problems spec-name form path opts]
   (let [{:keys [show-conformed?]} opts
         invalid-value (if (nil? path)
                       ;; This isn't used by default
@@ -308,7 +308,7 @@
        ""))))
 
 (defmethod value-str :default [_type spec-name form path problems opts]
-  (show-spec-name spec-name (value-and-conformed-value problems spec-name form path {:show-conformed? true})))
+  (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? true})))
 
 (defn ^:private explain-missing-keys [problems]
   (let [missing-keys (map #(printer/missing-key (:pred %)) problems)]
@@ -609,19 +609,19 @@ with args:
    (expected-str type spec-name form path problems opts)))
 
 (defmethod value-str :expound.problem/insufficient-input [_type spec-name form path problems opts]
-  (show-spec-name spec-name (value-and-conformed-value problems spec-name form path {:show-conformed? false})))
+  (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
 
 (defmethod value-str :expound.problem/extra-input [_type spec-name form path problems opts]
-  (show-spec-name spec-name (value-and-conformed-value problems spec-name form path {:show-conformed? false})))
+  (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
 
 (defmethod value-str :expound.problem/fspec-fn-failure [_type spec-name form path problems opts]
-  (show-spec-name spec-name (value-and-conformed-value problems spec-name form path {:show-conformed? false})))
+  (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
 
 (defmethod value-str :expound.problem/fspec-exception-failure [_type spec-name form path problems opts]
-  (show-spec-name spec-name (value-and-conformed-value problems spec-name form path {:show-conformed? false})))
+  (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
 
 (defmethod value-str :expound.problem/fspec-ret-failure [_type spec-name form path problems opts]
-  (show-spec-name spec-name (value-and-conformed-value problems spec-name form path {:show-conformed? false})))
+  (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
 
 (defmethod expected-str :expound.problem/fspec-fn-failure [_type spec-name form path problems opts]
   (s/assert ::singleton problems)
