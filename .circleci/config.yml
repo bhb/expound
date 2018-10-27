@@ -71,7 +71,10 @@ jobs:
       - run: lein check
       - run: TEST_CHECK_FACTOR=20 lein with-profile test-common test
       - run: lein with-profile +test-common eftest
-      - run: lein clean && lein with-profile test-web cljsbuild once test && bin/tests
+      - run: lein clean
+      - run: lein with-profile test-web cljsbuild once test 2> >(tee -a stderr.log >&2)
+      - run: cat stderr.log | bin/check-for-warnings.sh
+      - run: bin/tests
       - run: bin/golden_master_test.sh
       - run: lein jar && diff -u <(jar tf target/*.jar | sort) <(cat expected-jar-contents.txt | sort)
 
