@@ -104,12 +104,8 @@
               ;; and the unform function could throw any type of
               ;; exception (it's provided by user)
               (catch #?(:cljs :default
-                        :clj java.lang.Exception) _e
-                nil)
-              (catch #?(:cljs :default
-                        :clj java.lang.Error) _e
+                        :clj java.lang.Throwable) _e
                 nil))
-
         new-in (cond in1
                      in1
 
