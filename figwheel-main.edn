@@ -1,0 +1,2 @@
+{:auto-testing true
+ :watch-dirs ["src" "test"]}

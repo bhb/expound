@@ -25,8 +25,17 @@ open http://localhost:3446/index.html
 
 ## Running CLJS tests
 
+### Karma
+
 `lein with-profile test-web cljsbuild auto test`
 `ls ./resources/public/test-web/test.js | entr -s 'sleep 1; bin/tests'`
+
+### Figwheel
+
+`clojure -A:test:figwheel-repl`
+
+Open http://localhost:9500/figwheel-extra-main/auto-testing
+
 
 ## Running CLJ tests
 
@@ -42,7 +51,7 @@ or (to see which tests are slow)
 
 or (if you want to save a second or two)
 
-`clj -Atest`
+`clj -Atest:test-deps`
 
 ## Readability and linting
 
