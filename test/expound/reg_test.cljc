@@ -1,6 +1,7 @@
 (ns expound.reg-test
-  (:require [expound.alpha :as expound]
-            [clojure.test :as ct :refer [is testing deftest use-fixtures]]))
+  (:require #?(:cljs [expound.alpha :as expound :include-macros true]
+               :clj [expound.alpha :as expound])
+    [clojure.test :as ct :refer [is testing deftest use-fixtures]]))
 
 (deftest def-with-message-test
   (expound/def ::foobar int? "should be an int")

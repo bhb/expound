@@ -1,6 +1,6 @@
 (ns expound.specs
-  (:require [expound.alpha :as ex]
-            [clojure.spec.alpha :as s]))
+  (:require #?(:cljs [expound.alpha :as expound :include-macros true]
+               :clj [expound.alpha :as expound])))
 
 ;;;; public specs ;;;;;;
 

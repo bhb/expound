@@ -978,9 +978,6 @@ returned an invalid value.
            (defmsg '~k ~error-message)
            (s/def ~k ~spec-form))))))
 
-
-(foo 1)
-
 (s/fdef explain-result
         :args (s/cat :check-result (s/nilable map?))
         :ret nil?)
