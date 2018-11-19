@@ -1379,6 +1379,9 @@ Detected 1 error\n"
                                 (catch Exception e e))))))))
   (orch.st/unstrument `test-instrument-adder))
 
+;; Note - you may need to comment out this test out when
+;; using figwheel.main for testing, since the compilation
+;; warning seems to impact the building of other tests
 (deftest test-instrument-with-orchestra-args-syntax-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=

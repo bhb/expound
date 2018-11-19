@@ -1,5 +1,7 @@
 {:paths ["src"]
- :aliases {:test {:extra-paths ["test"]
+ :aliases {
+           ;; clj -Atest
+           :test {:extra-paths ["test"]
                   :extra-deps {com.cognitect/test-runner {:git/url "https://github.com/cognitect-labs/test-runner.git"
                                                           :sha "3cb0a9daf1cb746259dc8309b218f9211ad3b33b"}
                                org.clojure/test.check {:mvn/version "0.10.0-alpha3"}
@@ -19,4 +21,18 @@
                                {:git/url "https://github.com/JamesLaverack/cljfmt-runner"
                                 :sha "97960e9a6464935534b5a6bab529e063d0027128"}}
                   :main-opts ["-m" "cljfmt-runner.check"]}
-           :lint/fix {:main-opts ["-m" "cljfmt-runner.fix"]}}}
+           :lint/fix {:main-opts ["-m" "cljfmt-runner.fix"]}
+
+
+           ;; clojure -A:test:figwheel-repl
+           ;; open http://localhost:9500/figwheel-extra-main/auto-testing
+           :figwheel-repl {:extra-deps {com.bhauman/figwheel-main {:mvn/version "0.1.9"}
+                                        com.bhauman/rebel-readline-cljs {:mvn/version "0.1.4"}
+                                        ;;;;;;;;;;; test deps ;;;;;;;;;;;;;;
+                                        ;; not necessary for tests, but just for legacy karma set up
+                                        ;; until I remove it
+                                        karma-reporter {:mvn/version "3.1.0"}
+                                        }
+                           :main-opts ["-m" "figwheel.main"
+                                       "-b" "dev"
+                                       "-r"]}}}
