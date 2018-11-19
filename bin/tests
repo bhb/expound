@@ -4,7 +4,9 @@ IFS=$'\n\t'
 
 compile_status="${1:-No status}"
 
-echo "Running isolated CLJS test"
+# FIXME - enable when we fix
+# https://github.com/bhb/expound/issues/123
+# echo "Running isolated CLJS test"
 
 # cd bin && clojure -Sdeps '{:deps {org.clojure/clojurescript {:mvn/version "1.10.339"} expound/expound {:local/root ".."}}}' --main cljs.main --repl-env nashorn sample.cljs
 
