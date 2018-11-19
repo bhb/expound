@@ -1,8 +1,7 @@
 (ns expound.alpha
   "Generates human-readable errors for `clojure.spec`"
   (:require [expound.problems :as problems]
-            #?(:clj [clojure.spec.alpha :as s]
-               :cljs [cljs.spec.alpha :as s])
+            [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.set :as set]
             [clojure.walk :as walk]
