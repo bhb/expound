@@ -1,6 +1,9 @@
 (ns expound.specs
   (:require #?(:cljs [expound.alpha :as ex :include-macros true]
-               :clj [expound.alpha :as ex])))
+               :clj [expound.alpha :as ex])
+            ;; FIXME - remove this to expose
+            ;; https://github.com/bhb/expound/issues/123
+            [clojure.spec.alpha :as s]))
 
 ;;;; public specs ;;;;;;
 

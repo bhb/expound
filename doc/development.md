@@ -34,7 +34,7 @@ open http://localhost:3446/index.html
 
 `clojure -A:test:figwheel-repl`
 
-Open http://localhost:9500/figwheel-extra-main/auto-testing
+Open <http://localhost:9500/figwheel-extra-main/auto-testing>
 
 
 ## Running CLJ tests
