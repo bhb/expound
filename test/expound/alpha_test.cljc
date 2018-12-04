@@ -1534,7 +1534,8 @@ Detected 1 error\n"
   (st/instrument `test-instrument-adder)
   #?(:cljs
      (is (=
-          "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+          (if (spec-error-in-ex-msg?)
+            "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1550,6 +1551,8 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
+            "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
+
           (.-message (try
                        (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
                          (test-instrument-adder "" :x))
