@@ -966,9 +966,12 @@ returned an invalid value.
 
 #?(:clj
    (defmacro def
-     "Define a spec with an optional `error-message`.
+     "DEPRECATED: Prefer `defmsg` 
+
+  Define a spec with an optional `error-message`.
 
   Replaces `clojure.spec.alpha/def` but optionally takes a human-readable `error-message` (will only be used for predicates) e.g. \"should be a string\"."
+     {:deprecated "0.7.2"}
      ([k spec-form]
       `(s/def ~k ~spec-form))
      ([k spec-form error-message]

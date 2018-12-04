@@ -194,23 +194,7 @@ Re-binding `s/*explain-out*` has no effect on the results of `cljs.spec.test.alp
 
 #### Adding error messages
 
-If a value fails to satisfy a predicate, Expound will print the name of the function (or `<anonymous function>` if the function has no name). To improve the error message, you can use `expound.alpha/def` to add a human-readable error message to the spec.
-
-```clojure
-(def email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$")
-
-(expound/def :example/email (s/and string? #(re-matches email-regex %)) "should be a valid email address")
-
-(expound/expound :example/email "sally@")
-
-;; -- Spec failed --------------------
-;;
-;;   "sally@"
-;;
-;; should be a valid email address
-```
-
-If you prefer to use `clojure.spec.alpha/def`, you can still add a message using `expound.alpha/defmsg`:
+If a value fails to satisfy a predicate, Expound will print the name of the function (or `<anonymous function>` if the function has no name). To improve the error message, you can use `expound.alpha/defmsg` to add a human-readable error message to the spec.
 
 ```clojure
 (s/def :ex/name string?)
@@ -221,7 +205,6 @@ If you prefer to use `clojure.spec.alpha/def`, you can still add a message using
 ;; :bob
 ;;
 ;; should be a string
-
 ```
 
 #### Built-in predicates with error messages
