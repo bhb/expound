@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file. This change
 - Replaced Codox docs with [cljdoc](https://cljdoc.xyz/) for [API docs](https://cljdoc.xyz/d/expound/expound)
 - `clojure.spec` dependency updated to 0.2.168
 - Dropped support for ClojureScript 1.9.562 and 1.9.946
+- Deprecated `def` macro (use `defmsg` function instead)
 
 ## [0.7.1] - 2018-06-25
 
