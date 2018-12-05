@@ -138,6 +138,7 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
       - run: lein with-profile test-common,clj-1.9.0-alpha19 test
+      - run: lein with-profile test-common,clj-1.9.0 test
 
 workflows:
   version: 2

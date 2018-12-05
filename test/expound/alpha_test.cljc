@@ -1284,16 +1284,21 @@ Detected 1 error\n")
 (defn no-linum [s]
   (string/replace s #"(.cljc?):\d+" "$1:LINUM"))
 
+;; TODO - fix to be less brittle, since I don't want to update
+;; this and cut a release every time CLJS or CLJ is updated
 (defn spec-error-in-ex-msg? []
   #?(:cljs
      (not (contains? #{"1.10.439"} *clojurescript-version*))
      :clj
-     true))
+     (not (contains? #{{:major 1, :minor 10, :incremental 0, :qualifier "RC3"}
+                       {:major 1, :minor 10, :incremental 0}}
+                     *clojure-version*))))
 
 (deftest test-instrument
   (st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                (if (spec-error-in-ex-msg?) "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+                (if (spec-error-in-ex-msg?)
+                  "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1309,13 +1314,14 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-                    "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
+                  "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
                 (.-message (try
                              (binding [s/*explain-out* expound/printer]
                                (test-instrument-adder "" :x))
                              (catch :default e e)))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= (if (spec-error-in-ex-msg?)
+              "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1331,12 +1337,39 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
+              "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
             (no-linum
              (:cause
               (Throwable->map (try
                                 (binding [s/*explain-out* expound/printer]
                                   (test-instrument-adder "" :x))
                                 (catch Exception e e))))))))
+  (when-not (spec-error-in-ex-msg?)
+    (let [explain-data
+          (try
+            (test-instrument-adder "" :x)
+            (catch #?(:cljs :default :clj Exception)
+                   e (ex-data e)))]
+      (is (= (str #?(:cljs "<filename missing>:<line number missing>"
+                     :clj "alpha_test.cljc:LINUM")
+                  "
+
+-- Spec failed --------------------
+
+Function arguments
+
+  (\"\" ...)
+   ^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 1 error\n")
+             (no-linum
+              (with-out-str (expound/printer explain-data)))))))
+
   (st/unstrument `test-instrument-adder))
 
 (deftest test-instrument-with-orchestra-args-spec-failure
@@ -1558,7 +1591,9 @@ Detected 1 error\n"
                          (test-instrument-adder "" :x))
                        (catch :default e e)))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (=
+          (if (spec-error-in-ex-msg?)
+            "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1574,12 +1609,39 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-            (no-linum
-             (:cause
-              (Throwable->map (try
-                                (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
-                                  (test-instrument-adder "" :x))
-                                (catch Exception e e))))))))
+            "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
+          (no-linum
+           (:cause
+            (Throwable->map (try
+                              (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
+                                (test-instrument-adder "" :x))
+                              (catch Exception e e))))))))
+  (when-not (spec-error-in-ex-msg?)
+    (let [explain-data
+          (try
+            (test-instrument-adder "" :x)
+            (catch #?(:cljs :default :clj Exception)
+                   e (ex-data e)))]
+      (is (= (str #?(:cljs "<filename missing>:<line number missing>"
+                     :clj "alpha_test.cljc:LINUM")
+                  "
+
+-- Spec failed --------------------
+
+Function arguments
+
+  (\"\" :x)
+   ^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 1 error\n")
+             (no-linum
+              (with-out-str ((expound/custom-printer {:show-valid-values? true}) explain-data)))))))
+
   (st/unstrument `test-instrument-adder))
 
 (s/def :custom-printer/strings (s/coll-of string?))
@@ -3614,7 +3676,26 @@ should satisfy
            (printer-str {:print-specs? false} ed))))))
 
 #?(:clj (deftest macroexpansion-errors
-          (is (thrown-with-msg?
-               #?(:cljs :default :clj Exception)
-               #"should have additional elements. The next element \"\:init\-expr\" should satisfy"
-               (macroexpand '(clojure.core/let [a] 2))))))
+          (if (spec-error-in-ex-msg?)
+            (is (thrown-with-msg?
+                 #?(:cljs :default :clj Exception)
+                 #"should have additional elements. The next element \"\:init\-expr\" should satisfy"
+                 (macroexpand '(clojure.core/let [a] 2))))
+            (let [ed (try
+                       (macroexpand '(clojure.core/let [a] 2))
+                       (catch Exception e
+                         (-> (Throwable->map e) :via last :data)))]
+              (is (= "-- Syntax error -------------------
+
+  ([a] ...)
+   ^^^
+
+should have additional elements. The next element \":init-expr\" should satisfy
+
+  any?
+
+-------------------------
+Detected 1 error\n"
+                     (with-out-str ((expound/custom-printer {:print-specs? false})
+
+                                    ed))))))))
