@@ -137,8 +137,8 @@ jobs:
           - v1-dependencies-{{ checksum "project.clj" }}
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
-      - run: lein with-profile test-common,clj-1.9.0-alpha19 test
-      - run: lein with-profile test-common,clj-1.9.0 test
+      - run: lein with-profile test-common,clj-1.9.0-alpha19,spec-0.2.168 test
+      - run: lein with-profile test-common,clj-1.9.0,spec-0.2.168 test
 
 workflows:
   version: 2
