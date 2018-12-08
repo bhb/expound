@@ -2967,16 +2967,6 @@ Detected 1 error
         :ret int?)
 (defn results-str-missing-args-spec [] 1)
 
-;; FIXME - inline once
-;; https://github.com/jeaye/orchestra/issues/30
-;; is fixed
-(def ^:dynamic *orch-inst-enabled* #'orch.st/*instrument-enabled*)
-(defmacro with-instrument-disabled
-  "Disables instrument's checking of calls, within a scope."
-  [& body]
-  `(binding [*orch-inst-enabled* nil]
-     ~@body))
-
 (deftest explain-results
   (testing "explaining results with non-expound printer"
     (is (thrown-with-msg?

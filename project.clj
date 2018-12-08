@@ -100,7 +100,7 @@
                                                      :target-path]}
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [com.gfredericks/test.chuck "0.2.9"]
-                                          [orchestra "2018.08.19-1"]
+                                          [orchestra "2018.12.06-2"]
                                           [org.clojure/core.specs.alpha "0.2.36"]
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
