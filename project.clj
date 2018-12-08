@@ -114,7 +114,6 @@
                          :dependencies [[figwheel-sidecar "0.5.16"]
                                         [karma-reporter "3.1.0"]]}]
              :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
-             :clj-1.9.0-alpha19 {:dependencies [[org.clojure/clojure "1.9.0-alpha19"]]}
              :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]
                                         ]}
              :cljs-1.10.238 {:dependencies  [[org.clojure/clojurescript "1.10.238"]]}
