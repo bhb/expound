@@ -6,7 +6,7 @@
                                org.clojure/test.check {:mvn/version "0.10.0-alpha3"}
                                org.clojure/clojurescript {:mvn/version "1.10.439"}
                                com.gfredericks/test.chuck {:mvn/version "0.2.8"}
-                               orchestra {:mvn/version "2018.12.06-2"}
+                               orchestra {:mvn/version "2018.08.19-1"}
                                org.clojure/core.specs.alpha {:mvn/version "0.1.24"}
                                ring/ring-core {:mvn/version "1.6.3"} ; required to make ring-spec work, may cause issues with figwheel?
                                ring/ring-spec {:mvn/version "0.0.4"} ; to test specs
