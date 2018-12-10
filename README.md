@@ -1,7 +1,5 @@
 # Expound
 
-**Starting with version “0.2.176”, `clojure.spec.alpha` changes how specs errors are reported during macroexpansion. If you use Expound to print macro-expansion spec errors (e.g. syntax errors when using `let`, `ns` and `defn`), do not upgrade to  “0.2.176” until your REPL has been upgraded to support the new error format.**
-
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
 [![cljdoc badge](https://cljdoc.xyz/badge/expound/expound)](https://cljdoc.xyz/d/expound/expound/CURRENT)
 [![CircleCI](https://circleci.com/gh/bhb/expound.svg?style=shield)](https://circleci.com/gh/bhb/expound)
