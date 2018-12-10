@@ -1284,8 +1284,6 @@ Detected 1 error\n")
 (defn no-linum [s]
   (string/replace s #"(.cljc?):\d+" "$1:LINUM"))
 
-;; TODO - fix to be less brittle, since I don't want to update
-;; this and cut a release every time CLJS or CLJ is updated
 (defn spec-error-in-ex-msg? []
   #?(:cljs
      (not (contains? #{"1.10.439"} *clojurescript-version*))
@@ -3067,9 +3065,9 @@ Success!
 "
               (binding [s/*explain-out* expound/printer]
                 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check [`results-str-fn2 `results-str-fn3]))))))))
-  ;; TODO - restore
-  #_(testing "check-fn"
-      (is (= "== Checked <unknown> ========================
+
+  (testing "check-fn"
+    (is (= "== Checked <unknown> ========================
 
 -- Function spec failed -----------
 
@@ -3095,9 +3093,9 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-             (binding [s/*explain-out* expound/printer]
+           (binding [s/*explain-out* expound/printer]
              ;; warning will persist until https://dev.clojure.org/jira/browse/CLJS-2980 is fixed
-               (expound/explain-result-str (st/check-fn `results-str-fn1 (s/spec `results-str-fn2)))))))
+             (expound/explain-result-str (st/check-fn `results-str-fn1 (s/spec `results-str-fn2)))))))
   #?(:clj (testing "custom printer"
             (is (= "== Checked expound.alpha-test/results-str-fn4 
 
