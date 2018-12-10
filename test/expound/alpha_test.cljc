@@ -1286,11 +1286,10 @@ Detected 1 error\n")
 
 (defn spec-error-in-ex-msg? []
   #?(:cljs
-     (not (contains? #{"1.10.439"} *clojurescript-version*))
+     (contains? #{"1.10.238" "1.10.339"} *clojurescript-version*)
      :clj
-     (not (contains? #{{:major 1, :minor 10, :incremental 0, :qualifier "RC3"}
-                       {:major 1, :minor 10, :incremental 0}}
-                     *clojure-version*))))
+     (contains? #{{:major 1, :minor 9, :incremental 0, :qualifier nil}}
+                *clojure-version*)))
 
 (deftest test-instrument
   (st/instrument `test-instrument-adder)
