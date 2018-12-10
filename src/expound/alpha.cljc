@@ -719,7 +719,16 @@ returned an invalid value.
 
 (defn ^:private spec-name [ed]
   (if (#{:instrument} (::s/failure ed))
-    (-> ed ::s/problems first :path first)
+    (cond
+      ;; This works for clojure.spec <= 0.2.176
+      ;; and CLJS <= 1.10.439
+      (::s/args ed)
+      :args
+
+      :else
+      ;; for earlier versions
+      (-> ed ::s/problems first :path first))
+
     nil))
 
 (defn ^:private print-explain-data [opts explain-data]

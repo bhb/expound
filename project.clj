@@ -4,9 +4,9 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :scm {:name "git" :url "https://github.com/bhb/expound"}
-  :dependencies [[org.clojure/clojure "1.9.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.10.339" :scope "provided"]
-                 [org.clojure/spec.alpha "0.2.168" :scope "provided"]]
+  :dependencies [[org.clojure/clojure "1.10.0-RC3" :scope "provided"]
+                 [org.clojure/clojurescript "1.10.439" :scope "provided"]
+                 [org.clojure/spec.alpha "0.2.176" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
   :plugins [[com.jakemccrary/lein-test-refresh "0.23.0"]
@@ -82,7 +82,7 @@
                                   [io.aviso/pretty "0.1.34"]
                                   [vvvvalvalval/scope-capture "0.3.1"]
                                   [org.clojure/test.check "0.10.0-alpha3"]
-                                  [metosin/spec-tools "0.7.1"]
+                                  [metosin/spec-tools "0.8.2"]
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
@@ -114,9 +114,11 @@
                          :dependencies [[figwheel-sidecar "0.5.16"]
                                         [karma-reporter "3.1.0"]]}]
              :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
-             :clj-1.9.0-alpha19 {:dependencies [[org.clojure/clojure "1.9.0-alpha19"]]}
-             :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]]}
-             :cljs-1.10.238 {:dependencies  [[org.clojure/clojurescript "1.10.238"]]}}
+             :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]
+                                        ]}
+             :cljs-1.10.238 {:dependencies  [[org.clojure/clojurescript "1.10.238"]]}
+             :cljs-1.10.339 {:dependencies [[org.clojure/clojurescript "1.10.339"]]}
+             :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}}
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
                               ["with-profile" "test-web" "cljsbuild" "once" "test"]

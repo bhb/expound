@@ -14,7 +14,7 @@
 ;; runs all tests in all namespaces
 ;; This is what runs by default
 (defn ^:export run-all [karma]
-  (run-all-tests karma))
+  (jx.reporter.karma/run-all-tests karma))
 
 ;; runs all tests in all namespaces - only namespaces with names matching
 ;; the regular expression will be tested
