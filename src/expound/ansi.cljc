@@ -1,5 +1,5 @@
-(ns expound.ansi
-  (:require [clojure.string :as str]))
+(ns ^:no-doc expound.ansi
+  (:require [clojure.string :as string]))
 
 ;; Copied from strictly-specking, since I see no reason
 ;; to deviate from the colors displayed in figwheel
@@ -42,7 +42,7 @@
   codes."
   [codes]
   (let [codes (map sgr-code codes codes)
-        codes (str/join \; codes)]
+        codes (string/join \; codes)]
     (str \u001b \[ codes \m)))
 
 (defn escape
@@ -59,7 +59,7 @@
 (defn strip
   "Removes color codes from the given string."
   [string]
-  (str/replace string #"\u001b\[[0-9;]*[mK]" ""))
+  (string/replace string #"\u001b\[[0-9;]*[mK]" ""))
 
 (defmacro with-color [& body]
   `(binding [*enable-color* true]

@@ -1,4 +1,6 @@
-;; Usage: cd bin; clj sample.clj | less -R
+;; Usage: cd bin; clj sample.clj --check-results | less -R
+;; or
+;;        cd bin; clj sample.clj | less -R
 
 (ns expound.sample
   "Tests are great, but sometimes just skimming output is useful
@@ -21,7 +23,7 @@
      (catch Exception e#
        (println (.getMessage e#)))))
 
-(defn go []
+(defn go [check-results?]
   (set! s/*explain-out* (expound/custom-printer {:theme :figwheel-theme}))
   (st/instrument)
   (s/check-asserts true)
@@ -306,14 +308,15 @@
 
   (println "----- check results -----")
 
-  (doseq [sym-to-check (st/checkable-syms)]
-    (println "trying to check" sym-to-check "...")
-    (try
-      (st/with-instrument-disabled
-        (orch.st/with-instrument-disabled
-          (expound/explain-results (st/check sym-to-check {:clojure.spec.test.check/opts {:num-tests 5}}))))
-      (catch Exception e
-        (println "caught exception: " (.getMessage e)))))
+  (when check-results?
+    (doseq [sym-to-check (st/checkable-syms)]
+      (println "trying to check" sym-to-check "...")
+      (try
+        (st/with-instrument-disabled
+          (orch.st/with-instrument-disabled
+            (expound/explain-results (st/check sym-to-check {:clojure.spec.test.check/opts {:num-tests 5}}))))
+        (catch Exception e
+          (println "caught exception: " (.getMessage e))))))
 
   (s/fdef some-func
           :args (s/cat :x int?))
@@ -335,7 +338,11 @@
   (defn results-str-fn2 [x y]
     (+ x y))
 
-  (expound/explain-result (st/check-fn `resultsf-str-fn1 (s/spec `results-str-fn2))))
+  (expound/explain-result (st/check-fn `resultsf-str-fn1 (s/spec `results-str-fn2)))
 
-(go)
+  (s/def ::sorted-pair (s/and (s/cat :x int? :y int?) #(< (-> % :x) (-> % :y))))
+  (s/explain ::sorted-pair [1 0]))
 
+
+(go (= "--check-results" (first *command-line-args*)))
+(shutdown-agents)

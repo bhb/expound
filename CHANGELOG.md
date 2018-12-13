@@ -3,6 +3,17 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+- Bugs with exceptions on specs that conform e.g. [`s/keys*`](https://github.com/bhb/expound/issues/112) and [`s/and`](https://github.com/bhb/expound/issues/102). Expound also now [print messages for specs that use `conform` for coercion](https://github.com/bhb/expound/issues/78).
+
+### Added
+- Support for the new `explain-data` format introduced in ClojureScript 1.10.439 and `clojure.spec.alpha` 0.2.176
+
+### Changed
+- Replaced Codox docs with [cljdoc](https://cljdoc.xyz/) for [API docs](https://cljdoc.xyz/d/expound/expound)
+- `clojure.spec` dependency updated to 0.2.168
+- Dropped support for ClojureScript 1.9.562 and 1.9.946
+
 ## [0.7.1] - 2018-06-25
 
 ### Fixed

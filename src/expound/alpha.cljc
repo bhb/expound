@@ -1,5 +1,5 @@
 (ns expound.alpha
-  "Functions to print human-readable errors for clojure.spec"
+  "Generates human-readable errors for `clojure.spec`"
   (:require [expound.problems :as problems]
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
@@ -87,19 +87,29 @@
    that helps the user understand where that path is located
    in the form"
   [opts spec-name form path value]
-  (if (= :fn spec-name)
-    (binding [*print-namespace-maps* false] (ansi/color (pr-str form) :bad-value))
-    (if (= form value)
-      (binding [*print-namespace-maps* false] (ansi/color (printer/pprint-str value) :bad-value))
-      ;; It's silly to reconstruct a fake "problem"
+  (binding [*print-namespace-maps* false]
+    (cond
+      (= :fn spec-name)
+      (printer/indent (ansi/color (pr-str form) :bad-value))
+
+      (= form value)
+      (printer/indent (ansi/color (printer/pprint-str value) :bad-value))
+
+      ;; FIXME: It's silly to reconstruct a fake "problem"
       ;; after I've deconstructed it, but I'm not yet ready
       ;; to break the API for value-in-context BUT
       ;; I do want to test that a problems-based API
       ;; is useful.
       ;; See https://github.com/bhb/expound#configuring-the-printer
-      (problems/highlighted-value opts
-                                  {:expound/form form
-                                   :expound/in path}))))
+      path
+      (printer/indent (problems/highlighted-value opts
+                                                  {:expound/form form
+                                                   :expound/in path
+                                                   :expound/value value}))
+      :else
+      (printer/format
+       "Part of the value\n\n%s"
+       (printer/indent (ansi/color (pr-str form) :bad-value))))))
 
 (defn ^:private spec-str [spec]
   (if (keyword? spec)
@@ -242,7 +252,7 @@
                      (= pred (second %))))
        first))
 
-(defn ^:private no-method [spec-name val path problem]
+(defn ^:private no-method [_spec-name form path problem]
   (let [sp (s/spec (last (:expound/via problem)))
         {:keys [mm retag]} (multi-spec-parts
                             (multi-spec (:pred problem) sp))]
@@ -252,11 +262,11 @@
  Dispatch value:        `%s`"
      (pr-str mm)
      (pr-str retag)
-     (pr-str (if retag (retag (problems/value-in val path)) nil)))))
+     (pr-str (if retag (retag (problems/value-in form path)) nil)))))
 
-(defmulti ^:no-doc problem-group-str (fn [type spec-name _val _path _problems _opts] type))
-(defmulti ^:no-doc expected-str (fn [type  spec-name _val _path _problems _opts] type))
-(defmulti ^:no-doc value-str (fn [type  spec-name _val _path _problems _opts] type))
+(defmulti ^:no-doc problem-group-str (fn [type _spec-name _form _path _problems _opts] type))
+(defmulti ^:no-doc expected-str (fn [type  _spec-name _form _path _problems _opts] type))
+(defmulti ^:no-doc value-str (fn [type _spec-name _form _path _problems _opts] type))
 
 (defn ^:private expected-str* [spec-name problems opts]
   (let [problem (first problems)
@@ -270,14 +280,35 @@
         type (:expound.spec.problem/type problem)]
     (value-str type spec-name form in problems opts)))
 
-(defn ^:private problem-group-str* [spec-name problems opts]
-  (let [problem (first problems)
-        {:expound/keys [form in]} problem
-        type (:expound.spec.problem/type problem)]
-    (problem-group-str type spec-name form in problems opts)))
+(defn conformed-value [problems invalid-value]
+  (let [conformed-val (-> problems first :val)]
+    (if (= conformed-val invalid-value)
+      ""
+      (printer/format
+       "\n\nwhen conformed as\n\n%s"
+       (printer/indent (ansi/color (pr-str conformed-val) :bad-value))))))
 
-(defmethod value-str :default [_type spec-name val path problems opts]
-  (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))))
+;; FIXME - when I decide to break compatibility for value-str-fn, maybe
+;; make it show conform/unformed value
+(defn ^:private value+conformed-value [problems spec-name form path opts]
+  (let [{:keys [show-conformed?]} opts
+        invalid-value (if (nil? path)
+                      ;; This isn't used by default
+                      ;; because value-in-context will look at
+                      ;; path and only print form, but anyone
+                      ;; who provides their own *value-str-fn*
+                      ;; could use this
+                        ::no-value-found
+                        (problems/value-in form path))]
+    (printer/format
+     "%s%s"
+     (*value-str-fn* spec-name form path invalid-value)
+     (if show-conformed?
+       (conformed-value problems invalid-value)
+       ""))))
+
+(defmethod value-str :default [_type spec-name form path problems opts]
+  (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? true})))
 
 (defn ^:private explain-missing-keys [problems]
   (let [missing-keys (map #(printer/missing-key (:pred %)) problems)]
@@ -301,7 +332,7 @@
    (value-str type spec-name form in problems opts)
    expected))
 
-(defmethod expected-str :expound.problem-group/one-value [_type spec-name val path problems opts]
+(defmethod expected-str :expound.problem-group/one-value [_type spec-name form path problems opts]
   (let [problem (first problems)
         subproblems (:problems problem)
         grouped-subproblems (vals (group-by :expound.spec.problem/type subproblems))]
@@ -309,7 +340,7 @@
      "\n\nor\n\n"
      (map #(expected-str* spec-name % opts) grouped-subproblems))))
 
-(defmethod value-str :expound.problem-group/one-value [type spec-name val path problems opts]
+(defmethod value-str :expound.problem-group/one-value [type spec-name form path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)
         subproblems (:problems problem)]
@@ -322,7 +353,7 @@
 
     "Spec failed"))
 
-(defmethod problem-group-str :expound.problem-group/one-value [type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem-group/one-value [type spec-name form path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)
         subproblems (:problems problem)
@@ -334,9 +365,9 @@
                 in
                 problems
                 opts
-                (expected-str type spec-name val path problems opts))))
+                (expected-str type spec-name form path problems opts))))
 
-(defmethod expected-str :expound.problem-group/many-values [type spec-name val path problems opts]
+(defmethod expected-str :expound.problem-group/many-values [type spec-name form path problems opts]
   (let [subproblems (:problems (first problems))]
     (string/join
      "\n\nor value\n\n"
@@ -346,28 +377,28 @@
         (value-str* spec-name [problem] opts)
         (expected-str* spec-name [problem] opts))))))
 
-(defmethod problem-group-str :expound.problem-group/many-values [_type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem-group/many-values [_type spec-name form path problems opts]
   (s/assert ::singleton problems)
   (printer/format
    "%s\n\n%s"
    (header-label "Spec failed")
-   (expected-str _type spec-name val path problems opts)))
+   (expected-str _type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/missing-key [_type spec-name val path problems opts]
+(defmethod expected-str :expound.problem/missing-key [_type spec-name _form path problems opts]
   (explain-missing-keys problems))
 
-(defmethod problem-group-str :expound.problem/missing-key [type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem/missing-key [type spec-name form path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
   (format-err "Spec failed"
               type
               spec-name
-              val
+              form
               path
               problems
               opts
-              (expected-str type spec-name val path problems opts)))
+              (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/not-in-set [_type _spec-name _val _path problems _opts]
+(defmethod expected-str :expound.problem/not-in-set [_type _spec-name _form _path problems _opts]
   (let [combined-set (apply set/union (map :pred problems))]
     (printer/format
      "should be%s: %s"
@@ -379,44 +410,36 @@
                       (string/join ", "))
                  :good))))
 
-(defmethod problem-group-str :expound.problem/not-in-set [type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem/not-in-set [type spec-name form path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
   (format-err "Spec failed"
               type
               spec-name
-              val
+              form
               path
               problems
               opts
-              (expected-str type spec-name val path problems opts)))
+              (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/missing-spec [_type spec-name val path problems opts]
+(defmethod expected-str :expound.problem/missing-spec [_type spec-name form path problems opts]
   (str "with\n\n"
        (->> problems
-            (map #(no-method spec-name val path %))
+            (map #(no-method spec-name form path %))
             (string/join "\n\nor with\n\n"))))
 
-(defmethod value-str :expound.problem/missing-spec [_type spec-name val path problems opts]
+(defmethod value-str :expound.problem/missing-spec [_type spec-name form path problems opts]
   (printer/format
    "Cannot find spec for
 
- %s"
-   (show-spec-name spec-name (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path))))))
+%s"
+   (show-spec-name spec-name (*value-str-fn* spec-name form path (problems/value-in form path)))))
 
-(defmethod problem-group-str :expound.problem/missing-spec [type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem/missing-spec [type spec-name form path problems opts]
   (printer/format
    "%s\n\n%s\n\n%s"
    (header-label "Missing spec")
-   (value-str type spec-name val path problems opts)
-   (expected-str type spec-name val path problems opts)))
-
-(defn ^:private safe-sort-by
-  "Same as sort-by, but if an error is raised, returns the original unsorted collection"
-  [key-fn comp coll]
-  (try
-    (sort-by key-fn comp coll)
-    (catch #?(:cljs :default
-              :clj Exception) e coll)))
+   (value-str type spec-name form path problems opts)
+   (expected-str type spec-name form path problems opts)))
 
 (defn ^:private lcs* [[x & xs] [y & ys]]
   (cond
@@ -498,7 +521,7 @@
           [])
          lift-singleton-groups)))
 
-(defmethod expected-str :expound.problem/insufficient-input [_type spec-name val path problems opts]
+(defmethod expected-str :expound.problem/insufficient-input [_type spec-name form path problems opts]
   (let [problem (first problems)]
     (printer/format
      "should have additional elements. The next element%s %s"
@@ -515,31 +538,31 @@
                     (let [in (-> prob :expound/in)]
                       (expected-str (-> prob :expound.spec.problem/type) :expound/no-spec-name non-matching-value in [prob] opts))))))))
 
-(defmethod problem-group-str :expound.problem/insufficient-input [type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem/insufficient-input [type spec-name form path problems opts]
   (format-err "Syntax error"
               type
               spec-name
-              val
+              form
               path
               problems
               opts
-              (expected-str type spec-name val path problems opts)))
+              (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/extra-input [_type spec-name val path problems opts]
+(defmethod expected-str :expound.problem/extra-input [_type spec-name form path problems opts]
   (s/assert ::singleton problems)
   "has extra input")
 
-(defmethod problem-group-str :expound.problem/extra-input [type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem/extra-input [type spec-name form path problems opts]
   (format-err "Syntax error"
               type
               spec-name
-              val
+              form
               path
               problems
               opts
-              (expected-str type spec-name val path problems opts)))
+              (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/fspec-exception-failure [_type spec-name val path problems opts]
+(defmethod expected-str :expound.problem/fspec-exception-failure [_type spec-name form path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -555,18 +578,18 @@ with args:
                        (pr-str (:reason problem))))
      (printer/indent (string/join ", " (:val problem))))))
 
-(defmethod problem-group-str :expound.problem/fspec-exception-failure [type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem/fspec-exception-failure [type spec-name form path problems opts]
   (format-err
    "Exception"
    type
    spec-name
-   val
+   form
    path
    problems
    opts
-   (expected-str type spec-name val path problems opts)))
+   (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/fspec-ret-failure [_type spec-name val path problems opts]
+(defmethod expected-str :expound.problem/fspec-ret-failure [_type spec-name form path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -574,18 +597,33 @@ with args:
      (ansi/color (printer/indent (pr-str (:val problem))) :bad-value)
      (predicate-errors problems))))
 
-(defmethod problem-group-str :expound.problem/fspec-ret-failure [type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem/fspec-ret-failure [type spec-name form path problems opts]
   (format-err
    "Function spec failed"
    type
    spec-name
-   val
+   form
    path
    problems
    opts
-   (expected-str type spec-name val path problems opts)))
+   (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/fspec-fn-failure [_type spec-name val path problems opts]
+(defmethod value-str :expound.problem/insufficient-input [_type spec-name form path problems opts]
+  (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
+
+(defmethod value-str :expound.problem/extra-input [_type spec-name form path problems opts]
+  (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
+
+(defmethod value-str :expound.problem/fspec-fn-failure [_type spec-name form path problems opts]
+  (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
+
+(defmethod value-str :expound.problem/fspec-exception-failure [_type spec-name form path problems opts]
+  (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
+
+(defmethod value-str :expound.problem/fspec-ret-failure [_type spec-name form path problems opts]
+  (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
+
+(defmethod expected-str :expound.problem/fspec-fn-failure [_type spec-name form path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -599,19 +637,19 @@ should satisfy
      (printer/indent (ansi/color (pr-str (:val problem)) :bad-value))
      (printer/indent (ansi/color (pr-pred (:pred problem) (:spec problem)) :good-pred)))))
 
-(defmethod problem-group-str :expound.problem/fspec-fn-failure [type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem/fspec-fn-failure [type spec-name form path problems opts]
   (s/assert ::singleton problems)
   (format-err
    "Function spec failed"
    type
    spec-name
-   val
+   form
    path
    problems
    opts
-   (expected-str type spec-name val path problems opts)))
+   (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/check-fn-failure [_type spec-name val path problems opts]
+(defmethod expected-str :expound.problem/check-fn-failure [_type spec-name form path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -625,18 +663,18 @@ should satisfy
      (printer/indent (ansi/color (pr-str (:val problem)) :bad-value))
      (printer/indent (ansi/color (pr-pred (:pred problem) (:spec problem)) :good-pred)))))
 
-(defmethod problem-group-str :expound.problem/check-fn-failure [_type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem/check-fn-failure [_type spec-name form path problems opts]
   (s/assert ::singleton problems)
   (printer/format
    format-str
    (header-label "Function spec failed")
    (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
-   (expected-str _type spec-name val path problems opts)))
+   (expected-str _type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/check-ret-failure [_type spec-name val path problems opts]
+(defmethod expected-str :expound.problem/check-ret-failure [_type spec-name form path problems opts]
   (predicate-errors problems))
 
-(defmethod problem-group-str :expound.problem/check-ret-failure [_type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem/check-ret-failure [_type spec-name form path problems opts]
   (printer/format
    "%s
 
@@ -651,23 +689,23 @@ returned an invalid value.
 
    (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
 
-   (printer/indent (*value-str-fn* spec-name val path (problems/value-in val path)))
-   (expected-str _type spec-name val path problems opts)))
+   (*value-str-fn* spec-name form path (problems/value-in form path))
+   (expected-str _type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/unknown [_type spec-name val path problems opts]
+(defmethod expected-str :expound.problem/unknown [_type spec-name form path problems opts]
   (predicate-errors problems))
 
-(defmethod problem-group-str :expound.problem/unknown [type spec-name val path problems opts]
+(defmethod problem-group-str :expound.problem/unknown [type spec-name form path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
   (format-err
    "Spec failed"
    type
    spec-name
-   val
+   form
    path
    problems
    opts
-   (expected-str type spec-name val path problems opts)))
+   (expected-str type spec-name form path problems opts)))
 
 (defn ^:private instrumentation-info [failure caller]
   ;; As of version 1.9.562, Clojurescript does
@@ -681,7 +719,16 @@ returned an invalid value.
 
 (defn ^:private spec-name [ed]
   (if (#{:instrument} (::s/failure ed))
-    (-> ed ::s/problems first :path first)
+    (cond
+      ;; This works for clojure.spec <= 0.2.176
+      ;; and CLJS <= 1.10.439
+      (::s/args ed)
+      :args
+
+      :else
+      ;; for earlier versions
+      (-> ed ::s/problems first :path first))
+
     nil))
 
 (defn ^:private print-explain-data [opts explain-data]
@@ -873,10 +920,10 @@ returned an invalid value.
   "Returns a printer.
 
   Options:
-   :show-valid-values? - if false, replaces valid values with \"...\"
-   :value-str-fn       - function to print bad values
-   :print-specs?       - if true, display \"Relevant specs\" section. Otherwise, omit that section.
-   :theme               - enables color theme. Possible values: :figwheel-theme, :none"
+   - `:show-valid-values?` - if `false`, replaces valid values with \"...\"
+   - `:value-str-fn`       - function to print bad values
+   - `:print-specs?`       - if `true`, display \"Relevant specs\" section. Otherwise, omit that section.
+   - `:theme`               - enables color theme. Possible values: `:figwheel-theme`, `:none`"
   [opts]
   (fn [explain-data]
     (print (printer-str opts explain-data))))
@@ -930,7 +977,7 @@ returned an invalid value.
    (defmacro def
      "Define a spec with an optional `error-message`.
 
-  Replaces `clojure.spec.alpha/def` but optionally takes a human-readable `error-message` (will only be used for predicates) e.g. 'should be a string'."
+  Replaces `clojure.spec.alpha/def` but optionally takes a human-readable `error-message` (will only be used for predicates) e.g. \"should be a string\"."
      ([k spec-form]
       `(s/def ~k ~spec-form))
      ([k spec-form error-message]

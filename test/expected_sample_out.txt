@@ -1,0 +1,1394 @@
+=====  (clojure.spec.alpha/explain string? 1)  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m1[0m
+
+should satisfy
+
+  [32mstring?[0m
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :set-based-spec/tag :baz)  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m:baz[0m
+
+should be one of: [32m[32m:bar[0m, [32m:foo[0m[0m
+
+[36m-- Relevant specs -------[0m
+
+:set-based-spec/tag:
+  #{:bar :foo}
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :set-based-spec/one-or-two [:three])  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [[31m:three[0m]
+  [35m ^^^^^^[0m
+
+should be one of: [32m[32m:one[0m, [32m:two[0m[0m
+
+[36m-- Relevant specs -------[0m
+
+:set-based-spec/one-or-two:
+  (clojure.spec.alpha/or
+   :one
+   (clojure.spec.alpha/cat :a #{:one})
+   :two
+   (clojure.spec.alpha/cat :b #{:two}))
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :set-based-spec/nilable-tag :baz)  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m:baz[0m
+
+should be one of: [32m[32m:bar[0m, [32m:foo[0m[0m
+
+or
+
+should satisfy
+
+  [32mnil?[0m
+
+[36m-- Relevant specs -------[0m
+
+:set-based-spec/tag:
+  #{:bar :foo}
+:set-based-spec/nilable-tag:
+  (clojure.spec.alpha/nilable :set-based-spec/tag)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :set-based-spec/set-of-one :baz)  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m:baz[0m
+
+should be: [32m[32m:foobar[0m[0m
+
+[36m-- Relevant specs -------[0m
+
+:set-based-spec/set-of-one:
+  #{:foobar}
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :nested-type-based-spec/strs [one two 33])  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [... ... [31m33[0m]
+  [35m         ^^[0m
+
+should satisfy
+
+  [32mstring?[0m
+
+[36m-- Relevant specs -------[0m
+
+:nested-type-based-spec/str:
+  clojure.core/string?
+:nested-type-based-spec/strs:
+  (clojure.spec.alpha/coll-of :nested-type-based-spec/str)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :nested-type-based-spec-special-summary-string/ints [1 2 ...])  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [... ... [31m"..."[0m]
+  [35m         ^^^^^[0m
+
+should satisfy
+
+  [32mint?[0m
+
+[36m-- Relevant specs -------[0m
+
+:nested-type-based-spec-special-summary-string/int:
+  clojure.core/int?
+:nested-type-based-spec-special-summary-string/ints:
+  (clojure.spec.alpha/coll-of
+   :nested-type-based-spec-special-summary-string/int)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :or-spec/str-or-int :kw)  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m:kw[0m
+
+should satisfy
+
+  [32mint?[0m
+
+or
+
+  [32mstring?[0m
+
+[36m-- Relevant specs -------[0m
+
+:or-spec/str-or-int:
+  (clojure.spec.alpha/or :int clojure.core/int? :str clojure.core/string?)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :or-spec/vals [0 hi :kw bye])  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [... ... [31m:kw[0m ...]
+  [35m         ^^^[0m
+
+should satisfy
+
+  [32mint?[0m
+
+or
+
+  [32mstring?[0m
+
+[36m-- Relevant specs -------[0m
+
+:or-spec/str-or-int:
+  (clojure.spec.alpha/or :int clojure.core/int? :str clojure.core/string?)
+:or-spec/vals:
+  (clojure.spec.alpha/coll-of :or-spec/str-or-int)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain (s/or :strs (s/coll-of string?) :ints (s/coll-of int?)) 50)  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m50[0m
+
+should satisfy
+
+  [32mcoll?[0m
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain (s/or :letters #{a b} :ints #{1 2}) 50)  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m50[0m
+
+should be one of: [32m[32m"a"[0m, [32m"b"[0m, [32m1[0m, [32m2[0m[0m
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :or-spec/m-with-str-or-int {})  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m{}[0m
+
+should contain keys: [32m:or-spec/int[0m, [32m:or-spec/str[0m
+
+|          key |    spec |
+|--------------+---------|
+| :or-spec/int |    int? |
+| :or-spec/str | string? |
+
+[36m-- Relevant specs -------[0m
+
+:or-spec/m-with-int:
+  (clojure.spec.alpha/keys :req [:or-spec/int])
+:or-spec/m-with-str:
+  (clojure.spec.alpha/keys :req [:or-spec/str])
+:or-spec/m-with-str-or-int:
+  (clojure.spec.alpha/or
+   :m-with-str
+   :or-spec/m-with-str
+   :m-with-int
+   :or-spec/m-with-int)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain (s/or :m-with-str1 (s/keys :req [:or-spec/str]) :m-with-int2 (s/keys :req [:or-spec/str])) {})  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m{}[0m
+
+should contain keys: [32m:or-spec/str[0m
+
+|          key |    spec |
+|--------------+---------|
+| :or-spec/str | string? |
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :and-spec/name )  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m""[0m
+
+should satisfy
+
+  [32m(fn [%] (pos? (count %)))[0m
+
+[36m-- Relevant specs -------[0m
+
+:and-spec/name:
+  (clojure.spec.alpha/and
+   clojure.core/string?
+   (clojure.core/fn [%] (clojure.core/pos? (clojure.core/count %))))
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :and-spec/names [bob sally  1])  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [... ... [31m""[0m ...]
+  [35m         ^^[0m
+
+should satisfy
+
+  [32m(fn [%] (pos? (count %)))[0m
+
+[36m-- Relevant specs -------[0m
+
+:and-spec/name:
+  (clojure.spec.alpha/and
+   clojure.core/string?
+   (clojure.core/fn [%] (clojure.core/pos? (clojure.core/count %))))
+:and-spec/names:
+  (clojure.spec.alpha/coll-of :and-spec/name)
+
+[36m-- Spec failed --------------------[0m
+
+  [... ... ... [31m1[0m]
+  [35m             ^[0m
+
+should satisfy
+
+  [32mstring?[0m
+
+[36m-- Relevant specs -------[0m
+
+:and-spec/name:
+  (clojure.spec.alpha/and
+   clojure.core/string?
+   (clojure.core/fn [%] (clojure.core/pos? (clojure.core/count %))))
+:and-spec/names:
+  (clojure.spec.alpha/coll-of :and-spec/name)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m2[0m [36merrors[0m
+
+
+
+=====  (clojure.spec.alpha/explain :coll-of-spec/big-int-coll [])  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m[][0m
+
+should satisfy
+
+  [32m(<= 10 (count %) Integer/MAX_VALUE)[0m
+
+[36m-- Relevant specs -------[0m
+
+:coll-of-spec/big-int-coll:
+  (clojure.spec.alpha/coll-of clojure.core/int? :min-count 10)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :cat-spec/kw [])  =========
+[0m[0m[36m-- Syntax error -------------------[0m
+
+  [31m[][0m
+
+should have additional elements. The next element ":k" should satisfy
+
+  [32mkeyword?[0m
+
+[36m-- Relevant specs -------[0m
+
+:cat-spec/kw:
+  (clojure.spec.alpha/cat :k clojure.core/keyword? :v clojure.core/any?)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :cat-spec/set [])  =========
+[0m[0m[36m-- Syntax error -------------------[0m
+
+  [31m[][0m
+
+should have additional elements. The next element ":type" should be one of: [32m[32m:bar[0m, [32m:foo[0m[0m
+
+[36m-- Relevant specs -------[0m
+
+:cat-spec/set:
+  (clojure.spec.alpha/cat :type #{:bar :foo} :str clojure.core/string?)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :cat-spec/alt [])  =========
+[0m[0m[36m-- Syntax error -------------------[0m
+
+  [31m[][0m
+
+should have additional elements. The next element should satisfy
+
+  [32m(clojure.spec.alpha/alt :s string? :i int?)[0m
+
+[36m-- Relevant specs -------[0m
+
+:cat-spec/alt*:
+  (clojure.spec.alpha/alt :s clojure.core/string? :i clojure.core/int?)
+:cat-spec/alt:
+  (clojure.spec.alpha/+ :cat-spec/alt*)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :cat-spec/alt-inline [])  =========
+[0m[0m[36m-- Syntax error -------------------[0m
+
+  [31m[][0m
+
+should have additional elements. The next element should satisfy
+
+  [32m(clojure.spec.alpha/alt :s string? :i int?)[0m
+
+[36m-- Relevant specs -------[0m
+
+:cat-spec/alt-inline:
+  (clojure.spec.alpha/+
+   (clojure.spec.alpha/alt :s clojure.core/string? :i clojure.core/int?))
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :cat-spec/any [])  =========
+[0m[0m[36m-- Syntax error -------------------[0m
+
+  [31m[][0m
+
+should have additional elements. The next element ":x" should satisfy
+
+  [32many?[0m
+
+[36m-- Relevant specs -------[0m
+
+:cat-spec/any:
+  (clojure.spec.alpha/cat :x (clojure.spec.alpha/+ clojure.core/any?))
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :cat-spec/kw [:foo 1 :bar :baz])  =========
+[0m[0m[36m-- Syntax error -------------------[0m
+
+  [... ... [31m:bar[0m ...]
+  [35m         ^^^^[0m
+
+has extra input
+
+[36m-- Relevant specs -------[0m
+
+:cat-spec/kw:
+  (clojure.spec.alpha/cat :k clojure.core/keyword? :v clojure.core/any?)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :keys-spec/user {})  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m{}[0m
+
+should contain keys: [32m:age[0m, [32m:keys-spec/name[0m
+
+|             key |    spec |
+|-----------------+---------|
+|            :age |    int? |
+| :keys-spec/name | string? |
+
+[36m-- Relevant specs -------[0m
+
+:keys-spec/user:
+  (clojure.spec.alpha/keys
+   :req
+   [:keys-spec/name]
+   :req-un
+   [:keys-spec/age])
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :keys-spec/user2 {})  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m{}[0m
+
+should contain keys:
+
+[32m(and (and :keys-spec/name :keys-spec/age) (or :zip (and :state :city)))[0m
+
+|             key |     spec |
+|-----------------+----------|
+|           :city |  string? |
+|          :state |  string? |
+|            :zip | pos-int? |
+|  :keys-spec/age |     int? |
+| :keys-spec/name |  string? |
+
+[36m-- Relevant specs -------[0m
+
+:keys-spec/user2:
+  (clojure.spec.alpha/keys
+   :req
+   [(and :keys-spec/name :keys-spec/age)]
+   :req-un
+   [(or :key-spec/zip (and :key-spec/state :key-spec/city))])
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :keys-spec/user3 {})  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m{}[0m
+
+should contain keys:
+
+[32m(or :zip (and :state :city))[0m
+
+|    key |     spec |
+|--------+----------|
+|  :city |  string? |
+| :state |  string? |
+|   :zip | pos-int? |
+
+[36m-- Relevant specs -------[0m
+
+:keys-spec/user3:
+  (clojure.spec.alpha/keys
+   :req-un
+   [(or :key-spec/zip (and :key-spec/state :key-spec/city))])
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain (s/keys :req-un [:keys-spec/name :keys-spec/age]) {})  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m{}[0m
+
+should contain keys: [32m:age[0m, [32m:name[0m
+
+|   key |    spec |
+|-------+---------|
+|  :age |    int? |
+| :name | string? |
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :keys-spec/user {:age 1, :keys-spec/name :bob})  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  {:age ..., :keys-spec/name [31m:bob[0m}
+  [35m                           ^^^^[0m
+
+should satisfy
+
+  [32mstring?[0m
+
+[36m-- Relevant specs -------[0m
+
+:keys-spec/name:
+  clojure.core/string?
+:keys-spec/user:
+  (clojure.spec.alpha/keys
+   :req
+   [:keys-spec/name]
+   :req-un
+   [:keys-spec/age])
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :multi-spec/el {})  =========
+[0m[0m[36m-- Missing spec -------------------[0m
+
+Cannot find spec for
+
+  [31m{}[0m
+
+with
+
+ Spec multimethod:      `expound.sample/el-type`
+ Dispatch function:     `:multi-spec/el-type`
+ Dispatch value:        `nil`
+
+[36m-- Relevant specs -------[0m
+
+:multi-spec/el:
+  (clojure.spec.alpha/multi-spec
+   expound.sample/el-type
+   :multi-spec/el-type)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :multi-spec/el #:multi-spec{:el-type :image})  =========
+[0m[0m[36m-- Missing spec -------------------[0m
+
+Cannot find spec for
+
+  [31m{:multi-spec/el-type :image}[0m
+
+with
+
+ Spec multimethod:      `expound.sample/el-type`
+ Dispatch function:     `:multi-spec/el-type`
+ Dispatch value:        `:image`
+
+[36m-- Relevant specs -------[0m
+
+:multi-spec/el:
+  (clojure.spec.alpha/multi-spec
+   expound.sample/el-type
+   :multi-spec/el-type)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :multi-spec/el #:multi-spec{:el-type :text})  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m{:multi-spec/el-type :text}[0m
+
+should contain key: [32m:multi-spec/value[0m
+
+|               key |    spec |
+|-------------------+---------|
+| :multi-spec/value | string? |
+
+[36m-- Relevant specs -------[0m
+
+:multi-spec/el:
+  (clojure.spec.alpha/multi-spec
+   expound.sample/el-type
+   :multi-spec/el-type)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :recursive-spec/el {:tag :group, :children [{:tag :group, :children [{:tag :group, :props {:on-tap {}}}]}]})  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  {:tag ..., :children [[31m{:tag :group, :children [{:tag :group, :props {:on-tap {}}}]}[0m]}
+  [35m                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+should satisfy
+
+  [32mnil?[0m
+
+or value
+
+  {:tag ...,
+   :children [{:tag ..., :children [[31m{:tag :group, :props {:on-tap {}}}[0m]}]}
+  [35m                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+should satisfy
+
+  [32mnil?[0m
+
+or value
+
+  {:tag ...,
+   :children
+   [{:tag ...,
+     :children
+     [{:tag ..., :props {:on-tap [31m{}[0m}}]}]}
+  [35m                               ^^[0m
+
+should satisfy
+
+  [32mvector?[0m
+
+[36m-- Relevant specs -------[0m
+
+:recursive-spec/on-tap:
+  (clojure.spec.alpha/coll-of
+   clojure.core/map?
+   :kind
+   clojure.core/vector?)
+:recursive-spec/props:
+  (clojure.spec.alpha/keys :opt-un [:recursive-spec/on-tap])
+:recursive-spec/children:
+  (clojure.spec.alpha/coll-of
+   (clojure.spec.alpha/nilable :recursive-spec/el)
+   :kind
+   clojure.core/vector?)
+:recursive-spec/el:
+  (clojure.spec.alpha/keys
+   :req-un
+   [:recursive-spec/tag]
+   :opt-un
+   [:recursive-spec/props :recursive-spec/children])
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :cat-wrapped-in-or-spec/kv-or-string {foo hi})  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m{"foo" "hi"}[0m
+
+should contain key: [32m:cat-wrapped-in-or-spec/type[0m
+
+|                          key |     spec |
+|------------------------------+----------|
+| :cat-wrapped-in-or-spec/type | #{:text} |
+
+or
+
+should satisfy
+
+  [32msequential?[0m
+
+[36m-- Relevant specs -------[0m
+
+:cat-wrapped-in-or-spec/kv:
+  (clojure.spec.alpha/and
+   clojure.core/sequential?
+   (clojure.spec.alpha/cat :k clojure.core/keyword? :v clojure.core/any?))
+:cat-wrapped-in-or-spec/kv-or-string:
+  (clojure.spec.alpha/or
+   :map
+   (clojure.spec.alpha/keys :req [:cat-wrapped-in-or-spec/type])
+   :kv
+   :cat-wrapped-in-or-spec/kv)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (s/assert :test-assert/name :hello)  =========
+Spec assertion failed
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m:hello[0m
+
+should satisfy
+
+  [32mstring?[0m
+
+[36m-- Relevant specs -------[0m
+
+:test-assert/name:
+  clojure.core/string?
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+=====  (test-instrument-adder  :x)  =========
+Call to #'expound.sample/test-instrument-adder did not conform to spec:
+[0msample.clj:199
+
+[0m[36m-- Spec failed --------------------[0m
+
+Function arguments
+
+  ([31m""[0m ...)
+  [35m ^^[0m
+
+should satisfy
+
+  [32mint?[0m
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+=====  (test-instrument-adder  :x)  =========
+Call to #'expound.sample/test-instrument-adder did not conform to spec:
+[0msample.clj:204
+
+[0m[36m-- Spec failed --------------------[0m
+
+Function arguments
+
+  ([31m""[0m ...)
+  [35m ^^[0m
+
+should satisfy
+
+  [32mint?[0m
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+=====  (test-instrument-adder 1)  =========
+Call to #'expound.sample/test-instrument-adder did not conform to spec:
+[0msample.clj:207
+
+[0m[36m-- Syntax error -------------------[0m
+
+Function arguments
+
+  [31m(1)[0m
+
+should have additional elements. The next element ":y" should satisfy
+
+  [32mint?[0m
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+=====  (test-instrument-adder -1 -2)  =========
+Call to #'expound.sample/test-instrument-adder did not conform to spec:
+[0msample.clj:210
+
+[0m[36m-- Spec failed --------------------[0m
+
+Return value
+
+  [31m-3[0m
+
+should satisfy
+
+  [32mpos-int?[0m
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+=====  (test-instrument-adder 1 0)  =========
+Call to #'expound.sample/test-instrument-adder did not conform to spec:
+[0msample.clj:213
+
+[0m[36m-- Spec failed --------------------[0m
+
+Function arguments and return value
+
+  [31m{:ret 1, :args {:x 1, :y 0}}[0m
+
+should satisfy
+
+  [32m(fn
+   [%]
+   (> (:ret %) (-> % :args :x)))[0m
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+=====  (clojure.spec.alpha/explain :alt-spec/int-or-str [:hi])  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [[31m:hi[0m]
+  [35m ^^^[0m
+
+should satisfy
+
+  [32mint?[0m
+
+or
+
+  [32mstring?[0m
+
+[36m-- Relevant specs -------[0m
+
+:alt-spec/int-or-str:
+  (clojure.spec.alpha/alt
+   :int
+   clojure.core/int?
+   :string
+   clojure.core/string?)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :duplicate-preds/str-or-str 1)  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m1[0m
+
+should satisfy
+
+  [32m(fn [%] (string? %))[0m
+
+[36m-- Relevant specs -------[0m
+
+:duplicate-preds/str-or-str:
+  (clojure.spec.alpha/or
+   :str1
+   (clojure.core/fn [%] (clojure.core/string? %))
+   :str2
+   (clojure.core/fn [%] (clojure.core/string? %)))
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :fspec-test/div my-div)  =========
+[0m[0m[36m-- Exception ----------------------[0m
+
+  [31mexpound.sample/go/my-div[0m
+
+threw exception
+
+  "Assert failed: (not (zero? (/ x y)))"
+
+with args:
+
+  0, 1
+
+[36m-- Relevant specs -------[0m
+
+:fspec-test/div:
+  (clojure.spec.alpha/fspec
+   :args
+   (clojure.spec.alpha/cat :x clojure.core/int? :y clojure.core/pos-int?)
+   :ret
+   clojure.core/any?
+   :fn
+   nil)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain (s/coll-of :fspec-test/div) [my-div])  =========
+[0m[0m[36m-- Exception ----------------------[0m
+
+  [[31mexpound.sample/go/my-div[0m]
+  [35m ^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+threw exception
+
+  "Assert failed: (not (zero? (/ x y)))"
+
+with args:
+
+  0, 1
+
+[36m-- Relevant specs -------[0m
+
+:fspec-test/div:
+  (clojure.spec.alpha/fspec
+   :args
+   (clojure.spec.alpha/cat :x clojure.core/int? :y clojure.core/pos-int?)
+   :ret
+   clojure.core/any?
+   :fn
+   nil)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :fspec-ret-test/plus my-plus)  =========
+[0m[0m[36m-- Function spec failed -----------[0m
+
+  [31mexpound.sample/go/my-plus[0m
+
+returned an invalid value
+
+[31m  0[0m
+
+should satisfy
+
+  [32mpos-int?[0m
+
+[36m-- Relevant specs -------[0m
+
+:fspec-ret-test/my-int:
+  clojure.core/pos-int?
+:fspec-ret-test/plus:
+  (clojure.spec.alpha/fspec
+   :args
+   (clojure.spec.alpha/cat :x clojure.core/int? :y clojure.core/pos-int?)
+   :ret
+   :fspec-ret-test/my-int
+   :fn
+   nil)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain (s/coll-of :fspec-ret-test/plus) [my-plus])  =========
+[0m[0m[36m-- Function spec failed -----------[0m
+
+  [[31mexpound.sample/go/my-plus[0m]
+  [35m ^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+returned an invalid value
+
+[31m  0[0m
+
+should satisfy
+
+  [32mpos-int?[0m
+
+[36m-- Relevant specs -------[0m
+
+:fspec-ret-test/my-int:
+  clojure.core/pos-int?
+:fspec-ret-test/plus:
+  (clojure.spec.alpha/fspec
+   :args
+   (clojure.spec.alpha/cat :x clojure.core/int? :y clojure.core/pos-int?)
+   :ret
+   :fspec-ret-test/my-int
+   :fn
+   nil)
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :fspec-fn-test/minus my-minus)  =========
+[0m[0m[36m-- Function spec failed -----------[0m
+
+  [31mexpound.sample/go/my-minus[0m
+
+failed spec. Function arguments and return value
+
+  [31m{:args {:x 0, :y 0}, :ret 0}[0m
+
+should satisfy
+
+  [32m(fn
+   [%]
+   (< (:ret %) (-> % :args :x)))[0m
+
+[36m-- Relevant specs -------[0m
+
+:fspec-fn-test/minus:
+  (clojure.spec.alpha/fspec
+   :args
+   (clojure.spec.alpha/cat :x clojure.core/int? :y clojure.core/int?)
+   :ret
+   clojure.core/any?
+   :fn
+   (clojure.spec.alpha/and
+    (fn*
+     [p1__1085#]
+     (clojure.core/<
+      (:ret p1__1085#)
+      (clojure.core/-> p1__1085# :args :x)))
+    (fn*
+     [p1__1086#]
+     (clojure.core/<
+      (:ret p1__1086#)
+      (clojure.core/-> p1__1086# :args :y)))))
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain (s/coll-of :fspec-fn-test/minus) [my-minus])  =========
+[0m[0m[36m-- Function spec failed -----------[0m
+
+  [[31mexpound.sample/go/my-minus[0m]
+  [35m ^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+
+failed spec. Function arguments and return value
+
+  [31m{:args {:x 0, :y 0}, :ret 0}[0m
+
+should satisfy
+
+  [32m(fn
+   [%]
+   (< (:ret %) (-> % :args :x)))[0m
+
+[36m-- Relevant specs -------[0m
+
+:fspec-fn-test/minus:
+  (clojure.spec.alpha/fspec
+   :args
+   (clojure.spec.alpha/cat :x clojure.core/int? :y clojure.core/int?)
+   :ret
+   clojure.core/any?
+   :fn
+   (clojure.spec.alpha/and
+    (fn*
+     [p1__1085#]
+     (clojure.core/<
+      (:ret p1__1085#)
+      (clojure.core/-> p1__1085# :args :x)))
+    (fn*
+     [p1__1086#]
+     (clojure.core/<
+      (:ret p1__1086#)
+      (clojure.core/-> p1__1086# :args :y)))))
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?)) [:foo])  =========
+[0m[0m[36m-- Function spec failed -----------[0m
+
+  [[31m:foo[0m]
+  [35m ^^^^[0m
+
+returned an invalid value
+
+[31m  nil[0m
+
+should satisfy
+
+  [32mint?[0m
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?)) [#{}])  =========
+[0m[0m[36m-- Function spec failed -----------[0m
+
+  [[31m#{}[0m]
+  [35m ^^^[0m
+
+returned an invalid value
+
+[31m  nil[0m
+
+should satisfy
+
+  [32mint?[0m
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?)) [[]])  =========
+[0m[0m[36m-- Exception ----------------------[0m
+
+  [[31m[][0m]
+  [35m ^^[0m
+
+threw exception
+
+  nil
+
+with args:
+
+  0
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :multispec-in-compound-spec/pet1 #:pet{:type :fish})  =========
+[0m[0m[36m-- Missing spec -------------------[0m
+
+Cannot find spec for
+
+  [31m{:pet/type :fish}[0m
+
+with
+
+ Spec multimethod:      `expound.sample/pet`
+ Dispatch function:     `:pet/type`
+ Dispatch value:        `:fish`
+
+[36m-- Relevant specs -------[0m
+
+:multispec-in-compound-spec/pet1:
+  (clojure.spec.alpha/and
+   clojure.core/map?
+   (clojure.spec.alpha/multi-spec expound.sample/pet :pet/type))
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :multispec-in-compound-spec/pet2 #:pet{:type :fish})  =========
+[0m[0m[36m-- Missing spec -------------------[0m
+
+Cannot find spec for
+
+  [31m{:pet/type :fish}[0m
+
+with
+
+ Spec multimethod:      `expound.sample/pet`
+ Dispatch function:     `:pet/type`
+ Dispatch value:        `:fish`
+
+or with
+
+ Spec multimethod:      `expound.sample/animal`
+ Dispatch function:     `:animal/type`
+ Dispatch value:        `nil`
+
+[36m-- Relevant specs -------[0m
+
+:multispec-in-compound-spec/pet2:
+  (clojure.spec.alpha/or
+   :map1
+   (clojure.spec.alpha/multi-spec expound.sample/pet :pet/type)
+   :map2
+   (clojure.spec.alpha/multi-spec expound.sample/animal :animal/type))
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :predicate-messages/string :hello)  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m:hello[0m
+
+[32mshould be a string[0m
+
+[36m-- Relevant specs -------[0m
+
+:predicate-messages/string:
+  clojure.core/string?
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain (s/or :s :predicate-messages/string :v :predicate-messages/vector) 1)  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m1[0m
+
+[32mshould be a string[0m
+
+or
+
+[32mshould be a vector[0m
+
+[36m-- Relevant specs -------[0m
+
+:predicate-messages/vector:
+  clojure.core/vector?
+:predicate-messages/string:
+  clojure.core/string?
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain (s/or :p pos-int? :s :predicate-messages/string :v vector?) (quote foo))  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31mfoo[0m
+
+should satisfy
+
+  [32mpos-int?[0m
+
+or
+
+  [32mvector?[0m
+
+or
+
+[32mshould be a string[0m
+
+[36m-- Relevant specs -------[0m
+
+:predicate-messages/string:
+  clojure.core/string?
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :predicate-messages/email sally@)  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m"sally@"[0m
+
+[32mshould be a valid email address[0m
+
+[36m-- Relevant specs -------[0m
+
+:predicate-messages/email:
+  (clojure.spec.alpha/and
+   clojure.core/string?
+   (clojure.core/fn
+    [%]
+    (clojure.core/re-matches expound.sample/email-regex %)))
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+=====  (clojure.spec.alpha/explain :predicate-messages/score 101)  =========
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m101[0m
+
+[32mshould be between 0 and 100[0m
+
+[36m-- Relevant specs -------[0m
+
+:predicate-messages/score:
+  (clojure.spec.alpha/and
+   clojure.core/int?
+   (clojure.core/fn [%] (clojure.spec.alpha/int-in-range? 0 100 %)))
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+
+
+
+----- check results -----
+[36m== Checked expound.sample/some-func =========[0m
+
+Failed to check function.
+
+[31m  expound.sample/some-func[0m
+
+is not defined
+[36m== Checked <unknown> ========================[0m
+
+[0m[0m[36m-- Function spec failed -----------[0m
+
+[31m  (<unknown> 0 0)[0m
+
+failed spec. Function arguments and return value
+
+  [31m{:args {:x 0, :y 0}, :ret 0}[0m
+
+should satisfy
+
+  [32m(fn
+   [%]
+   (let
+    [x
+     (-> % :args :x)
+     y
+     (-> % :args :y)
+     ret
+     (-> % :ret)]
+    (< x ret)))[0m
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m
+[0m[0m[36m-- Spec failed --------------------[0m
+
+  [31m[1 0][0m
+
+when conformed as
+
+  [31m{:x 1, :y 0}[0m
+
+should satisfy
+
+  [32m(fn
+   [%]
+   (< (-> % :x) (-> % :y)))[0m
+
+[36m-- Relevant specs -------[0m
+
+:expound.sample/sorted-pair:
+  (clojure.spec.alpha/and
+   (clojure.spec.alpha/cat :x clojure.core/int? :y clojure.core/int?)
+   (clojure.core/fn
+    [%]
+    (clojure.core/< (clojure.core/-> % :x) (clojure.core/-> % :y))))
+
+[36m-------------------------[0m
+[36mDetected[0m [36m1[0m [36merror[0m

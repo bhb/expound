@@ -2,8 +2,7 @@
   (:require [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [clojure.spec.alpha :as s]
             [expound.problems :as problems]
-            [expound.test-utils :as test-utils]
-            [clojure.string :as string]))
+            [expound.test-utils :as test-utils]))
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -121,13 +120,13 @@
   (is (= "[... 0]\n     ^"
          (problems/highlighted-value
           {}
-          (second
+          (first
            (:expound/problems
             (problems/annotate
              (s/explain-data
               (clojure.spec.alpha/alt :a int?
                                       :b (clojure.spec.alpha/spec (clojure.spec.alpha/cat :c int?)))
-              {1 0}))))))))
+              [1 0]))))))))
 
 (deftest highlighted-value-on-coll-of
   ;; sets
@@ -226,3 +225,7 @@
              :expound/problems
              first
              (select-keys [:expound/in :val :reason])))))
+
+(defn nth-value [form i]
+  (let [seq (remove map-entry? (tree-seq coll? seq form))]
+    (nth seq (mod i (count seq)))))

@@ -17,3 +17,6 @@ expound.iml
 .nightlight.edn
 repl-deps
 test-deps
+.cpcache
+nashorn_code_cache
+.rebel_readline_history

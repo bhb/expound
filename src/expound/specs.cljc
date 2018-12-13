@@ -1,5 +1,8 @@
 (ns expound.specs
-  (:require [expound.alpha :as ex]
+  (:require #?(:cljs [expound.alpha :as ex :include-macros true]
+               :clj [expound.alpha :as ex])
+            ;; FIXME - remove this to expose
+            ;; https://github.com/bhb/expound/issues/123
             [clojure.spec.alpha :as s]))
 
 ;;;; public specs ;;;;;;
@@ -28,7 +31,7 @@
 (ex/def ::uuid uuid? "should be a UUID")
 (ex/def ::vec vector? "should be a vector")
 
-(def public-specs
+(def ^:no-doc public-specs
   [::bool #?(:clj ::bytes) ::double ::ident ::indexed ::int ::kw
    ::map ::nat-int ::neg-int ::pos-int ::qualified-ident
    ::qualified-kw ::qualified-sym ::seqable ::simple-ident
