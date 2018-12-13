@@ -109,8 +109,6 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 
 To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.spec.alpha/*explain-out*` for ClojureScript) to `expound/printer`.
 
-(Setting `*explain-out*` does not work correctly in ClojureScript versions prior to `1.9.562` due to differences in `explain-data`)
-
 ```clojure
 (require '[clojure.spec.alpha :as s])
 ;; for clojurescript:

@@ -1179,8 +1179,6 @@ Detected 1 error\n")
        ;; FIXME - anything including or after 1.9.908
        ;; should work, but seems to fail, possibly due to?
        ;; https://dev.clojure.org/jira/browse/CLJS-1297?
-       (not= "1.9.562"
-             *clojurescript-version*)
        ;; Just force false for now
        false)
      :clj

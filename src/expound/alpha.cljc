@@ -708,9 +708,6 @@ returned an invalid value.
    (expected-str type spec-name form path problems opts)))
 
 (defn ^:private instrumentation-info [failure caller]
-  ;; As of version 1.9.562, Clojurescript does
-  ;; not include failure or caller info, so
-  ;; if these are null, print a placeholder
   (if (= :instrument failure)
     (printer/format "%s:%s\n\n"
                     (:file caller "<filename missing>")
