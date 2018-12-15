@@ -125,8 +125,8 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 (binding [s/*explain-out* expound/printer]
   (s/assert :example.place/city 1))
 
-;; Or set it for the current thread.
 (set! s/*explain-out* expound/printer)
+;; (or alter-var-root - see doc/faq.md)
 (s/assert :example.place/city 1)
 
 ;; Use `instrument`
@@ -143,10 +143,6 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 ;; You can use `explain` without converting to expound
 (s/explain :example.place/city 123)
 ```
-
-If you are enabling Expound in a non-REPL environment, remember that `set!` will only change `s/*explain-out*` in the *current thread*. If your program spawns additional threads (e.g. a web server), you can set `s/*explain-out*` for all threads with `(alter-var-root #'s/*explain-out* (constantly expound/printer))`. This won't work (and is not necessary) in CLJS.
-
-[Using `set!` will also not work within an uberjar](https://github.com/bhb/expound/issues/19).
 
 ### Printing results for `check`
 
@@ -170,6 +166,7 @@ Re-binding `s/*explain-out*` has no effect on the results of `cljs.spec.test.alp
   (+ start (long (rand (- start end)))))
 
 (set! s/*explain-out* expound/printer)
+;; (or alter-var-root - see doc/faq.md)
 (expound/explain-results (st/check `ranged-rand))
 ;;== Checked user/ranged-rand =================
 ;;
@@ -226,6 +223,7 @@ Create a custom printer by changing the following options e.g.
 
 ```clojure
 (set! s/*explain-out* (expound/custom-printer {:show-valid-values? true :print-specs? false :theme :figwheel-theme}))
+;; (or alter-var-root - see doc/faq.md)
 ```
 
 | name | spec |  default | description |
@@ -242,6 +240,7 @@ By default, `printer` will omit valid values and replace them with `...`
 
 ```clojure
 (set! s/*explain-out* expound/printer)
+;; (or alter-var-root - see doc/faq.md)
 (s/explain :example/place {:city "Denver" :state :CO :country "USA"})
 
 ;; -- Spec failed --------------------
@@ -258,6 +257,7 @@ You can configure Expound to show valid values:
 
 ```clojure
 (set! s/*explain-out* (expound/custom-printer {:show-valid-values? true}))
+;; (or alter-var-root - see doc/faq.md)
 (s/explain :example/place {:city "Denver" :state :CO :country "USA"})
 
 ;; -- Spec failed --------------------
@@ -288,6 +288,7 @@ You can provide your own function to display the invalid value.
        "Invalid value: " (pr-str value)))
 
 (set! s/*explain-out* (expound/custom-printer {:value-str-fn my-value-str}))
+;; (or alter-var-root - see doc/faq.md)
 (s/explain :example/place {:city "Denver" :state :CO :country "USA"})
 
 ;; -- Spec failed --------------------
@@ -315,6 +316,7 @@ Clojure test allows you to declare a custom multi-method for its `clojure.test/r
 (enable-console-print!)
 
 (set! s/*explain-out* expound/printer)
+;; (or alter-var-root - see doc/faq.md)
 
 ;; We try to preserve the clojure.test output format
 (defmethod test/report [:cljs.test/default :error] [m]
@@ -335,7 +337,7 @@ Clojure test allows you to declare a custom multi-method for its `clojure.test/r
 (run-tests 'pkg.namespace-test)
 ```
 
-### Using Orchestra
+### Using Expound as printer for Orchestra
 
 Use [Orchestra](https://github.com/jeaye/orchestra) with Expound to get human-optimized error messages when checking your `:ret` and `:fn` specs.
 
@@ -352,6 +354,7 @@ Use [Orchestra](https://github.com/jeaye/orchestra) with Expound to get human-op
 
 (st/instrument)
 (set! s/*explain-out* expound/printer)
+;; (or alter-var-root - see doc/faq.md)
 (location "Seattle" "WA")
 
 ;;ExceptionInfo Call to #'user/location did not conform to spec:
