@@ -3684,3 +3684,33 @@ Detected 1 error\n"
                      (with-out-str ((expound/custom-printer {:print-specs? false})
 
                                     ed))))))))
+
+(deftest sorted-map-values
+  (is (= "-- Spec failed --------------------
+
+  {\"bar\" 1}
+
+should satisfy
+
+  number?
+
+-------------------------
+Detected 1 error\n"
+         (expound/expound-str
+          number?
+          (sorted-map "bar" 1))))
+  (is (= "-- Spec failed --------------------
+
+  {:foo {\"bar\" 1}}
+
+should satisfy
+
+  number?
+
+-------------------------
+Detected 1 error\n"
+         (expound/expound-str
+          number?
+          {:foo (sorted-map "bar"
+
+                            1)}))))
