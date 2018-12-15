@@ -485,6 +485,7 @@
   (walk/postwalk
    (fn [form]
      (if (and (map? form)
+              (not (sorted? form))
               (contains? #{:expound.problem-group/many-values
                            :expound.problem-group/one-value} (:expound.spec.problem/type form))
               (= 1 (count (:problems form))))
