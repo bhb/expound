@@ -1,4 +1,4 @@
-{:cljdoc.doc/tree [["Readme" {:file "README.md"}
-                    "Changelog" {:file "CHANGELOG.md"}
-                    "Prior Art" {:file "doc/prior_art.md"}
-                    "FAQ" {:file "doc/faq.md"}]]}
+{:cljdoc.doc/tree [["Readme" {:file "README.md"}]
+                   ["Changelog" {:file "CHANGELOG.md"}]
+                   ["Prior Art" {:file "doc/prior_art.md"}]
+                   ["FAQ" {:file "doc/faq.md"}]]}
