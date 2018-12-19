@@ -35,11 +35,11 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ### Leiningen/Boot
 
-`[expound "0.7.1"]`
+`[expound "0.7.2"]`
 
 #### deps.edn
 
-`expound {:mvn/version "0.7.1"}`
+`expound {:mvn/version "0.7.2"}`
 
 ### Lumo
 
