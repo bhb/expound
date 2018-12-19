@@ -1,7 +1,7 @@
 # Expound
 
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
-[![cljdoc badge](https://cljdoc.xyz/badge/expound/expound)](https://cljdoc.xyz/d/expound/expound/CURRENT)
+[![cljdoc badge](https://cljdoc.org/badge/expound/expound)](https://cljdoc.org/d/expound/expound/CURRENT)
 [![CircleCI](https://circleci.com/gh/bhb/expound.svg?style=shield)](https://circleci.com/gh/bhb/expound)
 
 **Clojurescript 1.10.439 does not work with Expound IF you use specs for macro-expansion or instrumentation. See https://dev.clojure.org/jira/browse/CLJS-2913 for details**
