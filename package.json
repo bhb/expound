@@ -1,6 +1,6 @@
 {
   "name": "@bbrinck/expound",
-  "version": "0.7.1",
+  "version": "0.7.2",
   "description": "Human-optimized error messages for clojure.spec",
   "author": {
     "name": "Ben Brinckerhoff",
