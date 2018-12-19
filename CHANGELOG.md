@@ -1,14 +1,13 @@
 # Change Log
 All notable changes to this project will be documented in this file. This change log follows the conventions of [keepachangelog.com](http://keepachangelog.com/).
 
-## [Unreleased]
+## [0.7.2] - 2018-12-18
 
 ### Fixed
 - Bugs with exceptions on specs that conform e.g. [`s/keys*`](https://github.com/bhb/expound/issues/112) and [`s/and`](https://github.com/bhb/expound/issues/102). Expound also now [print messages for specs that use `conform` for coercion](https://github.com/bhb/expound/issues/78).
 - [ClassCastException when checking spec against sorted map](https://github.com/bhb/expound/issues/136)
+- Incompatibilities with the new `explain-data` format introduced in ClojureScript 1.10.439 and `clojure.spec.alpha` 0.2.176
 
-### Added
-- Support for the new `explain-data` format introduced in ClojureScript 1.10.439 and `clojure.spec.alpha` 0.2.176
 
 ### Changed
 - Replaced Codox docs with [cljdoc](https://cljdoc.xyz/) for [API docs](https://cljdoc.xyz/d/expound/expound)
@@ -133,7 +132,8 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/bhb/expound/compare/v0.7.0...v0.7.2
 [0.7.1]: https://github.com/bhb/expound/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/bhb/expound/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/bhb/expound/compare/v0.5.0...v0.6.0
