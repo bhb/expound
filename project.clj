@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :scm {:name "git" :url "https://github.com/bhb/expound"}
-  :dependencies [[org.clojure/clojure "1.10.0-RC4" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
                  [org.clojure/clojurescript "1.10.439" :scope "provided"]
                  [org.clojure/spec.alpha "0.2.176" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
