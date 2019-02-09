@@ -77,7 +77,7 @@
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
                                   [figwheel-sidecar "0.5.18"]
                                   [cider/piggieback "0.4.0"]
-                                  [orchestra "2018.08.19-1"]
+                                  [orchestra "2019.02.06-1"]
                                   [org.clojure/core.specs.alpha "0.2.36"]
                                   [io.aviso/pretty "0.1.34"]
                                   [vvvvalvalval/scope-capture "0.3.1"]
@@ -99,7 +99,7 @@
                                                      :target-path]}
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [com.gfredericks/test.chuck "0.2.9"]
-                                          [orchestra "2018.08.19-1"]
+                                          [orchestra "2019.02.06-1"]
                                           [org.clojure/core.specs.alpha "0.2.36"]
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
