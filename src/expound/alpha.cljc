@@ -778,11 +778,12 @@ returned an invalid value.
 (defn ^:private print-check-result [check-result]
   (let [{:keys [sym spec failure] :or {sym '<unknown>}} check-result
         ret #?(:clj (:clojure.spec.test.check/ret check-result)
-               :cljs (:clojure.test.check/ret check-result))
+               :cljs (or (:clojure.spec.test.check/ret check-result)
+                         (:clojure.test.check/ret check-result)))
         explain-data (ex-data failure)
         bad-args (or #?(:clj (:clojure.spec.test.alpha/args explain-data)
                         :cljs (:cljs.spec.test.alpha/args explain-data))
-                     (first (:fail ret)))
+                     (-> ret :shrunk :smallest first))
         failure-reason (::s/failure explain-data)
         sym (or sym '<unknown>)]
     (str

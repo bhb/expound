@@ -12,7 +12,7 @@
   :plugins [[com.jakemccrary/lein-test-refresh "0.23.0"]
             [lein-cljfmt "0.6.0"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
-            [lein-figwheel "0.5.16"]
+            [lein-figwheel "0.5.18"]
             [lein-hiera "1.0.0"]]
   :cljsbuild {:builds
               [{:id "test"
@@ -75,8 +75,8 @@
              ;; :server-logfile false
 }
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
-                                  [figwheel-sidecar "0.5.16"]
-                                  [com.cemerick/piggieback "0.2.2"]
+                                  [figwheel-sidecar "0.5.18"]
+                                  [cider/piggieback "0.4.0"]
                                   [orchestra "2018.08.19-1"]
                                   [org.clojure/core.specs.alpha "0.2.36"]
                                   [io.aviso/pretty "0.1.34"]
@@ -89,12 +89,11 @@
                                   [com.gfredericks/test.chuck "0.2.9"]]
                    :injections [(require 'sc.api)]
                    :plugins [[io.aviso/pretty "0.1.34"]
-                             [lein-eftest "0.5.2"]]
+                             [lein-eftest "0.5.2"]
+                             [cider/cider-nrepl "0.18.0"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
-                   ;; for CIDER
-                   ;; :plugins [[cider/cider-nrepl "0.12.0"]]
-                   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
+                   :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
                    ;; need to add the compliled assets to the :clean-targets
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
@@ -111,9 +110,9 @@
                                           [com.bhauman/spell-spec "0.1.1"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
-                         :dependencies [[figwheel-sidecar "0.5.16"]
+                         :dependencies [[figwheel-sidecar "0.5.18"]
                                         [karma-reporter "3.1.0"]]}]
-             :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
+             :cljs-repl {:dependencies [[cider/piggieback "0.4.0"]]}
              :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :clj-1.10.0 {:dependencies [[org.clojure/clojure "1.10.0"]]}
              :cljs-1.10.238 {:dependencies  [[org.clojure/clojurescript "1.10.238"]]}
