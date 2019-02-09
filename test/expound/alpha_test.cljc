@@ -1272,9 +1272,9 @@ Detected 1 error\n")
            (s/explain-str :test-explain-str/name :hello)))))
 
 (s/fdef test-instrument-adder
-        :args (s/cat :x int? :y int?)
-        :fn #(> (:ret %) (-> % :args :x))
-        :ret pos-int?)
+  :args (s/cat :x int? :y int?)
+  :fn #(> (:ret %) (-> % :args :x))
+  :ret pos-int?)
 (defn test-instrument-adder [& args]
   (let [[x y] args]
     (+ x y)))
@@ -2913,53 +2913,53 @@ Detected 1 error
               101))))))
 
 (s/fdef results-str-fn1
-        :args (s/cat :x nat-int? :y nat-int?)
-        :ret pos?)
+  :args (s/cat :x nat-int? :y nat-int?)
+  :ret pos?)
 (defn results-str-fn1 [x y]
   #?(:clj (+' x y)
      :cljs (+ x y)))
 
 (s/fdef results-str-fn2
-        :args (s/cat :x nat-int? :y nat-int?)
-        :fn #(let [x (-> % :args :x)
-                   y (-> % :args :y)
-                   ret (-> % :ret)]
-               (< x ret)))
+  :args (s/cat :x nat-int? :y nat-int?)
+  :fn #(let [x (-> % :args :x)
+             y (-> % :args :y)
+             ret (-> % :ret)]
+         (< x ret)))
 (defn results-str-fn2 [x y]
   (+ x y))
 
 (s/fdef results-str-fn3
-        :args (s/cat :x #{0} :y #{0})
-        :ret nat-int?)
+  :args (s/cat :x #{0} :y #{0})
+  :ret nat-int?)
 (defn results-str-fn3 [x y]
   (+ x y))
 
 (s/fdef results-str-fn4
-        :args (s/cat :x int?)
-        :ret (s/coll-of int?))
+  :args (s/cat :x int?)
+  :ret (s/coll-of int?))
 (defn results-str-fn4 [x]
   [x :not-int])
 
 (s/fdef results-str-fn5
-        :args (s/cat :x #{1} :y #{1})
-        :ret string?)
+  :args (s/cat :x #{1} :y #{1})
+  :ret string?)
 (defn results-str-fn5
   [x y]
   #?(:clj (throw (Exception. "Ooop!"))
      :cljs (throw (js/Error. "Oops!"))))
 
 (s/fdef results-str-fn6
-        :args (s/cat :f fn?)
-        :ret any?)
+  :args (s/cat :f fn?)
+  :ret any?)
 (defn results-str-fn6
   [f]
   (f 1))
 
 (s/fdef results-str-missing-fn
-        :args (s/cat :x int?))
+  :args (s/cat :x int?))
 
 (s/fdef results-str-missing-args-spec
-        :ret int?)
+  :ret int?)
 (defn results-str-missing-args-spec [] 1)
 
 (deftest explain-results

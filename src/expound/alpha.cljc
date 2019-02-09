@@ -75,13 +75,13 @@
 (def ^:private ^:dynamic *value-str-fn* (fn [_ _ _ _] "NOT IMPLEMENTED"))
 
 (s/fdef value-in-context
-        :args (s/cat
-               :opts map?
-               :spec-name (s/nilable #{:args :fn :ret ::s/pred})
-               :form any?
-               :path :expound/path
-               :value any?)
-        :ret string?)
+  :args (s/cat
+         :opts map?
+         :spec-name (s/nilable #{:args :fn :ret ::s/pred})
+         :form any?
+         :path :expound/path
+         :value any?)
+  :ret string?)
 (defn ^:private value-in-context
   "Given a form and a path into that form, returns a string
    that helps the user understand where that path is located
@@ -127,8 +127,8 @@
       via)))
 
 (s/fdef specs
-        :args (s/cat :problems :expound.spec/problems)
-        :ret :expound.spec/specs)
+  :args (s/cat :problems :expound.spec/problems)
+  :ret :expound.spec/specs)
 (defn ^:private specs
   "Given a collection of problems, returns the specs for those problems, with duplicates removed"
   [problems]
@@ -905,16 +905,16 @@ returned an invalid value.
 ;;;;;; public ;;;;;;
 
 (s/fdef error-message
-        :args (s/cat :k qualified-keyword?)
-        :ret (s/nilable string?))
+  :args (s/cat :k qualified-keyword?)
+  :ret (s/nilable string?))
 (defn error-message
   "Given a spec named `k`, return its human-readable error message."
   [k]
   (get @registry-ref k))
 
 (s/fdef custom-printer
-        :args (s/cat :opts :expound.printer/opts)
-        :ret ifn?)
+  :args (s/cat :opts :expound.printer/opts)
+  :ret ifn?)
 (defn custom-printer
   "Returns a printer.
 
@@ -928,17 +928,17 @@ returned an invalid value.
     (print (printer-str opts explain-data))))
 
 (s/fdef printer
-        :args (s/cat :explain-data map?)
-        :ret nil?)
+  :args (s/cat :explain-data map?)
+  :ret nil?)
 (defn printer
   "Prints `explain-data` in a human-readable format."
   [explain-data]
   ((custom-printer {}) explain-data))
 
 (s/fdef expound-str
-        :args (s/cat :spec :expound.spec/spec
-                     :form any?)
-        :ret string?)
+  :args (s/cat :spec :expound.spec/spec
+               :form any?)
+  :ret string?)
 (defn expound-str
   "Given a `spec` and a `form`, either returns success message or a human-readable error message."
   [spec form]
@@ -954,18 +954,18 @@ returned an invalid value.
                    nil))))
 
 (s/fdef expound
-        :args (s/cat :spec :expound.spec/spec
-                     :form any?)
-        :ret nil?)
+  :args (s/cat :spec :expound.spec/spec
+               :form any?)
+  :ret nil?)
 (defn expound
   "Given a `spec` and a `form`, either prints a success message or a human-readable error message."
   [spec form]
   (print (expound-str spec form)))
 
 (s/fdef defmsg
-        :args (s/cat :k qualified-keyword?
-                     :error-message string?)
-        :ret nil?)
+  :args (s/cat :k qualified-keyword?
+               :error-message string?)
+  :ret nil?)
 (defn defmsg
   "Associates the spec named `k` with `error-message`."
   [k error-message]
@@ -989,8 +989,8 @@ returned an invalid value.
            (s/def ~k ~spec-form))))))
 
 (s/fdef explain-result
-        :args (s/cat :check-result (s/nilable map?))
-        :ret nil?)
+  :args (s/cat :check-result (s/nilable map?))
+  :ret nil?)
 (defn explain-result
   "Given a result from `clojure.spec.test.alpha/check`, prints a summary of the result."
   [check-result]
@@ -999,16 +999,16 @@ returned an invalid value.
   (s/*explain-out* check-result))
 
 (s/fdef explain-result-str
-        :args (s/cat :check-result (s/nilable map?))
-        :ret string?)
+  :args (s/cat :check-result (s/nilable map?))
+  :ret string?)
 (defn explain-result-str
   "Given a result from `clojure.spec.test.alpha/check`, returns a string summarizing the result."
   [check-result]
   (with-out-str (explain-result check-result)))
 
 (s/fdef explain-results
-        :args (s/cat :check-results (s/coll-of (s/nilable map?)))
-        :ret nil?)
+  :args (s/cat :check-results (s/coll-of (s/nilable map?)))
+  :ret nil?)
 (defn explain-results
   "Given a sequence of results from `clojure.spec.test.alpha/check`, prints a summary of the results."
   [check-results]
@@ -1018,8 +1018,8 @@ returned an invalid value.
   (explain-result (last check-results)))
 
 (s/fdef explain-results-str
-        :args (s/cat :check-results (s/coll-of (s/nilable map?)))
-        :ret string?)
+  :args (s/cat :check-results (s/coll-of (s/nilable map?)))
+  :ret string?)
 (defn explain-results-str
   "Given a sequence of results from `clojure.spec.test.alpha/check`, returns a string summarizing the results."
   [check-results]
