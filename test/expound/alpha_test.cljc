@@ -1370,7 +1370,7 @@ Detected 1 error\n")
 (deftest test-instrument-with-orchestra-args-spec-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1391,7 +1391,7 @@ Detected 1 error\n"
                                (test-instrument-adder "" :x))
                              (catch :default e e)))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1421,7 +1421,7 @@ Detected 1 error\n"
 (deftest test-instrument-with-orchestra-args-syntax-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Syntax error -------------------
@@ -1441,7 +1441,7 @@ Detected 1 error\n"
                                (test-instrument-adder 1))
                              (catch :default e e)))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
 alpha_test.cljc:LINUM
 
 -- Syntax error -------------------
@@ -1467,7 +1467,7 @@ Detected 1 error\n"
 (deftest test-instrument-with-orchestra-ret-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1487,7 +1487,7 @@ Detected 1 error\n"
                                (test-instrument-adder -1 -2))
                              (catch :default e e)))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1513,7 +1513,7 @@ Detected 1 error\n"
 (deftest test-instrument-with-orchestra-fn-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1533,7 +1533,7 @@ Detected 1 error\n"
                                (test-instrument-adder 1 0))
                              (catch :default e e)))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
