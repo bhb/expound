@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :scm {:name "git" :url "https://github.com/bhb/expound"}
   :dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.10.439" :scope "provided"]
+                 [org.clojure/clojurescript "1.10.516" :scope "provided"]
                  [org.clojure/spec.alpha "0.2.176" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
@@ -115,8 +115,10 @@
                                         [karma-reporter "3.1.0"]]}]
              :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
              :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]]}
+             :clj-1.10.0 {:dependencies [[org.clojure/clojure "1.10.0"]]}
              :cljs-1.10.238 {:dependencies  [[org.clojure/clojurescript "1.10.238"]]}
              :cljs-1.10.339 {:dependencies [[org.clojure/clojurescript "1.10.339"]]}
+             :cljs-1.10.439 {:dependencies [[org.clojure/clojurescript "1.10.439"]]}
              :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}}
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
