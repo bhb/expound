@@ -6,7 +6,7 @@
 | `explain`                                 | yes                     | yes                      | yes                      |
 | `explain-results`                         | yes                     | yes                      | yes                      |
 | expound errors for instrumented functions | yes                     | no                       | yes                      |
-| expound errors for macros                 | yes                     | no                       | no                       |
+| expound errors for macros                 | no                      | no                       | no                       |
 
 ## Relevant JIRAs
 
