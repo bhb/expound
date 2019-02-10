@@ -5,14 +5,14 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :scm {:name "git" :url "https://github.com/bhb/expound"}
   :dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
-                 [org.clojure/clojurescript "1.10.439" :scope "provided"]
+                 [org.clojure/clojurescript "1.10.516" :scope "provided"]
                  [org.clojure/spec.alpha "0.2.176" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
   :plugins [[com.jakemccrary/lein-test-refresh "0.23.0"]
-            [lein-cljfmt "0.6.0"]
+            [lein-cljfmt "0.6.4"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
-            [lein-figwheel "0.5.16"]
+            [lein-figwheel "0.5.18"]
             [lein-hiera "1.0.0"]]
   :cljsbuild {:builds
               [{:id "test"
@@ -75,9 +75,9 @@
              ;; :server-logfile false
 }
   :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
-                                  [figwheel-sidecar "0.5.16"]
-                                  [com.cemerick/piggieback "0.2.2"]
-                                  [orchestra "2018.08.19-1"]
+                                  [figwheel-sidecar "0.5.18"]
+                                  [cider/piggieback "0.4.0"]
+                                  [orchestra "2019.02.06-1"]
                                   [org.clojure/core.specs.alpha "0.2.36"]
                                   [io.aviso/pretty "0.1.34"]
                                   [vvvvalvalval/scope-capture "0.3.1"]
@@ -89,18 +89,17 @@
                                   [com.gfredericks/test.chuck "0.2.9"]]
                    :injections [(require 'sc.api)]
                    :plugins [[io.aviso/pretty "0.1.34"]
-                             [lein-eftest "0.5.2"]]
+                             [lein-eftest "0.5.2"]
+                             [cider/cider-nrepl "0.18.0"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
-                   ;; for CIDER
-                   ;; :plugins [[cider/cider-nrepl "0.12.0"]]
-                   :repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
+                   :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
                    ;; need to add the compliled assets to the :clean-targets
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [com.gfredericks/test.chuck "0.2.9"]
-                                          [orchestra "2018.08.19-1"]
+                                          [orchestra "2019.02.06-1"]
                                           [org.clojure/core.specs.alpha "0.2.36"]
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
@@ -111,12 +110,14 @@
                                           [com.bhauman/spell-spec "0.1.1"]]}
              :test-web [:test-common
                         {:source-paths ["test"]
-                         :dependencies [[figwheel-sidecar "0.5.16"]
+                         :dependencies [[figwheel-sidecar "0.5.18"]
                                         [karma-reporter "3.1.0"]]}]
-             :cljs-repl {:dependencies [[com.cemerick/piggieback "0.2.2"]]}
+             :cljs-repl {:dependencies [[cider/piggieback "0.4.0"]]}
              :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]]}
+             :clj-1.10.0 {:dependencies [[org.clojure/clojure "1.10.0"]]}
              :cljs-1.10.238 {:dependencies  [[org.clojure/clojurescript "1.10.238"]]}
              :cljs-1.10.339 {:dependencies [[org.clojure/clojurescript "1.10.339"]]}
+             :cljs-1.10.439 {:dependencies [[org.clojure/clojurescript "1.10.439"]]}
              :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}}
   :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"

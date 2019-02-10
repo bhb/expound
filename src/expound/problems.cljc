@@ -26,9 +26,9 @@
     ::irrelevant))
 
 (s/fdef summary-form
-        :args (s/cat :show-valid-values? boolean?
-                     :form any?
-                     :highlighted-path :expound/path))
+  :args (s/cat :show-valid-values? boolean?
+               :form any?
+               :highlighted-path :expound/path))
 (defn summary-form [show-valid-values? form in]
   (let [[k & rst] in
         rst (or rst [])

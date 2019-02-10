@@ -164,8 +164,8 @@
    :clj (def format clojure.core/format))
 
 (s/fdef pprint-str
-        :args (s/cat :x any?)
-        :ret string?)
+  :args (s/cat :x any?)
+  :ret string?)
 (defn pprint-str
   "Returns the pretty-printed string"
   [x]
@@ -210,8 +210,8 @@
                                  keys-clauses))) :correct-key)))))
 
 (s/fdef no-trailing-whitespace
-        :args (s/cat :s string?)
-        :ret string?)
+  :args (s/cat :s string?)
+  :ret string?)
 (defn no-trailing-whitespace
   "Given an potentially multi-line string, returns that string with all
   trailing whitespace removed."
@@ -225,11 +225,11 @@
       s')))
 
 (s/fdef indent
-        :args (s/cat
-               :first-line-indent-level (s/? nat-int?)
-               :indent-level (s/? nat-int?)
-               :s string?)
-        :ret string?)
+  :args (s/cat
+         :first-line-indent-level (s/? nat-int?)
+         :indent-level (s/? nat-int?)
+         :s string?)
+  :ret string?)
 (defn indent
   "Given an potentially multi-line string, returns that string indented by
    'indent-level' spaces. Optionally, can indent first line and other lines
