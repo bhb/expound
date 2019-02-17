@@ -111,6 +111,7 @@ jobs:
       - run: lein clean && lein with-profile test-web,clj-1.9.0,cljs-1.10.238 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,clj-1.9.0,cljs-1.10.339 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,clj-1.10.0,cljs-1.10.439 cljsbuild once test && bin/tests
+      - run: lein clean && lein with-profile test-web,clj-1.10.0,cljs-1.10.516 cljsbuild once test && bin/tests
 
   test_clj_old:
     docker:

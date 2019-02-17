@@ -144,6 +144,10 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 (s/explain :example.place/city 123)
 ```
 
+Due to the way that macros are expanded in ClojureScript, you'll need to configure Expound in *Clojure* to use Expound during macro-expansion. This does not apply to self-hosted ClojureScript. Note the `-e` arg when starting ClojureScript:
+
+`clj -Srepro -Sdeps '{:deps {expound {:mvn/version "0.7.2"} org.clojure/test.check {:mvn/version "0.9.0"} org.clojure/clojurescript {:mvn/version "1.10.520"}}}' -e "(require '[expound.alpha :as expound]) (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)" -m cljs.main -re node`
+
 ### Printing results for `check`
 
 Re-binding `s/*explain-out*` has no effect on the results of `cljs.spec.test.alpha/summarize-results`, but Expound provides the function `expound/explain-results` to print the results from `clojure.spec.test.alpha/check`.
