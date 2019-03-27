@@ -1,10 +1,10 @@
 # Expound
 
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
-[![cljdoc badge](https://cljdoc.xyz/badge/expound/expound)](https://cljdoc.xyz/d/expound/expound/CURRENT)
+[![cljdoc badge](https://cljdoc.org/badge/expound/expound)](https://cljdoc.org/d/expound/expound/CURRENT)
 [![CircleCI](https://circleci.com/gh/bhb/expound.svg?style=shield)](https://circleci.com/gh/bhb/expound)
 
-**Clojurescript 1.10.439 does not work with Expound IF you use specs for macro-expansion or instrumentation. See https://dev.clojure.org/jira/browse/CLJS-2913 for details**
+**If you are using recent versions of ClojureScript, please check the [compatibility guide](doc/compatibility.md)**
 
 Expound formats `clojure.spec` error messages in a way that is optimized for humans to read.
 
@@ -143,6 +143,10 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 ;; You can use `explain` without converting to expound
 (s/explain :example.place/city 123)
 ```
+
+Due to the way that macros are expanded in ClojureScript, you'll need to configure Expound in *Clojure* to use Expound during macro-expansion. This does not apply to self-hosted ClojureScript. Note the `-e` arg when starting ClojureScript:
+
+`clj -Srepro -Sdeps '{:deps {expound {:mvn/version "0.7.2"} org.clojure/test.check {:mvn/version "0.9.0"} org.clojure/clojurescript {:mvn/version "1.10.520"}}}' -e "(require '[expound.alpha :as expound]) (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)" -m cljs.main -re node`
 
 ### Printing results for `check`
 
