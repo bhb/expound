@@ -7,6 +7,7 @@
   for seeting how output appears in practice"
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as st]
+            [clojure.main :as main]
             [expound.alpha :as expound]
             [orchestra.spec.test :as orch.st]))
 
@@ -22,6 +23,12 @@
      ~form
      (catch Exception e#
        (println (.getMessage e#)))))
+
+(defmacro format-spec-err [form]
+  `(try
+     ~form
+     (catch Exception e#
+       (throw (Exception. (main/err->msg e#))))))
 
 (defn go [check-results?]
   (set! s/*explain-out* (expound/custom-printer {:theme :figwheel-theme}))
@@ -196,7 +203,8 @@
   (st/instrument `test-instrument-adder)
 
   (display-try
-   (test-instrument-adder "" :x))
+   (format-spec-err
+    (test-instrument-adder "" :x)))
 
   (orch.st/instrument `test-instrument-adder)
 
@@ -341,7 +349,8 @@
   (expound/explain-result (st/check-fn `resultsf-str-fn1 (s/spec `results-str-fn2)))
 
   (s/def ::sorted-pair (s/and (s/cat :x int? :y int?) #(< (-> % :x) (-> % :y))))
-  (s/explain ::sorted-pair [1 0]))
+  (s/explain ::sorted-pair [1 0])
+  )
 
 
 (go (= "--check-results" (first *command-line-args*)))
