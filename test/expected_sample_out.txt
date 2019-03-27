@@ -767,9 +767,9 @@ should satisfy
 [36m-------------------------[0m
 [36mDetected[0m [36m1[0m [36merror[0m
 
-=====  (test-instrument-adder  :x)  =========
-Call to #'expound.sample/test-instrument-adder did not conform to spec:
-[0msample.clj:199
+=====  (format-spec-err (test-instrument-adder  :x))  =========
+Execution error - invalid arguments to expound.sample/test-instrument-adder at (sample.clj:207).
+[0msample.clj:207
 
 [0m[36m-- Spec failed --------------------[0m
 
@@ -786,8 +786,8 @@ should satisfy
 [36mDetected[0m [36m1[0m [36merror[0m
 
 =====  (test-instrument-adder  :x)  =========
-Call to #'expound.sample/test-instrument-adder did not conform to spec:
-[0msample.clj:204
+Call to expound.sample/test-instrument-adder did not conform to spec:
+[0msample.clj:212
 
 [0m[36m-- Spec failed --------------------[0m
 
@@ -804,8 +804,8 @@ should satisfy
 [36mDetected[0m [36m1[0m [36merror[0m
 
 =====  (test-instrument-adder 1)  =========
-Call to #'expound.sample/test-instrument-adder did not conform to spec:
-[0msample.clj:207
+Call to expound.sample/test-instrument-adder did not conform to spec:
+[0msample.clj:215
 
 [0m[36m-- Syntax error -------------------[0m
 
@@ -821,8 +821,8 @@ should have additional elements. The next element ":y" should satisfy
 [36mDetected[0m [36m1[0m [36merror[0m
 
 =====  (test-instrument-adder -1 -2)  =========
-Call to #'expound.sample/test-instrument-adder did not conform to spec:
-[0msample.clj:210
+Call to expound.sample/test-instrument-adder did not conform to spec:
+[0msample.clj:218
 
 [0m[36m-- Spec failed --------------------[0m
 
@@ -838,8 +838,8 @@ should satisfy
 [36mDetected[0m [36m1[0m [36merror[0m
 
 =====  (test-instrument-adder 1 0)  =========
-Call to #'expound.sample/test-instrument-adder did not conform to spec:
-[0msample.clj:213
+Call to expound.sample/test-instrument-adder did not conform to spec:
+[0msample.clj:221
 
 [0m[36m-- Spec failed --------------------[0m
 
