@@ -9,11 +9,13 @@
                  [org.clojure/spec.alpha "0.2.176" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
-  :plugins [[com.jakemccrary/lein-test-refresh "0.23.0"]
+  :plugins [
+            [com.jakemccrary/lein-test-refresh "0.23.0"]
             [lein-cljfmt "0.6.4"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.18"]
-            [lein-hiera "1.0.0"]]
+            [lein-hiera "1.0.0"]
+            ]
   :cljsbuild {:builds
               [{:id "test"
                 :source-paths ["src" "test"]
@@ -74,23 +76,27 @@
              ;; to pipe all the output to the repl
              ;; :server-logfile false
 }
-  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
+  :profiles {:dev {:dependencies [
+                                  [binaryage/devtools "0.9.10"]
                                   [figwheel-sidecar "0.5.18"]
                                   [cider/piggieback "0.4.0"]
                                   [orchestra "2019.02.06-1"]
                                   [org.clojure/core.specs.alpha "0.2.36"]
-                                  [io.aviso/pretty "0.1.34"]
-                                  [vvvvalvalval/scope-capture "0.3.1"]
+                                  [io.aviso/pretty "0.1.37"]
+                                  [vvvvalvalval/scope-capture "0.3.2"]
                                   [org.clojure/test.check "0.10.0-alpha3"]
                                   [metosin/spec-tools "0.8.2"]
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
-                                  [com.gfredericks/test.chuck "0.2.9"]]
+                                  [com.gfredericks/test.chuck "0.2.9"]
+                                  ]
                    :injections [(require 'sc.api)]
-                   :plugins [[io.aviso/pretty "0.1.34"]
+                   :plugins [
+                             [io.aviso/pretty "0.1.37"]
                              [lein-eftest "0.5.2"]
-                             [cider/cider-nrepl "0.18.0"]]
+                             [cider/cider-nrepl "0.21.1"]
+                             ]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
                    :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
