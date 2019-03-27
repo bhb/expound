@@ -90,7 +90,7 @@
                    :injections [(require 'sc.api)]
                    :plugins [[io.aviso/pretty "0.1.34"]
                              [lein-eftest "0.5.2"]
-                             [cider/cider-nrepl "0.18.0"]]
+                             [cider/cider-nrepl "0.20.0"]]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
                    :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
