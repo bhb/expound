@@ -1889,7 +1889,8 @@ Detected 1 error\n"
     (str x)
 
     (char? x)
-    (int x)
+    #?(:cljs (.charCodeAt x)
+       :clj (int x))
 
     (uuid? x)
     (str x)
