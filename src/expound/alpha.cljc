@@ -937,30 +937,36 @@ returned an invalid value.
 
 (s/fdef expound-str
   :args (s/cat :spec :expound.spec/spec
-               :form any?)
+               :form any?
+               :opts (s/? :expound.printer/opts))
   :ret string?)
 (defn expound-str
   "Given a `spec` and a `form`, either returns success message or a human-readable error message."
-  [spec form]
-  ;; expound was initially released with support
-  ;; for CLJS 1.9.542 which did not include
-  ;; the value in the explain data, so we patch it
-  ;; in to avoid breaking back compat (at least for now)
-  (let [explain-data (s/explain-data spec form)]
-    (printer-str {}
-                 (if explain-data
-                   (assoc explain-data
-                          ::s/value form)
-                   nil))))
+  ([spec form]
+   (expound-str spec form {}))
+  ([spec form opts]
+   ;; expound was initially released with support
+   ;; for CLJS 1.9.542 which did not include
+   ;; the value in the explain data, so we patch it
+   ;; in to avoid breaking back compat (at least for now)
+   (let [explain-data (s/explain-data spec form)]
+     (printer-str opts
+                  (if explain-data
+                    (assoc explain-data
+                           ::s/value form)
+                    nil)))))
 
 (s/fdef expound
   :args (s/cat :spec :expound.spec/spec
-               :form any?)
+               :form any?
+               :opts (s/? :expound.printer/opts))
   :ret nil?)
 (defn expound
   "Given a `spec` and a `form`, either prints a success message or a human-readable error message."
-  [spec form]
-  (print (expound-str spec form)))
+  ([spec form]
+   (expound spec form {}))
+  ([spec form opts]
+   (print (expound-str spec form opts))))
 
 (s/fdef defmsg
   :args (s/cat :k qualified-keyword?
