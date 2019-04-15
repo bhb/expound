@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Added
+- `expound` and `expound-str` now (optionally) accept the same options as `custom-printer`
+
 ## [0.7.2] - 2018-12-18
 
 ### Fixed
