@@ -82,7 +82,6 @@
                                   [cider/piggieback "0.4.0"]
                                   [orchestra "2019.02.06-1"]
                                   [org.clojure/core.specs.alpha "0.2.36"]
-                                  [io.aviso/pretty "0.1.37"]
                                   [vvvvalvalval/scope-capture "0.3.2"]
                                   [org.clojure/test.check "0.10.0-alpha3"]
                                   [metosin/spec-tools "0.8.2"]
@@ -106,6 +105,7 @@
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [com.gfredericks/test.chuck "0.2.9"]
                                           [orchestra "2019.02.06-1"]
+                                          [io.aviso/pretty "0.1.37"]
                                           [org.clojure/core.specs.alpha "0.2.36"]
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
@@ -113,7 +113,8 @@
                                           [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                           [vvvvalvalval/scope-capture "0.3.1"]
                                           [metosin/spec-tools "0.7.1"]
-                                          [com.bhauman/spell-spec "0.1.1"]]}
+                                          [com.bhauman/spell-spec "0.1.1"]]
+                           :middleware [io.aviso.lein-pretty/inject]}
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.18"]
