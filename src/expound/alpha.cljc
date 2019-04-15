@@ -195,24 +195,6 @@
                   (error-message last-spec)
                   (s/get-spec last-spec)))))
 
-(defn ^:private predicate-errors [problems]
-  (let [[with-msg no-msgs] ((juxt filter remove)
-                            (fn [{:keys [expound/via pred]}]
-                              (spec-w-error-message? via pred))
-                            problems)]
-    (->> (when (seq no-msgs)
-           (printer/format
-            "should satisfy\n\n%s"
-            (preds no-msgs)))
-         (conj (keep (fn [{:keys [expound/via]}]
-                       (let [last-spec (last via)]
-                         (if (qualified-keyword? last-spec)
-                           (ansi/color (error-message last-spec) :good)
-                           nil)))
-                     with-msg))
-         (remove nil?)
-         (string/join "\n\nor\n\n"))))
-
 (defn ^:private label
   ([size]
    (apply str (repeat size "-")))
@@ -522,6 +504,18 @@
           [])
          lift-singleton-groups)))
 
+(defn ^:private problems-without-location [problems opts]
+  (let [failure nil
+        non-matching-value [:expound/value-that-should-never-match]
+        problems (->> problems
+                      ;;(map remove-ret)
+                      (map #(dissoc % :expound.spec.problem/type :reason))
+                      (map #(assoc % :expound.spec.problem/type (problems/type failure % true)))
+                      groups)]
+    (apply str (for [prob problems]
+                 (let [in (-> prob :expound/in)]
+                   (expected-str (-> prob :expound.spec.problem/type) :expound/no-spec-name non-matching-value in [prob] opts))))))
+
 (defmethod expected-str :expound.problem/insufficient-input [_type spec-name form path problems opts]
   (let [problem (first problems)]
     (printer/format
@@ -529,15 +523,7 @@
      (if-some [el-name (last (:expound/path problem))]
        (str " \"" (pr-str el-name) "\"")
        "")
-     (let [failure nil
-           non-matching-value [:expound/value-that-should-never-match]
-           problems (->> problems
-                         (map #(dissoc % :expound.spec.problem/type :reason))
-                         (map #(assoc % :expound.spec.problem/type (problems/type failure %)))
-                         groups)]
-       (apply str (for [prob problems]
-                    (let [in (-> prob :expound/in)]
-                      (expected-str (-> prob :expound.spec.problem/type) :expound/no-spec-name non-matching-value in [prob] opts))))))))
+     (problems-without-location problems opts))))
 
 (defmethod problem-group-str :expound.problem/insufficient-input [type spec-name form path problems opts]
   (format-err "Syntax error"
@@ -596,7 +582,7 @@ with args:
     (printer/format
      "returned an invalid value\n\n%s\n\n%s"
      (ansi/color (printer/indent (pr-str (:val problem))) :bad-value)
-     (predicate-errors problems))))
+     (problems-without-location problems opts))))
 
 (defmethod problem-group-str :expound.problem/fspec-ret-failure [type spec-name form path problems opts]
   (format-err
@@ -673,7 +659,7 @@ should satisfy
    (expected-str _type spec-name form path problems opts)))
 
 (defmethod expected-str :expound.problem/check-ret-failure [_type spec-name form path problems opts]
-  (predicate-errors problems))
+  (problems-without-location problems opts))
 
 (defmethod problem-group-str :expound.problem/check-ret-failure [_type spec-name form path problems opts]
   (printer/format
@@ -694,7 +680,22 @@ returned an invalid value.
    (expected-str _type spec-name form path problems opts)))
 
 (defmethod expected-str :expound.problem/unknown [_type spec-name form path problems opts]
-  (predicate-errors problems))
+  (let [[with-msg no-msgs] ((juxt filter remove)
+                            (fn [{:keys [expound/via pred]}]
+                              (spec-w-error-message? via pred))
+                            problems)]
+    (->> (when (seq no-msgs)
+           (printer/format
+            "should satisfy\n\n%s"
+            (preds no-msgs)))
+         (conj (keep (fn [{:keys [expound/via]}]
+                       (let [last-spec (last via)]
+                         (if (qualified-keyword? last-spec)
+                           (ansi/color (error-message last-spec) :good)
+                           nil)))
+                     with-msg))
+         (remove nil?)
+         (string/join "\n\nor\n\n"))))
 
 (defmethod problem-group-str :expound.problem/unknown [type spec-name form path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))

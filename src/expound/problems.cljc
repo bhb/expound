@@ -187,10 +187,31 @@
 (defn ^:private extra-input? [_failure problem]
   (contains? #{"Extra input"} (:reason problem)))
 
-(defn ^:private ptype [failure problem]
+(defn ^:private ptype [failure problem skip-locations?]
   (cond
     (:expound.spec.problem/type problem)
     (:expound.spec.problem/type problem)
+
+    ;; This is really a location of a failure, not a failure type
+    (and (not skip-locations?) (fspec-ret-failure? failure problem))
+    :expound.problem/fspec-ret-failure
+
+    (fspec-exception-failure? failure problem)
+    :expound.problem/fspec-exception-failure
+
+    ;; This is really a location of a failure, not a failure type
+    ;; (compare to check-fn-failure, which is also an fn failure, but
+    ;; at a different location)
+    (and (not skip-locations?) (fspec-fn-failure? failure problem))
+    :expound.problem/fspec-fn-failure
+
+    ;; This is really a location of a failure, not a failure type
+    (and (not skip-locations?) (check-ret-failure? failure problem))
+    :expound.problem/check-ret-failure
+
+    ;; This is really a location of a failure, not a failure type
+    (and (not skip-locations?) (check-fn-failure? failure problem)) 
+    :expound.problem/check-fn-failure
 
     (insufficient-input? failure problem)
     :expound.problem/insufficient-input
@@ -206,21 +227,6 @@
 
     (missing-spec? failure problem)
     :expound.problem/missing-spec
-
-    (fspec-exception-failure? failure problem)
-    :expound.problem/fspec-exception-failure
-
-    (fspec-ret-failure? failure problem)
-    :expound.problem/fspec-ret-failure
-
-    (fspec-fn-failure? failure problem)
-    :expound.problem/fspec-fn-failure
-
-    (check-ret-failure? failure problem)
-    :expound.problem/check-ret-failure
-
-    (check-fn-failure? failure problem)
-    :expound.problem/check-fn-failure
 
     :else
     :expound.problem/unknown))
@@ -261,14 +267,17 @@
                (cond
                  (contains? explain-data ::s/ret) ret
                  (contains? explain-data ::s/args) args
-                 (contains? explain-data ::s/fn) fn))
+                 (contains? explain-data ::s/fn) fn
+                 :else (throw (ex-info "Invalid explain-data" {:explain-data explain-data}))))
         problems' (map (comp (partial adjust-in form)
                              (partial adjust-path failure)
                              (partial add-spec spec)
                              (partial fix-via spec)
                              #(assoc % :expound/form form)
-                             #(assoc % :expound.spec.problem/type (ptype failure %)))
-                       problems)]
+                             #(assoc % :expound.spec.problem/type (ptype failure % false)))
+                       problems)
+        
+        ]
     (-> explain-data
         (assoc :expound/form form
                :expound/caller caller

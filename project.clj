@@ -113,7 +113,8 @@
                                           [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                           [vvvvalvalval/scope-capture "0.3.1"]
                                           [metosin/spec-tools "0.7.1"]
-                                          [com.bhauman/spell-spec "0.1.1"]]
+                                          [com.bhauman/spell-spec "0.1.1"]
+                                          [metosin/reitit "0.1.2"]]
                            :middleware [io.aviso.lein-pretty/inject]}
              :test-web [:test-common
                         {:source-paths ["test"]

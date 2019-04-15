@@ -23,6 +23,7 @@
             [expound.ansi :as ansi]
             [clojure.test.check.random :as random]
             [clojure.test.check.rose-tree :as rose]
+            [reitit.ring :as rr] ;; TODO - Delete this once I confirm it works
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -2489,6 +2490,7 @@ Detected 1 error\n")
 (s/def :fspec-ret-test/plus (s/fspec
                              :args (s/cat :x int? :y pos-int?)
                              :ret :fspec-ret-test/my-int))
+
 (defn my-plus [x y]
   (+ x y))
 
@@ -2506,22 +2508,9 @@ should satisfy
 
   pos-int?
 
--- Relevant specs -------
-
-:fspec-ret-test/my-int:
-  pf.core/pos-int?
-:fspec-ret-test/plus:
-  (pf.spec.alpha/fspec
-   :args
-   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
-   :ret
-   :fspec-ret-test/my-int
-   :fn
-   nil)
-
 -------------------------
 Detected 1 error\n")
-           (until-unsuccessful #(expound/expound-str :fspec-ret-test/plus my-plus))))
+           (until-unsuccessful #(expound/expound-str :fspec-ret-test/plus my-plus {:print-specs? false}))))
 
     (is (= (pf "-- Function spec failed -----------
 
@@ -2536,22 +2525,35 @@ should satisfy
 
   pos-int?
 
--- Relevant specs -------
-
-:fspec-ret-test/my-int:
-  pf.core/pos-int?
-:fspec-ret-test/plus:
-  (pf.spec.alpha/fspec
-   :args
-   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
-   :ret
-   :fspec-ret-test/my-int
-   :fn
-   nil)
-
 -------------------------
 Detected 1 error\n")
-           (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus]))))))
+           (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus] {:print-specs? false}))))
+    (s/def :fspec-ret-test/return-map (s/fspec
+                                       :args (s/cat)
+                                       :ret (s/keys :req-un [:fspec-ret-test/my-int])))
+    (is (= (pf "-- Function spec failed -----------
+
+  <anonymous function>
+
+returned an invalid value
+
+  {}
+
+should contain key: :my-int
+
+|     key | spec |
+|---------+------|
+| :my-int |  nil |
+
+-------------------------
+Detected 1 error
+")
+           (until-unsuccessful #(expound/expound-str :fspec-ret-test/return-map
+                                                     (fn [] {})
+                                                     {:print-specs? false}
+                                                     ))
+           ))
+    ))
 
 (s/def :fspec-fn-test/minus (s/fspec
                              :args (s/cat :x int? :y int?)
@@ -2943,6 +2945,14 @@ Detected 1 error
   [f]
   (f 1))
 
+(s/def :results-str-fn7/k string?)
+(s/fdef results-str-fn7
+        :args (s/cat :m (s/keys))
+        :ret (s/keys :req-un [:results-str-fn7/k]))
+(defn results-str-fn7
+  [m]
+  m)
+
 (s/fdef results-str-missing-fn
   :args (s/cat :x int?))
 
@@ -2978,7 +2988,29 @@ should satisfy
 Detected 1 error
 ")
            (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1)))))))
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1))))))
+    (is (= (pf
+            "== Checked expound.alpha-test/results-str-fn7 
+
+-- Function spec failed -----------
+
+  (expound.alpha-test/results-str-fn7 {})
+
+returned an invalid value.
+
+  {}
+
+should contain key: :k
+
+| key |    spec |
+|-----+---------|
+|  :k | string? |
+
+-------------------------
+Detected 1 error
+")
+           (binding [s/*explain-out* expound/printer]
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn7)))))))
   (testing "single bad result (failing fn spec)"
     (is (= (pf "== Checked expound.alpha-test/results-str-fn2 
 
@@ -3698,3 +3730,70 @@ Detected 1 error\n"
           {:foo (sorted-map "bar"
 
                             1)}))))
+
+
+;; TODO: cleanup
+;; Bug 1 - return value from rspec doesn't work well with
+;; conformance code (see ring.sync/handler)
+
+;; Bug 2 - exception handling (which happens w/ async case) doesn't combine
+;; well with other failures
+
+;; Bug 3 - ring.spec has a strange looking :fn spec that returns a spec that
+;; seems to dupe the args/ret specs and not assert any new information
+
+
+(comment
+  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+    
+    (s/explain :ring/handler (fn handler [req] {}))
+    )
+
+  (s/explain :ring/handler (fn handler [req] {}))
+
+
+  ;; bug 1
+  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+    
+    (s/explain :ring.sync/handler (fn handler [req] {}))
+    )
+  (s/explain :ring.sync/handler (fn handler [req] {}))
+
+  ;; bug 2
+  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+    (s/explain :ring.async/handler (fn handler [req] {}))
+    )
+  (s/explain :ring.async/handler (fn handler [req] {}))
+
+
+  ;; bug 3
+  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+    
+    (s/explain :ring.sync+async/handler (fn handler [req] {}))
+    )
+
+  
+  (s/explain :ring.sync+async/handler (fn handler [req] {}))
+
+  (s/form :ring/handler)
+  (s/form :ring.sync/handler)
+  (s/form :ring.async/handler)
+  (s/form :ring.sync+async/handler)
+  )
+
+;; make sure to include [metosin/reitit "0.1.2"]
+;; :ring/handler has lots of alternatives in the spec
+;; including several possible fdef implementations
+;; TODO - delete this when it works
+#_(deftest complex-alternatives
+  ;; Repro without reitit
+  (is (= "foobar"
+         (binding [s/*explain-out* expound/printer]
+           (s/explain-str :ring/handler (fn [req] {})))))
+
+  ;; Repro with reitit
+  (binding [s/*explain-out* expound/printer]
+    (is (string?
+         (s/explain-str :ring/handler (rr/ring-handler (rr/router ["" #(prn "")])))))))
+
+
