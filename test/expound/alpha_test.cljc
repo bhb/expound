@@ -1173,27 +1173,15 @@ Detected 1 error\n")
    :simple :expound.ds/simple-specs
    :maybe :expound.ds/maybe-spec))
 
-(def data-spec-compat?
-  #?(:cljs
-     (do
-       ;; FIXME - anything including or after 1.9.908
-       ;; should work, but seems to fail, possibly due to?
-       ;; https://dev.clojure.org/jira/browse/CLJS-1297?
-       ;; Just force false for now
-       false)
-     :clj
-     true))
-
-(when data-spec-compat?
-  (deftest generated-data-specs
-    (checking
-     "generated data specs"
-     (chuck/times num-tests)
-     [data-spec (s/gen :expound.ds/spec)
-      form test-utils/any-printable-wo-nan
-      prefix (s/gen qualified-keyword?)
-      :let [gen-spec (ds/spec prefix (real-spec data-spec))]]
-     (is (string? (expound/expound-str gen-spec form))))))
+(deftest generated-data-specs
+  (checking
+   "generated data specs"
+   (chuck/times num-tests)
+   [data-spec (s/gen :expound.ds/spec)
+    form test-utils/any-printable-wo-nan
+    prefix (s/gen qualified-keyword?)
+    :let [gen-spec (ds/spec prefix (real-spec data-spec))]]
+   (is (string? (expound/expound-str gen-spec form)))))
 
 ;; FIXME - keys
 ;; FIXME - cat + alt, + ? *
