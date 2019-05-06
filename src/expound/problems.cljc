@@ -137,7 +137,7 @@
 
 ;; via is slightly different when using s/assert
 (defn fix-via [spec problem]
-  (if (= spec (first (:via problem)))
+  (if (= spec (last (:via problem)))
     (assoc problem :expound/via (:via problem))
     (assoc problem :expound/via (into [spec] (:via problem)))))
 
@@ -156,22 +156,24 @@
   (and
    (not= :instrument failure)
    (not= :check-failed failure)
-   (= :ret (first (:path problem)))))
+   ;; TODO: write test for this change
+   ;; was first, now last
+   (= :ret (last (:path problem)))))
 
 (defn ^:private fspec-fn-failure? [failure problem]
   (and
    (not= :instrument failure)
    (not= :check-failed failure)
-   (= :fn (first (:path problem)))))
+   (= :fn (last (:path problem)))))
 
 (defn ^:private check-ret-failure? [failure problem]
   (and
    (= :check-failed failure)
-   (= :ret (first (:path problem)))))
+   (= :ret (last (:path problem)))))
 
 (defn ^:private check-fn-failure? [failure problem]
   (and (= :check-failed failure)
-       (= :fn (first (:path problem)))))
+       (= :fn (last (:path problem)))))
 
 (defn ^:private missing-key? [_failure problem]
   (let [pred (:pred problem)]

@@ -480,6 +480,19 @@
 
 (defn ^:private groups [problems]
   (let [grouped-by-in-path (->> problems
+                                ;; HERE: I have sample data in the test file, but the issue
+                                ;; is that we group by :in, which is the same here, even though locations
+                                ;; are wildly different.
+
+                                ;; in *is* good way to structure in many cases, because we do
+                                ;; want to talk about alternative ways to extra same data in database
+                                ;; but
+
+                                ;; the problem is that this seems to group by a single value,
+                                ;; but of course these
+
+                                ;; since we immediately throw away the key, i wonder if
+                                ;; we could just add a prefix to the path
                                 (group-by :expound/in)
                                 vals
                                 (map (fn [grp]
@@ -508,7 +521,6 @@
   (let [failure nil
         non-matching-value [:expound/value-that-should-never-match]
         problems (->> problems
-                      ;;(map remove-ret)
                       (map #(dissoc % :expound.spec.problem/type :reason))
                       (map #(assoc % :expound.spec.problem/type (problems/type failure % true)))
                       groups)]
