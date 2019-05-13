@@ -1998,7 +1998,8 @@ Detected 1 error\n"
              (mutate form mutate-path)))))
 
 #?(:clj
-   (deftest real-spec-tests-mutated-valid-value
+   1
+   #_(deftest real-spec-tests-mutated-valid-value
      ;; FIXME - we need to use generate mutated value, instead
      ;; of adding randomness to test
      #_(checking
@@ -3516,10 +3517,10 @@ should satisfy
                (tree-seq coll? seq spec-defs)))]
     (set/difference used defined)))
 
-#?(:clj (deftest eval-gen-test
+#?(:clj 1 #_(deftest eval-gen-test
           ;; FIXME - this is a useful test but not 100% reliable yet
           ;; so I'm disabling to get this PR in
-          #_(binding [s/*recursion-limit* 2]
+          (binding [s/*recursion-limit* 2]
             (checking
              "expound returns string"
              5 ;; Hard-code at 5, since generating specs explodes in size quite quickly
