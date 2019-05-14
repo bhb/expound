@@ -5,8 +5,6 @@
             [clojure.string :as string]
             [clojure.set :as set]
             [clojure.walk :as walk]
-            #?(:cljs [goog.string.format])
-            #?(:cljs [goog.string])
             [expound.printer :as printer]
             [expound.util :as util]
             [expound.ansi :as ansi]
