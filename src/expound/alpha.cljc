@@ -945,16 +945,7 @@ returned an invalid value.
   ([spec form]
    (expound-str spec form {}))
   ([spec form opts]
-   ;; expound was initially released with support
-   ;; for CLJS 1.9.542 which did not include
-   ;; the value in the explain data, so we patch it
-   ;; in to avoid breaking back compat (at least for now)
-   (let [explain-data (s/explain-data spec form)]
-     (printer-str opts
-                  (if explain-data
-                    (assoc explain-data
-                           ::s/value form)
-                    nil)))))
+   (printer-str opts (s/explain-data spec form))))
 
 (s/fdef expound
   :args (s/cat :spec :expound.spec/spec
@@ -1030,3 +1021,5 @@ returned an invalid value.
   "Given a sequence of results from `clojure.spec.test.alpha/check`, returns a string summarizing the results."
   [check-results]
   (with-out-str (explain-results check-results)))
+
+(def install! [])
