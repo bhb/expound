@@ -19,11 +19,9 @@
             [com.stuartsierra.dependency :as deps]
             [expound.alpha :as expound]
             [expound.ansi :as ansi]
-            [expound.ansi :as ansi]
             [expound.printer :as printer]
             [expound.problems :as problems]
             [expound.test-utils :as test-utils]
-            [reitit.ring :as rr] ;; TODO - Delete this once I confirm it works
             [spec-tools.data-spec :as ds]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
@@ -3732,101 +3730,6 @@ Detected 1 error\n"
 
                             1)}))))
 
-
-;; TODO: cleanup
-;; Bug 1 - return value from rspec doesn't work well with
-;; conformance code (see ring.sync/handler) - DONE
-
-;; Bug 2 - exception handling (which happens w/ async case) doesn't combine
-;; well with other failures
-
-;; Bug 3 - ring.spec has a strange looking :fn spec that returns a spec that
-;; seems to dupe the args/ret specs and not assert any new information - This is just a weird issue w/ the spec;
-;; Document this in the bug
-
-(comment
-
-  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-    (s/explain :ring/handler (fn handler [req] {}))
-    )
-
-  (require '[expound.problems :as problems])
-
-  (problems/annotate (s/explain-data :ring.sync/handler (fn handler [req] {})))
-
-  (expound/expound :ring.sync/handler (fn handler [req] {}))
-  
-  ;;{:clojure.spec.alpha/problems ({:path [:ret], :pred (clojure.core/fn [%] (clojure.core/contains? % :status)), :val {}, :via [:ring.sync/handler :ring/response], :in []} {:path [:ret], :pred (clojure.core/fn [%] (clojure.core/contains? % :headers)), :val {}, :via [:ring.sync/handler :ring/response], :in []}), :clojure.spec.alpha/spec :ring.sync/handler, :clojure.spec.alpha/value #function[expound.alpha-test/eval18040/handler--18041], :expound/form #function[expound.alpha-test/eval18040/handler--18041], :expound/caller nil, :expound/problems ({:path [:ret], :pred (clojure.core/fn [%] (clojure.core/contains? % :status)), :via [:ring.sync/handler :ring/response], :expound/form #function[expound.alpha-test/eval18040/handler--18041], :val {}, :expound.spec.problem/type :expound.problem/fspec-ret-failure, :spec :ring.sync/handler, :expound/path [:ret], :expound/in [], :in [], :expound/via [:ring.sync/handler :ring/response]} {:path [:ret], :pred (clojure.core/fn [%] (clojure.core/contains? % :headers)), :via [:ring.sync/handler :ring/response], :expound/form #function[expound.alpha-test/eval18040/handler--18041], :val {}, :expound.spec.problem/type :expound.problem/fspec-ret-failure, :spec :ring.sync/handler, :expound/path [:ret], :expound/in [], :in [], :expound/via [:ring.sync/handler :ring/response]})}
-  
-  
-  (#'expound/groups (:expound/problems (problems/annotate (s/explain-data :ring/handler (fn handler [req] {})))))
-
-  
-
-;;  [{:expound.spec.problem/type :expound.problem-group/one-value, :path-prefix nil, :problems [{:path [:sync :ret], :pred (clojure.core/fn [%] (clojure.core/contains? % :status)), :via [:ring/handler :ring.sync/handler :ring/response], :expound/form #function[expound.alpha-test/eval18031/handler--18032], :val {}, :expound.spec.problem/type :expound.problem/missing-key, :spec :ring/handler, :expound/path [:sync :ret], :expound/in [], :in [], :expound/via [:ring/handler :ring.sync/handler :ring/response]} {:path [:sync :ret], :pred (clojure.core/fn [%] (clojure.core/contains? % :headers)), :via [:ring/handler :ring.sync/handler :ring/response], :expound/form #function[expound.alpha-test/eval18031/handler--18032], :val {}, :expound.spec.problem/type :expound.problem/missing-key, :spec :ring/handler, :expound/path [:sync :ret], :expound/in [], :in [], :expound/via [:ring/handler :ring.sync/handler :ring/response]} {:path [:async], :pred (apply fn), :via [:ring/handler :ring.async/handler], :expound/form #function[expound.alpha-test/eval18031/handler--18032], :val ({:server-port 1, :server-name "", :remote-addr "", :uri "/", :scheme :http, :protocol "HTTP/1.1", :headers {}, :request-method :a} #function[clojure.spec.alpha/fspec-impl/reify--2524/fn--2527] #function[clojure.spec.alpha/fspec-impl/reify--2524/fn--2527]), :expound.spec.problem/type :expound.problem/fspec-exception-failure, :spec :ring/handler, :reason "Wrong number of args (3) passed to: expound.alpha-test/eval18031/handler--18032", :expound/path [:async], :expound/in [], :in [], :expound/via [:ring/handler :ring.async/handler]} {:path [:sync+async :fn :sync :args :request], :pred clojure.core/map?, :via [:ring/handler :ring.sync+async/handler :ring.sync.handler/args :ring.sync.handler/args :ring/request :ring/request], :expound/form #function[expound.alpha-test/eval18031/handler--18032], :val :sync, :expound.spec.problem/type :expound.problem/unknown, :spec :ring/handler, :expound/path [:sync+async :fn :sync :args :request], :expound/in [], :in [:args 0], :expound/via [:ring/handler :ring.sync+async/handler :ring.sync.handler/args :ring.sync.handler/args :ring/request :ring/request]} {:path [:sync+async :fn :sync :ret], :pred clojure.core/map?, :via [:ring/handler :ring.sync+async/handler :ring/response], :expound/form #function[expound.alpha-test/eval18031/handler--18032], :val [:async {}], :expound.spec.problem/type :expound.problem/unknown, :spec :ring/handler, :expound/path [:sync+async :fn :sync :ret], :expound/in [], :in [:ret], :expound/via [:ring/handler :ring.sync+async/handler :ring/response]} {:path [:sync+async :fn :async :args :request], :pred clojure.core/map?, :via [:ring/handler :ring.sync+async/handler :ring.async.handler/args :ring.async.handler/args :ring/request :ring/request], :expound/form #function[expound.alpha-test/eval18031/handler--18032], :val :sync, :expound.spec.problem/type :expound.problem/unknown, :spec :ring/handler, :expound/path [:sync+async :fn :async :args :request], :expound/in [], :in [:args 0], :expound/via [:ring/handler :ring.sync+async/handler :ring.async.handler/args :ring.async.handler/args :ring/request :ring/request]}]}]
-
-
-  ;; HERE - the issue appears to be that we're trying to merge several errors for fspecs into one and then conform it
-
-
-  (s/explain :ring/handler (fn handler [req] {}))
-
-  
-
-
-  ;; bug 1
-  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-    
-    (s/explain :ring.sync/handler (fn handler [req] {}))
-    )
-  (s/explain :ring.sync/handler (fn handler [req] {}))
-
-  ;; bug 2
-  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-    (s/explain :ring.async/handler (fn handler [req] {}))
-    )
-  (s/explain :ring.async/handler (fn handler [req] {}))
-
-
-  ;; bug 3
-  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-    
-    (s/explain :ring.sync+async/handler (fn handler [req] {}))
-    )
-
-  
-  (s/explain :ring.sync+async/handler (fn handler [req] {}))
-
-  (s/form :ring/handler)
-
-  
-(s/form :ring.sync/handler)
-  (s/form :ring.async/handler)
-  (s/form :ring.sync+async/handler)
-  
-
-  (clojure.spec.alpha/fspec :args (clojure.spec.alpha/or :sync :ring.sync.handler/args
-                                                         :async :ring.async.handler/args)
-                            :ret (clojure.spec.alpha/or :sync :ring.sync.handler/ret :async :ring.async.handler/ret)
-                            :fn (clojure.spec.alpha/or
-                                 :sync (clojure.spec.alpha/keys :req-un [:ring.sync.handler/args :ring.sync.handler/ret]) :async (clojure.spec.alpha/keys :req-un [:ring.async.handler/args :ring.async.handler/ret])))
-  )
-
-;; make sure to include [metosin/reitit "0.1.2"]
-;; :ring/handler has lots of alternatives in the spec
-;; including several possible fdef implementations
-;; TODO - delete this when it works
-#_(deftest complex-alternatives
-  ;; Repro without reitit
-  (is (= "foobar"
-         (binding [s/*explain-out* expound/printer]
-           (s/explain-str :ring/handler (fn [req] {})))))
-
-  ;; Repro with reitit
-  (binding [s/*explain-out* expound/printer]
-    (is (string?
-         (s/explain-str :ring/handler (rr/ring-handler (rr/router ["" #(prn "")])))))))
-
 (defn select-expound-info [spec value]
   (->> (s/explain-data spec value)
        (problems/annotate)
@@ -3843,3 +3746,73 @@ Detected 1 error\n"
     (is (set/subset? p1 all-problems) {:extra (set/difference p1 all-problems)})
     (is (set/subset? p2 all-problems) {:extra (set/difference p2 all-problems)})
     (is (set/subset? p3 all-problems) {:extra (set/difference p3 all-problems)})))
+
+;; These will get better once
+;; https://github.com/ring-clojure/ring-spec/pull/7
+;; is merged
+(deftest ring-specs
+  (is (=
+       "-- Spec failed --------------------
+
+  expound.alpha-test/fn/fn/handler
+
+when conformed as
+
+  :sync
+
+should satisfy
+
+  map?
+
+-- Function spec failed -----------
+
+  expound.alpha-test/fn/fn/handler
+
+returned an invalid value
+
+  [:async {}]
+
+should satisfy
+
+  map?
+
+-------------------------
+Detected 2 errors
+"
+       (expound/expound-str
+        :ring.sync+async/handler (fn handler [req] {})
+        {:print-specs? false})))
+  (is (=
+       "-- Spec failed --------------------
+
+  expound.alpha-test/fn/handler
+
+when conformed as
+
+  :sync
+
+should satisfy
+
+  map?
+
+-- Function spec failed -----------
+
+  expound.alpha-test/fn/handler
+
+returned an invalid value
+
+  [:sync {:status 200, :headers {}}]
+
+should satisfy
+
+  map?
+
+-------------------------
+Detected 2 errors
+"
+       (expound/expound-str
+        :ring.sync+async/handler
+        (fn handler [req]
+          {:status 200
+           :headers {}})
+        {:print-specs? false}))))

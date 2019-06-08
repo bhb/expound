@@ -493,7 +493,7 @@
 
                                 ;; since we immediately throw away the key, i wonder if
                                 ;; we could just add a prefix to the path
-                                (group-by :expound/in)
+                                (group-by :in)
                                 vals
                                 (map (fn [grp]
                                        (if (= 1 (count grp))
