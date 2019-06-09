@@ -3766,9 +3766,7 @@ should satisfy
 
   map?
 
--- Function spec failed -----------
-
-  expound.alpha-test/fn/fn/handler
+or
 
 returned an invalid value
 
@@ -3779,7 +3777,7 @@ should satisfy
   map?
 
 -------------------------
-Detected 2 errors
+Detected 1 error
 "
           (expound/expound-str
            :ring.sync+async/handler (fn handler [req] {})
@@ -3797,9 +3795,7 @@ should satisfy
 
   map?
 
--- Function spec failed -----------
-
-  expound.alpha-test/fn/handler
+or
 
 returned an invalid value
 
@@ -3810,7 +3806,7 @@ should satisfy
   map?
 
 -------------------------
-Detected 2 errors
+Detected 1 error
 "
           (expound/expound-str
            :ring.sync+async/handler
