@@ -3737,22 +3737,24 @@ Detected 1 error\n"
        (map #(select-keys % [:expound.spec.problem/type :expound/in]))
       (set)))
 
-(deftest or-includes-problems-for-each-branch
-  (let [p1 (select-expound-info :ring.sync/handler (fn handler [req] {}))
-        p2 (select-expound-info :ring.async/handler (fn handler [req] {}))
-        p3 (select-expound-info :ring.sync+async/handler (fn handler [req] {}))
-        all-problems (select-expound-info :ring/handler (fn handler [req] {}))]
+#?(:clj
+   (deftest or-includes-problems-for-each-branch
+     (let [p1 (select-expound-info :ring.sync/handler (fn handler [req] {}))
+           p2 (select-expound-info :ring.async/handler (fn handler [req] {}))
+           p3 (select-expound-info :ring.sync+async/handler (fn handler [req] {}))
+           all-problems (select-expound-info :ring/handler (fn handler [req] {}))]
 
-    (is (set/subset? p1 all-problems) {:extra (set/difference p1 all-problems)})
-    (is (set/subset? p2 all-problems) {:extra (set/difference p2 all-problems)})
-    (is (set/subset? p3 all-problems) {:extra (set/difference p3 all-problems)})))
+       (is (set/subset? p1 all-problems) {:extra (set/difference p1 all-problems)})
+       (is (set/subset? p2 all-problems) {:extra (set/difference p2 all-problems)})
+       (is (set/subset? p3 all-problems) {:extra (set/difference p3 all-problems)}))))
 
 ;; These will get better once
 ;; https://github.com/ring-clojure/ring-spec/pull/7
 ;; is merged
-(deftest ring-specs
-  (is (=
-       "-- Spec failed --------------------
+#?(:clj
+   (deftest ring-specs
+     (is (=
+          "-- Spec failed --------------------
 
   expound.alpha-test/fn/fn/handler
 
@@ -3779,11 +3781,11 @@ should satisfy
 -------------------------
 Detected 2 errors
 "
-       (expound/expound-str
-        :ring.sync+async/handler (fn handler [req] {})
-        {:print-specs? false})))
-  (is (=
-       "-- Spec failed --------------------
+          (expound/expound-str
+           :ring.sync+async/handler (fn handler [req] {})
+           {:print-specs? false})))
+     (is (=
+          "-- Spec failed --------------------
 
   expound.alpha-test/fn/handler
 
@@ -3810,9 +3812,9 @@ should satisfy
 -------------------------
 Detected 2 errors
 "
-       (expound/expound-str
-        :ring.sync+async/handler
-        (fn handler [req]
-          {:status 200
-           :headers {}})
-        {:print-specs? false}))))
+          (expound/expound-str
+           :ring.sync+async/handler
+           (fn handler [req]
+             {:status 200
+              :headers {}})
+           {:print-specs? false})))))
