@@ -156,8 +156,6 @@
   (and
    (not= :instrument failure)
    (not= :check-failed failure)
-   ;; TODO: write test for this change
-   ;; was first, now last
    (= :ret (last (:path problem)))))
 
 (defn ^:private fspec-fn-failure? [failure problem]
