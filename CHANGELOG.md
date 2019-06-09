@@ -3,6 +3,9 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+* [Bug printing specs with several `or` branches](https://github.com/bhb/expound/issues/93)
+
 ### Added
 - `expound` and `expound-str` now (optionally) accept the same options as `custom-printer`
 
