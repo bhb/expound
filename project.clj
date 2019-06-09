@@ -102,7 +102,8 @@
                    ;; need to add the compliled assets to the :clean-targets
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
-             :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
+             :test-common {:dependencies [[pjstadig/humane-test-output "0.9.0"]
+                                          [org.clojure/test.check "0.10.0-alpha3"]
                                           [com.gfredericks/test.chuck "0.2.9"]
                                           [orchestra "2019.02.06-1"]
                                           [io.aviso/pretty "0.1.37"]
@@ -114,7 +115,10 @@
                                           [vvvvalvalval/scope-capture "0.3.1"]
                                           [metosin/spec-tools "0.7.1"]
                                           [com.bhauman/spell-spec "0.1.1"]]
-                           :middleware [io.aviso.lein-pretty/inject]}
+                           :middleware [io.aviso.lein-pretty/inject]
+                           :injections [(require 'pjstadig.humane-test-output)
+                                        (pjstadig.humane-test-output/activate!)]
+                           }
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.18"]

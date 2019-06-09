@@ -4,12 +4,14 @@
                 [[clojure.core.specs.alpha]
                  [ring.core.spec]
                  [onyx.spec]])
+            [clojure.set :as set]
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as st]
             [clojure.string :as string]
-            [clojure.set :as set]
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [clojure.test.check.generators :as gen]
+            [clojure.test.check.random :as random]
+            [clojure.test.check.rose-tree :as rose]
             [clojure.walk :as walk]
             [com.gfredericks.test.chuck :as chuck]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
@@ -18,11 +20,9 @@
             [expound.alpha :as expound]
             [expound.ansi :as ansi]
             [expound.printer :as printer]
+            [expound.problems :as problems]
             [expound.test-utils :as test-utils]
             [spec-tools.data-spec :as ds]
-            [expound.ansi :as ansi]
-            [clojure.test.check.random :as random]
-            [clojure.test.check.rose-tree :as rose]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -2490,6 +2490,7 @@ Detected 1 error\n")
 (s/def :fspec-ret-test/plus (s/fspec
                              :args (s/cat :x int? :y pos-int?)
                              :ret :fspec-ret-test/my-int))
+
 (defn my-plus [x y]
   (+ x y))
 
@@ -2507,22 +2508,9 @@ should satisfy
 
   pos-int?
 
--- Relevant specs -------
-
-:fspec-ret-test/my-int:
-  pf.core/pos-int?
-:fspec-ret-test/plus:
-  (pf.spec.alpha/fspec
-   :args
-   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
-   :ret
-   :fspec-ret-test/my-int
-   :fn
-   nil)
-
 -------------------------
 Detected 1 error\n")
-           (until-unsuccessful #(expound/expound-str :fspec-ret-test/plus my-plus))))
+           (until-unsuccessful #(expound/expound-str :fspec-ret-test/plus my-plus {:print-specs? false}))))
 
     (is (= (pf "-- Function spec failed -----------
 
@@ -2537,22 +2525,35 @@ should satisfy
 
   pos-int?
 
--- Relevant specs -------
-
-:fspec-ret-test/my-int:
-  pf.core/pos-int?
-:fspec-ret-test/plus:
-  (pf.spec.alpha/fspec
-   :args
-   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
-   :ret
-   :fspec-ret-test/my-int
-   :fn
-   nil)
-
 -------------------------
 Detected 1 error\n")
-           (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus]))))))
+           (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus] {:print-specs? false}))))
+    (s/def :fspec-ret-test/return-map (s/fspec
+                                       :args (s/cat)
+                                       :ret (s/keys :req-un [:fspec-ret-test/my-int])))
+    (is (= (pf "-- Function spec failed -----------
+
+  <anonymous function>
+
+returned an invalid value
+
+  {}
+
+should contain key: :my-int
+
+|     key | spec |
+|---------+------|
+| :my-int |  nil |
+
+-------------------------
+Detected 1 error
+")
+           (until-unsuccessful #(expound/expound-str :fspec-ret-test/return-map
+                                                     (fn [] {})
+                                                     {:print-specs? false}
+                                                     ))
+           ))
+    ))
 
 (s/def :fspec-fn-test/minus (s/fspec
                              :args (s/cat :x int? :y int?)
@@ -2944,6 +2945,14 @@ Detected 1 error
   [f]
   (f 1))
 
+(s/def :results-str-fn7/k string?)
+(s/fdef results-str-fn7
+        :args (s/cat :m (s/keys))
+        :ret (s/keys :req-un [:results-str-fn7/k]))
+(defn results-str-fn7
+  [m]
+  m)
+
 (s/fdef results-str-missing-fn
   :args (s/cat :x int?))
 
@@ -2979,7 +2988,29 @@ should satisfy
 Detected 1 error
 ")
            (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1)))))))
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1))))))
+    (is (= (pf
+            "== Checked expound.alpha-test/results-str-fn7 
+
+-- Function spec failed -----------
+
+  (expound.alpha-test/results-str-fn7 {})
+
+returned an invalid value.
+
+  {}
+
+should contain key: :k
+
+| key |    spec |
+|-----+---------|
+|  :k | string? |
+
+-------------------------
+Detected 1 error
+")
+           (binding [s/*explain-out* expound/printer]
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn7)))))))
   (testing "single bad result (failing fn spec)"
     (is (= (pf "== Checked expound.alpha-test/results-str-fn2 
 
@@ -3699,3 +3730,88 @@ Detected 1 error\n"
           {:foo (sorted-map "bar"
 
                             1)}))))
+
+(defn select-expound-info [spec value]
+  (->> (s/explain-data spec value)
+       (problems/annotate)
+       (:expound/problems)
+       (map #(select-keys % [:expound.spec.problem/type :expound/in]))
+      (set)))
+
+#?(:clj
+   (deftest or-includes-problems-for-each-branch
+     (let [p1 (select-expound-info :ring.sync/handler (fn handler [req] {}))
+           p2 (select-expound-info :ring.async/handler (fn handler [req] {}))
+           p3 (select-expound-info :ring.sync+async/handler (fn handler [req] {}))
+           all-problems (select-expound-info :ring/handler (fn handler [req] {}))]
+
+       (is (set/subset? p1 all-problems) {:extra (set/difference p1 all-problems)})
+       (is (set/subset? p2 all-problems) {:extra (set/difference p2 all-problems)})
+       (is (set/subset? p3 all-problems) {:extra (set/difference p3 all-problems)}))))
+
+;; These will get better once
+;; https://github.com/ring-clojure/ring-spec/pull/7
+;; is merged
+#?(:clj
+   (deftest ring-specs
+     (is (=
+          "-- Spec failed --------------------
+
+  expound.alpha-test/fn/fn/handler
+
+when conformed as
+
+  :sync
+
+should satisfy
+
+  map?
+
+or
+
+returned an invalid value
+
+  [:async {}]
+
+should satisfy
+
+  map?
+
+-------------------------
+Detected 1 error
+"
+          (expound/expound-str
+           :ring.sync+async/handler (fn handler [req] {})
+           {:print-specs? false})))
+     (is (=
+          "-- Spec failed --------------------
+
+  expound.alpha-test/fn/handler
+
+when conformed as
+
+  :sync
+
+should satisfy
+
+  map?
+
+or
+
+returned an invalid value
+
+  [:sync {:status 200, :headers {}}]
+
+should satisfy
+
+  map?
+
+-------------------------
+Detected 1 error
+"
+          (expound/expound-str
+           :ring.sync+async/handler
+           (fn handler [req]
+             {:status 200
+              :headers {}})
+           {:print-specs? false})))))
