@@ -3754,8 +3754,11 @@ Detected 1 error\n"
 ;; is merged
 #?(:clj
    (deftest ring-specs
-     (is (=
-          "-- Spec failed --------------------
+     (let [actual (expound/expound-str
+           :ring.sync+async/handler (fn handler [req] {})
+           {:print-specs? false})]
+       (is (or (=
+                "-- Spec failed --------------------
 
   expound.alpha-test/fn/fn/handler
 
@@ -3780,11 +3783,55 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-          (expound/expound-str
-           :ring.sync+async/handler (fn handler [req] {})
-           {:print-specs? false})))
-     (is (=
-          "-- Spec failed --------------------
+                actual)
+               (=
+                "-- Spec failed --------------------
+
+  expound.alpha-test/fn/handler
+
+returned an invalid value
+
+  {}
+
+should contain keys: :headers, :status
+
+|      key |                                          spec |
+|----------+-----------------------------------------------|
+| :headers |                        :ring.response/headers |
+|  :status | (and int? (fn [%] (int-in-range? 100 600 %))) |
+
+-------------------------
+Detected 1 error
+"
+                actual)
+               )
+           (str "Actual message was:\n" actual "\nand expected was:\n" "-- Spec failed --------------------
+
+  expound.alpha-test/fn/fn/handler
+
+returned an invalid value
+
+  {}
+
+should contain keys: :headers, :status
+
+|      key |                                          spec |
+|----------+-----------------------------------------------|
+| :headers |                        :ring.response/headers |
+|  :status | (and int? (fn [%] (int-in-range? 100 600 %))) |
+
+-------------------------
+Detected 1 error
+")))
+     (let [actual (expound/expound-str
+                   :ring.sync+async/handler
+                   (fn handler [req]
+                     {:status 200
+                      :headers {}})
+                   {:print-specs? false})]
+       (is
+        (or
+         (= "-- Spec failed --------------------
 
   expound.alpha-test/fn/handler
 
@@ -3809,9 +3856,21 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-          (expound/expound-str
-           :ring.sync+async/handler
-           (fn handler [req]
-             {:status 200
-              :headers {}})
-           {:print-specs? false})))))
+            actual)
+         (re-matches
+          #"-- Exception ----------------------
+
+  expound.alpha-test/fn/handler
+
+threw exception
+
+  \"Wrong number of args \(3\) passed to: .*\"
+
+with args:
+
+  \{:server-port 1, :server-name \"\", :remote-addr \"\", :uri \"/\", :scheme :http, :protocol \"HTTP/1.1\", :headers \{\}, :request-method :a\}, .*, .*
+
+-------------------------
+Detected 1 error
+"
+          actual))))))
