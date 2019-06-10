@@ -2028,7 +2028,7 @@ Detected 1 error\n"
     (number? s) s
     (re-matches #"^\d+$" s) #?(:cljs (js/parseInt s 10)
                                :clj (Integer. s))
-    :default ::s/invalid))
+    :else ::s/invalid))
 
 (s/def :conformers-test/number (s/conformer numberify))
 
