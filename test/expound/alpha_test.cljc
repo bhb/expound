@@ -15,7 +15,6 @@
             [clojure.walk :as walk]
             [com.gfredericks.test.chuck :as chuck]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
-            [com.gfredericks.test.chuck.properties :as properties]
             [com.stuartsierra.dependency :as deps]
             [expound.alpha :as expound]
             [expound.ansi :as ansi]
@@ -971,10 +970,10 @@ Detected 1 error\n")
            :specs.coll-of/min-count
            :specs.coll-of/distinct]))
 
-(defn apply-coll-of [spec {:keys [into kind count max-count min-count distinct gen-max gen-into gen] :as opts}]
+(defn apply-coll-of [spec {:keys [into max-count min-count distinct ]}]
   (s/coll-of spec :into into :min-count min-count :max-count max-count :distinct distinct))
 
-(defn apply-map-of [spec1 spec2 {:keys [into kind count max-count min-count distinct gen-max gen-into gen] :as opts}]
+(defn apply-map-of [spec1 spec2 {:keys [into max-count min-count distinct _gen-max]}]
   (s/map-of spec1 spec2 :into into :min-count min-count :max-count max-count :distinct distinct))
 
 ;; Since CLJS prints out entire source of a function when
@@ -1646,7 +1645,7 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-           (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (fn [spec-name form path val] "  <HIDDEN>")})]
+           (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (fn [_spec-name _form _path _val] "  <HIDDEN>")})]
              (s/explain-str :custom-printer/strings ["a" "b" :c]))))))
 
 (defn spec-dependencies [spec]
@@ -2064,6 +2063,9 @@ Detected 1 error\n"
    ;; re-use previous sequence spec
    :conformers-test/string-AB-seq))
 
+(defn parse-csv [s]
+  (map string/upper-case (string/split s #",")))
+
 (deftest conformers-test
   ;; Example from http://cjohansen.no/a-unified-specification/
   (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})
@@ -2193,8 +2195,6 @@ Detected 1 error\n")
     (testing "conformers that modify path of values"
       (s/def :conformers-test/vals (s/coll-of (s/and string?
                                                      #(re-matches #"[A-G]+" %))))
-      (defn parse-csv [s]
-        (map string/upper-case (string/split s #",")))
       (s/def :conformers-test/csv (s/and string?
                                          (s/conformer parse-csv)
                                          :conformers-test/vals))
@@ -2934,7 +2934,7 @@ Detected 1 error
   :args (s/cat :x #{1} :y #{1})
   :ret string?)
 (defn results-str-fn5
-  [x y]
+  [_x _y]
   #?(:clj (throw (Exception. "Ooop!"))
      :cljs (throw (js/Error. "Oops!"))))
 
@@ -3740,10 +3740,10 @@ Detected 1 error\n"
 
 #?(:clj
    (deftest or-includes-problems-for-each-branch
-     (let [p1 (select-expound-info :ring.sync/handler (fn handler [req] {}))
-           p2 (select-expound-info :ring.async/handler (fn handler [req] {}))
-           p3 (select-expound-info :ring.sync+async/handler (fn handler [req] {}))
-           all-problems (select-expound-info :ring/handler (fn handler [req] {}))]
+     (let [p1 (select-expound-info :ring.sync/handler (fn handler [_req] {}))
+           p2 (select-expound-info :ring.async/handler (fn handler [_req] {}))
+           p3 (select-expound-info :ring.sync+async/handler (fn handler [_req] {}))
+           all-problems (select-expound-info :ring/handler (fn handler [_req] {}))]
 
        (is (set/subset? p1 all-problems) {:extra (set/difference p1 all-problems)})
        (is (set/subset? p2 all-problems) {:extra (set/difference p2 all-problems)})
@@ -3755,7 +3755,7 @@ Detected 1 error\n"
 #?(:clj
    (deftest ring-specs
      (let [actual (expound/expound-str
-           :ring.sync+async/handler (fn handler [req] {})
+           :ring.sync+async/handler (fn handler [_req] {})
            {:print-specs? false})]
        (is (or (=
                 "-- Spec failed --------------------
@@ -3825,7 +3825,7 @@ Detected 1 error
 ")))
      (let [actual (expound/expound-str
                    :ring.sync+async/handler
-                   (fn handler [req]
+                   (fn handler [_req]
                      {:status 200
                       :headers {}})
                    {:print-specs? false})]
