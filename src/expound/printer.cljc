@@ -152,8 +152,8 @@
            (if (empty? ns-n)
              anon-fn-str
              (str
-              (demunge-str ns-n) "/"
-              (demunge-str fn-n)))))
+              (demunge ns-n) "/"
+              (demunge fn-n)))))
       (elide-core-ns)
       (string/replace #"--\d+" "")
       (string/replace #"@[a-zA-Z0-9]+" "")))

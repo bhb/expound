@@ -633,7 +633,7 @@ should satisfy
    opts
    (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/check-fn-failure [_type spec-name form path problems opts]
+(defmethod expected-str :expound.problem/check-fn-failure [_type _spec-name _form _path problems _opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -655,7 +655,7 @@ should satisfy
    (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
    (expected-str _type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/check-ret-failure [_type spec-name form path problems opts]
+(defmethod expected-str :expound.problem/check-ret-failure [_type _spec-name _form _path problems opts]
   (problems-without-location problems opts))
 
 (defmethod problem-group-str :expound.problem/check-ret-failure [_type spec-name form path problems opts]
@@ -676,7 +676,7 @@ returned an invalid value.
    (*value-str-fn* spec-name form path (problems/value-in form path))
    (expected-str _type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/unknown [_type spec-name form path problems opts]
+(defmethod expected-str :expound.problem/unknown [_type _spec-name _form _path problems _opts]
   (let [[with-msg no-msgs] ((juxt filter remove)
                             (fn [{:keys [expound/via pred]}]
                               (spec-w-error-message? via pred))
@@ -796,17 +796,17 @@ returned an invalid value.
           :cljs (and
                  failure
                  (re-matches #"Unable to construct gen at.*" (.-message failure))))
-       (let [path (::s/path explain-data)]
-         (str
-          #?(:clj
+       (str
+        #?(:clj
+           (let [path (::s/path explain-data)]
              (str
               "Unable to construct generator for "
-              (ansi/color (pr-str path) :error-key))
-             :cljs
-             (.-message failure))
-          " in\n\n"
-          (printer/indent (str (s/form (:args (:spec check-result)))))
-          "\n"))
+              (ansi/color (pr-str path) :error-key)))
+           :cljs
+           (.-message failure))
+        " in\n\n"
+        (printer/indent (str (s/form (:args (:spec check-result)))))
+        "\n")
 
        (= :no-args-spec failure-reason)
        (str
