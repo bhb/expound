@@ -4,7 +4,6 @@
             [expound.paths-test]
             [expound.printer-test]
             [expound.problems-test]
-            [expound.reg-test]
             [expound.test-utils]
             [expound.specs-test]
             [expound.spell-spec-test]))

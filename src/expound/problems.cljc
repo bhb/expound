@@ -233,7 +233,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn escape-replacement [pattern s]
+(defn escape-replacement [#?(:clj pattern :cljs _pattern) s]
   #?(:clj (if (string? pattern)
             s
             (string/re-quote-replacement s))
