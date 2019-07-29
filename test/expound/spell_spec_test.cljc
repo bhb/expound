@@ -1,6 +1,6 @@
 ;; copied from
 ;; https://github.com/bhauman/spell-spec/blob/master/test/spell_spec/expound_test.cljc
-;; to I don't break the extension API
+;; so I don't break the extension API
 (ns expound.spell-spec-test
   (:require [#?(:clj clojure.test :cljs cljs.test)
              :refer [deftest is testing]]

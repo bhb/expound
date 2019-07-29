@@ -102,8 +102,10 @@
                    ;; need to add the compliled assets to the :clean-targets
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
-             :test-common {:dependencies [[pjstadig/humane-test-output "0.9.0"]
-                                          [org.clojure/test.check "0.10.0-alpha3"]
+             :kaocha [:test-common
+                      {:dependencies [[lambdaisland/kaocha "0.0-418"]]}]
+             :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
+                                          [pjstadig/humane-test-output "0.9.0"]
                                           [com.gfredericks/test.chuck "0.2.9"]
                                           [orchestra "2019.02.06-1"]
                                           [io.aviso/pretty "0.1.37"]
@@ -131,7 +133,8 @@
              :cljs-1.10.439 {:dependencies [[org.clojure/clojurescript "1.10.439"]]}
              :cljs-1.10.516 {:dependencies [[org.clojure/clojurescript "1.10.516"]]}
              :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}}
-  :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
+  :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner"]
+            "run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
                               ["with-profile" "test-web" "cljsbuild" "once" "test"]
                               ["with-profile" "test-web" "cljsbuild" "auto" "test"]]}
