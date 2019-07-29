@@ -726,7 +726,30 @@ should satisfy
 Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
-           (expound/expound-str :keys-spec/user {:age 1 :keys-spec/name :bob})))))
+           (expound/expound-str :keys-spec/user {:age 1 :keys-spec/name :bob}))))
+  (testing "contains compound specs"
+    (s/def :keys-spec/states (s/coll-of :key-spec/state :kind vector?))
+    (s/def :keys-spec/address (s/keys :req [:key-spec/city :key-space/state]))
+    (s/def :keys-spec/cities (s/coll-of :key-spec/city :kind set?))
+    (s/def :keys-spec/locations (s/keys :req-un [:keys-spec/states
+                                                 :keys-spec/address
+                                                 :keys-spec/locations]))
+    (is (= "-- Spec failed --------------------
+
+  {}
+
+should contain keys: :address, :locations, :states
+
+|        key |                                                                       spec |
+|------------+----------------------------------------------------------------------------|
+|   :address |                              (keys :req [:key-spec/city :key-space/state]) |
+| :locations | (keys :req-un [:keys-spec/states :keys-spec/address :keys-spec/locations]) |
+|    :states |                                    (coll-of :key-spec/state :kind vector?) |
+
+-------------------------
+Detected 1 error
+"
+           (expound/expound-str :keys-spec/locations {} { :print-specs? false})))))
 
 (s/def :multi-spec/value string?)
 (s/def :multi-spec/children vector?)
@@ -970,7 +993,7 @@ Detected 1 error\n")
            :specs.coll-of/min-count
            :specs.coll-of/distinct]))
 
-(defn apply-coll-of [spec {:keys [into max-count min-count distinct ]}]
+(defn apply-coll-of [spec {:keys [into max-count min-count distinct]}]
   (s/coll-of spec :into into :min-count min-count :max-count max-count :distinct distinct))
 
 (defn apply-map-of [spec1 spec2 {:keys [into max-count min-count distinct _gen-max]}]
@@ -2001,26 +2024,26 @@ Detected 1 error\n"
    #_(deftest real-spec-tests-mutated-valid-value
      ;; FIXME - we need to use generate mutated value, instead
      ;; of adding randomness to test
-     #_(checking
-        "for any real-world spec and any mutated valid data, explain-str returns a string"
-        (chuck/times num-tests)
-        [spec spec-gen
-         mutate-path (gen/vector gen/pos-int)]
-        (when-not (some
-                   #{"clojure.spec.alpha/fspec"}
-                   (->> spec
-                        inline-specs
-                        (tree-seq coll? identity)
-                        (map str)))
-          (when (contains? (s/registry) spec)
-            (try
-              (let [valid-form (first (s/exercise spec 1))
-                    invalid-form (mutate valid-form mutate-path)]
-                (is (string? (expound/expound-str spec invalid-form))))
-              (catch clojure.lang.ExceptionInfo e
-                (when (not= :no-gen (::s/failure (ex-data e)))
-                  (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
-                    (throw e))))))))))
+       #_(checking
+          "for any real-world spec and any mutated valid data, explain-str returns a string"
+          (chuck/times num-tests)
+          [spec spec-gen
+           mutate-path (gen/vector gen/pos-int)]
+          (when-not (some
+                     #{"clojure.spec.alpha/fspec"}
+                     (->> spec
+                          inline-specs
+                          (tree-seq coll? identity)
+                          (map str)))
+            (when (contains? (s/registry) spec)
+              (try
+                (let [valid-form (first (s/exercise spec 1))
+                      invalid-form (mutate valid-form mutate-path)]
+                  (is (string? (expound/expound-str spec invalid-form))))
+                (catch clojure.lang.ExceptionInfo e
+                  (when (not= :no-gen (::s/failure (ex-data e)))
+                    (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
+                      (throw e))))))))))
 
 ;; Using conformers for transformation should not crash by default, or at least give useful error message.
 (defn numberify [s]
@@ -2551,10 +2574,7 @@ Detected 1 error
 ")
            (until-unsuccessful #(expound/expound-str :fspec-ret-test/return-map
                                                      (fn [] {})
-                                                     {:print-specs? false}
-                                                     ))
-           ))
-    ))
+                                                     {:print-specs? false}))))))
 
 (s/def :fspec-fn-test/minus (s/fspec
                              :args (s/cat :x int? :y int?)
@@ -2948,8 +2968,8 @@ Detected 1 error
 
 (s/def :results-str-fn7/k string?)
 (s/fdef results-str-fn7
-        :args (s/cat :m (s/keys))
-        :ret (s/keys :req-un [:results-str-fn7/k]))
+  :args (s/cat :m (s/keys))
+  :ret (s/keys :req-un [:results-str-fn7/k]))
 (defn results-str-fn7
   [m]
   m)
@@ -3551,58 +3571,58 @@ should satisfy
 #?(:clj 1 #_(deftest eval-gen-test
           ;; FIXME - this is a useful test but not 100% reliable yet
           ;; so I'm disabling to get this PR in
-          (binding [s/*recursion-limit* 2]
-            (checking
-             "expound returns string"
-             5 ;; Hard-code at 5, since generating specs explodes in size quite quickly
-             [spec-defs (s/gen ::spec-defs)
-              pred-specs (gen/vector (s/gen ::pred-spec) 5)
-              seed (s/gen pos-int?)
-              mutate-path (gen/vector gen/pos-int)]
-             (try
-               (doseq [[spec-name spec] (map vector (missing-specs spec-defs) (cycle pred-specs))]
-                 (eval `(s/def ~spec-name ~spec)))
-               (doseq [spec-def spec-defs]
-                 (eval spec-def))
+              (binding [s/*recursion-limit* 2]
+                (checking
+                 "expound returns string"
+                 5 ;; Hard-code at 5, since generating specs explodes in size quite quickly
+                 [spec-defs (s/gen ::spec-defs)
+                  pred-specs (gen/vector (s/gen ::pred-spec) 5)
+                  seed (s/gen pos-int?)
+                  mutate-path (gen/vector gen/pos-int)]
+                 (try
+                   (doseq [[spec-name spec] (map vector (missing-specs spec-defs) (cycle pred-specs))]
+                     (eval `(s/def ~spec-name ~spec)))
+                   (doseq [spec-def spec-defs]
+                     (eval spec-def))
 
-               (let [spec (second (last spec-defs))
-                     form (last (last spec-defs))
-                     disallowed #{"clojure.spec.alpha/fspec"
-                                  "clojure.spec.alpha/multi-spec"
-                                  "clojure.spec.alpha/with-gen"}]
-                 (when-not (or (some
-                                disallowed
-                                (map str (tree-seq coll? identity form)))
-                               (some
-                                disallowed
-                                (->> spec
-                                     inline-specs
-                                     (tree-seq coll? identity)
-                                     (map str))))
-                   (let [valid-form (first (sample-seq (s/gen spec) seed))
-                         invalid-form (mutate valid-form mutate-path)]
-                     (try
-                       (is (string?
-                            (expound/expound-str spec invalid-form)))
-                       (is (not
-                            (string/includes?
-                             (expound/expound-str (second (last spec-defs)) invalid-form)
-                             "should contain keys")))
-                       (catch Exception e
-                         (is (or
-                              (string/includes?
-                               (:cause (Throwable->map e))
-                               "Method code too large!")
-                              (string/includes?
-                               (:cause (Throwable->map e))
-                               "Cannot convert path."))))))))
-               (finally
+                   (let [spec (second (last spec-defs))
+                         form (last (last spec-defs))
+                         disallowed #{"clojure.spec.alpha/fspec"
+                                      "clojure.spec.alpha/multi-spec"
+                                      "clojure.spec.alpha/with-gen"}]
+                     (when-not (or (some
+                                    disallowed
+                                    (map str (tree-seq coll? identity form)))
+                                   (some
+                                    disallowed
+                                    (->> spec
+                                         inline-specs
+                                         (tree-seq coll? identity)
+                                         (map str))))
+                       (let [valid-form (first (sample-seq (s/gen spec) seed))
+                             invalid-form (mutate valid-form mutate-path)]
+                         (try
+                           (is (string?
+                                (expound/expound-str spec invalid-form)))
+                           (is (not
+                                (string/includes?
+                                 (expound/expound-str (second (last spec-defs)) invalid-form)
+                                 "should contain keys")))
+                           (catch Exception e
+                             (is (or
+                                  (string/includes?
+                                   (:cause (Throwable->map e))
+                                   "Method code too large!")
+                                  (string/includes?
+                                   (:cause (Throwable->map e))
+                                   "Cannot convert path."))))))))
+                   (finally
                  ;; Get access to private atom in clojure.spec
-                 (def spec-reg (deref #'s/registry-ref))
-                 (doseq [k (filter
-                            (fn [k] (= "expound-generated-spec" (namespace k)))
-                            (keys (s/registry)))]
-                   (swap! spec-reg dissoc k))))))))
+                     (def spec-reg (deref #'s/registry-ref))
+                     (doseq [k (filter
+                                (fn [k] (= "expound-generated-spec" (namespace k)))
+                                (keys (s/registry)))]
+                       (swap! spec-reg dissoc k))))))))
 
 (deftest clean-registry
   (testing "only base spec remains"
@@ -3737,7 +3757,7 @@ Detected 1 error\n"
        (problems/annotate)
        (:expound/problems)
        (map #(select-keys % [:expound.spec.problem/type :expound/in]))
-      (set)))
+       (set)))
 
 #?(:clj
    (deftest or-includes-problems-for-each-branch

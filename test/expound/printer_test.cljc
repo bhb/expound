@@ -23,13 +23,14 @@
          (printer/pprint-fn (comp vec str))))
   (is (= "expound.test-utils/instrument-all"
          (printer/pprint-fn test-utils/instrument-all)))
-
   (is (= "expound.test-utils/contains-nan?"
          (printer/pprint-fn contains-nan?))))
 
 (s/def :print-spec-keys/field1 string?)
 (s/def :print-spec-keys/field2 (s/coll-of :print-spec-keys/field1))
 (s/def :print-spec-keys/field3 int?)
+(s/def :print-spec-keys/field4 string?)
+(s/def :print-spec-keys/field5 string?)
 (s/def :print-spec-keys/key-spec (s/keys
                                   :req [:print-spec-keys/field1]
                                   :req-un [:print-spec-keys/field2]))
@@ -39,24 +40,34 @@
                                              (or
                                               :print-spec-keys/field2
                                               :print-spec-keys/field3))]))
+(s/def :print-spec-keys/key-spec3 (s/keys
+                                   :req-un [:print-spec-keys/field1
+                                            :print-spec-keys/field4
+                                            :print-spec-keys/field5]))
+(s/def :print-spec-keys/set-spec (s/coll-of :print-spec-keys/field1
+                                            :kind set?))
+(s/def :print-spec-keys/vector-spec (s/coll-of :print-spec-keys/field1
+                                               :kind vector?))
+(s/def :print-spec-keys/key-spec4 (s/keys
+                                   :req-un [:print-spec-keys/set-spec
+                                            :print-spec-keys/vector-spec
+                                            :print-spec-keys/key-spec3]))
 
 (defn copy-key [m k1 k2]
   (assoc m k2 (get m k1)))
 
-(deftest print-spec-keys
+(deftest print-spec-keys*
   (is (=
-       "|                     key |              spec |
-|-------------------------+-------------------|
-|                 :field2 | (coll-of string?) |
-| :print-spec-keys/field1 |           string? |"
-       (printer/print-spec-keys
+       [{"key" :field2, "spec" "(coll-of :print-spec-keys/field1)"}
+        {"key" :print-spec-keys/field1, "spec" "string?"}]
+       (printer/print-spec-keys*
         (map #(copy-key % :via :expound/via)
              (::s/problems
               (s/explain-data
                :print-spec-keys/key-spec
                {}))))))
   (is (nil?
-       (printer/print-spec-keys
+       (printer/print-spec-keys*
         (map #(copy-key % :via :expound/via)
              (::s/problems
               (s/explain-data
@@ -66,10 +77,8 @@
                {}))))))
 
   (is (=
-       "|                     key |    spec |
-|-------------------------+---------|
-| :print-spec-keys/field1 | string? |"
-       (printer/print-spec-keys
+       [{"key" :print-spec-keys/field1, "spec" "string?"}]
+       (printer/print-spec-keys*
         (map #(copy-key % :via :expound/via)
              (::s/problems
               (s/explain-data
@@ -79,11 +88,10 @@
                {:field2 [""]}))))))
 
   (is (=
-       "|                     key |              spec |
-|-------------------------+-------------------|
-| :print-spec-keys/field1 |           string? |
-| :print-spec-keys/field2 | (coll-of string?) |"
-       (printer/print-spec-keys
+       [{"key" :print-spec-keys/field1, "spec" "string?"}
+        {"key" :print-spec-keys/field2,
+         "spec" "(coll-of :print-spec-keys/field1)"}]
+       (printer/print-spec-keys*
         (map #(copy-key % :via :expound/via)
              (::s/problems
               (s/explain-data
@@ -91,14 +99,24 @@
                 :req [:print-spec-keys/field1
                       :print-spec-keys/field2])
                {}))))))
-  (is (= "|     key |              spec |
-|---------+-------------------|
-| :field1 |           string? |
-| :field2 | (coll-of string?) |
-| :field3 |              int? |"
-         (printer/print-spec-keys
-          (map #(copy-key % :via :expound/via)
-               (::s/problems
-                (s/explain-data
-                 :print-spec-keys/key-spec2
-                 {})))))))
+  (is (=
+       [{"key" :field1, "spec" "string?"}
+        {"key" :field2, "spec" "(coll-of :print-spec-keys/field1)"}
+        {"key" :field3, "spec" "int?"}]
+       (printer/print-spec-keys*
+        (map #(copy-key % :via :expound/via)
+             (::s/problems
+              (s/explain-data
+               :print-spec-keys/key-spec2
+               {}))))))
+  (is (=
+       [{"key" :key-spec3,
+         "spec" "(keys :req-un [:print-spec-keys/field1 :print-spec-keys/field4 :print-spec-keys/field5])"}
+        {"key" :set-spec, "spec" "(coll-of :print-spec-keys/field1 :kind set?)"}
+        {"key" :vector-spec, "spec" "(coll-of :print-spec-keys/field1 :kind vector?)"}]
+       (printer/print-spec-keys*
+        (map #(copy-key % :via :expound/via)
+             (::s/problems
+              (s/explain-data
+               :print-spec-keys/key-spec4
+               {})))))))

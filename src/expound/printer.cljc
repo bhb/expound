@@ -85,21 +85,9 @@
      keys)))
 
 (defn expand-spec [spec]
-  (let [!seen-specs (atom #{})]
-    (walk/prewalk
-     (fn [x]
-       (if-not (qualified-keyword? x)
-         x
-         (if-let [sp (s/get-spec x)]
-           (if-not (contains? @!seen-specs x)
-             (do
-               (swap! !seen-specs conj x)
-               (s/form sp))
-             x)
-           x)))
-     (if (s/get-spec spec)
-       (s/form spec)
-       spec))))
+  (if (s/get-spec spec)
+    (s/form spec)
+    spec))
 
 (defn summarize-key-clause [[branch match]]
   (case branch
@@ -181,7 +169,7 @@
       spec-name
       spec-str)))
 
-(defn print-spec-keys [problems]
+(defn print-spec-keys* [problems]
   (let [keys (keywords (map #(missing-key (:pred %)) problems))]
     (if (and (empty? (:expound/via (first problems)))
              (some simple-keyword? keys))
@@ -192,10 +180,14 @@
 
       (->> (key->spec keys problems)
            (map (fn [[k v]] {"key" k "spec" (simple-spec-or-name v)}))
-           (sort-by #(get % "key"))
-           (pprint/print-table ["key" "spec"])
-           with-out-str
-           string/trim))))
+           (sort-by #(get % "key"))))))
+
+(defn print-spec-keys [problems]
+  (->>
+   (print-spec-keys* problems)
+   (pprint/print-table ["key" "spec"])
+   with-out-str
+   string/trim))
 
 (defn print-missing-keys [problems]
   (let [keys-clauses (distinct (map (comp missing-key :pred) problems))]
