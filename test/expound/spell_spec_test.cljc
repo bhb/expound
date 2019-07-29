@@ -10,7 +10,6 @@
             [clojure.string :as string]
             [spell-spec.alpha :as spell :refer [warn-keys strict-keys warn-strict-keys]]
             [expound.alpha :as exp]
-            [expound.ansi :as ansi]
             [spell-spec.expound :as sp.ex]))
 
 ;; copied from

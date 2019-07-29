@@ -4,25 +4,24 @@
                 [[clojure.core.specs.alpha]
                  [ring.core.spec]
                  [onyx.spec]])
+            [clojure.set :as set]
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as st]
             [clojure.string :as string]
-            [clojure.set :as set]
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [clojure.test.check.generators :as gen]
+            [clojure.test.check.random :as random]
+            [clojure.test.check.rose-tree :as rose]
             [clojure.walk :as walk]
             [com.gfredericks.test.chuck :as chuck]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
-            [com.gfredericks.test.chuck.properties :as properties]
             [com.stuartsierra.dependency :as deps]
             [expound.alpha :as expound]
             [expound.ansi :as ansi]
             [expound.printer :as printer]
+            [expound.problems :as problems]
             [expound.test-utils :as test-utils]
             [spec-tools.data-spec :as ds]
-            [expound.ansi :as ansi]
-            [clojure.test.check.random :as random]
-            [clojure.test.check.rose-tree :as rose]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -971,10 +970,10 @@ Detected 1 error\n")
            :specs.coll-of/min-count
            :specs.coll-of/distinct]))
 
-(defn apply-coll-of [spec {:keys [into kind count max-count min-count distinct gen-max gen-into gen] :as opts}]
+(defn apply-coll-of [spec {:keys [into max-count min-count distinct ]}]
   (s/coll-of spec :into into :min-count min-count :max-count max-count :distinct distinct))
 
-(defn apply-map-of [spec1 spec2 {:keys [into kind count max-count min-count distinct gen-max gen-into gen] :as opts}]
+(defn apply-map-of [spec1 spec2 {:keys [into max-count min-count distinct _gen-max]}]
   (s/map-of spec1 spec2 :into into :min-count min-count :max-count max-count :distinct distinct))
 
 ;; Since CLJS prints out entire source of a function when
@@ -1646,7 +1645,7 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-           (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (fn [spec-name form path val] "  <HIDDEN>")})]
+           (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (fn [_spec-name _form _path _val] "  <HIDDEN>")})]
              (s/explain-str :custom-printer/strings ["a" "b" :c]))))))
 
 (defn spec-dependencies [spec]
@@ -2029,7 +2028,7 @@ Detected 1 error\n"
     (number? s) s
     (re-matches #"^\d+$" s) #?(:cljs (js/parseInt s 10)
                                :clj (Integer. s))
-    :default ::s/invalid))
+    :else ::s/invalid))
 
 (s/def :conformers-test/number (s/conformer numberify))
 
@@ -2064,6 +2063,9 @@ Detected 1 error\n"
    (s/conformer seq)
    ;; re-use previous sequence spec
    :conformers-test/string-AB-seq))
+
+(defn parse-csv [s]
+  (map string/upper-case (string/split s #",")))
 
 (deftest conformers-test
   ;; Example from http://cjohansen.no/a-unified-specification/
@@ -2194,8 +2196,6 @@ Detected 1 error\n")
     (testing "conformers that modify path of values"
       (s/def :conformers-test/vals (s/coll-of (s/and string?
                                                      #(re-matches #"[A-G]+" %))))
-      (defn parse-csv [s]
-        (map string/upper-case (string/split s #",")))
       (s/def :conformers-test/csv (s/and string?
                                          (s/conformer parse-csv)
                                          :conformers-test/vals))
@@ -2491,6 +2491,7 @@ Detected 1 error\n")
 (s/def :fspec-ret-test/plus (s/fspec
                              :args (s/cat :x int? :y pos-int?)
                              :ret :fspec-ret-test/my-int))
+
 (defn my-plus [x y]
   (+ x y))
 
@@ -2508,22 +2509,9 @@ should satisfy
 
   pos-int?
 
--- Relevant specs -------
-
-:fspec-ret-test/my-int:
-  pf.core/pos-int?
-:fspec-ret-test/plus:
-  (pf.spec.alpha/fspec
-   :args
-   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
-   :ret
-   :fspec-ret-test/my-int
-   :fn
-   nil)
-
 -------------------------
 Detected 1 error\n")
-           (until-unsuccessful #(expound/expound-str :fspec-ret-test/plus my-plus))))
+           (until-unsuccessful #(expound/expound-str :fspec-ret-test/plus my-plus {:print-specs? false}))))
 
     (is (= (pf "-- Function spec failed -----------
 
@@ -2538,22 +2526,35 @@ should satisfy
 
   pos-int?
 
--- Relevant specs -------
-
-:fspec-ret-test/my-int:
-  pf.core/pos-int?
-:fspec-ret-test/plus:
-  (pf.spec.alpha/fspec
-   :args
-   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
-   :ret
-   :fspec-ret-test/my-int
-   :fn
-   nil)
-
 -------------------------
 Detected 1 error\n")
-           (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus]))))))
+           (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus] {:print-specs? false}))))
+    (s/def :fspec-ret-test/return-map (s/fspec
+                                       :args (s/cat)
+                                       :ret (s/keys :req-un [:fspec-ret-test/my-int])))
+    (is (= (pf "-- Function spec failed -----------
+
+  <anonymous function>
+
+returned an invalid value
+
+  {}
+
+should contain key: :my-int
+
+|     key | spec |
+|---------+------|
+| :my-int |  nil |
+
+-------------------------
+Detected 1 error
+")
+           (until-unsuccessful #(expound/expound-str :fspec-ret-test/return-map
+                                                     (fn [] {})
+                                                     {:print-specs? false}
+                                                     ))
+           ))
+    ))
 
 (s/def :fspec-fn-test/minus (s/fspec
                              :args (s/cat :x int? :y int?)
@@ -2934,7 +2935,7 @@ Detected 1 error
   :args (s/cat :x #{1} :y #{1})
   :ret string?)
 (defn results-str-fn5
-  [x y]
+  [_x _y]
   #?(:clj (throw (Exception. "Ooop!"))
      :cljs (throw (js/Error. "Oops!"))))
 
@@ -2944,6 +2945,14 @@ Detected 1 error
 (defn results-str-fn6
   [f]
   (f 1))
+
+(s/def :results-str-fn7/k string?)
+(s/fdef results-str-fn7
+        :args (s/cat :m (s/keys))
+        :ret (s/keys :req-un [:results-str-fn7/k]))
+(defn results-str-fn7
+  [m]
+  m)
 
 (s/fdef results-str-missing-fn
   :args (s/cat :x int?))
@@ -2980,7 +2989,29 @@ should satisfy
 Detected 1 error
 ")
            (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1)))))))
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1))))))
+    (is (= (pf
+            "== Checked expound.alpha-test/results-str-fn7 
+
+-- Function spec failed -----------
+
+  (expound.alpha-test/results-str-fn7 {})
+
+returned an invalid value.
+
+  {}
+
+should contain key: :k
+
+| key |    spec |
+|-----+---------|
+|  :k | string? |
+
+-------------------------
+Detected 1 error
+")
+           (binding [s/*explain-out* expound/printer]
+             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn7)))))))
   (testing "single bad result (failing fn spec)"
     (is (= (pf "== Checked expound.alpha-test/results-str-fn2 
 
@@ -3700,3 +3731,21 @@ Detected 1 error\n"
           {:foo (sorted-map "bar"
 
                             1)}))))
+
+(defn select-expound-info [spec value]
+  (->> (s/explain-data spec value)
+       (problems/annotate)
+       (:expound/problems)
+       (map #(select-keys % [:expound.spec.problem/type :expound/in]))
+      (set)))
+
+#?(:clj
+   (deftest or-includes-problems-for-each-branch
+     (let [p1 (select-expound-info :ring.sync/handler (fn handler [_req] {}))
+           p2 (select-expound-info :ring.async/handler (fn handler [_req] {}))
+           p3 (select-expound-info :ring.sync+async/handler (fn handler [_req] {}))
+           all-problems (select-expound-info :ring/handler (fn handler [_req] {}))]
+
+       (is (set/subset? p1 all-problems) {:extra (set/difference p1 all-problems)})
+       (is (set/subset? p2 all-problems) {:extra (set/difference p2 all-problems)})
+       (is (set/subset? p3 all-problems) {:extra (set/difference p3 all-problems)}))))

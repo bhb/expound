@@ -1,16 +1,7 @@
 (ns expound.printer-test
   (:require [clojure.spec.alpha :as s]
-            [clojure.string :as string]
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
-            [expound.alpha :as expound]
             [expound.printer :as printer]
-            #?(:cljs
-               [clojure.spec.test.alpha :as st]
-               ;; FIXME
-               ;; orchestra is supposed to work with cljs but
-               ;; it isn't working for me right now
-               #_[orchestra-cljs.spec.test :as st]
-               :clj [orchestra.spec.test :as st])
             [expound.test-utils :as test-utils :refer [contains-nan?]]))
 
 (use-fixtures :once

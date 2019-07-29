@@ -254,4 +254,9 @@
 
         (and (int? k)
              (seqable? form))
-        (recur (nth (seq form) k) rst)))))
+        (recur (nth (seq form) k) rst)
+
+        :else
+        (throw (ex-info "No value found"
+                        {:form form
+                         :in in}))))))
