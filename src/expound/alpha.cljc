@@ -1,6 +1,7 @@
 (ns expound.alpha
   "Generates human-readable errors for `clojure.spec`"
   (:require [expound.problems :as problems]
+            [clojure.pprint :as pprint]
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.set :as set]
@@ -453,18 +454,71 @@
      (lcs* xs ys))
    paths))
 
-(defn ^:private alternation [grp1 grp2]
-  (let [xs (:path-prefix grp1)
-        ys (:path-prefix grp2)
-        prefix (lcs xs ys)]
-    (if (and
-         (some? prefix)
-         (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp1))
-           true
-           (not= prefix xs))
-         (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp2))
-           true
-           (not= prefix ys)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; START CHANGED SECTION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; DEPRECATED; replaced with share-alt-tags and recursive-spec
+#_(defn ^:private alternation [grp1 grp2]
+    (let [xs (:path-prefix grp1)
+          ys (:path-prefix grp2)
+          prefix (lcs xs ys)]
+      (if (and
+           (some? prefix)
+           (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp1))
+             true
+             (not= prefix xs))
+           (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp2))
+             true
+             (not= prefix ys)))
+        grp1
+        nil)))
+
+(defn ^:private tree-seq-spec [spec]
+  (tree-seq (partial not-every? #(not (coll? %)))
+            (partial filter coll?)
+            (s/form spec)))
+
+(defn ^:private has-keys [spec k1 k2]
+  (filter (fn [node]
+            (and
+             (-> node first keyword #{::s/or ::s/alt})
+             (let [node-keys (->> node rest (apply hash-map) keys set)]
+               (and (contains? node-keys k1)
+                    (contains? node-keys k2)))))
+          (tree-seq-spec spec)))
+
+(defn ^:private share-alt-tags
+  "Determine if two groups have prefixes (ie. spec tags) that are included in
+  an s/or or s/and predicate. Returns group 1 if true, nil if false."
+  [grp1 grp2]
+  (let [pxs (:path-prefix grp1)
+        pys (:path-prefix grp2)
+        pprefix (lcs pxs pys)
+        next-1 (get pxs (-> pprefix count))
+        next-2 (get pys (-> pprefix count))]
+    (if (or (nil? next-1) (nil? next-2))
+      nil
+      (let [shared-specs (lcs (:via-prefix grp1) (:via-prefix grp2))
+            spec-seq (flatten (map #(has-keys % next-1 next-2) shared-specs))]
+        (if (some? (not-empty spec-seq))
+          grp1
+          nil)))))
+
+(defn ^:private recursive-spec
+  "Determine if either group 1 or 2 is recursive (ie. have repeating specs in
+  their via paths) and if one group is included in another. Return group 1 if
+  true, false otherwise."
+  [grp1 grp2]
+  (let [vxs (:via-prefix grp1)
+        vys (:via-prefix grp2)
+        vprefix (lcs vxs vys)]
+    (if (or (and (not= (count vys) (count (distinct vys)))
+                 (< (count vprefix) (count vys))
+                 (= vxs vprefix))
+            (and (not= (count vxs) (count (distinct vxs)))
+                 (< (count vprefix) (count vxs))
+                 (= vys vprefix)))
       grp1
       nil)))
 
@@ -472,12 +526,15 @@
   {:expound.spec.problem/type :expound.problem-group/many-values
    :path-prefix               (lcs (:path-prefix grp1)
                                    (:path-prefix grp2))
+   :via-prefix                (lcs (:via-prefix grp1)
+                                   (:via-prefix grp2))
    :problems                  (into
-                               (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp1))
+                               (if (= :expound.problem-group/many-values
+                                      (:expound.spec.problem/type grp1))
                                  (:problems grp1)
                                  [grp1])
-
-                               (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp2))
+                               (if (= :expound.problem-group/many-values
+                                      (:expound.spec.problem/type grp2))
                                  (:problems grp2)
                                  [grp2]))})
 
@@ -496,31 +553,44 @@
 (defn ^:private remove-vec [v x]
   (vec (remove #{x} v)))
 
-(defn ^:private groups [problems]
-  (let [grouped-by-in-path (->> problems
-                                (group-by :expound/in)
-                                vals
-                                (map (fn [grp]
-                                       (if (= 1 (count grp))
-                                         {:expound.spec.problem/type :expound.problem-group/one-value
+(defn conj-groups
+  "Consolidate a group into a group collection if it's either part of an s/or,
+  s/alt or recursive spec."
+  [groups group]
+  (if-let [old-groups-1 (some #(recursive-spec % group) groups)]
+    ;; Consolidate if we find a recursive spec
+    (-> groups
+        (remove-vec old-groups-1)
+        (conj (problem-group old-groups-1 group)))
+    ;; Consolidate if we find groups that split off at s/or or s/alt
+    (if-let [old-groups-2 (some #(share-alt-tags % group) groups)]
+      (-> groups
+          (remove-vec old-groups-2)
+          (conj (problem-group old-groups-2 group)))
+      (conj groups group))))
 
-                                          :path-prefix               (:expound/path (first grp))
-                                          :problems                  grp}
-                                         {:expound.spec.problem/type :expound.problem-group/one-value
-                                          :path-prefix               (apply lcs (map :expound/path grp))
-                                          :problems                  grp}))))]
+(defn ^:private groups [problems]
+  (let [grouped-by-in-path
+        (->> problems
+             (group-by :expound/in)
+             vals
+             (map (fn [grp]
+                    (if (= 1 (count grp))
+                      {:expound.spec.problem/type :expound.problem-group/one-value
+                       :path-prefix               (:expound/path (first grp))
+                       :via-prefix                (:expound/via (first grp))
+                       :problems                  grp}
+                      {:expound.spec.problem/type :expound.problem-group/one-value
+                       :path-prefix               (apply lcs (map :expound/path grp))
+                       :via-prefix                (apply lcs (map :expound/via grp))
+                       :problems                  grp}))))]
     (->> grouped-by-in-path
-         (reduce
-          (fn [grps group]
-            (if-let [old-group (some #(alternation % group) grps)]
-              (-> grps
-                  (remove-vec old-group)
-                  (conj (problem-group
-                         old-group
-                         group)))
-              (conj grps group)))
-          [])
+         (reduce conj-groups [])
          lift-singleton-groups)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; END CHANGED SECTION
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defmethod expected-str :expound.problem/insufficient-input [_type spec-name form path problems opts]
   (let [problem (first problems)]
@@ -1024,3 +1094,31 @@ returned an invalid value.
   "Given a sequence of results from `clojure.spec.test.alpha/check`, returns a string summarizing the results."
   [check-results]
   (with-out-str (explain-results check-results)))
+
+(s/def :keys-spec/one string?)
+(s/def :keys-spec/two string?)
+(s/def :keys-spec/three string?)
+(s/def :keys-spec/map-spec (s/keys :req-un [:keys-spec/one
+                                            :keys-spec/two
+                                            :keys-spec/three]))
+; (expound :keys-spec/map-spec {:one 1.2 :two 123 :three true})
+
+(s/def :and-spec/ne-string (s/and string?
+                                  #(pos? (count %))))
+(s/def :and-spec/ne-strings (s/coll-of :and-spec/ne-string))
+; (expound :and-spec/ne-strings ["bob" "sally" "" 1])
+
+; (s/def :or-spec/foo (s/or :string string? :pos-int pos?))
+; (expound :or-spec/foo -12)
+
+; (s/def :or-spec/bar (s/or :seq0 (s/cat :y1 string? :y2 boolean?) :seq1 (s/cat :x1 int? :x2 int?)))
+; (expound :or-spec/bar ["foo" "bar"])
+
+; (s/def :alt-spec/or-spec (s/alt :one int?
+;                                 :many (s/spec (s/+ int?))))
+; (s/def :alt-spec/baz (s/cat :bs (s/alt :number (s/or :int int?
+;                                                      :float float?)
+;                                        :many (s/spec (s/+ int?)))))
+; (expound :alt-spec/baz [["1"]])
+
+; (s/def ::alt-spec/one-many-int-or-str (s/cat :bs (s/alt :one :alt-spec/)))

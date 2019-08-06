@@ -611,6 +611,13 @@ Detected 1 error\n")
                                            :key-spec/state
                                            :key-spec/city))]))
 
+(s/def :keys-spec/foo string?)
+(s/def :keys-spec/bar string?)
+(s/def :keys-spec/baz string?)
+(s/def :keys-spec/map-spec (s/keys :req-un [:keys-spec/foo
+                                          :keys-spec/bar
+                                          :keys-spec/baz]))
+
 (deftest keys-spec
   (testing "missing keys"
     (is (= (pf "-- Spec failed --------------------
@@ -727,7 +734,40 @@ should satisfy
 Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
-           (expound/expound-str :keys-spec/user {:age 1 :keys-spec/name :bob})))))
+           (expound/expound-str :keys-spec/user {:age 1 :keys-spec/name :bob})))
+    (is (= (pf "-- Spec failed --------------------
+
+  {:foo 1.2, :bar ..., :baz ...}
+        ^^^
+
+should satisfy
+
+  string?
+
+-- Spec failed --------------------
+
+  {:foo ..., :bar 123, :baz ...}
+                  ^^^
+
+should satisfy
+
+  string?
+
+-- Spec failed --------------------
+
+  {:foo ..., :bar ..., :baz true}
+                            ^^^^
+
+should satisfy
+
+  string?
+
+-------------------------
+Detected 3 errors\n") 
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str :keys-spec/map-spec {:foo 1.2
+                                                       :bar 123
+                                                       :baz true}))))))
 
 (s/def :multi-spec/value string?)
 (s/def :multi-spec/children vector?)
@@ -861,7 +901,8 @@ Detected 1 error\n")
               {:tag :group
                :children [{:tag :group
                            :children [{:tag :group
-                                       :props {:on-tap {}}}]}]}))))))
+                                       :props {:on-tap {}}}]}]})
+             )))))
 
 (s/def :cat-wrapped-in-or-spec/kv (s/and
                                    sequential?
@@ -1784,6 +1825,9 @@ Detected 1 error\n"
              (s/explain-str
               :alt-spec/one-many-int-or-str
               [[:one]]))))
+    #_(expound/expound
+              :alt-spec/one-many-int-or-str
+              [[:one]])
     (s/def :alt-spec/int-or-str (s/or :i int?
                                       :s string?))
     (s/def :alt-spec/one-many-int-or-str (s/cat :bs (s/alt :one :alt-spec/int-or-str
