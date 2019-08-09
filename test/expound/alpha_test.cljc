@@ -1986,9 +1986,6 @@ Detected 1 error\n"
              (s/explain-str
               :alt-spec/one-many-int-or-str
               [[:one]]))))
-    #_(expound/expound
-              :alt-spec/one-many-int-or-str
-              [[:one]])
     (s/def :alt-spec/int-or-str (s/or :i int?
                                       :s string?))
     (s/def :alt-spec/one-many-int-or-str (s/cat :bs (s/alt :one :alt-spec/int-or-str

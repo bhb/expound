@@ -1,5 +1,5 @@
 {:paths ["src"]
- :aliases {;; clj -A:test
+ :aliases {;; clj -Atest
            :test {:extra-paths ["test"]
                   :extra-deps {com.cognitect/test-runner {:git/url "https://github.com/cognitect-labs/test-runner.git"
                                                           :sha "3cb0a9daf1cb746259dc8309b218f9211ad3b33b"}
@@ -15,8 +15,7 @@
                                com.bhauman/spell-spec {:mvn/version "0.1.1"}}
                   ;; Taken from https://github.com/boot-clj/boot/wiki/Improving-startup-time
                   :jvm-opts ["-client " "-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1" "-Xmx2g" "-XX:+UseConcMarkSweepGC" "-XX:+CMSClassUnloadingEnabled" "-Xverify:none"]
-                  :main-opts ["-m" "cognitect.test-runner"] 
-                  }
+                  :main-opts ["-m" "cognitect.test-runner"]}
            ;; clj -A:lint:lint/fix
            :lint {:extra-deps {com.jameslaverack/cljfmt-runner
                                {:git/url "https://github.com/JamesLaverack/cljfmt-runner"
