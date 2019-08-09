@@ -490,7 +490,7 @@
 
 (defn ^:private share-alt-tags
   "Determine if two groups have prefixes (ie. spec tags) that are included in
-  an s/or or s/and predicate. Returns group 1 if true, nil if false."
+  an s/or or s/alt predicate. Returns group 1 if true, nil if false."
   [grp1 grp2]
   (let [pxs (:path-prefix grp1)
         pys (:path-prefix grp2)
@@ -556,7 +556,12 @@
 (defn conj-groups
   "Consolidate a group into a group collection if it's either part of an s/or,
   s/alt or recursive spec."
-  [groups group]
+  [groups group] 
+  #_(if-let [old-groups-2 (some #(share-alt-tags % group) groups)]
+      (-> groups
+          (remove-vec old-groups-2)
+          (conj (problem-group old-groups-2 group)))
+      (conj groups group))
   (if-let [old-groups-1 (some #(recursive-spec % group) groups)]
     ;; Consolidate if we find a recursive spec
     (-> groups
@@ -1094,31 +1099,3 @@ returned an invalid value.
   "Given a sequence of results from `clojure.spec.test.alpha/check`, returns a string summarizing the results."
   [check-results]
   (with-out-str (explain-results check-results)))
-
-(s/def :keys-spec/one string?)
-(s/def :keys-spec/two string?)
-(s/def :keys-spec/three string?)
-(s/def :keys-spec/map-spec (s/keys :req-un [:keys-spec/one
-                                            :keys-spec/two
-                                            :keys-spec/three]))
-; (expound :keys-spec/map-spec {:one 1.2 :two 123 :three true})
-
-(s/def :and-spec/ne-string (s/and string?
-                                  #(pos? (count %))))
-(s/def :and-spec/ne-strings (s/coll-of :and-spec/ne-string))
-; (expound :and-spec/ne-strings ["bob" "sally" "" 1])
-
-; (s/def :or-spec/foo (s/or :string string? :pos-int pos?))
-; (expound :or-spec/foo -12)
-
-; (s/def :or-spec/bar (s/or :seq0 (s/cat :y1 string? :y2 boolean?) :seq1 (s/cat :x1 int? :x2 int?)))
-; (expound :or-spec/bar ["foo" "bar"])
-
-; (s/def :alt-spec/or-spec (s/alt :one int?
-;                                 :many (s/spec (s/+ int?))))
-; (s/def :alt-spec/baz (s/cat :bs (s/alt :number (s/or :int int?
-;                                                      :float float?)
-;                                        :many (s/spec (s/+ int?)))))
-; (expound :alt-spec/baz [["1"]])
-
-; (s/def ::alt-spec/one-many-int-or-str (s/cat :bs (s/alt :one :alt-spec/)))
