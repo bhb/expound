@@ -1,7 +1,6 @@
 (ns expound.alpha
   "Generates human-readable errors for `clojure.spec`"
   (:require [expound.problems :as problems]
-            [clojure.pprint :as pprint]
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.set :as set]
@@ -556,12 +555,7 @@
 (defn conj-groups
   "Consolidate a group into a group collection if it's either part of an s/or,
   s/alt or recursive spec."
-  [groups group] 
-  #_(if-let [old-groups-2 (some #(share-alt-tags % group) groups)]
-      (-> groups
-          (remove-vec old-groups-2)
-          (conj (problem-group old-groups-2 group)))
-      (conj groups group))
+  [groups group]
   (if-let [old-groups-1 (some #(recursive-spec % group) groups)]
     ;; Consolidate if we find a recursive spec
     (-> groups

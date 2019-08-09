@@ -783,8 +783,8 @@ should satisfy
 Detected 3 errors\n") 
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
              (s/explain-str :keys-spec/map-spec-1 {:foo 1.2
-                                                 :bar 123
-                                                 :baz true}))))
+                                                   :bar 123
+                                                   :baz true}))))
     (is (= (pf 
 "-- Spec failed --------------------
 
@@ -821,8 +821,8 @@ or
 Detected 3 errors\n") 
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
              (s/explain-str :keys-spec/map-spec-2 {:foo 1.2 
-                                                 :bar 123 
-                                                 :qux false}))))
+                                                   :bar 123 
+                                                   :qux false}))))
     (is (= (pf 
 "-- Spec failed --------------------
 
@@ -874,8 +874,7 @@ Detected 4 errors\n")
              (s/explain-str :keys-spec/map-spec-3 {:foo 1.2 
                                                    :child-2 {:bar 123
                                                              :child-1 {:baz true
-                                                                       :qux false}}}))))
-    ))
+                                                                       :qux false}}}))))))
 
 (s/def :multi-spec/value string?)
 (s/def :multi-spec/children vector?)
@@ -1019,8 +1018,7 @@ Detected 1 error\n")
               {:tag :group
                :children [{:tag :group
                            :children [{:tag :group
-                                       :props {:on-tap {}}}]}]})
-             ))))
+                                       :props {:on-tap {}}}]}]})))))
   ;; XXX New Test
   (testing "test that our new recursive spec grouping function works with
            alternative paths"
@@ -1065,10 +1063,7 @@ Detected 1 error\n")
               {:tag-2 :group
                :children-2 [{:tag-2 :group
                            :children-2 [{:tag-2 :group
-                                       :props-2 {:on-tap-2 {}}}]}]})
-             )
-           )) 
-    ))
+                                       :props-2 {:on-tap-2 {}}}]}]}))))))
 
 (s/def :cat-wrapped-in-or-spec/kv (s/and
                                    sequential?
