@@ -335,9 +335,10 @@ Detected 1 error
 
 should contain keys: :or-spec/int, :or-spec/str
 
-|          key |    spec |
+| key          | spec    |
 |--------------+---------|
-| :or-spec/int |    int? |
+| :or-spec/int | int?    |
+|--------------+---------|
 | :or-spec/str | string? |
 
 -- Relevant specs -------
@@ -364,7 +365,7 @@ Detected 1 error
 
 should contain keys: :or-spec/str
 
-|          key |    spec |
+| key          | spec    |
 |--------------+---------|
 | :or-spec/str | string? |
 
@@ -610,6 +611,8 @@ Detected 1 error\n")
                                            :key-spec/state
                                            :key-spec/city))]))
 
+(s/def :keys-spec/user4 (s/keys :req []))
+
 (deftest keys-spec
   (testing "missing keys"
     (is (= (pf "-- Spec failed --------------------
@@ -618,9 +621,10 @@ Detected 1 error\n")
 
 should contain keys: :age, :keys-spec/name
 
-|             key |    spec |
+| key             | spec    |
 |-----------------+---------|
-|            :age |    int? |
+| :age            | int?    |
+|-----------------+---------|
 | :keys-spec/name | string? |
 
 -- Relevant specs -------
@@ -642,13 +646,17 @@ should contain keys:
 
 (and (and :keys-spec/name :keys-spec/age) (or :zip (and :state :city)))
 
-|             key |     spec |
+| key             | spec     |
 |-----------------+----------|
-|           :city |  string? |
-|          :state |  string? |
-|            :zip | pos-int? |
-|  :keys-spec/age |     int? |
-| :keys-spec/name |  string? |
+| :city           | string?  |
+|-----------------+----------|
+| :state          | string?  |
+|-----------------+----------|
+| :zip            | pos-int? |
+|-----------------+----------|
+| :keys-spec/age  | int?     |
+|-----------------+----------|
+| :keys-spec/name | string?  |
 
 -- Relevant specs -------
 
@@ -670,11 +678,13 @@ should contain keys:
 
 (or :zip (and :state :city))
 
-|    key |     spec |
+| key    | spec     |
 |--------+----------|
-|  :city |  string? |
-| :state |  string? |
-|   :zip | pos-int? |
+| :city  | string?  |
+|--------+----------|
+| :state | string?  |
+|--------+----------|
+| :zip   | pos-int? |
 
 -- Relevant specs -------
 
@@ -694,9 +704,10 @@ Detected 1 error\n")
 
 should contain keys: :age, :name
 
-|   key |    spec |
+| key   | spec    |
 |-------+---------|
-|  :age |    int? |
+| :age  | int?    |
+|-------+---------|
 | :name | string? |
 
 -------------------------
@@ -734,22 +745,29 @@ Detected 1 error\n"
     (s/def :keys-spec/locations (s/keys :req-un [:keys-spec/states
                                                  :keys-spec/address
                                                  :keys-spec/locations]))
-    (is (= "-- Spec failed --------------------
+
+    ;; HERE - need to left justify this I think, to get proper indentation
+    (is (=
+         "-- Spec failed --------------------
 
   {}
 
 should contain keys: :address, :locations, :states
 
-|        key |                                                                       spec |
-|------------+----------------------------------------------------------------------------|
-|   :address |                              (keys :req [:key-spec/city :key-space/state]) |
-| :locations | (keys :req-un [:keys-spec/states :keys-spec/address :keys-spec/locations]) |
-|    :states |                                    (coll-of :key-spec/state :kind vector?) |
+| key        | spec                                                          |
+|------------+---------------------------------------------------------------|
+| :address   | (keys :req [:key-spec/city :key-space/state])                 |
+|------------+---------------------------------------------------------------|
+| :locations | (keys                                                         |
+|            |  :req-un                                                      |
+|            |  [:keys-spec/states :keys-spec/address :keys-spec/locations]) |
+|------------+---------------------------------------------------------------|
+| :states    | (coll-of :key-spec/state :kind vector?)                       |
 
 -------------------------
 Detected 1 error
 "
-           (expound/expound-str :keys-spec/locations {} { :print-specs? false})))))
+         (expound/expound-str :keys-spec/locations {} {:print-specs? false})))))
 
 (s/def :multi-spec/value string?)
 (s/def :multi-spec/children vector?)
@@ -818,7 +836,7 @@ Detected 1 error\n")
 
 should contain key: :multi-spec/value
 
-|               key |    spec |
+| key               | spec    |
 |-------------------+---------|
 | :multi-spec/value | string? |
 
@@ -900,7 +918,7 @@ Detected 1 error\n")
 
 should contain key: :cat-wrapped-in-or-spec/type
 
-|                          key |     spec |
+| key                          | spec     |
 |------------------------------+----------|
 | :cat-wrapped-in-or-spec/type | #{:text} |
 
@@ -2112,7 +2130,7 @@ when conformed as
 
 should contain key: :user/id
 
-|      key |    spec |
+| key      | spec    |
 |----------+---------|
 | :user/id | string? |
 
@@ -2565,9 +2583,9 @@ returned an invalid value
 
 should contain key: :my-int
 
-|     key | spec |
+| key     | spec |
 |---------+------|
-| :my-int |  nil |
+| :my-int | nil  |
 
 -------------------------
 Detected 1 error
@@ -3023,9 +3041,9 @@ returned an invalid value.
 
 should contain key: :k
 
-| key |    spec |
+| key | spec    |
 |-----+---------|
-|  :k | string? |
+| :k  | string? |
 
 -------------------------
 Detected 1 error

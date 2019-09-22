@@ -1,8 +1,13 @@
 (ns expound.printer-test
   (:require [clojure.spec.alpha :as s]
-            [clojure.test :as ct :refer [is testing deftest use-fixtures]]
+            [clojure.test :as ct :refer [is deftest use-fixtures]]
             [expound.printer :as printer]
+            [clojure.pprint :as pprint]
+            [com.gfredericks.test.chuck :as chuck]
+            [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [expound.test-utils :as test-utils :refer [contains-nan?]]))
+
+(def num-tests 5)
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -111,12 +116,35 @@
                {}))))))
   (is (=
        [{"key" :key-spec3,
-         "spec" "(keys :req-un [:print-spec-keys/field1 :print-spec-keys/field4 :print-spec-keys/field5])"}
-        {"key" :set-spec, "spec" "(coll-of :print-spec-keys/field1 :kind set?)"}
-        {"key" :vector-spec, "spec" "(coll-of :print-spec-keys/field1 :kind vector?)"}]
+         "spec" "(keys\n :req-un\n [:print-spec-keys/field1\n  :print-spec-keys/field4\n  :print-spec-keys/field5])"}
+        {"key" :set-spec, "spec" "(coll-of\n :print-spec-keys/field1\n :kind\n set?)"}
+        {"key" :vector-spec, "spec" "(coll-of\n :print-spec-keys/field1\n :kind\n vector?)"}]
        (printer/print-spec-keys*
         (map #(copy-key % :via :expound/via)
              (::s/problems
               (s/explain-data
                :print-spec-keys/key-spec4
                {})))))))
+
+(deftest print-table
+  (is (=
+       "
+| :key | :spec |
+|------+-------|
+| abc  | a     |
+|      | b     |
+|------+-------|
+| def  | d     |
+|      | e     |
+"
+       (with-out-str (printer/print-table [{:key "abc" :spec "a\nb"}
+                                           {:key "def" :spec "d\ne"}])))))
+
+
+
+
+
+
+
+
+

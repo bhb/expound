@@ -2,7 +2,6 @@
   (:require [clojure.string :as string]
             [clojure.spec.alpha :as s]
             [clojure.pprint :as pprint]
-            [clojure.walk :as walk]
             [clojure.set :as set]
             [expound.util :as util]
             [expound.ansi :as ansi]
@@ -10,7 +9,7 @@
   (:refer-clojure :exclude [format]))
 
 (def indent-level 2)
-(def max-spec-str-width 100)
+(def max-spec-str-width 140)
 (def anon-fn-str "<anonymous function>")
 
 (s/def :expound.spec/spec-conjunction
@@ -35,6 +34,106 @@
                                         :compound (s/cat
                                                    :op #{`or `and}
                                                    :clauses (s/+ :expound.spec/contains-key-pred))))
+
+
+;;;;; TODO - make private fns
+
+(declare format)
+
+(defn str-height [lines]
+  (count lines))
+
+(defn str-width [lines]
+  (apply max 0 (map count lines)))
+
+(defn max-column-width [rows k]
+  (apply max 0 (map #(str-width (string/split-lines (str (get % k)))) rows)))
+
+(defn max-row-height [row]
+  (apply max 0
+         (map #(str-height (string/split-lines (str %))) (vals row))))
+
+(defn formatted-multirows [column-widths multi-rows]
+  (map
+   (fn [multi-row]
+       ;;multi-row
+     (map
+      (fn [row]
+        row
+        (map
+         (fn [[k v]]
+           (format (str "%-" (get column-widths k) "s") v))
+         row))
+      multi-row))
+   multi-rows))
+
+(defn rows-with-headers [columns rows]
+  (concat [(into {} (zipmap columns (map str columns)))]
+          rows))
+
+;; TODO - bad name?
+(defn bracket [xs]
+  (str "| "
+       (string/join " | " xs)
+       " |"))
+
+(defn table* [multirows]
+  (let [row (first (first multirows))
+        ;; TODO - use bracket fn
+        divider (str  "|-" (string/join "+" (map
+                                             #(apply str (repeat (inc (count (str %))) "-"))
+                                             row)) "-|")]
+    (flatten (interpose
+              divider
+              (map
+               (fn [multirow]
+                 (map
+                  (fn [row]
+                    (bracket row))
+                  multirow))
+
+               multirows)))))
+
+(defn table [multirows]
+  (println)
+  (doseq [line (table* multirows)]
+    (println line)))
+
+(defn multirows [row-heights rows]
+  (map-indexed
+   (fn [idx row]
+     (let [row-height (get row-heights idx)]
+       (reduce
+        (fn [new-rows i]
+          (conj new-rows
+                (into {}
+                      (map
+                       (fn [[k v]]
+                         [k
+                          (get (string/split-lines (str v)) i "")])
+
+                       row))))
+        []
+        (range 0 row-height))))
+   rows))
+
+(defn print-table* [rows]
+  (when-not (empty? rows)
+    (let [columns (keys (first rows))
+          rows (rows-with-headers columns rows)
+          row-heights (mapv max-row-height rows)
+          column-widths (into {}
+                              (map
+                               (fn [k] [k (max-column-width rows k)])
+                               columns))]
+
+      (->>
+       rows
+       (multirows row-heights)
+       (formatted-multirows column-widths)))))
+
+(defn print-table [rows]
+  (table (print-table* rows)))
 
 ;;;; private
 
@@ -83,11 +182,6 @@
                      first))))
      {}
      keys)))
-
-(defn expand-spec [spec]
-  (if (s/get-spec spec)
-    (s/form spec)
-    spec))
 
 (defn summarize-key-clause [[branch match]]
   (case branch
@@ -161,11 +255,20 @@
     (pprint-fn x)
     (pprint/write x :stream nil)))
 
+(defn expand-spec [spec]
+  (if (s/get-spec spec)
+    (pprint-str (s/form spec))
+    spec))
+
 (defn simple-spec-or-name [spec-name]
-  (let [spec-str (elide-spec-ns (elide-core-ns (pr-str (expand-spec spec-name))))]
+  (let [expanded (expand-spec spec-name)
+        spec-str (elide-spec-ns (elide-core-ns
+                                 (if (nil? expanded)
+                                   "nil"
+                                   expanded)))]
+
     (if (or
-         (< max-spec-str-width (count spec-str))
-         (string/includes? spec-str "\n"))
+         (< max-spec-str-width (count spec-str)))
       spec-name
       spec-str)))
 
@@ -185,7 +288,7 @@
 (defn print-spec-keys [problems]
   (->>
    (print-spec-keys* problems)
-   (pprint/print-table ["key" "spec"])
+   (print-table)
    with-out-str
    string/trim))
 
