@@ -38,6 +38,7 @@
 
 ;;;;; TODO - make private fns
 
+
 (declare format)
 
 (defn str-height [lines]
@@ -72,6 +73,7 @@
           rows))
 
 ;; TODO - bad name?
+
 (defn bracket [xs]
   (str "| "
        (string/join " | " xs)

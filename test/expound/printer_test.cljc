@@ -116,9 +116,16 @@
                {}))))))
   (is (=
        [{"key" :key-spec3,
-         "spec" "(keys\n :req-un\n [:print-spec-keys/field1\n  :print-spec-keys/field4\n  :print-spec-keys/field5])"}
-        {"key" :set-spec, "spec" "(coll-of\n :print-spec-keys/field1\n :kind\n set?)"}
-        {"key" :vector-spec, "spec" "(coll-of\n :print-spec-keys/field1\n :kind\n vector?)"}]
+         "spec" #?(:clj
+                   "(keys\n :req-un\n [:print-spec-keys/field1\n  :print-spec-keys/field4\n  :print-spec-keys/field5])"
+                   :cljs
+                   "(keys\n :req-un\n [:print-spec-keys/field1\n  :print-spec-keys/field4 \n  :print-spec-keys/field5])")}
+        {"key" :set-spec, "spec" #?(:clj
+                                    "(coll-of\n :print-spec-keys/field1\n :kind\n set?)"
+                                    :cljs
+                                    "(coll-of :print-spec-keys/field1 :kind set?)")}
+        {"key" :vector-spec, "spec" #?(:clj "(coll-of\n :print-spec-keys/field1\n :kind\n vector?)"
+                                       :cljs "(coll-of\n :print-spec-keys/field1 \n :kind \n vector?)")}]
        (printer/print-spec-keys*
         (map #(copy-key % :via :expound/via)
              (::s/problems
