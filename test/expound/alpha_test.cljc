@@ -15,11 +15,11 @@
             [clojure.walk :as walk]
             [com.gfredericks.test.chuck :as chuck]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
-            [com.stuartsierra.dependency :as deps]
             [expound.alpha :as expound]
             [expound.ansi :as ansi]
             [expound.printer :as printer]
             [expound.problems :as problems]
+            [expound.spec-gen :as sg]
             [expound.test-utils :as test-utils]
             [spec-tools.data-spec :as ds]
             #?(:clj [orchestra.spec.test :as orch.st]
@@ -988,73 +988,11 @@ should satisfy
 Detected 1 error\n")
          (expound/expound-str :map-of-spec/name->age {:sally 30}))))
 
-;; I want to do something like
-;; (s/def :specs.coll-of/into #{[] '() #{}})
-;; but Clojure (not Clojurescript) won't allow
-;; this. As a workaround, I'll just use vectors instead
-;; of vectors and lists.
-;; FIXME - force a specific type of into/kind one for each test
-;; (one for vectors, one for lists, etc)
-(s/def :specs.coll-of/into #{[] #{}})
-(s/def :specs.coll-of/kind #{vector? list? set?})
-(s/def :specs.coll-of/count pos-int?)
-(s/def :specs.coll-of/max-count pos-int?)
-(s/def :specs.coll-of/min-count pos-int?)
-(s/def :specs.coll-of/distinct boolean?)
-
-(s/def :specs/every-args
-  (s/keys :req-un
-          [:specs.coll-of/into
-           :specs.coll-of/kind
-           :specs.coll-of/count
-           :specs.coll-of/max-count
-           :specs.coll-of/min-count
-           :specs.coll-of/distinct]))
-
-(defn apply-coll-of [spec {:keys [into max-count min-count distinct]}]
-  (s/coll-of spec :into into :min-count min-count :max-count max-count :distinct distinct))
-
-(defn apply-map-of [spec1 spec2 {:keys [into max-count min-count distinct _gen-max]}]
-  (s/map-of spec1 spec2 :into into :min-count min-count :max-count max-count :distinct distinct))
-
-;; Since CLJS prints out entire source of a function when
-;; it pretty-prints a failure, the output becomes much nicer if
-;; we wrap each function in a simple spec
-(expound/def :specs/string string? "should be a string")
-(expound/def :specs/vector vector? "should be a vector")
-(s/def :specs/int int?)
-(s/def :specs/boolean boolean?)
-(expound/def :specs/keyword keyword? "should be a keyword")
-(s/def :specs/map map?)
-(s/def :specs/symbol symbol?)
-(s/def :specs/pos-int pos-int?)
-(s/def :specs/neg-int neg-int?)
-(s/def :specs/zero #(and (number? %) (zero? %)))
-(s/def :specs/keys (s/keys
-                    :req-un [:specs/string]
-                    :req [:specs/map]
-                    :opt-un [:specs/vector]
-                    :opt [:specs/int]))
-
-(def simple-spec-gen (gen/one-of
-                      [(gen/elements [:specs/string
-                                      :specs/vector
-                                      :specs/int
-                                      :specs/boolean
-                                      :specs/keyword
-                                      :specs/map
-                                      :specs/symbol
-                                      :specs/pos-int
-                                      :specs/neg-int
-                                      :specs/zero
-                                      :specs/keys])
-                       (gen/set gen/simple-type-printable)]))
-
 (deftest generated-simple-spec
   (checking
    "simple spec"
    (chuck/times num-tests)
-   [simple-spec simple-spec-gen
+   [simple-spec sg/simple-spec-gen
     :let [sp-form (s/form simple-spec)]
     form gen/any-printable]
    (is (string? (expound/expound-str simple-spec form)))))
@@ -1063,9 +1001,9 @@ Detected 1 error\n")
   (checking
    "'coll-of' spec"
    (chuck/times num-tests)
-   [simple-spec simple-spec-gen
+   [simple-spec sg/simple-spec-gen
     every-args (s/gen :specs/every-args)
-    :let [spec (apply-coll-of simple-spec every-args)]
+    :let [spec (sg/apply-coll-of simple-spec every-args)]
     :let [sp-form (s/form spec)]
     form gen/any-printable]
    (is (string? (expound/expound-str spec form)))))
@@ -1074,8 +1012,8 @@ Detected 1 error\n")
   (checking
    "'and' spec"
    (chuck/times num-tests)
-   [simple-spec1 simple-spec-gen
-    simple-spec2 simple-spec-gen
+   [simple-spec1 sg/simple-spec-gen
+    simple-spec2 sg/simple-spec-gen
     :let [spec (s/and simple-spec1 simple-spec2)]
     :let [sp-form (s/form spec)]
     form gen/any-printable]
@@ -1085,8 +1023,8 @@ Detected 1 error\n")
   (checking
    "'or' spec generates string"
    (chuck/times num-tests)
-   [simple-spec1 simple-spec-gen
-    simple-spec2 simple-spec-gen
+   [simple-spec1 sg/simple-spec-gen
+    simple-spec2 sg/simple-spec-gen
     :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)
           sp-form (s/form spec)]
     form gen/any-printable]
@@ -1132,12 +1070,12 @@ Detected 1 error\n")
   (checking
    "'map-of' spec"
    (chuck/times num-tests)
-   [simple-spec1 simple-spec-gen
-    simple-spec2 simple-spec-gen
-    simple-spec3 simple-spec-gen
+   [simple-spec1 sg/simple-spec-gen
+    simple-spec2 sg/simple-spec-gen
+    simple-spec3 sg/simple-spec-gen
     every-args1 (s/gen :specs/every-args)
     every-args2 (s/gen :specs/every-args)
-    :let [spec (apply-map-of simple-spec1 (apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)
+    :let [spec (sg/apply-map-of simple-spec1 (sg/apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)
           sp-form (s/form spec)]
     form test-utils/any-printable-wo-nan]
    (is (string? (expound/expound-str spec form)))))
@@ -1689,29 +1627,6 @@ Detected 1 error
            (binding [s/*explain-out* (expound/custom-printer {:value-str-fn (fn [_spec-name _form _path _val] "  <HIDDEN>")})]
              (s/explain-str :custom-printer/strings ["a" "b" :c]))))))
 
-(defn spec-dependencies [spec]
-  (->> spec
-       s/form
-       (tree-seq coll? seq)
-       (filter #(and (s/get-spec %) (not= spec %)))
-       distinct))
-
-(defn topo-sort [specs]
-  (deps/topo-sort
-   (reduce
-    (fn [gr spec]
-      (reduce
-       (fn [g d]
-         ;; If this creates a circular reference, then
-         ;; just skip it.
-         (if (deps/depends? g d spec)
-           g
-           (deps/depend g spec d)))
-       gr
-       (spec-dependencies spec)))
-    (deps/graph)
-    specs)))
-
 (s/def :alt-spec/int-alt-str (s/alt :int int? :string string?))
 
 (deftest alt-spec
@@ -1876,12 +1791,6 @@ Detected 1 error\n"
                  :cljs "(cljs.spec.alpha/alt :int cljs.core/int? :string cljs.core/string?)"))
           (expound/expound-str :alt-spec/int-alt-str [:hi]))))
 
-#?(:clj
-   (def spec-gen (gen/elements (->> (s/registry)
-                                    (map key)
-                                    topo-sort
-                                    (filter keyword?)))))
-
 (defn mutate-coll [x]
   (cond
     (map? x)
@@ -1980,7 +1889,7 @@ Detected 1 error\n"
       ;; :ring/handler spec, but keep it plugged in, since it
       ;; takes a long time to shrink
       (chuck/times num-tests)
-      [spec spec-gen
+      [spec sg/spec-gen
        form gen/any-printable]
       ;; Can't reliably test fspecs until
       ;; https://dev.clojure.org/jira/browse/CLJ-2258 is fixed
@@ -2000,7 +1909,7 @@ Detected 1 error\n"
      (checking
       "for any real-world spec and any data, assert returns an error that matches explain-str"
       (chuck/times num-tests)
-      [spec spec-gen
+      [spec sg/spec-gen
        form gen/any-printable]
       ;; Can't reliably test fspecs until
       ;; https://dev.clojure.org/jira/browse/CLJ-2258 is fixed
@@ -2045,7 +1954,7 @@ Detected 1 error\n"
        #_(checking
           "for any real-world spec and any mutated valid data, explain-str returns a string"
           (chuck/times num-tests)
-          [spec spec-gen
+          [spec sg/spec-gen
            mutate-path (gen/vector gen/pos-int)]
           (when-not (some
                      #{"clojure.spec.alpha/fspec"}
@@ -3558,8 +3467,8 @@ should satisfy
     4))
 
 (deftest spec-specs-can-generate
-  (doseq [spec-spec (filter keyword? (topo-sort (filter #(= "expound.alpha-test" (namespace %))
-                                                        (keys (s/registry)))))]
+  (doseq [spec-spec (filter keyword? (sg/topo-sort (filter #(= "expound.alpha-test" (namespace %))
+                                                           (keys (s/registry)))))]
     (is
      (doall (s/exercise spec-spec (exercise-count spec-spec)))
      (str "Failed to generate examples for spec " spec-spec))))
@@ -3657,7 +3566,7 @@ should satisfy
    "spec for specs validates against real specs"
    (chuck/times num-tests)
    [sp (gen/elements
-        (topo-sort
+        (sg/topo-sort
          (remove
           (fn [k]
             (string/includes? (pr-str (s/form (s/get-spec k))) "clojure.core.specs.alpha/quotable"))

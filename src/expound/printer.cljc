@@ -9,7 +9,6 @@
   (:refer-clojure :exclude [format]))
 
 (def indent-level 2)
-(def max-spec-str-width 140)
 (def anon-fn-str "<anonymous function>")
 
 (s/def :expound.spec/spec-conjunction
@@ -82,9 +81,9 @@
 (defn table* [multirows]
   (let [row (first (first multirows))
         ;; TODO - use bracket fn
-        divider (str  "|-" (string/join "+" (map
-                                             #(apply str (repeat (inc (count (str %))) "-"))
-                                             row)) "-|")]
+        divider (str  "|-" (string/join "-+-" (map
+                                               #(apply str (repeat (count (str %)) "-"))
+                                               row)) "-|")]
     (flatten (interpose
               divider
               (map
@@ -269,10 +268,7 @@
                                    "nil"
                                    expanded)))]
 
-    (if (or
-         (< max-spec-str-width (count spec-str)))
-      spec-name
-      spec-str)))
+    spec-str))
 
 (defn print-spec-keys* [problems]
   (let [keys (keywords (map #(missing-key (:pred %)) problems))]

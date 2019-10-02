@@ -3,9 +3,11 @@
             [clojure.test :as ct :refer [is deftest use-fixtures]]
             [expound.printer :as printer]
             [clojure.pprint :as pprint]
+            [clojure.string :as string]
             [com.gfredericks.test.chuck :as chuck]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
-            [expound.test-utils :as test-utils :refer [contains-nan?]]))
+            [expound.test-utils :as test-utils :refer [contains-nan?]]
+            [expound.spec-gen :as sg]))
 
 (def num-tests 5)
 
@@ -147,11 +149,64 @@
        (with-out-str (printer/print-table [{:key "abc" :spec "a\nb"}
                                            {:key "def" :spec "d\ne"}])))))
 
+(deftest print-table-gen
+  (checking
+   "any table with have constant width"
+   (chuck/times num-tests)
+   [col-count (s/gen pos-int?)
+    keys (s/gen (s/coll-of keyword? :min-count 1))
+    row-count (s/gen pos-int?)
+    vals (s/gen (s/coll-of
+                 (s/coll-of string? :count col-count)
+                 :count row-count))
+    :let [rows (mapv
+                #(zipmap keys (get vals %))
+                (range 0 row-count))
+          table (with-out-str
+                  (printer/print-table rows))
+          srows (rest (string/split table #"\n"))]]
+
+   (is (apply = (map count srows))))
+
+  (checking
+   "any table will contain a sub-table of all rows but the last"
+   (chuck/times num-tests)
+   [col-count (s/gen pos-int?)
+    keys (s/gen (s/coll-of keyword? :min-count 1))
+    row-count (s/gen pos-int?)
+    vals (s/gen (s/coll-of
+                 (s/coll-of string? :count col-count)
+                 :count row-count))
+    :let [rows (mapv
+                #(zipmap keys (get vals %))
+                (range 0 row-count))
+          sub-rows  (butlast rows)
+          table (with-out-str
+                  (printer/print-table rows))
+          sub-table (with-out-str
+                      (printer/print-table sub-rows))
+          sub-table-last-row (last (string/split sub-table #"\n"))
+          table-last-row (last (string/split table #"\n"))]]
+   ;; If the line we delete shrinks the width of the table
+   ;; (because it was the widest value)
+   ;; then the property will not apply
 
 
+   (when (= (count sub-table-last-row) (count table-last-row))
+     (is (string/includes? table sub-table))))
 
+  (checking
+   "for any known registered spec, table has max width"
+   (chuck/times num-tests)
+   [spec sg/spec-gen
+    :let [rows [{:key spec
+                 :spec (printer/expand-spec spec)}]
+          table (with-out-str
+                  (printer/print-table rows))
+          srows (rest (string/split table #"\n"))]]
 
+   (prn [:count (count (last srows))])
+   (println "---------------------")
+   (println table)
 
-
-
-
+   (is (< (count (last srows)) 200))))
