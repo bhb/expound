@@ -152,7 +152,7 @@
 (deftest print-table-gen
   (checking
    "any table with have constant width"
-   (chuck/times num-tests)
+   num-tests
    [col-count (s/gen pos-int?)
     keys (s/gen (s/coll-of keyword? :min-count 1))
     row-count (s/gen pos-int?)
@@ -170,7 +170,7 @@
 
   (checking
    "any table will contain a sub-table of all rows but the last"
-   (chuck/times num-tests)
+   num-tests
    [col-count (s/gen pos-int?)
     keys (s/gen (s/coll-of keyword? :min-count 1))
     row-count (s/gen pos-int?)
@@ -190,23 +190,16 @@
    ;; If the line we delete shrinks the width of the table
    ;; (because it was the widest value)
    ;; then the property will not apply
-
-
    (when (= (count sub-table-last-row) (count table-last-row))
      (is (string/includes? table sub-table))))
 
   (checking
    "for any known registered spec, table has max width"
-   (chuck/times num-tests)
+   num-tests
    [spec sg/spec-gen
     :let [rows [{:key spec
                  :spec (printer/expand-spec spec)}]
           table (with-out-str
                   (printer/print-table rows))
           srows (rest (string/split table #"\n"))]]
-
-   (prn [:count (count (last srows))])
-   (println "---------------------")
-   (println table)
-
    (is (< (count (last srows)) 200))))
