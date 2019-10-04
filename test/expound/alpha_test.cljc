@@ -772,9 +772,9 @@ Detected 1 error
 (s/def :multi-spec/value string?)
 (s/def :multi-spec/children vector?)
 (defmulti el-type :multi-spec/el-type)
-(defmethod el-type :text [x]
+(defmethod el-type :text [_x]
   (s/keys :req [:multi-spec/value]))
-(defmethod el-type :group [x]
+(defmethod el-type :group [_x]
   (s/keys :req [:multi-spec/children]))
 (s/def :multi-spec/el (s/multi-spec el-type :multi-spec/el-type))
 
