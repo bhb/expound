@@ -73,27 +73,21 @@
 
 ;; TODO - bad name?
 
-(defn bracket [xs]
-  (str "| "
-       (string/join " | " xs)
-       " |"))
+(defn bracket [xs edge spacer middle]
+  (str edge spacer
+       (string/join (str spacer middle spacer) xs)
+       spacer edge))
 
 (defn table* [multirows]
   (let [row (first (first multirows))
-        ;; TODO - use bracket fn
-        divider (str  "|-" (string/join "-+-" (map
-                                               #(apply str (repeat (count (str %)) "-"))
-                                               row)) "-|")]
-    (flatten (interpose
-              divider
-              (map
-               (fn [multirow]
-                 (map
-                  (fn [row]
-                    (bracket row))
-                  multirow))
-
-               multirows)))))
+        columns-dividers (map #(apply str (repeat (count (str %)) "-")) row)
+        row-divider (bracket columns-dividers "|" "-" "+")]
+    (->> multirows
+         (map
+          (fn [multirow]
+            (map (fn [row] (bracket row "|" " " "|")) multirow)))
+         (interpose [row-divider])
+         (mapcat seq))))
 
 (defn table [multirows]
   (println)
