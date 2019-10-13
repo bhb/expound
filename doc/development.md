@@ -53,6 +53,14 @@ or (if you want to save a second or two)
 
 `clj -Atest:test-deps`
 
+or
+
+`bin/kaocha --watch --plugin profiling`
+
+## Code coverage
+
+`bin/kaocha --plugin cloverage --cov-exclude-call expound.alpha/def`
+
 ## Readability and linting
 
 `./bin/inconsistent-aliases` shows namespace aliases that are different across the codebase.

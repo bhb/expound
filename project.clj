@@ -103,7 +103,8 @@
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
              :kaocha [:test-common
-                      {:dependencies [[lambdaisland/kaocha "0.0-418"]]}]
+                      {:dependencies [[lambdaisland/kaocha "0.0-554"]
+                                      [lambdaisland/kaocha-cloverage "0.0-41"]]}]
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [pjstadig/humane-test-output "0.9.0"]
                                           [com.gfredericks/test.chuck "0.2.9"]
