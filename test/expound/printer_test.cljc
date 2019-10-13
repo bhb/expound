@@ -145,7 +145,36 @@
 |      | e     |
 "
        (with-out-str (printer/print-table [{:key "abc" :spec "a\nb"}
-                                           {:key "def" :spec "d\ne"}])))))
+                                           {:key "def" :spec "d\ne"}]))))
+  ;; can select ordering of keys
+  (is (=
+       "
+| :b | :c |
+|----+----|
+| 2  | 3  |
+|----+----|
+| {} | () |
+"
+       (with-out-str (printer/print-table
+                      [:b :c]
+                      [{:a 1 :b 2 :c 3}
+                       {:a [] :b {} :c '()}]))))
+
+  ;; ordering is deterministic, not based on hashmap
+  ;; semantics
+  (is (=
+       "
+| :k | :a | :b | :c | :d | :e | :f | :g | :h | :i | :j |
+|----+----+----+----+----+----+----+----+----+----+----|
+| k  | a  | b  | c  | d  | e  | f  | g  | h  | i  | j  |
+|----+----+----+----+----+----+----+----+----+----+----|
+| k  | a  | b  | c  | d  | e  | f  | g  | h  | i  | j  |
+"
+       (with-out-str
+         (printer/print-table
+          [:k :a :b :c :d :e :f :g :h :i :j]
+          [{:a "a" :b "b" :c "c" :d "d" :e "e" :f "f" :g "g" :h "h" :i "i" :j "j" :k "k" :l "l"}
+           {:l "l" :k "k" :j "j" :i "i" :h "h" :g "g" :f "f" :e "e" :d "d" :c "c" :b "b" :a "a"}])))))
 
 #?(:clj
    (deftest print-table-gen
@@ -172,14 +201,16 @@
       num-tests
       [col-count (s/gen pos-int?)
        keys (s/gen (s/coll-of keyword? :min-count 1))
-       row-count (s/gen pos-int?)
+       row-count (s/gen (s/int-in 2 10))
        vals (s/gen (s/coll-of
                     (s/coll-of string? :count col-count)
                     :count row-count))
        :let [rows (mapv
                    #(zipmap keys (get vals %))
                    (range 0 row-count))
-             sub-rows  (butlast rows)
+             sub-rows (do
+                        (prn (butlast rows))
+                        (butlast rows))
              table (with-out-str
                      (printer/print-table rows))
              sub-table (with-out-str
@@ -202,3 +233,4 @@
                      (printer/print-table rows))
              srows (rest (string/split table #"\n"))]]
       (is (< (count (last srows)) 200)))))
+

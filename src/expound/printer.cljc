@@ -34,101 +34,79 @@
                                                    :op #{`or `and}
                                                    :clauses (s/+ :expound.spec/contains-key-pred))))
 
-
-;;;;; TODO - make private fns
-
-
 (declare format)
 
-(defn str-height [lines]
-  (count lines))
+(defn ^:private str-width [lines]
+  (apply max (map count lines)))
 
-(defn str-width [lines]
-  (apply max 0 (map count lines)))
+(defn ^:private max-column-width [rows i]
+  (apply max 0 (map #(str-width (string/split-lines (str (nth % i)))) rows)))
 
-(defn max-column-width [rows k]
-  (apply max 0 (map #(str-width (string/split-lines (str (get % k)))) rows)))
-
-(defn max-row-height [row]
+(defn ^:private max-row-height [row]
   (apply max 0
-         (map #(str-height (string/split-lines (str %))) (vals row))))
+         (map #(count (string/split-lines (str %))) row)))
 
-(defn formatted-multirows [column-widths multi-rows]
-  (map
-   (fn [multi-row]
-       ;;multi-row
-     (map
-      (fn [row]
-        row
-        (map
-         (fn [[k v]]
-           (format (str "%-" (get column-widths k) "s") v))
-         row))
-      multi-row))
-   multi-rows))
+(defn ^:private indented-multirows [column-widths multi-rows]
+  (->> multi-rows
+       (map
+        (fn [multi-row]
+          (map
+           (fn [row]
+             (map-indexed
+              (fn [i v]
+                (format (str "%-" (nth column-widths i) "s") v))
+              row))
+           multi-row)))))
 
-(defn rows-with-headers [columns rows]
-  (concat [(into {} (zipmap columns (map str columns)))]
-          rows))
-
-;; TODO - bad name?
-
-(defn bracket [xs edge spacer middle]
+(defn ^:private formatted-row [row edge spacer middle]
   (str edge spacer
-       (string/join (str spacer middle spacer) xs)
+       (string/join (str spacer middle spacer) row)
        spacer edge))
 
-(defn table* [multirows]
-  (let [row (first (first multirows))
-        columns-dividers (map #(apply str (repeat (count (str %)) "-")) row)
-        row-divider (bracket columns-dividers "|" "-" "+")]
+(defn ^:private table [multirows]
+  (let [header (first (first multirows))
+        columns-dividers (map #(apply str (repeat (count (str %)) "-")) header)
+        row-divider (formatted-row columns-dividers "|" "-" "+")]
     (->> multirows
          (map
           (fn [multirow]
-            (map (fn [row] (bracket row "|" " " "|")) multirow)))
+            (map (fn [row] (formatted-row row "|" " " "|")) multirow)))
          (interpose [row-divider])
          (mapcat seq))))
 
-(defn table [multirows]
-  (println)
-  (doseq [line (table* multirows)]
-    (println line)))
+(defn ^:private multirow [row-height row]
+  (let [split-row-contents (mapv (fn [v] (string/split-lines (str v))) row)]
+    (for [row-idx (range row-height)]
+      (for [col-idx (range (count row))]
+        (get-in split-row-contents [col-idx row-idx] "")))))
 
-(defn multirows [row-heights rows]
-  (map-indexed
-   (fn [idx row]
-     (let [row-height (get row-heights idx)]
-       (reduce
-        (fn [new-rows i]
-          (conj new-rows
-                (into {}
-                      (map
-                       (fn [[k v]]
-                         [k
-                          (get (string/split-lines (str v)) i "")])
+(defn ^:private multirows [row-heights rows]
+  (map-indexed (fn [idx row] (multirow (get row-heights idx) row)) rows))
 
-                       row))))
-        []
-        (range 0 row-height))))
-   rows))
-
-(defn print-table* [rows]
-  (when-not (empty? rows)
-    (let [columns (keys (first rows))
-          rows (rows-with-headers columns rows)
+(defn ^:private formatted-multirows [column-keys map-rows]
+  (when-not (empty? map-rows)
+    (let [rows (into [column-keys] (map #(map % column-keys) map-rows))
           row-heights (mapv max-row-height rows)
-          column-widths (into {}
-                              (map
-                               (fn [k] [k (max-column-width rows k)])
-                               columns))]
+          column-widths (map-indexed
+                         (fn [i _] (max-column-width rows i))
+                         (first rows))]
 
       (->>
        rows
        (multirows row-heights)
-       (formatted-multirows column-widths)))))
+       (indented-multirows column-widths)))))
 
-(defn print-table [rows]
-  (table (print-table* rows)))
+(s/fdef print-table
+  :args (s/cat
+         :columns (s/? (s/coll-of any?))
+         :map-rows (s/coll-of map?)))
+(defn print-table
+  ([map-rows]
+   (print-table (keys (first map-rows)) map-rows))
+  ([column-keys map-rows]
+   (println)
+   (doseq [line (table (formatted-multirows column-keys map-rows))]
+     (println line))))
 
 ;;;; private
 
@@ -280,7 +258,7 @@
 (defn print-spec-keys [problems]
   (->>
    (print-spec-keys* problems)
-   (print-table)
+   (print-table ["key" "spec"])
    with-out-str
    string/trim))
 
