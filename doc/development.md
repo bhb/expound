@@ -45,10 +45,6 @@ or
 
 `lein with-profile +test-common test-refresh :changes-only`
 
-or (to see which tests are slow)
-
-`lein with-profile +test-common eftest`
-
 or (if you want to save a second or two)
 
 `clj -Atest:test-deps`

@@ -30,9 +30,6 @@
                            :optimizations :none
                            :verbose true
                            :compiler-stats true}}]}
-  :eftest {:multithread? false
-           :test-warn-time 750
-           :capture-output? false}
   :figwheel {;; :http-server-root "public" ;; default and assumes "resources"
              :server-port 3446 ;; default is 3449
 
@@ -93,7 +90,6 @@
                    :injections [(require 'sc.api)]
                    :plugins [
                              [io.aviso/pretty "0.1.37"]
-                             [lein-eftest "0.5.2"]
                              [cider/cider-nrepl "0.21.1"]
                              ]
                    ;; need to add dev source path here to get user.clj loaded
