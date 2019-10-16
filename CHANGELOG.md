@@ -10,6 +10,9 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - `expound` and `expound-str` now (optionally) accept the same options as `custom-printer`
 
+### Changed
+- New format for table of keys
+
 ## [0.7.2] - 2018-12-18
 
 ### Fixed
