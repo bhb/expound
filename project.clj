@@ -80,7 +80,7 @@
                                   [orchestra "2019.02.06-1"]
                                   [org.clojure/core.specs.alpha "0.2.36"]
                                   [vvvvalvalval/scope-capture "0.3.2"]
-                                  [org.clojure/test.check "0.10.0-alpha3"]
+                                  [org.clojure/test.check "0.10.0"]
                                   [metosin/spec-tools "0.8.2"]
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
