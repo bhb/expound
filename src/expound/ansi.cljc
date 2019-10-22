@@ -56,20 +56,6 @@
   [string & codes]
   (str (esc codes) string (escape :none)))
 
-(defn strip
-  "Removes color codes from the given string."
-  [string]
-  (string/replace string #"\u001b\[[0-9;]*[mK]" ""))
-
-(defmacro with-color [& body]
-  `(binding [*enable-color* true]
-     ~@body))
-
-(defmacro with-color-when [b & body]
-  `(if ~b
-     (with-color ~@body)
-     (do ~@body)))
-
 (def ansi-code? sgr-code)
 
 (def ^:dynamic *print-styles*
@@ -90,10 +76,6 @@
    :pointer     [:magenta]
    :none        [:none]})
 
-(defmacro black-and-white [body]
-  (binding [*print-styles* {}]
-    ~body))
-
 (defn resolve-styles [styles]
   (if-let [res (not-empty
                 (mapcat #(or
@@ -109,12 +91,3 @@
   (if *enable-color*
     (apply sgr s (resolve-styles styles))
     s))
-
-(defmacro print-color-text
-  [codes body]
-  `(if *enable-color*
-     (do
-       (.write ^java.io.Writer *out* (apply str (esc (resolve-styles ~codes))))
-       ~body
-       (.write ^java.io.Writer *out* (escape :none)))
-     ~body))

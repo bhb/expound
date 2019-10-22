@@ -822,8 +822,7 @@ returned an invalid value.
           (ansi/color (printer/indent (pr-str sym)) :bad-value)
           "\n\nis not defined\n")
          ;; CLJS doesn't set the symbol
-         (str
-          "Cannot check undefined function\n"))
+         "Cannot check undefined function\n")
 
        (and explain-data
             (= :check-failed (-> explain-data ::s/failure)))
