@@ -30,9 +30,6 @@
                            :optimizations :none
                            :verbose true
                            :compiler-stats true}}]}
-  :eftest {:multithread? false
-           :test-warn-time 750
-           :capture-output? false}
   :figwheel {;; :http-server-root "public" ;; default and assumes "resources"
              :server-port 3446 ;; default is 3449
 
@@ -93,7 +90,6 @@
                    :injections [(require 'sc.api)]
                    :plugins [
                              [io.aviso/pretty "0.1.37"]
-                             [lein-eftest "0.5.2"]
                              [cider/cider-nrepl "0.21.1"]
                              ]
                    ;; need to add dev source path here to get user.clj loaded
@@ -103,7 +99,8 @@
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
              :kaocha [:test-common
-                      {:dependencies [[lambdaisland/kaocha "0.0-418"]]}]
+                      {:dependencies [[lambdaisland/kaocha "0.0-554"]
+                                      [lambdaisland/kaocha-cloverage "0.0-41"]]}]
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [pjstadig/humane-test-output "0.9.0"]
                                           [com.gfredericks/test.chuck "0.2.9"]

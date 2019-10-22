@@ -20,36 +20,6 @@
 (defn kvps? [x]
   (instance? KeyValuePathSegment x))
 
-(s/fdef prefix-path?
-  :args (s/cat
-         :partial-path :expound/path
-         :partial-path :expound/path)
-  :ret boolean?)
-(defn prefix-path?
-  "True if partial-path is a prefix of full-path."
-  [partial-path full-path]
-  (and (< (count partial-path) (count full-path))
-       (= partial-path
-          (subvec full-path 0 (count partial-path)))))
-
-(s/fdef kps-path?
-  :args (s/cat :x any?)
-  :ret boolean?)
-(defn kps-path?
-  "True if path points to a key"
-  [x]
-  (boolean (and (vector? x)
-                (kps? (last x)))))
-
-(s/fdef kvps-path?
-  :args (s/cat :x any?)
-  :ret boolean?)
-(defn kvps-path?
-  "True if path points to a key/value pair"
-  [x]
-  (boolean (and (vector? x)
-                (some kvps? x))))
-
 (declare in-with-kps*)
 
 (defn fn-equal [x y]

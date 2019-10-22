@@ -4,10 +4,14 @@ All notable changes to this project will be documented in this file. This change
 ## [Unreleased]
 
 ### Fixed
-* [Bug printing specs with several `or` branches](https://github.com/bhb/expound/issues/93)
+- [Bug printing specs with several `or` branches](https://github.com/bhb/expound/issues/93)
+- [Bug with over-expanding spec forms inside a table of keys](https://github.com/bhb/expound/issues/155) 
 
 ### Added
 - `expound` and `expound-str` now (optionally) accept the same options as `custom-printer`
+
+### Changed
+- New format for table of missing keys
 
 ## [0.7.2] - 2018-12-18
 

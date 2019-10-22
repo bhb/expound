@@ -70,7 +70,6 @@ jobs:
       - run: sudo bin/install-node && npm install
       - run: lein check
       - run: TEST_CHECK_FACTOR=20 lein with-profile test-common test
-      - run: lein with-profile +test-common eftest
       - run: lein clean
       - run: lein with-profile test-web cljsbuild once test 2> >(tee -a stderr.log >&2)
       - run: cat stderr.log | bin/check-for-warnings.sh

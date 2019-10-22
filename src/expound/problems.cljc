@@ -210,7 +210,7 @@
     :expound.problem/check-ret-failure
 
     ;; This is really a location of a failure, not a failure type
-    (and (not skip-locations?) (check-fn-failure? failure problem)) 
+    (and (not skip-locations?) (check-fn-failure? failure problem))
     :expound.problem/check-fn-failure
 
     (insufficient-input? failure problem)
@@ -275,9 +275,8 @@
                              (partial fix-via spec)
                              #(assoc % :expound/form form)
                              #(assoc % :expound.spec.problem/type (ptype failure % false)))
-                       problems)
-        
-        ]
+                       problems)]
+
     (-> explain-data
         (assoc :expound/form form
                :expound/caller caller
