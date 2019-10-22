@@ -2,6 +2,6 @@
 {:tests [{:id :clj
           :test-paths ["test"]
           }
-         {:type :kaocha.type/spec.test.check
+         #_{:type :kaocha.type/spec.test.check
           :id   :generative-fdef-checks}
          ]}
