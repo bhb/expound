@@ -336,7 +336,7 @@ Detected 1 error
 should contain keys: :or-spec/int, :or-spec/str
 
 | key          | spec    |
-|--------------+---------|
+|==============+=========|
 | :or-spec/int | int?    |
 |--------------+---------|
 | :or-spec/str | string? |
@@ -366,7 +366,7 @@ Detected 1 error
 should contain keys: :or-spec/str
 
 | key          | spec    |
-|--------------+---------|
+|==============+=========|
 | :or-spec/str | string? |
 
 -------------------------
@@ -622,7 +622,7 @@ Detected 1 error\n")
 should contain keys: :age, :keys-spec/name
 
 | key             | spec    |
-|-----------------+---------|
+|=================+=========|
 | :age            | int?    |
 |-----------------+---------|
 | :keys-spec/name | string? |
@@ -647,7 +647,7 @@ should contain keys:
 (and (and :keys-spec/name :keys-spec/age) (or :zip (and :state :city)))
 
 | key             | spec     |
-|-----------------+----------|
+|=================+==========|
 | :city           | string?  |
 |-----------------+----------|
 | :state          | string?  |
@@ -679,7 +679,7 @@ should contain keys:
 (or :zip (and :state :city))
 
 | key    | spec     |
-|--------+----------|
+|========+==========|
 | :city  | string?  |
 |--------+----------|
 | :state | string?  |
@@ -705,7 +705,7 @@ Detected 1 error\n")
 should contain keys: :age, :name
 
 | key   | spec    |
-|-------+---------|
+|=======+=========|
 | :age  | int?    |
 |-------+---------|
 | :name | string? |
@@ -755,7 +755,7 @@ Detected 1 error\n"
 should contain keys: :address, :locations, :states
 
 | key        | spec                                                          |
-|------------+---------------------------------------------------------------|
+|============+===============================================================|
 | :address   | (keys :req [:key-spec/city :key-space/state])                 |
 |------------+---------------------------------------------------------------|
 | :locations | (keys                                                         |
@@ -837,7 +837,7 @@ Detected 1 error\n")
 should contain key: :multi-spec/value
 
 | key               | spec    |
-|-------------------+---------|
+|===================+=========|
 | :multi-spec/value | string? |
 
 -- Relevant specs -------
@@ -919,7 +919,7 @@ Detected 1 error\n")
 should contain key: :cat-wrapped-in-or-spec/type
 
 | key                          | spec     |
-|------------------------------+----------|
+|==============================+==========|
 | :cat-wrapped-in-or-spec/type | #{:text} |
 
 or
@@ -2040,7 +2040,7 @@ when conformed as
 should contain key: :user/id
 
 | key      | spec    |
-|----------+---------|
+|==========+=========|
 | :user/id | string? |
 
 -------------------------
@@ -2493,7 +2493,7 @@ returned an invalid value
 should contain key: :my-int
 
 | key     | spec |
-|---------+------|
+|=========+======|
 | :my-int | nil  |
 
 -------------------------
@@ -2951,7 +2951,7 @@ returned an invalid value.
 should contain key: :k
 
 | key | spec    |
-|-----+---------|
+|=====+=========|
 | :k  | string? |
 
 -------------------------

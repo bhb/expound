@@ -66,13 +66,19 @@
 (defn ^:private table [multirows]
   (let [header (first (first multirows))
         columns-dividers (map #(apply str (repeat (count (str %)) "-")) header)
-        row-divider (formatted-row columns-dividers "|" "-" "+")]
-    (->> multirows
-         (map
-          (fn [multirow]
-            (map (fn [row] (formatted-row row "|" " " "|")) multirow)))
-         (interpose [row-divider])
-         (mapcat seq))))
+        header-columns-dividers (map #(apply str (repeat (count (str %)) "=")) header)
+        header-divider (formatted-row header-columns-dividers "|" "=" "+")
+        row-divider (formatted-row columns-dividers "|" "-" "+")
+        formatted-multirows (->> multirows
+                                 (map
+                                  (fn [multirow]
+                                    (map (fn [row] (formatted-row row "|" " " "|")) multirow))))]
+
+    (->>
+     (concat [[header-divider]] (repeat [row-divider]))
+     (mapcat vector formatted-multirows)
+     (butlast) ;; remove the trailing row-divider
+     (mapcat seq))))
 
 (defn ^:private multirow [row-height row]
   (let [split-row-contents (mapv (fn [v] (string/split-lines (str v))) row)]
