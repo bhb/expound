@@ -3634,14 +3634,14 @@ should satisfy
                        (macroexpand '(clojure.core/let [a] 2))
                        (catch Exception e
                          (-> (Throwable->map e) :via last :data)))]
-              (is (= "-- Syntax error -------------------
+              (is (= "-- Spec failed --------------------
 
   ([a] ...)
    ^^^
 
-should have additional elements. The next element \":init-expr\" should satisfy
+should satisfy
 
-  any?
+  even-number-of-forms?
 
 -------------------------
 Detected 1 error\n"
