@@ -14,7 +14,7 @@
             [lein-cljfmt "0.6.4"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.18"]
-            [lein-hiera "1.0.0"]
+            [lein-hiera "1.1.0"]
             ]
   :cljsbuild {:builds
               [{:id "test"
