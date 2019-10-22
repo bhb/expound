@@ -208,9 +208,7 @@
        :let [rows (mapv
                    #(zipmap keys (get vals %))
                    (range 0 row-count))
-             sub-rows (do
-                        (prn (butlast rows))
-                        (butlast rows))
+             sub-rows (butlast rows)
              table (with-out-str
                      (printer/print-table rows))
              sub-table (with-out-str

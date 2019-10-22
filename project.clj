@@ -129,7 +129,8 @@
              :cljs-1.10.339 {:dependencies [[org.clojure/clojurescript "1.10.339"]]}
              :cljs-1.10.439 {:dependencies [[org.clojure/clojurescript "1.10.439"]]}
              :cljs-1.10.516 {:dependencies [[org.clojure/clojurescript "1.10.516"]]}
-             :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}}
+             :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}
+             :spec-0.2.176  {:dependencies [[org.clojure/spec.alpha "0.2.176"]]}}
   :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner"]
             "run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
