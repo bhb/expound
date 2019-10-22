@@ -22,9 +22,15 @@ with
 ```
 -- Spec failed --------------------
 
- {}
+  {}
 
-should contain keys: `:city`,`:state`
+should contain keys: :city, :state
+
+| key    | spec    |
+|========+=========|
+| :city  | string? |
+|--------+---------|
+| :state | string? |
 ```
 
 Expound is in alpha while `clojure.spec` is in alpha.
