@@ -3628,7 +3628,8 @@ should satisfy
           (if (spec-error-in-ex-msg?)
             (is (thrown-with-msg?
                  #?(:cljs :default :clj Exception)
-                 #"should have additional elements. The next element \"\:init\-expr\" should satisfy"
+                 ;;#"(?i)should satisfy\s+even-number-of-forms\?"
+                 #"even-number-of-forms\?"
                  (macroexpand '(clojure.core/let [a] 2))))
             (let [ed (try
                        (macroexpand '(clojure.core/let [a] 2))
