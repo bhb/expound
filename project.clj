@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :scm {:name "git" :url "https://github.com/bhb/expound"}
-  :dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
                  [org.clojure/clojurescript "1.10.520" :scope "provided"]
                  [org.clojure/spec.alpha "0.2.176" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
@@ -14,7 +14,7 @@
             [lein-cljfmt "0.6.4"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.18"]
-            [lein-hiera "1.0.0"]
+            [lein-hiera "1.1.0"]
             ]
   :cljsbuild {:builds
               [{:id "test"
@@ -78,14 +78,14 @@
                                   [figwheel-sidecar "0.5.18"]
                                   [cider/piggieback "0.4.0"]
                                   [orchestra "2019.02.06-1"]
-                                  [org.clojure/core.specs.alpha "0.2.36"]
+                                  [org.clojure/core.specs.alpha "0.2.44"]
                                   [vvvvalvalval/scope-capture "0.3.2"]
-                                  [org.clojure/test.check "0.10.0-alpha3"]
+                                  [org.clojure/test.check "0.10.0"]
                                   [metosin/spec-tools "0.8.2"]
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
-                                  [com.gfredericks/test.chuck "0.2.9"]
+                                  [com.gfredericks/test.chuck "0.2.10"]
                                   ]
                    :injections [(require 'sc.api)]
                    :plugins [
@@ -103,10 +103,10 @@
                                       [lambdaisland/kaocha-cloverage "0.0-41"]]}]
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [pjstadig/humane-test-output "0.9.0"]
-                                          [com.gfredericks/test.chuck "0.2.9"]
+                                          [com.gfredericks/test.chuck "0.2.10"]
                                           [orchestra "2019.02.06-1"]
                                           [io.aviso/pretty "0.1.37"]
-                                          [org.clojure/core.specs.alpha "0.2.36"]
+                                          [org.clojure/core.specs.alpha "0.2.44"]
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.4"] ; to test specs
@@ -129,7 +129,8 @@
              :cljs-1.10.339 {:dependencies [[org.clojure/clojurescript "1.10.339"]]}
              :cljs-1.10.439 {:dependencies [[org.clojure/clojurescript "1.10.439"]]}
              :cljs-1.10.516 {:dependencies [[org.clojure/clojurescript "1.10.516"]]}
-             :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}}
+             :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}
+             :spec-0.2.176  {:dependencies [[org.clojure/spec.alpha "0.2.176"]]}}
   :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner"]
             "run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
