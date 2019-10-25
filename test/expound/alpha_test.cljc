@@ -769,6 +769,155 @@ Detected 1 error
 "
          (expound/expound-str :keys-spec/locations {} {:print-specs? false})))))
 
+(s/def :keys-spec/foo string?)
+(s/def :keys-spec/bar string?)
+(s/def :keys-spec/baz string?)
+(s/def :keys-spec/qux (s/or :string string?
+                            :int int?))
+(s/def :keys-spec/child-1 (s/keys :req-un [:keys-spec/baz :keys-spec/qux]))
+(s/def :keys-spec/child-2 (s/keys :req-un [:keys-spec/bar :keys-spec/child-1]))
+
+(s/def :keys-spec/map-spec-1 (s/keys :req-un [:keys-spec/foo
+                                              :keys-spec/bar
+                                              :keys-spec/baz]))
+(s/def :keys-spec/map-spec-2 (s/keys :req-un [:keys-spec/foo
+                                              :keys-spec/bar
+                                              :keys-spec/qux]))
+(s/def :keys-spec/map-spec-3 (s/keys :req-un [:keys-spec/foo
+                                              :keys-spec/child-2]))
+
+
+;; XXX New Tests
+;; Make sure that our changes work with s/keys
+
+
+(deftest keys-spec-2
+  (testing "More advanced key specs"
+    (is (= (pf
+            "-- Spec failed --------------------
+
+  {:foo 1.2, :bar ..., :baz ...}
+        ^^^
+
+should satisfy
+
+  string?
+
+-- Spec failed --------------------
+
+  {:foo ..., :bar 123, :baz ...}
+                  ^^^
+
+should satisfy
+
+  string?
+
+-- Spec failed --------------------
+
+  {:foo ..., :bar ..., :baz true}
+                            ^^^^
+
+should satisfy
+
+  string?
+
+-------------------------
+Detected 3 errors\n")
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str :keys-spec/map-spec-1 {:foo 1.2
+                                                   :bar 123
+                                                   :baz true}))))
+    (is (= (pf
+            "-- Spec failed --------------------
+
+  {:foo 1.2, :bar ..., :qux ...}
+        ^^^
+
+should satisfy
+
+  string?
+
+-- Spec failed --------------------
+
+  {:foo ..., :bar 123, :qux ...}
+                  ^^^
+
+should satisfy
+
+  string?
+
+-- Spec failed --------------------
+
+  {:foo ..., :bar ..., :qux false}
+                            ^^^^^
+
+should satisfy
+
+  string?
+
+or
+
+  int?
+
+-------------------------
+Detected 3 errors\n")
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str :keys-spec/map-spec-2 {:foo 1.2
+                                                   :bar 123
+                                                   :qux false}))))
+    (is (= (pf
+            "-- Spec failed --------------------
+
+  {:foo 1.2, :child-2 ...}
+        ^^^
+
+should satisfy
+
+  string?
+
+-- Spec failed --------------------
+
+  {:foo ..., :child-2 {:bar 123, :child-1 ...}}
+                            ^^^
+
+should satisfy
+
+  string?
+
+-- Spec failed --------------------
+
+  {:foo ...,
+   :child-2
+   {:bar ..., :child-1 {:baz true, :qux ...}}}
+                             ^^^^
+
+should satisfy
+
+  string?
+
+-- Spec failed --------------------
+
+  {:foo ...,
+   :child-2
+   {:bar ..., :child-1 {:baz ..., :qux false}}}
+                                       ^^^^^
+
+should satisfy
+
+  string?
+
+or
+
+  int?
+
+-------------------------
+Detected 4 errors\n")
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str :keys-spec/map-spec-3 {:foo 1.2
+                                                   :child-2 {:bar 123
+                                                             :child-1 {:baz true
+                                                                       :qux false}}}))))))
+
 (s/def :multi-spec/value string?)
 (s/def :multi-spec/children vector?)
 (defmulti el-type :multi-spec/el-type)
@@ -858,6 +1007,15 @@ Detected 1 error\n")
                                   :opt-un [:recursive-spec/props :recursive-spec/children]))
 (s/def :recursive-spec/children (s/coll-of (s/nilable :recursive-spec/el) :kind vector?))
 
+(s/def :recursive-spec/tag-2 (s/or :text (fn [n] (= n :text))
+                                   :group (fn [n] (= n :group))))
+(s/def :recursive-spec/on-tap-2 (s/coll-of map? :kind vector?))
+(s/def :recursive-spec/props-2 (s/keys :opt-un [:recursive-spec/on-tap-2]))
+(s/def :recursive-spec/el-2 (s/keys :req-un [:recursive-spec/tag-2]
+                                    :opt-un [:recursive-spec/props-2
+                                             :recursive-spec/children-2]))
+(s/def :recursive-spec/children-2 (s/coll-of (s/nilable :recursive-spec/el-2) :kind vector?))
+
 (deftest recursive-spec
   (testing "only shows problem with data at 'leaves' (not problems with all parents in tree)"
     (is (= (pf
@@ -901,7 +1059,52 @@ Detected 1 error\n")
               {:tag :group
                :children [{:tag :group
                            :children [{:tag :group
-                                       :props {:on-tap {}}}]}]}))))))
+                                       :props {:on-tap {}}}]}]})))))
+  ;; XXX New Test
+  (testing "test that our new recursive spec grouping function works with
+           alternative paths"
+    (is (= (pf
+            "-- Spec failed --------------------
+
+  {:tag-2 ..., :children-2 [{:tag-2 :group, :children-2 [{:tag-2 :group, :props-2 {:on-tap-2 {}}}]}]}
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+should satisfy
+
+  nil?
+
+or value
+
+  {:tag-2 ...,
+   :children-2 [{:tag-2 ..., :children-2 [{:tag-2 :group, :props-2 {:on-tap-2 {}}}]}]}
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+should satisfy
+
+  nil?
+
+or value
+
+  {:tag-2 ...,
+   :children-2
+   [{:tag-2 ...,
+     :children-2
+     [{:tag-2 ..., :props-2 {:on-tap-2 {}}}]}]}
+                                       ^^
+
+should satisfy
+
+  vector?
+
+-------------------------
+Detected 1 error\n")
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str
+              :recursive-spec/el-2
+              {:tag-2 :group
+               :children-2 [{:tag-2 :group
+                             :children-2 [{:tag-2 :group
+                                           :props-2 {:on-tap-2 {}}}]}]}))))))
 
 (s/def :cat-wrapped-in-or-spec/kv (s/and
                                    sequential?
@@ -1763,7 +1966,7 @@ Detected 1 error\n"
              (s/explain-str
               :alt-spec/one-many-int-or-str
               [[:one]])))))
-  (is (=  (pf "-- Spec failed --------------------
+  (is (= (pf "-- Spec failed --------------------
 
   [:hi]
    ^^^
@@ -1783,13 +1986,106 @@ or
 
 -------------------------
 Detected 1 error\n"
-              #?(:clj "(clojure.spec.alpha/alt
+             #?(:clj "(clojure.spec.alpha/alt
    :int
    clojure.core/int?
    :string
    clojure.core/string?)"
-                 :cljs "(cljs.spec.alpha/alt :int cljs.core/int? :string cljs.core/string?)"))
-          (expound/expound-str :alt-spec/int-alt-str [:hi]))))
+                :cljs "(cljs.spec.alpha/alt :int cljs.core/int? :string cljs.core/string?)"))
+         (expound/expound-str :alt-spec/int-alt-str [:hi]))))
+
+(s/def :alt-spec/num-types (s/alt :int int? :float float?))
+(s/def :alt-spec/str-types (s/alt :int (fn [n] (= n "int"))
+                                  :float (fn [n] (= n "float"))))
+(s/def :alt-spec/num-or-str (s/alt :num :alt-spec/num-types
+                                   :str :alt-spec/str-types))
+
+(deftest alt-spec-2
+  (testing "more specs involving alternatives"
+    (is (= (pf
+            "-- Spec failed --------------------
+
+  [true]
+   ^^^^
+
+should satisfy
+
+  int?
+
+or
+
+  float?
+
+or
+
+  (fn [n] (= n \"int\"))
+
+or
+
+  (fn [n] (= n \"float\"))
+
+-- Relevant specs -------
+
+:alt-spec/str-types:
+  (clojure.spec.alpha/alt
+   :int
+   (clojure.core/fn [n] (clojure.core/= n \"int\"))
+   :float
+   (clojure.core/fn [n] (clojure.core/= n \"float\")))
+:alt-spec/num-types:
+  (clojure.spec.alpha/alt
+   :int
+   clojure.core/int?
+   :float
+   clojure.core/float?)
+:alt-spec/num-or-str:
+  (clojure.spec.alpha/alt
+   :num
+   :alt-spec/num-types
+   :str
+   :alt-spec/str-types)
+
+-------------------------
+Detected 1 error\n") (expound/expound-str :alt-spec/num-or-str [true])))
+    ;; If two s/alt specs have the same tags, we shouldn't confuse them.
+    (is (= (pf
+            "-- Spec failed --------------------
+
+  {:num-types [true], :str-types ...}
+               ^^^^
+
+should satisfy
+
+  int?
+
+or
+
+  float?
+
+-- Spec failed --------------------
+
+  {:num-types ..., :str-types [false]}
+                               ^^^^^
+
+should satisfy
+
+  (fn [n] (= n \"int\"))
+
+or
+
+  (fn [n] (= n \"float\"))
+
+-------------------------
+Detected 2 errors\n")
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str (s/keys :req-un [:alt-spec/num-types :alt-spec/str-types])
+                            {:num-types [true] :str-types [false]}))))))
+
+#?(:clj
+   (def spec-gen (gen/elements (->> (s/registry)
+                                    (map key)
+                                    sg/topo-sort
+                                    (filter keyword?)))))
 
 (defn mutate-coll [x]
   (cond
