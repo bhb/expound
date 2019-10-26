@@ -2000,7 +2000,8 @@ Detected 1 error\n"
 (s/def :alt-spec/num-or-str (s/alt :num :alt-spec/num-types
                                    :str :alt-spec/str-types))
 
-(deftest alt-spec-2
+;; TODO - include in alt-spec?
+(deftest alt-spec2
   (testing "more specs involving alternatives"
     (is (= (pf
             "-- Spec failed --------------------
@@ -2024,29 +2025,8 @@ or
 
   (fn [n] (= n \"float\"))
 
--- Relevant specs -------
-
-:alt-spec/str-types:
-  (clojure.spec.alpha/alt
-   :int
-   (clojure.core/fn [n] (clojure.core/= n \"int\"))
-   :float
-   (clojure.core/fn [n] (clojure.core/= n \"float\")))
-:alt-spec/num-types:
-  (clojure.spec.alpha/alt
-   :int
-   clojure.core/int?
-   :float
-   clojure.core/float?)
-:alt-spec/num-or-str:
-  (clojure.spec.alpha/alt
-   :num
-   :alt-spec/num-types
-   :str
-   :alt-spec/str-types)
-
 -------------------------
-Detected 1 error\n") (expound/expound-str :alt-spec/num-or-str [true])))
+Detected 1 error\n") (expound/expound-str :alt-spec/num-or-str [true] {:print-specs? false})))
     ;; If two s/alt specs have the same tags, we shouldn't confuse them.
     (is (= (pf
             "-- Spec failed --------------------
