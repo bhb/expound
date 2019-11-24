@@ -473,6 +473,9 @@
                       (contains? node-keys k) (some #(contains-alternate-at-path? % rest-path) rest-form)
                       :else false))
 
+        ;; It annoys me that I can't figure out a way to hit this branch in a spec
+        ;; and I can't sufficiently explain why this will never be hit. Intuitively,
+        ;; it seems like this should be similar to 's/or' and 's/alt' cases
         #{`s/nilable} (cond
                         (empty? path) true
                         (contains? #{::s/pred ::s/nil} k) (some
