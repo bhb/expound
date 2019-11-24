@@ -542,12 +542,12 @@
        form))
    groups))
 
-(defn ^:private remove-vec [v x]
+(defn ^:private vec-remove [v x]
   (vec (remove #{x} v)))
 
 (defn ^:private replace-group [groups old-groups group]
   (-> groups
-      (remove-vec old-groups)
+      (vec-remove old-groups)
       (conj (problem-group old-groups group))))
 
 (defn conj-groups
