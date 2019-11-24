@@ -714,7 +714,35 @@ should contain keys: :age, :name
 Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
-           (expound/expound-str (s/keys :req-un [:keys-spec/name :keys-spec/age]) {}))))
+           (expound/expound-str (s/keys :req-un [:keys-spec/name :keys-spec/age]) {})))
+    (defmulti key-spec-mspec :tag)
+    (s/def :key-spec/mspec (s/multi-spec key-spec-mspec :tag))
+    (s/def :key-spec/i int?)
+    (s/def :key-spec/s string?)
+    (defmethod key-spec-mspec :int [_] (s/keys :req-un [::tag ::i]))
+    (defmethod key-spec-mspec :string [_] (s/keys :req-un [::tag ::s]))
+    ;; We can't inspect the contents of a multi-spec (to figure out
+    ;; which spec we mean by :i), so this is the best we can do.
+    (is (= "-- Spec failed --------------------
+
+  {:tag :int}
+
+should contain key: :i
+
+| key | spec                                              |
+|=====+===================================================|
+| :i  | <can't find spec for unqualified spec identifier> |
+
+-- Relevant specs -------
+
+:key-spec/mspec:
+  (clojure.spec.alpha/multi-spec expound.alpha-test/key-spec-mspec :tag)
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            :key-spec/mspec
+            {:tag :int}))))
 
   (testing "invalid key"
     (is (= (pf "-- Spec failed --------------------
@@ -2880,9 +2908,9 @@ returned an invalid value
 
 should contain key: :my-int
 
-| key     | spec |
-|=========+======|
-| :my-int | nil  |
+| key     | spec                                              |
+|=========+===================================================|
+| :my-int | <can't find spec for unqualified spec identifier> |
 
 -------------------------
 Detected 1 error

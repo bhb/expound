@@ -163,9 +163,10 @@
               k
               (if (qualified-keyword? k)
                 k
-                (->> specs
-                     (filter #(= (name k) (name %)))
-                     first))))
+                (or (->> specs
+                         (filter #(= (name k) (name %)))
+                         first)
+                    "<can't find spec for unqualified spec identifier>"))))
      {}
      keys)))
 
