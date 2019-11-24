@@ -433,31 +433,103 @@
      (lcs* xs ys))
    paths))
 
-(defn ^:private alternation [grp1 grp2]
-  (let [xs (:path-prefix grp1)
-        ys (:path-prefix grp2)
-        prefix (lcs xs ys)]
-    (if (and
-         (some? prefix)
-         (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp1))
-           true
-           (not= prefix xs))
-         (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp2))
-           true
-           (not= prefix ys)))
-      grp1
-      nil)))
+(defn ^:private contains-alternate-at-path? [spec-form path]
+  (if (not (coll? spec-form))
+    false
+    (let [[op & rest-form] spec-form
+          [k & rest-path] path]
+      (condp contains? op
+        #{`s/or `s/alt} (let [node-keys (->> rest-form (apply hash-map) keys set)]
+                          (cond
+                            (empty? path) true
+                            (contains? node-keys k) (some #(contains-alternate-at-path? % rest-path) rest-form)
+                            :else false))
+
+        #{`s/keys `s/keys*} (let [keys-args (->> rest-form (apply hash-map))
+                                  node-keys (set (concat
+                                                  (:opt keys-args [])
+                                                  (:req keys-args [])
+                                                  (map #(keyword (name %)) (:opt-un keys-args []))
+                                                  (map #(keyword (name %)) (:req-un keys-args []))))
+                                  possible-spec-names (if (qualified-keyword? k)
+                                                        [k]
+                                                        (filter
+                                                         #(= k
+                                                             (keyword (name %)))
+                                                         (flatten (vals keys-args))))]
+                              (cond
+                                ;; path is ambiguous here, we don't know which they intended if
+                                ;; there are multiple-paths
+                                (empty? path) false
+
+                                (contains? node-keys k) (some #(contains-alternate-at-path? % rest-path)
+                                                              (map s/form possible-spec-names))
+
+                                :else false))
+
+        #{`s/cat} (let [node-keys (->> rest-form (apply hash-map) keys set)]
+                    (cond
+                      (empty? path) false
+                      (contains? node-keys k) (some #(contains-alternate-at-path? % rest-path) rest-form)
+                      :else false))
+
+        ;; It annoys me that I can't figure out a way to hit this branch in a spec
+        ;; and I can't sufficiently explain why this will never be hit. Intuitively,
+        ;; it seems like this should be similar to 's/or' and 's/alt' cases
+        #{`s/nilable} (cond
+                        (empty? path) true
+                        (contains? #{::s/pred ::s/nil} k) (some
+                                                           #(contains-alternate-at-path? % rest-path)
+                                                           rest-form)
+
+                        :else false)
+
+        (some #(contains-alternate-at-path? % path) rest-form)))))
+
+(defn ^:private share-alt-tags?
+  "Determine if two groups have prefixes (ie. spec tags) that are included in
+  an s/or or s/alt predicate."
+  [grp1 grp2]
+  (let [pprefix1 (:path-prefix grp1)
+        pprefix2 (:path-prefix grp2)
+        shared-prefix (lcs pprefix1 pprefix2)
+        shared-specs (lcs (:via-prefix grp1) (:via-prefix grp2))]
+
+    (and (get pprefix1 (-> shared-prefix count))
+         (get pprefix2 (-> shared-prefix count))
+         (some #(and
+                 (contains-alternate-at-path? (s/form %) shared-prefix)
+                 (contains-alternate-at-path? (s/form %) shared-prefix))
+               shared-specs))))
+
+(defn ^:private recursive-spec?
+  "Determine if either group 1 or 2 is recursive (ie. have repeating specs in
+  their via paths) and if one group is included in another."
+  [grp1 grp2]
+  (let [vxs (:via-prefix grp1)
+        vys (:via-prefix grp2)
+        vprefix (lcs vxs vys)]
+
+    (or (and (not= (count vys) (count (distinct vys)))
+             (< (count vprefix) (count vys))
+             (= vxs vprefix))
+        (and (not= (count vxs) (count (distinct vxs)))
+             (< (count vprefix) (count vxs))
+             (= vys vprefix)))))
 
 (defn ^:private problem-group [grp1 grp2]
   {:expound.spec.problem/type :expound.problem-group/many-values
    :path-prefix               (lcs (:path-prefix grp1)
                                    (:path-prefix grp2))
+   :via-prefix                (lcs (:via-prefix grp1)
+                                   (:via-prefix grp2))
    :problems                  (into
-                               (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp1))
+                               (if (= :expound.problem-group/many-values
+                                      (:expound.spec.problem/type grp1))
                                  (:problems grp1)
                                  [grp1])
-
-                               (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp2))
+                               (if (= :expound.problem-group/many-values
+                                      (:expound.spec.problem/type grp2))
                                  (:problems grp2)
                                  [grp2]))})
 
@@ -473,33 +545,36 @@
        form))
    groups))
 
-(defn ^:private remove-vec [v x]
+(defn ^:private vec-remove [v x]
   (vec (remove #{x} v)))
 
-(defn ^:private groups [problems]
-  (let [grouped-by-in-path (->> problems
-                                (group-by :expound/in)
-                                vals
-                                (map (fn [grp]
-                                       (if (= 1 (count grp))
-                                         {:expound.spec.problem/type :expound.problem-group/one-value
+(defn ^:private replace-group [groups old-groups group]
+  (-> groups
+      (vec-remove old-groups)
+      (conj (problem-group old-groups group))))
 
-                                          :path-prefix               (:expound/path (first grp))
-                                          :problems                  grp}
-                                         {:expound.spec.problem/type :expound.problem-group/one-value
-                                          :path-prefix               (apply lcs (map :expound/path grp))
-                                          :problems                  grp}))))]
+(defn conj-groups
+  "Consolidate a group into a group collection if it's either part of an s/or,
+  s/alt or recursive spec."
+  [groups group]
+  (if-let [old-group (first (filter #(or (recursive-spec? % group)
+                                         (share-alt-tags? % group))
+                                    groups))]
+    (replace-group groups old-group group)
+    (conj groups group)))
+
+(defn ^:private groups [problems]
+  (let [grouped-by-in-path
+        (->> problems
+             (group-by :expound/in)
+             vals
+             (map (fn [grp]
+                    {:expound.spec.problem/type :expound.problem-group/one-value
+                     :path-prefix               (apply lcs (map :expound/path grp))
+                     :via-prefix                (apply lcs (map :expound/via grp))
+                     :problems                  grp})))]
     (->> grouped-by-in-path
-         (reduce
-          (fn [grps group]
-            (if-let [old-group (some #(alternation % group) grps)]
-              (-> grps
-                  (remove-vec old-group)
-                  (conj (problem-group
-                         old-group
-                         group)))
-              (conj grps group)))
-          [])
+         (reduce conj-groups [])
          lift-singleton-groups)))
 
 (defn ^:private problems-without-location [problems opts]

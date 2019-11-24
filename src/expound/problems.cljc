@@ -137,7 +137,7 @@
 
 ;; via is slightly different when using s/assert
 (defn fix-via [spec problem]
-  (if (= spec (last (:via problem)))
+  (if (= spec (first (:via problem)))
     (assoc problem :expound/via (:via problem))
     (assoc problem :expound/via (into [spec] (:via problem)))))
 
