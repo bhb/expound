@@ -745,8 +745,6 @@ Detected 1 error\n"
     (s/def :keys-spec/locations (s/keys :req-un [:keys-spec/states
                                                  :keys-spec/address
                                                  :keys-spec/locations]))
-
-    ;; HERE - need to left justify this I think, to get proper indentation
     (is (=
          "-- Spec failed --------------------
 
@@ -865,8 +863,9 @@ Detected 3 errors\n")
              (s/explain-str :keys-spec/map-spec-2 {:foo 1.2
                                                    :bar 123
                                                    :qux false}))))
-    (is (= (pf
-            "-- Spec failed --------------------
+
+    (is (=
+         "-- Spec failed --------------------
 
   {:foo 1.2, :child-2 ...}
         ^^^
@@ -911,12 +910,12 @@ or
   int?
 
 -------------------------
-Detected 4 errors\n")
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str :keys-spec/map-spec-3 {:foo 1.2
-                                                   :child-2 {:bar 123
-                                                             :child-1 {:baz true
-                                                                       :qux false}}}))))))
+Detected 4 errors\n"
+         (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+           (s/explain-str :keys-spec/map-spec-3 {:foo 1.2
+                                                 :child-2 {:bar 123
+                                                           :child-1 {:baz true
+                                                                     :qux false}}}))))))
 
 (s/def :multi-spec/value string?)
 (s/def :multi-spec/children vector?)
@@ -1832,9 +1831,22 @@ Detected 1 error
 
 (s/def :alt-spec/int-alt-str (s/alt :int int? :string string?))
 
+(s/def :alt-spec/num-types (s/alt :int int? :float float?))
+(s/def :alt-spec/str-types (s/alt :int (fn [n] (= n "int"))
+                                  :float (fn [n] (= n "float"))))
+(s/def :alt-spec/num-or-str (s/alt :num :alt-spec/num-types
+                                   :str :alt-spec/str-types))
+
+(s/def :alt-spec/i int?)
+(s/def :alt-spec/s string?)
+(s/def :alt-spec/alt-or-map (s/or :i :alt-spec/i
+                                  :s :alt-spec/s
+                                  :k (s/keys :req-un [:alt-spec/i :alt-spec/s])))
+
 (deftest alt-spec
   (testing "alternatives at different paths in spec"
-    (is (= "-- Spec failed --------------------
+    (is (=
+         "-- Spec failed --------------------
 
   [\"foo\"]
 
@@ -1853,12 +1865,12 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str
-              (s/or
-               :i int?
-               :seq (s/cat :x1 int? :x2 int?))
-              ["foo"]))))
+         (expound/expound-str
+          (s/or
+           :i int?
+           :seq (s/cat :x1 int? :x2 int?))
+          ["foo"]
+          {:print-specs? false})))
     (s/def :alt-spec/one-many-int (s/cat :bs (s/alt :one int?
                                                     :many (s/spec (s/+ int?)))))
     (is (= (pf "-- Spec failed --------------------
@@ -1992,19 +2004,48 @@ Detected 1 error\n"
    :string
    clojure.core/string?)"
                 :cljs "(cljs.spec.alpha/alt :int cljs.core/int? :string cljs.core/string?)"))
-         (expound/expound-str :alt-spec/int-alt-str [:hi]))))
+         (expound/expound-str :alt-spec/int-alt-str [:hi])))
 
-(s/def :alt-spec/num-types (s/alt :int int? :float float?))
-(s/def :alt-spec/str-types (s/alt :int (fn [n] (= n "int"))
-                                  :float (fn [n] (= n "float"))))
-(s/def :alt-spec/num-or-str (s/alt :num :alt-spec/num-types
-                                   :str :alt-spec/str-types))
+  (is (= "-- Spec failed --------------------
 
-;; TODO - include in alt-spec?
-(deftest alt-spec2
-  (testing "more specs involving alternatives"
-    (is (= (pf
-            "-- Spec failed --------------------
+  {:i \"\", :s 1}
+
+should satisfy
+
+  int?
+
+or
+
+  string?
+
+-- Spec failed --------------------
+
+  {:i \"\", :s ...}
+      ^^
+
+should satisfy
+
+  int?
+
+-- Spec failed --------------------
+
+  {:i ..., :s 1}
+              ^
+
+should satisfy
+
+  string?
+
+-------------------------
+Detected 3 errors
+"
+
+         (expound/expound-str
+          :alt-spec/alt-or-map
+          {:i "" :s 1}
+          {:print-specs? false})))
+
+  (is (= "-- Spec failed --------------------
 
   [true]
    ^^^^
@@ -2026,10 +2067,9 @@ or
   (fn [n] (= n \"float\"))
 
 -------------------------
-Detected 1 error\n") (expound/expound-str :alt-spec/num-or-str [true] {:print-specs? false})))
-    ;; If two s/alt specs have the same tags, we shouldn't confuse them.
-    (is (= (pf
-            "-- Spec failed --------------------
+Detected 1 error\n" (expound/expound-str :alt-spec/num-or-str [true] {:print-specs? false})))
+  ;; If two s/alt specs have the same tags, we shouldn't confuse them.
+  (is (= "-- Spec failed --------------------
 
   {:num-types [true], :str-types ...}
                ^^^^
@@ -2056,10 +2096,85 @@ or
   (fn [n] (= n \"float\"))
 
 -------------------------
-Detected 2 errors\n")
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str (s/keys :req-un [:alt-spec/num-types :alt-spec/str-types])
-                            {:num-types [true] :str-types [false]}))))))
+Detected 2 errors\n"
+         (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+           (s/explain-str (s/keys :req-un [:alt-spec/num-types :alt-spec/str-types])
+                          {:num-types [true] :str-types [false]}))))
+
+  (is (=
+       "-- Spec failed --------------------
+
+  [\"\"]
+
+should satisfy
+
+  nil?
+
+or value
+
+  [\"\"]
+   ^^
+
+should satisfy
+
+  int?
+
+or
+
+  float?
+
+-------------------------
+Detected 1 error
+"
+       (expound/expound-str
+        (s/nilable (s/cat :n (s/alt :int int? :float float?)))
+        [""]
+        {:print-specs? false})))
+
+  (defmulti alt-spec-mspec :tag)
+  (s/def :alt-spec/mspec (s/multi-spec alt-spec-mspec :tag))
+  (defmethod alt-spec-mspec :x [_] (s/keys :req-un [:alt-spec/one-many-int]))
+  (is (=
+       ;; This output is not what we want: ideally, the two alternates
+       ;; should be grouped into a single problem.
+       ;; I'm adding it as a spec to avoid regressions and to keep it as
+       ;; an example of something I could improve.
+       ;; The reason we can't do better is that we can't reliably look
+       ;; at the form of a multi-spec. It would be nice if spec inserted
+       ;; the actual spec form that was returned by the multi-spec, but
+       ;; as it stands today, we'd have to figure out how to call the multi-
+       ;; method with the actual value. That would be complicated and
+       ;; potentially have unknown side effects from running arbitrary code.
+
+       "-- Spec failed --------------------
+
+  {:mspec {:tag ..., :one-many-int [[\"1\"]]}}
+                                    ^^^^^
+
+should satisfy
+
+  int?
+
+-- Spec failed --------------------
+
+  {:mspec {:tag ..., :one-many-int [[\"1\"]]}}
+                                     ^^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 2 errors\n"
+
+       (expound/expound-str
+        (s/keys
+         :req-un [:alt-spec/mspec])
+        {:mspec
+         {:tag :x
+          :one-many-int [["1"]]}}
+
+        {:print-specs? false}))))
 
 #?(:clj
    (def spec-gen (gen/elements (->> (s/registry)

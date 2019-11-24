@@ -102,6 +102,14 @@
        (multirows row-heights)
        (indented-multirows column-widths)))))
 
+(defn table-str [column-keys map-rows]
+  (str
+   "\n"
+   (apply str
+          (map
+           (fn [line] (str line "\n"))
+           (table (formatted-multirows column-keys map-rows))))))
+
 (s/fdef print-table
   :args (s/cat
          :columns (s/? (s/coll-of any?))
@@ -110,11 +118,10 @@
   ([map-rows]
    (print-table (keys (first map-rows)) map-rows))
   ([column-keys map-rows]
-   (println)
-   (doseq [line (table (formatted-multirows column-keys map-rows))]
-     (println line))))
+   (print (table-str column-keys map-rows))))
 
 ;;;; private
+
 
 (defn keywords [form]
   (->> form
