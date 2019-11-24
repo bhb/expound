@@ -88,7 +88,7 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 (s/def :example.place/city string?)
 (s/def :example.place/state string?)
 (s/def :example/place (s/keys :req-un [:example.place/city :example.place/state]))
-(expound/expound :example/place {:city "Denver", :state :CO})
+(expound/expound :example/place {:city "Denver", :state :CO} {:print-specs? false})
 ;; -- Spec failed --------------------
 
 ;;   {:city ..., :state :CO}
@@ -97,15 +97,6 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 ;; should satisfy
 
 ;;   string?
-
-;; -- Relevant specs -------
-
-;; :example.place/state:
-;;   clojure.core/string?
-;; :example/place:
-;;   (clojure.spec.alpha/keys
-;;    :req-un
-;;    [:example.place/city :example.place/state])
 
 ;; -------------------------
 ;; Detected 1 error
@@ -229,7 +220,13 @@ You can see the full list of available specs with `expound.specs/public-specs`.
 
 ### Printer options
 
-Create a custom printer by changing the following options e.g.
+`expound` and `expound-str` can be configured with options:
+
+```
+(expound/expound :example/place {:city "Denver", :state :CO} {:print-specs? false :theme :figwheel-theme})
+```
+
+or, to configure the global printer:
 
 ```clojure
 (set! s/*explain-out* (expound/custom-printer {:show-valid-values? true :print-specs? false :theme :figwheel-theme}))
