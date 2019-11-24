@@ -784,15 +784,9 @@ Detected 1 error
 (s/def :keys-spec/map-spec-3 (s/keys :req-un [:keys-spec/foo
                                               :keys-spec/child-2]))
 
-
-;; XXX New Tests
-;; Make sure that our changes work with s/keys
-
-
-(deftest keys-spec-2
-  (testing "More advanced key specs"
-    (is (= (pf
-            "-- Spec failed --------------------
+(deftest grouping-and-key-specs
+  (is (= (pf
+          "-- Spec failed --------------------
 
   {:foo 1.2, :bar ..., :baz ...}
         ^^^
@@ -821,12 +815,12 @@ should satisfy
 
 -------------------------
 Detected 3 errors\n")
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str :keys-spec/map-spec-1 {:foo 1.2
-                                                   :bar 123
-                                                   :baz true}))))
-    (is (= (pf
-            "-- Spec failed --------------------
+         (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+           (s/explain-str :keys-spec/map-spec-1 {:foo 1.2
+                                                 :bar 123
+                                                 :baz true}))))
+  (is (= (pf
+          "-- Spec failed --------------------
 
   {:foo 1.2, :bar ..., :qux ...}
         ^^^
@@ -859,13 +853,13 @@ or
 
 -------------------------
 Detected 3 errors\n")
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str :keys-spec/map-spec-2 {:foo 1.2
-                                                   :bar 123
-                                                   :qux false}))))
+         (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+           (s/explain-str :keys-spec/map-spec-2 {:foo 1.2
+                                                 :bar 123
+                                                 :qux false}))))
 
-    (is (=
-         "-- Spec failed --------------------
+  (is (=
+       "-- Spec failed --------------------
 
   {:foo 1.2, :child-2 ...}
         ^^^
@@ -911,11 +905,11 @@ or
 
 -------------------------
 Detected 4 errors\n"
-         (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-           (s/explain-str :keys-spec/map-spec-3 {:foo 1.2
-                                                 :child-2 {:bar 123
-                                                           :child-1 {:baz true
-                                                                     :qux false}}}))))))
+       (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+         (s/explain-str :keys-spec/map-spec-3 {:foo 1.2
+                                               :child-2 {:bar 123
+                                                         :child-1 {:baz true
+                                                                   :qux false}}})))))
 
 (s/def :multi-spec/value string?)
 (s/def :multi-spec/children vector?)
@@ -1059,7 +1053,6 @@ Detected 1 error\n")
                :children [{:tag :group
                            :children [{:tag :group
                                        :props {:on-tap {}}}]}]})))))
-  ;; XXX New Test
   (testing "test that our new recursive spec grouping function works with
            alternative paths"
     (is (= (pf
