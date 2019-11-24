@@ -2280,12 +2280,16 @@ Detected 2 errors\n"
       ;; because the algorithm to fix up the 'in' paths depends
       ;; on the non-conforming value existing somewhere within
       ;; the top-level form
-      (when-not (some
-                 #{"clojure.spec.alpha/fspec"}
-                 (->> spec
-                      inline-specs
-                      (tree-seq coll? identity)
-                      (map str)))
+      (when-not
+          ;; a conformer generally won't work against any arbitrary value
+          ;; e.g. we can't conform 0 with the conformer 'seq'
+       (or (contains? #{:conformers-test/string-AB} spec)
+           (some
+            #{"clojure.spec.alpha/fspec"}
+            (->> spec
+                 inline-specs
+                 (tree-seq coll? identity)
+                 (map str))))
         (is (string? (expound/expound-str spec form)))))))
 
 #?(:clj
