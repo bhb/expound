@@ -1,17 +1,13 @@
 (ns expound.printer-test
   (:require [clojure.spec.alpha :as s]
-            [clojure.string :as string]
-            [clojure.test :as ct :refer [is testing deftest use-fixtures]]
-            [expound.alpha :as expound]
+            [clojure.test :as ct :refer [is deftest use-fixtures]]
             [expound.printer :as printer]
-            #?(:cljs
-               [clojure.spec.test.alpha :as st]
-               ;; FIXME
-               ;; orchestra is supposed to work with cljs but
-               ;; it isn't working for me right now
-               #_[orchestra-cljs.spec.test :as st]
-               :clj [orchestra.spec.test :as st])
-            [expound.test-utils :as test-utils :refer [contains-nan?]]))
+            [clojure.string :as string]
+            [com.gfredericks.test.chuck.clojure-test :refer [checking]]
+            [expound.test-utils :as test-utils :refer [contains-nan?]]
+            [expound.spec-gen :as sg]))
+
+(def num-tests 5)
 
 (use-fixtures :once
   test-utils/check-spec-assertions
@@ -32,13 +28,14 @@
          (printer/pprint-fn (comp vec str))))
   (is (= "expound.test-utils/instrument-all"
          (printer/pprint-fn test-utils/instrument-all)))
-
   (is (= "expound.test-utils/contains-nan?"
          (printer/pprint-fn contains-nan?))))
 
 (s/def :print-spec-keys/field1 string?)
 (s/def :print-spec-keys/field2 (s/coll-of :print-spec-keys/field1))
 (s/def :print-spec-keys/field3 int?)
+(s/def :print-spec-keys/field4 string?)
+(s/def :print-spec-keys/field5 string?)
 (s/def :print-spec-keys/key-spec (s/keys
                                   :req [:print-spec-keys/field1]
                                   :req-un [:print-spec-keys/field2]))
@@ -48,24 +45,34 @@
                                              (or
                                               :print-spec-keys/field2
                                               :print-spec-keys/field3))]))
+(s/def :print-spec-keys/key-spec3 (s/keys
+                                   :req-un [:print-spec-keys/field1
+                                            :print-spec-keys/field4
+                                            :print-spec-keys/field5]))
+(s/def :print-spec-keys/set-spec (s/coll-of :print-spec-keys/field1
+                                            :kind set?))
+(s/def :print-spec-keys/vector-spec (s/coll-of :print-spec-keys/field1
+                                               :kind vector?))
+(s/def :print-spec-keys/key-spec4 (s/keys
+                                   :req-un [:print-spec-keys/set-spec
+                                            :print-spec-keys/vector-spec
+                                            :print-spec-keys/key-spec3]))
 
 (defn copy-key [m k1 k2]
   (assoc m k2 (get m k1)))
 
-(deftest print-spec-keys
+(deftest print-spec-keys*
   (is (=
-       "|                     key |              spec |
-|-------------------------+-------------------|
-|                 :field2 | (coll-of string?) |
-| :print-spec-keys/field1 |           string? |"
-       (printer/print-spec-keys
+       [{"key" :field2, "spec" "(coll-of :print-spec-keys/field1)"}
+        {"key" :print-spec-keys/field1, "spec" "string?"}]
+       (printer/print-spec-keys*
         (map #(copy-key % :via :expound/via)
              (::s/problems
               (s/explain-data
                :print-spec-keys/key-spec
                {}))))))
   (is (nil?
-       (printer/print-spec-keys
+       (printer/print-spec-keys*
         (map #(copy-key % :via :expound/via)
              (::s/problems
               (s/explain-data
@@ -75,10 +82,8 @@
                {}))))))
 
   (is (=
-       "|                     key |    spec |
-|-------------------------+---------|
-| :print-spec-keys/field1 | string? |"
-       (printer/print-spec-keys
+       [{"key" :print-spec-keys/field1, "spec" "string?"}]
+       (printer/print-spec-keys*
         (map #(copy-key % :via :expound/via)
              (::s/problems
               (s/explain-data
@@ -88,11 +93,10 @@
                {:field2 [""]}))))))
 
   (is (=
-       "|                     key |              spec |
-|-------------------------+-------------------|
-| :print-spec-keys/field1 |           string? |
-| :print-spec-keys/field2 | (coll-of string?) |"
-       (printer/print-spec-keys
+       [{"key" :print-spec-keys/field1, "spec" "string?"}
+        {"key" :print-spec-keys/field2,
+         "spec" "(coll-of :print-spec-keys/field1)"}]
+       (printer/print-spec-keys*
         (map #(copy-key % :via :expound/via)
              (::s/problems
               (s/explain-data
@@ -100,14 +104,131 @@
                 :req [:print-spec-keys/field1
                       :print-spec-keys/field2])
                {}))))))
-  (is (= "|     key |              spec |
-|---------+-------------------|
-| :field1 |           string? |
-| :field2 | (coll-of string?) |
-| :field3 |              int? |"
-         (printer/print-spec-keys
-          (map #(copy-key % :via :expound/via)
-               (::s/problems
-                (s/explain-data
-                 :print-spec-keys/key-spec2
-                 {})))))))
+  (is (=
+       [{"key" :field1, "spec" "string?"}
+        {"key" :field2, "spec" "(coll-of :print-spec-keys/field1)"}
+        {"key" :field3, "spec" "int?"}]
+       (printer/print-spec-keys*
+        (map #(copy-key % :via :expound/via)
+             (::s/problems
+              (s/explain-data
+               :print-spec-keys/key-spec2
+               {}))))))
+  (is (=
+       [{"key" :key-spec3,
+         "spec" #?(:clj
+                   "(keys\n :req-un\n [:print-spec-keys/field1\n  :print-spec-keys/field4\n  :print-spec-keys/field5])"
+                   :cljs
+                   "(keys\n :req-un\n [:print-spec-keys/field1\n  :print-spec-keys/field4 \n  :print-spec-keys/field5])")}
+        {"key" :set-spec, "spec" #?(:clj
+                                    "(coll-of\n :print-spec-keys/field1\n :kind\n set?)"
+                                    :cljs
+                                    "(coll-of :print-spec-keys/field1 :kind set?)")}
+        {"key" :vector-spec, "spec" #?(:clj "(coll-of\n :print-spec-keys/field1\n :kind\n vector?)"
+                                       :cljs "(coll-of\n :print-spec-keys/field1 \n :kind \n vector?)")}]
+       (printer/print-spec-keys*
+        (map #(copy-key % :via :expound/via)
+             (::s/problems
+              (s/explain-data
+               :print-spec-keys/key-spec4
+               {})))))))
+
+(deftest print-table
+  (is (=
+       "
+| :key | :spec |
+|======+=======|
+| abc  | a     |
+|      | b     |
+|------+-------|
+| def  | d     |
+|      | e     |
+"
+       (with-out-str (printer/print-table [{:key "abc" :spec "a\nb"}
+                                           {:key "def" :spec "d\ne"}]))))
+  ;; can select ordering of keys
+  (is (=
+       "
+| :b | :c |
+|====+====|
+| 2  | 3  |
+|----+----|
+| {} | () |
+"
+       (with-out-str (printer/print-table
+                      [:b :c]
+                      [{:a 1 :b 2 :c 3}
+                       {:a [] :b {} :c '()}]))))
+
+  ;; ordering is deterministic, not based on hashmap
+  ;; semantics
+  (is (=
+       "
+| :k | :a | :b | :c | :d | :e | :f | :g | :h | :i | :j |
+|====+====+====+====+====+====+====+====+====+====+====|
+| k  | a  | b  | c  | d  | e  | f  | g  | h  | i  | j  |
+|----+----+----+----+----+----+----+----+----+----+----|
+| k  | a  | b  | c  | d  | e  | f  | g  | h  | i  | j  |
+"
+       (with-out-str
+         (printer/print-table
+          [:k :a :b :c :d :e :f :g :h :i :j]
+          [{:a "a" :b "b" :c "c" :d "d" :e "e" :f "f" :g "g" :h "h" :i "i" :j "j" :k "k" :l "l"}
+           {:l "l" :k "k" :j "j" :i "i" :h "h" :g "g" :f "f" :e "e" :d "d" :c "c" :b "b" :a "a"}])))))
+
+#?(:clj
+   (deftest print-table-gen
+     (checking
+      "any table with have constant width"
+      num-tests
+      [col-count (s/gen pos-int?)
+       keys (s/gen (s/coll-of keyword? :min-count 1))
+       row-count (s/gen pos-int?)
+       vals (s/gen (s/coll-of
+                    (s/coll-of string? :count col-count)
+                    :count row-count))
+       :let [rows (mapv
+                   #(zipmap keys (get vals %))
+                   (range 0 row-count))
+             table (with-out-str
+                     (printer/print-table rows))
+             srows (rest (string/split table #"\n"))]]
+
+      (is (apply = (map count srows))))
+
+     (checking
+      "any table will contain a sub-table of all rows but the last"
+      num-tests
+      [col-count (s/gen pos-int?)
+       keys (s/gen (s/coll-of keyword? :min-count 1))
+       row-count (s/gen (s/int-in 2 10))
+       vals (s/gen (s/coll-of
+                    (s/coll-of string? :count col-count)
+                    :count row-count))
+       :let [rows (mapv
+                   #(zipmap keys (get vals %))
+                   (range 0 row-count))
+             sub-rows (butlast rows)
+             table (with-out-str
+                     (printer/print-table rows))
+             sub-table (with-out-str
+                         (printer/print-table sub-rows))
+             sub-table-last-row (last (string/split sub-table #"\n"))
+             table-last-row (last (string/split table #"\n"))]]
+      ;; If the line we delete shrinks the width of the table
+      ;; (because it was the widest value)
+      ;; then the property will not apply
+      (when (= (count sub-table-last-row) (count table-last-row))
+        (is (string/includes? table sub-table))))
+
+     (checking
+      "for any known registered spec, table has max width"
+      num-tests
+      [spec sg/spec-gen
+       :let [rows [{:key spec
+                    :spec (printer/expand-spec spec)}]
+             table (with-out-str
+                     (printer/print-table rows))
+             srows (rest (string/split table #"\n"))]]
+      (is (< (count (last srows)) 200)))))
+

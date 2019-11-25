@@ -1,0 +1,7 @@
+#kaocha/v1
+{:tests [{:id :clj
+          :test-paths ["test"]
+          }
+         #_{:type :kaocha.type/spec.test.check
+          :id   :generative-fdef-checks}
+         ]}

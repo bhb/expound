@@ -45,13 +45,17 @@ or
 
 `lein with-profile +test-common test-refresh :changes-only`
 
-or (to see which tests are slow)
-
-`lein with-profile +test-common eftest`
-
 or (if you want to save a second or two)
 
 `clj -Atest:test-deps`
+
+or
+
+`bin/kaocha --watch --plugin profiling`
+
+## Code coverage
+
+`bin/kaocha --plugin cloverage --cov-exclude-call expound.alpha/def`
 
 ## Readability and linting
 
@@ -62,6 +66,11 @@ or (if you want to save a second or two)
 `lein hiera` generates a graph of namespace dependencies
 
 ## Release
+
+1. Update version in `project.clj`
+2. `git tag -a v0.7.2 -m "version 0.7.2"`
+3. Update `CHANGELOG.md` (including section for release and links at bottom)
+4. Update version in `README.md`
 
 ### clojars
 

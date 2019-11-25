@@ -5,7 +5,7 @@ set -euo pipefail
 stdin=$(cat -)
 
 # ignore expected warning
-warnings=$(echo "$stdin" | grep -v "WARNING: Wrong number of args (1) passed to expound.alpha-test/test-instrument-adder")
+warnings=$(echo "$stdin")
 
 if grep -q "WARNING" <(echo $warnings); then
     echo "$warnings" | grep "WARNING" 

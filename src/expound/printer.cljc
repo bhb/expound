@@ -2,7 +2,6 @@
   (:require [clojure.string :as string]
             [clojure.spec.alpha :as s]
             [clojure.pprint :as pprint]
-            [clojure.walk :as walk]
             [clojure.set :as set]
             [expound.util :as util]
             [expound.ansi :as ansi]
@@ -10,7 +9,6 @@
   (:refer-clojure :exclude [format]))
 
 (def indent-level 2)
-(def max-spec-str-width 100)
 (def anon-fn-str "<anonymous function>")
 
 (s/def :expound.spec/spec-conjunction
@@ -36,7 +34,94 @@
                                                    :op #{`or `and}
                                                    :clauses (s/+ :expound.spec/contains-key-pred))))
 
+(declare format)
+
+(defn ^:private str-width [lines]
+  (apply max (map count lines)))
+
+(defn ^:private max-column-width [rows i]
+  (apply max 0 (map #(str-width (string/split-lines (str (nth % i)))) rows)))
+
+(defn ^:private max-row-height [row]
+  (apply max 0
+         (map #(count (string/split-lines (str %))) row)))
+
+(defn ^:private indented-multirows [column-widths multi-rows]
+  (->> multi-rows
+       (map
+        (fn [multi-row]
+          (map
+           (fn [row]
+             (map-indexed
+              (fn [i v]
+                (format (str "%-" (nth column-widths i) "s") v))
+              row))
+           multi-row)))))
+
+(defn ^:private formatted-row [row edge spacer middle]
+  (str edge spacer
+       (string/join (str spacer middle spacer) row)
+       spacer edge))
+
+(defn ^:private table [multirows]
+  (let [header (first (first multirows))
+        columns-dividers (map #(apply str (repeat (count (str %)) "-")) header)
+        header-columns-dividers (map #(apply str (repeat (count (str %)) "=")) header)
+        header-divider (formatted-row header-columns-dividers "|" "=" "+")
+        row-divider (formatted-row columns-dividers "|" "-" "+")
+        formatted-multirows (->> multirows
+                                 (map
+                                  (fn [multirow]
+                                    (map (fn [row] (formatted-row row "|" " " "|")) multirow))))]
+
+    (->>
+     (concat [[header-divider]] (repeat [row-divider]))
+     (mapcat vector formatted-multirows)
+     (butlast) ;; remove the trailing row-divider
+     (mapcat seq))))
+
+(defn ^:private multirow [row-height row]
+  (let [split-row-contents (mapv (fn [v] (string/split-lines (str v))) row)]
+    (for [row-idx (range row-height)]
+      (for [col-idx (range (count row))]
+        (get-in split-row-contents [col-idx row-idx] "")))))
+
+(defn ^:private multirows [row-heights rows]
+  (map-indexed (fn [idx row] (multirow (get row-heights idx) row)) rows))
+
+(defn ^:private formatted-multirows [column-keys map-rows]
+  (when-not (empty? map-rows)
+    (let [rows (into [column-keys] (map #(map % column-keys) map-rows))
+          row-heights (mapv max-row-height rows)
+          column-widths (map-indexed
+                         (fn [i _] (max-column-width rows i))
+                         (first rows))]
+
+      (->>
+       rows
+       (multirows row-heights)
+       (indented-multirows column-widths)))))
+
+(defn table-str [column-keys map-rows]
+  (str
+   "\n"
+   (apply str
+          (map
+           (fn [line] (str line "\n"))
+           (table (formatted-multirows column-keys map-rows))))))
+
+(s/fdef print-table
+  :args (s/cat
+         :columns (s/? (s/coll-of any?))
+         :map-rows (s/coll-of map?)))
+(defn print-table
+  ([map-rows]
+   (print-table (keys (first map-rows)) map-rows))
+  ([column-keys map-rows]
+   (print (table-str column-keys map-rows))))
+
 ;;;; private
+
 
 (defn keywords [form]
   (->> form
@@ -78,28 +163,12 @@
               k
               (if (qualified-keyword? k)
                 k
-                (->> specs
-                     (filter #(= (name k) (name %)))
-                     first))))
+                (or (->> specs
+                         (filter #(= (name k) (name %)))
+                         first)
+                    "<can't find spec for unqualified spec identifier>"))))
      {}
      keys)))
-
-(defn expand-spec [spec]
-  (let [!seen-specs (atom #{})]
-    (walk/prewalk
-     (fn [x]
-       (if-not (qualified-keyword? x)
-         x
-         (if-let [sp (s/get-spec x)]
-           (if-not (contains? @!seen-specs x)
-             (do
-               (swap! !seen-specs conj x)
-               (s/form sp))
-             x)
-           x)))
-     (if (s/get-spec spec)
-       (s/form spec)
-       spec))))
 
 (defn summarize-key-clause [[branch match]]
   (case branch
@@ -152,8 +221,8 @@
            (if (empty? ns-n)
              anon-fn-str
              (str
-              (demunge-str ns-n) "/"
-              (demunge-str fn-n)))))
+              (demunge ns-n) "/"
+              (demunge fn-n)))))
       (elide-core-ns)
       (string/replace #"--\d+" "")
       (string/replace #"@[a-zA-Z0-9]+" "")))
@@ -173,15 +242,21 @@
     (pprint-fn x)
     (pprint/write x :stream nil)))
 
-(defn simple-spec-or-name [spec-name]
-  (let [spec-str (elide-spec-ns (elide-core-ns (pr-str (expand-spec spec-name))))]
-    (if (or
-         (< max-spec-str-width (count spec-str))
-         (string/includes? spec-str "\n"))
-      spec-name
-      spec-str)))
+(defn expand-spec [spec]
+  (if (s/get-spec spec)
+    (pprint-str (s/form spec))
+    spec))
 
-(defn print-spec-keys [problems]
+(defn simple-spec-or-name [spec-name]
+  (let [expanded (expand-spec spec-name)
+        spec-str (elide-spec-ns (elide-core-ns
+                                 (if (nil? expanded)
+                                   "nil"
+                                   expanded)))]
+
+    spec-str))
+
+(defn print-spec-keys* [problems]
   (let [keys (keywords (map #(missing-key (:pred %)) problems))]
     (if (and (empty? (:expound/via (first problems)))
              (some simple-keyword? keys))
@@ -192,10 +267,14 @@
 
       (->> (key->spec keys problems)
            (map (fn [[k v]] {"key" k "spec" (simple-spec-or-name v)}))
-           (sort-by #(get % "key"))
-           (pprint/print-table ["key" "spec"])
-           with-out-str
-           string/trim))))
+           (sort-by #(get % "key"))))))
+
+(defn print-spec-keys [problems]
+  (->>
+   (print-spec-keys* problems)
+   (print-table ["key" "spec"])
+   with-out-str
+   string/trim))
 
 (defn print-missing-keys [problems]
   (let [keys-clauses (distinct (map (comp missing-key :pred) problems))]

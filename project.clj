@@ -1,19 +1,21 @@
-(defproject expound "0.7.2"
+(defproject expound "0.8.0"
   :description "Human-optimized error messages for clojure.spec"
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :scm {:name "git" :url "https://github.com/bhb/expound"}
-  :dependencies [[org.clojure/clojure "1.10.0" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
                  [org.clojure/clojurescript "1.10.520" :scope "provided"]
                  [org.clojure/spec.alpha "0.2.176" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
-  :plugins [[com.jakemccrary/lein-test-refresh "0.23.0"]
+  :plugins [
+            [com.jakemccrary/lein-test-refresh "0.23.0"]
             [lein-cljfmt "0.6.4"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.18"]
-            [lein-hiera "1.0.0"]]
+            [lein-hiera "1.1.0"]
+            ]
   :cljsbuild {:builds
               [{:id "test"
                 :source-paths ["src" "test"]
@@ -28,9 +30,6 @@
                            :optimizations :none
                            :verbose true
                            :compiler-stats true}}]}
-  :eftest {:multithread? false
-           :test-warn-time 750
-           :capture-output? false}
   :figwheel {;; :http-server-root "public" ;; default and assumes "resources"
              :server-port 3446 ;; default is 3449
 
@@ -74,40 +73,51 @@
              ;; to pipe all the output to the repl
              ;; :server-logfile false
 }
-  :profiles {:dev {:dependencies [[binaryage/devtools "0.9.10"]
+  :profiles {:dev {:dependencies [
+                                  [binaryage/devtools "0.9.10"]
                                   [figwheel-sidecar "0.5.18"]
                                   [cider/piggieback "0.4.0"]
                                   [orchestra "2019.02.06-1"]
-                                  [org.clojure/core.specs.alpha "0.2.36"]
-                                  [io.aviso/pretty "0.1.34"]
-                                  [vvvvalvalval/scope-capture "0.3.1"]
-                                  [org.clojure/test.check "0.10.0-alpha3"]
+                                  [org.clojure/core.specs.alpha "0.2.44"]
+                                  [vvvvalvalval/scope-capture "0.3.2"]
+                                  [org.clojure/test.check "0.10.0"]
                                   [metosin/spec-tools "0.8.2"]
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
-                                  [com.gfredericks/test.chuck "0.2.9"]]
+                                  [com.gfredericks/test.chuck "0.2.10"]
+                                  ]
                    :injections [(require 'sc.api)]
-                   :plugins [[io.aviso/pretty "0.1.34"]
-                             [lein-eftest "0.5.2"]
-                             [cider/cider-nrepl "0.18.0"]]
+                   :plugins [
+                             [io.aviso/pretty "0.1.37"]
+                             [cider/cider-nrepl "0.21.1"]
+                             ]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
                    :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
                    ;; need to add the compliled assets to the :clean-targets
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
+             :kaocha [:test-common
+                      {:dependencies [[lambdaisland/kaocha "0.0-554"]
+                                      [lambdaisland/kaocha-cloverage "0.0-41"]]}]
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
-                                          [com.gfredericks/test.chuck "0.2.9"]
+                                          [pjstadig/humane-test-output "0.9.0"]
+                                          [com.gfredericks/test.chuck "0.2.10"]
                                           [orchestra "2019.02.06-1"]
-                                          [org.clojure/core.specs.alpha "0.2.36"]
+                                          [io.aviso/pretty "0.1.37"]
+                                          [org.clojure/core.specs.alpha "0.2.44"]
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.4"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                           [vvvvalvalval/scope-capture "0.3.1"]
                                           [metosin/spec-tools "0.7.1"]
-                                          [com.bhauman/spell-spec "0.1.1"]]}
+                                          [com.bhauman/spell-spec "0.1.1"]]
+                           :middleware [io.aviso.lein-pretty/inject]
+                           :injections [(require 'pjstadig.humane-test-output)
+                                        (pjstadig.humane-test-output/activate!)]
+                           }
              :test-web [:test-common
                         {:source-paths ["test"]
                          :dependencies [[figwheel-sidecar "0.5.18"]
@@ -119,8 +129,10 @@
              :cljs-1.10.339 {:dependencies [[org.clojure/clojurescript "1.10.339"]]}
              :cljs-1.10.439 {:dependencies [[org.clojure/clojurescript "1.10.439"]]}
              :cljs-1.10.516 {:dependencies [[org.clojure/clojurescript "1.10.516"]]}
-             :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}}
-  :aliases {"run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
+             :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}
+             :spec-0.2.176  {:dependencies [[org.clojure/spec.alpha "0.2.176"]]}}
+  :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner"]
+            "run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
                               ["with-profile" "test-web" "cljsbuild" "once" "test"]
                               ["with-profile" "test-web" "cljsbuild" "auto" "test"]]}

@@ -220,9 +220,10 @@ should be one of: [32m[32m"a"[0m, [32m"b"[0m, [32m1[0m, [32m2[0m[0m
 
 should contain keys: [32m:or-spec/int[0m, [32m:or-spec/str[0m
 
-|          key |    spec |
+| key          | spec    |
+|==============+=========|
+| :or-spec/int | int?    |
 |--------------+---------|
-| :or-spec/int |    int? |
 | :or-spec/str | string? |
 
 [36m-- Relevant specs -------[0m
@@ -250,8 +251,8 @@ should contain keys: [32m:or-spec/int[0m, [32m:or-spec/str[0m
 
 should contain keys: [32m:or-spec/str[0m
 
-|          key |    spec |
-|--------------+---------|
+| key          | spec    |
+|==============+=========|
 | :or-spec/str | string? |
 
 [36m-------------------------[0m
@@ -462,9 +463,10 @@ has extra input
 
 should contain keys: [32m:age[0m, [32m:keys-spec/name[0m
 
-|             key |    spec |
+| key             | spec    |
+|=================+=========|
+| :age            | int?    |
 |-----------------+---------|
-|            :age |    int? |
 | :keys-spec/name | string? |
 
 [36m-- Relevant specs -------[0m
@@ -490,13 +492,17 @@ should contain keys:
 
 [32m(and (and :keys-spec/name :keys-spec/age) (or :zip (and :state :city)))[0m
 
-|             key |     spec |
+| key             | spec     |
+|=================+==========|
+| :city           | string?  |
 |-----------------+----------|
-|           :city |  string? |
-|          :state |  string? |
-|            :zip | pos-int? |
-|  :keys-spec/age |     int? |
-| :keys-spec/name |  string? |
+| :state          | string?  |
+|-----------------+----------|
+| :zip            | pos-int? |
+|-----------------+----------|
+| :keys-spec/age  | int?     |
+|-----------------+----------|
+| :keys-spec/name | string?  |
 
 [36m-- Relevant specs -------[0m
 
@@ -521,11 +527,13 @@ should contain keys:
 
 [32m(or :zip (and :state :city))[0m
 
-|    key |     spec |
+| key    | spec     |
+|========+==========|
+| :city  | string?  |
 |--------+----------|
-|  :city |  string? |
-| :state |  string? |
-|   :zip | pos-int? |
+| :state | string?  |
+|--------+----------|
+| :zip   | pos-int? |
 
 [36m-- Relevant specs -------[0m
 
@@ -546,9 +554,10 @@ should contain keys:
 
 should contain keys: [32m:age[0m, [32m:name[0m
 
-|   key |    spec |
+| key   | spec    |
+|=======+=========|
+| :age  | int?    |
 |-------+---------|
-|  :age |    int? |
 | :name | string? |
 
 [36m-------------------------[0m
@@ -639,8 +648,8 @@ with
 
 should contain key: [32m:multi-spec/value[0m
 
-|               key |    spec |
-|-------------------+---------|
+| key               | spec    |
+|===================+=========|
 | :multi-spec/value | string? |
 
 [36m-- Relevant specs -------[0m
@@ -721,8 +730,8 @@ should satisfy
 
 should contain key: [32m:cat-wrapped-in-or-spec/type[0m
 
-|                          key |     spec |
-|------------------------------+----------|
+| key                          | spec     |
+|==============================+==========|
 | :cat-wrapped-in-or-spec/type | #{:text} |
 
 or

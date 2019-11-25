@@ -5,8 +5,6 @@
             [clojure.string :as string]
             [clojure.set :as set]
             [clojure.walk :as walk]
-            #?(:cljs [goog.string.format])
-            #?(:cljs [goog.string])
             [expound.printer :as printer]
             [expound.util :as util]
             [expound.ansi :as ansi]
@@ -195,24 +193,6 @@
                   (error-message last-spec)
                   (s/get-spec last-spec)))))
 
-(defn ^:private predicate-errors [problems]
-  (let [[with-msg no-msgs] ((juxt filter remove)
-                            (fn [{:keys [expound/via pred]}]
-                              (spec-w-error-message? via pred))
-                            problems)]
-    (->> (when (seq no-msgs)
-           (printer/format
-            "should satisfy\n\n%s"
-            (preds no-msgs)))
-         (conj (keep (fn [{:keys [expound/via]}]
-                       (let [last-spec (last via)]
-                         (if (qualified-keyword? last-spec)
-                           (ansi/color (error-message last-spec) :good)
-                           nil)))
-                     with-msg))
-         (remove nil?)
-         (string/join "\n\nor\n\n"))))
-
 (defn ^:private label
   ([size]
    (apply str (repeat size "-")))
@@ -307,7 +287,7 @@
        (conformed-value problems invalid-value)
        ""))))
 
-(defmethod value-str :default [_type spec-name form path problems opts]
+(defmethod value-str :default [_type spec-name form path problems _opts]
   (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? true})))
 
 (defn ^:private explain-missing-keys [problems]
@@ -332,7 +312,7 @@
    (value-str type spec-name form in problems opts)
    expected))
 
-(defmethod expected-str :expound.problem-group/one-value [_type spec-name form path problems opts]
+(defmethod expected-str :expound.problem-group/one-value [_type spec-name _form _path problems opts]
   (let [problem (first problems)
         subproblems (:problems problem)
         grouped-subproblems (vals (group-by :expound.spec.problem/type subproblems))]
@@ -340,7 +320,7 @@
      "\n\nor\n\n"
      (map #(expected-str* spec-name % opts) grouped-subproblems))))
 
-(defmethod value-str :expound.problem-group/one-value [type spec-name form path problems opts]
+(defmethod value-str :expound.problem-group/one-value [_type spec-name _form _path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)
         subproblems (:problems problem)]
@@ -353,7 +333,7 @@
 
     "Spec failed"))
 
-(defmethod problem-group-str :expound.problem-group/one-value [type spec-name form path problems opts]
+(defmethod problem-group-str :expound.problem-group/one-value [type spec-name _form path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)
         subproblems (:problems problem)
@@ -367,7 +347,7 @@
                 opts
                 (expected-str type spec-name form path problems opts))))
 
-(defmethod expected-str :expound.problem-group/many-values [type spec-name form path problems opts]
+(defmethod expected-str :expound.problem-group/many-values [_type spec-name _form _path problems opts]
   (let [subproblems (:problems (first problems))]
     (string/join
      "\n\nor value\n\n"
@@ -384,7 +364,7 @@
    (header-label "Spec failed")
    (expected-str _type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/missing-key [_type spec-name _form path problems opts]
+(defmethod expected-str :expound.problem/missing-key [_type _spec-name _form _path problems _opts]
   (explain-missing-keys problems))
 
 (defmethod problem-group-str :expound.problem/missing-key [type spec-name form path problems opts]
@@ -421,13 +401,13 @@
               opts
               (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/missing-spec [_type spec-name form path problems opts]
+(defmethod expected-str :expound.problem/missing-spec [_type spec-name form path problems _opts]
   (str "with\n\n"
        (->> problems
             (map #(no-method spec-name form path %))
             (string/join "\n\nor with\n\n"))))
 
-(defmethod value-str :expound.problem/missing-spec [_type spec-name form path problems opts]
+(defmethod value-str :expound.problem/missing-spec [_type spec-name form path _problems _opts]
   (printer/format
    "Cannot find spec for
 
@@ -453,31 +433,103 @@
      (lcs* xs ys))
    paths))
 
-(defn ^:private alternation [grp1 grp2]
-  (let [xs (:path-prefix grp1)
-        ys (:path-prefix grp2)
-        prefix (lcs xs ys)]
-    (if (and
-         (some? prefix)
-         (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp1))
-           true
-           (not= prefix xs))
-         (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp2))
-           true
-           (not= prefix ys)))
-      grp1
-      nil)))
+(defn ^:private contains-alternate-at-path? [spec-form path]
+  (if (not (coll? spec-form))
+    false
+    (let [[op & rest-form] spec-form
+          [k & rest-path] path]
+      (condp contains? op
+        #{`s/or `s/alt} (let [node-keys (->> rest-form (apply hash-map) keys set)]
+                          (cond
+                            (empty? path) true
+                            (contains? node-keys k) (some #(contains-alternate-at-path? % rest-path) rest-form)
+                            :else false))
+
+        #{`s/keys `s/keys*} (let [keys-args (->> rest-form (apply hash-map))
+                                  node-keys (set (concat
+                                                  (:opt keys-args [])
+                                                  (:req keys-args [])
+                                                  (map #(keyword (name %)) (:opt-un keys-args []))
+                                                  (map #(keyword (name %)) (:req-un keys-args []))))
+                                  possible-spec-names (if (qualified-keyword? k)
+                                                        [k]
+                                                        (filter
+                                                         #(= k
+                                                             (keyword (name %)))
+                                                         (flatten (vals keys-args))))]
+                              (cond
+                                ;; path is ambiguous here, we don't know which they intended if
+                                ;; there are multiple-paths
+                                (empty? path) false
+
+                                (contains? node-keys k) (some #(contains-alternate-at-path? % rest-path)
+                                                              (map s/form possible-spec-names))
+
+                                :else false))
+
+        #{`s/cat} (let [node-keys (->> rest-form (apply hash-map) keys set)]
+                    (cond
+                      (empty? path) false
+                      (contains? node-keys k) (some #(contains-alternate-at-path? % rest-path) rest-form)
+                      :else false))
+
+        ;; It annoys me that I can't figure out a way to hit this branch in a spec
+        ;; and I can't sufficiently explain why this will never be hit. Intuitively,
+        ;; it seems like this should be similar to 's/or' and 's/alt' cases
+        #{`s/nilable} (cond
+                        (empty? path) true
+                        (contains? #{::s/pred ::s/nil} k) (some
+                                                           #(contains-alternate-at-path? % rest-path)
+                                                           rest-form)
+
+                        :else false)
+
+        (some #(contains-alternate-at-path? % path) rest-form)))))
+
+(defn ^:private share-alt-tags?
+  "Determine if two groups have prefixes (ie. spec tags) that are included in
+  an s/or or s/alt predicate."
+  [grp1 grp2]
+  (let [pprefix1 (:path-prefix grp1)
+        pprefix2 (:path-prefix grp2)
+        shared-prefix (lcs pprefix1 pprefix2)
+        shared-specs (lcs (:via-prefix grp1) (:via-prefix grp2))]
+
+    (and (get pprefix1 (-> shared-prefix count))
+         (get pprefix2 (-> shared-prefix count))
+         (some #(and
+                 (contains-alternate-at-path? (s/form %) shared-prefix)
+                 (contains-alternate-at-path? (s/form %) shared-prefix))
+               shared-specs))))
+
+(defn ^:private recursive-spec?
+  "Determine if either group 1 or 2 is recursive (ie. have repeating specs in
+  their via paths) and if one group is included in another."
+  [grp1 grp2]
+  (let [vxs (:via-prefix grp1)
+        vys (:via-prefix grp2)
+        vprefix (lcs vxs vys)]
+
+    (or (and (not= (count vys) (count (distinct vys)))
+             (< (count vprefix) (count vys))
+             (= vxs vprefix))
+        (and (not= (count vxs) (count (distinct vxs)))
+             (< (count vprefix) (count vxs))
+             (= vys vprefix)))))
 
 (defn ^:private problem-group [grp1 grp2]
   {:expound.spec.problem/type :expound.problem-group/many-values
    :path-prefix               (lcs (:path-prefix grp1)
                                    (:path-prefix grp2))
+   :via-prefix                (lcs (:via-prefix grp1)
+                                   (:via-prefix grp2))
    :problems                  (into
-                               (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp1))
+                               (if (= :expound.problem-group/many-values
+                                      (:expound.spec.problem/type grp1))
                                  (:problems grp1)
                                  [grp1])
-
-                               (if (= :expound.problem-group/many-values (:expound.spec.problem/type grp2))
+                               (if (= :expound.problem-group/many-values
+                                      (:expound.spec.problem/type grp2))
                                  (:problems grp2)
                                  [grp2]))})
 
@@ -493,51 +545,57 @@
        form))
    groups))
 
-(defn ^:private remove-vec [v x]
+(defn ^:private vec-remove [v x]
   (vec (remove #{x} v)))
 
-(defn ^:private groups [problems]
-  (let [grouped-by-in-path (->> problems
-                                (group-by :expound/in)
-                                vals
-                                (map (fn [grp]
-                                       (if (= 1 (count grp))
-                                         {:expound.spec.problem/type :expound.problem-group/one-value
+(defn ^:private replace-group [groups old-groups group]
+  (-> groups
+      (vec-remove old-groups)
+      (conj (problem-group old-groups group))))
 
-                                          :path-prefix               (:expound/path (first grp))
-                                          :problems                  grp}
-                                         {:expound.spec.problem/type :expound.problem-group/one-value
-                                          :path-prefix               (apply lcs (map :expound/path grp))
-                                          :problems                  grp}))))]
+(defn conj-groups
+  "Consolidate a group into a group collection if it's either part of an s/or,
+  s/alt or recursive spec."
+  [groups group]
+  (if-let [old-group (first (filter #(or (recursive-spec? % group)
+                                         (share-alt-tags? % group))
+                                    groups))]
+    (replace-group groups old-group group)
+    (conj groups group)))
+
+(defn ^:private groups [problems]
+  (let [grouped-by-in-path
+        (->> problems
+             (group-by :expound/in)
+             vals
+             (map (fn [grp]
+                    {:expound.spec.problem/type :expound.problem-group/one-value
+                     :path-prefix               (apply lcs (map :expound/path grp))
+                     :via-prefix                (apply lcs (map :expound/via grp))
+                     :problems                  grp})))]
     (->> grouped-by-in-path
-         (reduce
-          (fn [grps group]
-            (if-let [old-group (some #(alternation % group) grps)]
-              (-> grps
-                  (remove-vec old-group)
-                  (conj (problem-group
-                         old-group
-                         group)))
-              (conj grps group)))
-          [])
+         (reduce conj-groups [])
          lift-singleton-groups)))
 
-(defmethod expected-str :expound.problem/insufficient-input [_type spec-name form path problems opts]
+(defn ^:private problems-without-location [problems opts]
+  (let [failure nil
+        non-matching-value [:expound/value-that-should-never-match]
+        problems (->> problems
+                      (map #(dissoc % :expound.spec.problem/type :reason))
+                      (map #(assoc % :expound.spec.problem/type (problems/type failure % true)))
+                      groups)]
+    (apply str (for [prob problems]
+                 (let [in (-> prob :expound/in)]
+                   (expected-str (-> prob :expound.spec.problem/type) :expound/no-spec-name non-matching-value in [prob] opts))))))
+
+(defmethod expected-str :expound.problem/insufficient-input [_type _spec-name _form _path problems opts]
   (let [problem (first problems)]
     (printer/format
      "should have additional elements. The next element%s %s"
      (if-some [el-name (last (:expound/path problem))]
        (str " \"" (pr-str el-name) "\"")
        "")
-     (let [failure nil
-           non-matching-value [:expound/value-that-should-never-match]
-           problems (->> problems
-                         (map #(dissoc % :expound.spec.problem/type :reason))
-                         (map #(assoc % :expound.spec.problem/type (problems/type failure %)))
-                         groups)]
-       (apply str (for [prob problems]
-                    (let [in (-> prob :expound/in)]
-                      (expected-str (-> prob :expound.spec.problem/type) :expound/no-spec-name non-matching-value in [prob] opts))))))))
+     (problems-without-location problems opts))))
 
 (defmethod problem-group-str :expound.problem/insufficient-input [type spec-name form path problems opts]
   (format-err "Syntax error"
@@ -549,7 +607,7 @@
               opts
               (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/extra-input [_type spec-name form path problems opts]
+(defmethod expected-str :expound.problem/extra-input [_type _spec-name _form _path problems _opts]
   (s/assert ::singleton problems)
   "has extra input")
 
@@ -563,7 +621,7 @@
               opts
               (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/fspec-exception-failure [_type spec-name form path problems opts]
+(defmethod expected-str :expound.problem/fspec-exception-failure [_type _spec-name _form _path problems _opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -590,13 +648,13 @@ with args:
    opts
    (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/fspec-ret-failure [_type spec-name form path problems opts]
+(defmethod expected-str :expound.problem/fspec-ret-failure [_type _spec-name _form _path problems opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
      "returned an invalid value\n\n%s\n\n%s"
      (ansi/color (printer/indent (pr-str (:val problem))) :bad-value)
-     (predicate-errors problems))))
+     (problems-without-location problems opts))))
 
 (defmethod problem-group-str :expound.problem/fspec-ret-failure [type spec-name form path problems opts]
   (format-err
@@ -609,22 +667,22 @@ with args:
    opts
    (expected-str type spec-name form path problems opts)))
 
-(defmethod value-str :expound.problem/insufficient-input [_type spec-name form path problems opts]
+(defmethod value-str :expound.problem/insufficient-input [_type spec-name form path problems _opts]
   (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
 
-(defmethod value-str :expound.problem/extra-input [_type spec-name form path problems opts]
+(defmethod value-str :expound.problem/extra-input [_type spec-name form path problems _opts]
   (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
 
-(defmethod value-str :expound.problem/fspec-fn-failure [_type spec-name form path problems opts]
+(defmethod value-str :expound.problem/fspec-fn-failure [_type spec-name form path problems _opts]
   (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
 
-(defmethod value-str :expound.problem/fspec-exception-failure [_type spec-name form path problems opts]
+(defmethod value-str :expound.problem/fspec-exception-failure [_type spec-name form path problems _opts]
   (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
 
-(defmethod value-str :expound.problem/fspec-ret-failure [_type spec-name form path problems opts]
+(defmethod value-str :expound.problem/fspec-ret-failure [_type spec-name form path problems _opts]
   (show-spec-name spec-name (value+conformed-value problems spec-name form path {:show-conformed? false})))
 
-(defmethod expected-str :expound.problem/fspec-fn-failure [_type spec-name form path problems opts]
+(defmethod expected-str :expound.problem/fspec-fn-failure [_type _spec-name _form _path problems _opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -650,7 +708,7 @@ should satisfy
    opts
    (expected-str type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/check-fn-failure [_type spec-name form path problems opts]
+(defmethod expected-str :expound.problem/check-fn-failure [_type _spec-name _form _path problems _opts]
   (s/assert ::singleton problems)
   (let [problem (first problems)]
     (printer/format
@@ -672,8 +730,8 @@ should satisfy
    (ansi/color (printer/indent (pr-str (:expound/check-fn-call (first problems)))) :bad-value)
    (expected-str _type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/check-ret-failure [_type spec-name form path problems opts]
-  (predicate-errors problems))
+(defmethod expected-str :expound.problem/check-ret-failure [_type _spec-name _form _path problems opts]
+  (problems-without-location problems opts))
 
 (defmethod problem-group-str :expound.problem/check-ret-failure [_type spec-name form path problems opts]
   (printer/format
@@ -693,8 +751,23 @@ returned an invalid value.
    (*value-str-fn* spec-name form path (problems/value-in form path))
    (expected-str _type spec-name form path problems opts)))
 
-(defmethod expected-str :expound.problem/unknown [_type spec-name form path problems opts]
-  (predicate-errors problems))
+(defmethod expected-str :expound.problem/unknown [_type _spec-name _form _path problems _opts]
+  (let [[with-msg no-msgs] ((juxt filter remove)
+                            (fn [{:keys [expound/via pred]}]
+                              (spec-w-error-message? via pred))
+                            problems)]
+    (->> (when (seq no-msgs)
+           (printer/format
+            "should satisfy\n\n%s"
+            (preds no-msgs)))
+         (conj (keep (fn [{:keys [expound/via]}]
+                       (let [last-spec (last via)]
+                         (if (qualified-keyword? last-spec)
+                           (ansi/color (error-message last-spec) :good)
+                           nil)))
+                     with-msg))
+         (remove nil?)
+         (string/join "\n\nor\n\n"))))
 
 (defmethod problem-group-str :expound.problem/unknown [type spec-name form path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
@@ -798,17 +871,17 @@ returned an invalid value.
           :cljs (and
                  failure
                  (re-matches #"Unable to construct gen at.*" (.-message failure))))
-       (let [path (::s/path explain-data)]
-         (str
-          #?(:clj
+       (str
+        #?(:clj
+           (let [path (::s/path explain-data)]
              (str
               "Unable to construct generator for "
-              (ansi/color (pr-str path) :error-key))
-             :cljs
-             (.-message failure))
-          " in\n\n"
-          (printer/indent (str (s/form (:args (:spec check-result)))))
-          "\n"))
+              (ansi/color (pr-str path) :error-key)))
+           :cljs
+           (.-message failure))
+        " in\n\n"
+        (printer/indent (str (s/form (:args (:spec check-result)))))
+        "\n")
 
        (= :no-args-spec failure-reason)
        (str
@@ -824,8 +897,7 @@ returned an invalid value.
           (ansi/color (printer/indent (pr-str sym)) :bad-value)
           "\n\nis not defined\n")
          ;; CLJS doesn't set the symbol
-         (str
-          "Cannot check undefined function\n"))
+         "Cannot check undefined function\n")
 
        (and explain-data
             (= :check-failed (-> explain-data ::s/failure)))
@@ -937,30 +1009,27 @@ returned an invalid value.
 
 (s/fdef expound-str
   :args (s/cat :spec :expound.spec/spec
-               :form any?)
+               :form any?
+               :opts (s/? :expound.printer/opts))
   :ret string?)
 (defn expound-str
   "Given a `spec` and a `form`, either returns success message or a human-readable error message."
-  [spec form]
-  ;; expound was initially released with support
-  ;; for CLJS 1.9.542 which did not include
-  ;; the value in the explain data, so we patch it
-  ;; in to avoid breaking back compat (at least for now)
-  (let [explain-data (s/explain-data spec form)]
-    (printer-str {}
-                 (if explain-data
-                   (assoc explain-data
-                          ::s/value form)
-                   nil))))
+  ([spec form]
+   (expound-str spec form {}))
+  ([spec form opts]
+   (printer-str opts (s/explain-data spec form))))
 
 (s/fdef expound
   :args (s/cat :spec :expound.spec/spec
-               :form any?)
+               :form any?
+               :opts (s/? :expound.printer/opts))
   :ret nil?)
 (defn expound
   "Given a `spec` and a `form`, either prints a success message or a human-readable error message."
-  [spec form]
-  (print (expound-str spec form)))
+  ([spec form]
+   (expound spec form {}))
+  ([spec form opts]
+   (print (expound-str spec form opts))))
 
 (s/fdef defmsg
   :args (s/cat :k qualified-keyword?

@@ -22,24 +22,30 @@ with
 ```
 -- Spec failed --------------------
 
- {}
+  {}
 
-should contain keys: `:city`,`:state`
+should contain keys: :city, :state
+
+| key    | spec    |
+|========+=========|
+| :city  | string? |
+|--------+---------|
+| :state | string? |
 ```
 
 Expound is in alpha while `clojure.spec` is in alpha.
 
-**Expound depends on projects supported by [Clojurists Together](https://www.clojuriststogether.org/). If you find this project useful, please consider making a monthly donation to Clojurists Together (or ask your employer to do so).**
+**Expound is supported by [Clojurists Together](https://www.clojuriststogether.org/). If you find this project useful, please consider making a monthly donation to Clojurists Together (or ask your employer to do so).**
 
 ## Installation
 
 ### Leiningen/Boot
 
-`[expound "0.7.2"]`
+`[expound "0.8.0"]`
 
 #### deps.edn
 
-`expound {:mvn/version "0.7.2"}`
+`expound {:mvn/version "0.8.0"}`
 
 ### Lumo
 
@@ -82,7 +88,7 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 (s/def :example.place/city string?)
 (s/def :example.place/state string?)
 (s/def :example/place (s/keys :req-un [:example.place/city :example.place/state]))
-(expound/expound :example/place {:city "Denver", :state :CO})
+(expound/expound :example/place {:city "Denver", :state :CO} {:print-specs? false})
 ;; -- Spec failed --------------------
 
 ;;   {:city ..., :state :CO}
@@ -91,15 +97,6 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 ;; should satisfy
 
 ;;   string?
-
-;; -- Relevant specs -------
-
-;; :example.place/state:
-;;   clojure.core/string?
-;; :example/place:
-;;   (clojure.spec.alpha/keys
-;;    :req-un
-;;    [:example.place/city :example.place/state])
 
 ;; -------------------------
 ;; Detected 1 error
@@ -146,7 +143,7 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 
 Due to the way that macros are expanded in ClojureScript, you'll need to configure Expound in *Clojure* to use Expound during macro-expansion. This does not apply to self-hosted ClojureScript. Note the `-e` arg when starting ClojureScript:
 
-`clj -Srepro -Sdeps '{:deps {expound {:mvn/version "0.7.2"} org.clojure/test.check {:mvn/version "0.9.0"} org.clojure/clojurescript {:mvn/version "1.10.520"}}}' -e "(require '[expound.alpha :as expound]) (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)" -m cljs.main -re node`
+`clj -Srepro -Sdeps '{:deps {expound {:mvn/version "0.8.0"} org.clojure/test.check {:mvn/version "0.9.0"} org.clojure/clojurescript {:mvn/version "1.10.520"}}}' -e "(require '[expound.alpha :as expound]) (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)" -m cljs.main -re node`
 
 ### Printing results for `check`
 
@@ -223,7 +220,13 @@ You can see the full list of available specs with `expound.specs/public-specs`.
 
 ### Printer options
 
-Create a custom printer by changing the following options e.g.
+`expound` and `expound-str` can be configured with options:
+
+```
+(expound/expound :example/place {:city "Denver", :state :CO} {:print-specs? false :theme :figwheel-theme})
+```
+
+or, to configure the global printer:
 
 ```clojure
 (set! s/*explain-out* (expound/custom-printer {:show-valid-values? true :print-specs? false :theme :figwheel-theme}))
@@ -408,6 +411,6 @@ If you are working on the code, please read the [Development Guide](doc/developm
 
 ## License
 
-Copyright © 2017-2018 Ben Brinckerhoff
+Copyright © 2017-2019 Ben Brinckerhoff
 
 Distributed under the Eclipse Public License version 1.0, just like Clojure.

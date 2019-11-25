@@ -28,10 +28,10 @@
   (s/check-asserts false))
 
 (defn instrument-all [test-fn]
-  (set! s/*explain-out* (expound/custom-printer {:theme :figwheel-theme}))
-  (st/instrument)
-  (test-fn)
-  (st/unstrument))
+  (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
+    (st/instrument)
+    (test-fn)
+    (st/unstrument)))
 
 (defn contains-nan? [x]
   (boolean (some util/nan? (tree-seq coll? identity x))))
