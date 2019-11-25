@@ -11,7 +11,7 @@ All notable changes to this project will be documented in this file. This change
 - [Bug with incorrectly grouping independent problems in a `keys` spec](https://github.com/bhb/expound/issues/165). Thanks [`@kelvinqian00`](https://github.com/kelvinqian00) for the fix!
 
 ### Added
-- `expound` and `expound-str` now (optionally) accept the same options as `custom-printer`
+- `expound` and `expound-str` now (optionally) accept the same options as `custom-printer` (e.g. `(expound int? "" {:theme :figwheel-theme})`)
 
 ### Changed
 - New format for table of missing keys
