@@ -4,8 +4,6 @@
 [![cljdoc badge](https://cljdoc.org/badge/expound/expound)](https://cljdoc.org/d/expound/expound/CURRENT)
 [![CircleCI](https://circleci.com/gh/bhb/expound.svg?style=shield)](https://circleci.com/gh/bhb/expound)
 
-**If you are using recent versions of ClojureScript, please check the [compatibility guide](doc/compatibility.md)**
-
 Expound formats `clojure.spec` error messages in a way that is optimized for humans to read.
 
 For example, Expound will replace a Spec error message like:
@@ -38,6 +36,8 @@ Expound is in alpha while `clojure.spec` is in alpha.
 **Expound is supported by [Clojurists Together](https://www.clojuriststogether.org/). If you find this project useful, please consider making a monthly donation to Clojurists Together (or ask your employer to do so).**
 
 ## Installation
+
+**If you are using recent versions of ClojureScript, please check the [compatibility guide](doc/compatibility.md)**
 
 ### Leiningen/Boot
 
