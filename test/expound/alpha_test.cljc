@@ -733,16 +733,12 @@ should contain key: :i
 |=====+===================================================|
 | :i  | <can't find spec for unqualified spec identifier> |
 
--- Relevant specs -------
-
-:key-spec/mspec:
-  (clojure.spec.alpha/multi-spec expound.alpha-test/key-spec-mspec :tag)
-
 -------------------------
 Detected 1 error\n"
            (expound/expound-str
             :key-spec/mspec
-            {:tag :int}))))
+            {:tag :int}
+            {:print-specs? false}))))
 
   (testing "invalid key"
     (is (= (pf "-- Spec failed --------------------
