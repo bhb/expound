@@ -67,6 +67,11 @@ or
 
 ## Release
 
+1. Update version in `project.clj`
+2. `git tag -a v0.7.2 -m "version 0.7.2"`
+3. Update `CHANGELOG.md` (including section for release and links at bottom)
+4. Update version in `README.md`
+
 ### clojars
 
 Double check version is changed in `project.clj` and `lein deploy clojars`

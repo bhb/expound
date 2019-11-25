@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.8.0] - 2019-12-24
+
 ### Fixed
 - [Bug printing specs with several `or` branches](https://github.com/bhb/expound/issues/93)
 - [Bug with over-expanding spec forms inside a table of keys](https://github.com/bhb/expound/issues/155)
@@ -145,7 +147,8 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/bhb/expound/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/bhb/expound/compare/v0.7.0...v0.7.2
 [0.7.1]: https://github.com/bhb/expound/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/bhb/expound/compare/v0.6.0...v0.7.0
