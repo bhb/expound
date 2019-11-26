@@ -2,7 +2,7 @@
 
 set -o xtrace
 set -o nounset
-set -uo pipefail
+set -euo pipefail
 
 mydir=$(mktemp -d "${TMPDIR:-/tmp/}$(basename $0).XXXXXXXXXXXX")
 
