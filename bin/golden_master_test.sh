@@ -1,8 +1,8 @@
 #!/bin/bash
 
+set -o xtrace
 set -o nounset
-set -o errexit
-set -euo pipefail
+set -uo pipefail
 
 mydir=$(mktemp -d "${TMPDIR:-/tmp/}$(basename $0).XXXXXXXXXXXX")
 

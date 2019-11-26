@@ -7,7 +7,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.7.1
+      - image: circleci/clojure:lein-2.9.1
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -41,7 +41,7 @@ jobs:
   test_current:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.7.1
+      - image: circleci/clojure:lein-2.9.1
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -81,7 +81,7 @@ jobs:
   test_cljs_old:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.7.1
+      - image: circleci/clojure:lein-2.9.1
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -115,7 +115,7 @@ jobs:
   test_clj_old:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.7.1
+      - image: circleci/clojure:lein-2.9.1
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
