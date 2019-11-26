@@ -86,15 +86,42 @@
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                   [com.gfredericks/test.chuck "0.2.10"]
+                                  [cider/cider-nrepl "0.22.4"]
                                   ]
                    :injections [(require 'sc.api)]
                    :plugins [
                              [io.aviso/pretty "0.1.37"]
-                             [cider/cider-nrepl "0.21.1"]
+                             ;; I am NOT adding cider-nrepl here because
+                             ;; using it as a plugin seems to add it as a top-level dependency
+                             ;; when I build the package!
                              ]
                    ;; need to add dev source path here to get user.clj loaded
                    :source-paths ["src" "dev"]
-                   :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl]}
+                   :repl-options {:nrepl-middleware [cider.piggieback/wrap-cljs-repl
+                                                     ;; Manually add all middlewear
+                                                     ;; https://docs.cider.mx/cider-nrepl/usage.html#_via_leiningen
+                                                     cider.nrepl/wrap-apropos
+                                                     cider.nrepl/wrap-classpath
+                                                     cider.nrepl/wrap-clojuredocs
+                                                     cider.nrepl/wrap-complete
+                                                     cider.nrepl/wrap-debug
+                                                     cider.nrepl/wrap-format
+                                                     cider.nrepl/wrap-info
+                                                     cider.nrepl/wrap-inspect
+                                                     cider.nrepl/wrap-macroexpand
+                                                     cider.nrepl/wrap-ns
+                                                     cider.nrepl/wrap-spec
+                                                     cider.nrepl/wrap-profile
+                                                     cider.nrepl/wrap-refresh
+                                                     cider.nrepl/wrap-resource
+                                                     cider.nrepl/wrap-stacktrace
+                                                     cider.nrepl/wrap-test
+                                                     cider.nrepl/wrap-trace
+                                                     cider.nrepl/wrap-out
+                                                     cider.nrepl/wrap-undef
+                                                     cider.nrepl/wrap-version
+                                                     cider.nrepl/wrap-xref
+                                                     ]}
                    ;; need to add the compliled assets to the :clean-targets
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
