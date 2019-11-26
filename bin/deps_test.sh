@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -o nounset
 set -euo pipefail
 set -o errexit
 
