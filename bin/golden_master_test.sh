@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set -o errexit
 set -euo pipefail
 
 mydir=$(mktemp -d "${TMPDIR:-/tmp/}$(basename $0).XXXXXXXXXXXX")
