@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.8.1] - 2018-11-30
+
 ### Fixed
 
 - [Bug with unnecessary dependency](https://github.com/bhb/expound/issues/171)
@@ -155,7 +157,8 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/bhb/expound/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/bhb/expound/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/bhb/expound/compare/v0.7.0...v0.7.2
 [0.7.1]: https://github.com/bhb/expound/compare/v0.7.0...v0.7.1
