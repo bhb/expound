@@ -6,13 +6,11 @@
 
 Expound formats `clojure.spec` error messages in a way that is optimized for humans to read.
 
-For example, Expound will replace a Spec error message like:
+For example, Expound will replace a `clojure.spec` error message like:
 
 ```
 val: {} fails spec: :example/place predicate: (contains? % :city)
 val: {} fails spec: :example/place predicate: (contains? % :state)
-:clojure.spec.alpha/spec  :example/place
-:clojure.spec.alpha/value  {}
 ```
 
 with
@@ -31,6 +29,8 @@ should contain keys: :city, :state
 | :state | string? |
 ```
 
+[Comparison with `clojure.spec` error messages](doc/comparison.md)
+
 Expound is in alpha while `clojure.spec` is in alpha.
 
 **Expound is supported by [Clojurists Together](https://www.clojuriststogether.org/). If you find this project useful, please consider making a monthly donation to Clojurists Together (or ask your employer to do so).**
@@ -41,11 +41,11 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ### Leiningen/Boot
 
-`[expound "0.8.0"]`
+`[expound "0.8.1"]`
 
 #### deps.edn
 
-`expound {:mvn/version "0.8.0"}`
+`expound {:mvn/version "0.8.1"}`
 
 ### Lumo
 
@@ -54,6 +54,8 @@ Expound is in alpha while `clojure.spec` is in alpha.
 ## Usage
 
 [API docs](https://cljdoc.xyz/d/expound/expound/CURRENT)
+
+### Quick start via `clj`
 
 ```
 > brew install clojure
@@ -143,7 +145,7 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 
 Due to the way that macros are expanded in ClojureScript, you'll need to configure Expound in *Clojure* to use Expound during macro-expansion. This does not apply to self-hosted ClojureScript. Note the `-e` arg when starting ClojureScript:
 
-`clj -Srepro -Sdeps '{:deps {expound {:mvn/version "0.8.0"} org.clojure/test.check {:mvn/version "0.9.0"} org.clojure/clojurescript {:mvn/version "1.10.520"}}}' -e "(require '[expound.alpha :as expound]) (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)" -m cljs.main -re node`
+`clj -Srepro -Sdeps '{:deps {expound {:mvn/version "0.8.1"} org.clojure/test.check {:mvn/version "0.9.0"} org.clojure/clojurescript {:mvn/version "1.10.520"}}}' -e "(require '[expound.alpha :as expound]) (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)" -m cljs.main -re node`
 
 ### Printing results for `check`
 

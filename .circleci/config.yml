@@ -7,7 +7,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.7.1
+      - image: circleci/clojure:lein-2.9.1
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -41,7 +41,7 @@ jobs:
   test_current:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.7.1
+      - image: circleci/clojure:lein-2.9.1
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -75,12 +75,15 @@ jobs:
       - run: cat stderr.log | bin/check-for-warnings.sh
       - run: bin/tests
       - run: bin/golden_master_test.sh
+      - run: bin/deps_test.sh
+      - run: bin/build_comparison_doc.sh
+      - run: git diff --exit-code -- doc/comparison.md # make sure above step does not modify examples
       - run: lein jar && diff -u <(jar tf target/*.jar | sort) <(cat expected-jar-contents.txt | sort)
 
   test_cljs_old:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.7.1
+      - image: circleci/clojure:lein-2.9.1
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -114,7 +117,7 @@ jobs:
   test_clj_old:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.7.1
+      - image: circleci/clojure:lein-2.9.1
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
