@@ -3,6 +3,14 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+
+- [Bug with unnecessary dependency](https://github.com/bhb/expound/issues/171)
+
+### Added
+
+- New documentation comparing `clojure.spec` messages to Expound messages
+
 ## [0.8.0] - 2019-12-24
 
 ### Fixed
