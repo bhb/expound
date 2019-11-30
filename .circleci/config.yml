@@ -76,6 +76,8 @@ jobs:
       - run: bin/tests
       - run: bin/golden_master_test.sh
       - run: bin/deps_test.sh
+      - run: bin/build_comparison_doc.sh
+      - run: git diff --exit-code -- doc/comparison.md # make sure above step does not modify examples
       - run: lein jar && diff -u <(jar tf target/*.jar | sort) <(cat expected-jar-contents.txt | sort)
 
   test_cljs_old:
