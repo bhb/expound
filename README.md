@@ -6,13 +6,11 @@
 
 Expound formats `clojure.spec` error messages in a way that is optimized for humans to read.
 
-For example, Expound will replace a Spec error message like:
+For example, Expound will replace a `clojure.spec` error message like:
 
 ```
 val: {} fails spec: :example/place predicate: (contains? % :city)
 val: {} fails spec: :example/place predicate: (contains? % :state)
-:clojure.spec.alpha/spec  :example/place
-:clojure.spec.alpha/value  {}
 ```
 
 with
@@ -30,6 +28,8 @@ should contain keys: :city, :state
 |--------+---------|
 | :state | string? |
 ```
+
+[Comparison with `clojure.spec` error messages](doc/comparison.md)
 
 Expound is in alpha while `clojure.spec` is in alpha.
 

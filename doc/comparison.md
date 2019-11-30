@@ -1,6 +1,6 @@
 # Comparison
 
-Examples of how Expound's error messages can help you quickly determine why a value fails a spec.
+Expound's error messages are more verbose than the `clojure.spec` messages, which can help you quickly determine why a value fails a spec. Here are some examples.
 
 
 ---
