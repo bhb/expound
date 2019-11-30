@@ -55,6 +55,8 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 [API docs](https://cljdoc.xyz/d/expound/expound/CURRENT)
 
+### Quick start via `clj`
+
 ```
 > brew install clojure
 > clj -Sdeps '{:deps {friendly {:git/url "https://gist.github.com/bhb/2686b023d074ac052dbc21f12f324f18" :sha "bb5806bd655d743f3b48b36ce83c0085a8d7c54a"}}}' -m friendly

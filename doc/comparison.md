@@ -204,7 +204,7 @@ Detected 1 error
 ### Predicate descriptions
 
 
-If you provide human-readable descriptions of predicates, Expound will display them
+If you provide a predicate description, Expound will display them
 
 
 #### Specs
