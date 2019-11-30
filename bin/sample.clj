@@ -4,7 +4,7 @@
 
 (ns expound.sample
   "Tests are great, but sometimes just skimming output is useful
-  for seeting how output appears in practice"
+  for seeing how output appears in practice"
   (:require [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as st]
             [clojure.main :as main]

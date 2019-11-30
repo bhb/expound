@@ -1,5 +1,6 @@
 {:cljdoc.doc/tree [["Readme" {:file "README.md"}]
                    ["Changelog" {:file "CHANGELOG.md"}]
                    ["Compatibility " {:file "doc/compatibility.md"}]
+                   ["Comparison" {:file "doc/comparison.md"}]
                    ["Prior Art" {:file "doc/prior_art.md"}]
                    ["FAQ" {:file "doc/faq.md"}]]}
