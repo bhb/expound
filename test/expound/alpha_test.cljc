@@ -956,7 +956,6 @@ Cannot find spec for
 with
 
  Spec multimethod:      `expound.alpha-test/el-type`
- Dispatch function:     `:multi-spec/el-type`
  Dispatch value:        `nil`
 
 -- Relevant specs -------
@@ -980,7 +979,6 @@ Cannot find spec for
 with
 
  Spec multimethod:      `expound.alpha-test/el-type`
- Dispatch function:     `:multi-spec/el-type`
  Dispatch value:        `:image`
 
 -- Relevant specs -------
@@ -1015,7 +1013,29 @@ should contain key: :multi-spec/value
 
 -------------------------
 Detected 1 error\n")
-         (expound/expound-str :multi-spec/el {:multi-spec/el-type :text})))))
+         (expound/expound-str :multi-spec/el {:multi-spec/el-type :text}))))
+
+  ;; https://github.com/bhb/expound/issues/122
+  (testing "when re-tag is a function"
+    (defmulti multi-spec-bar-spec :type)
+    (s/def :multi-spec/b string?)
+    (defmethod multi-spec-bar-spec ::b [_] (s/keys :req [::b]))
+    (s/def :multi-spec/bar (s/multi-spec multi-spec-bar-spec (fn [val tag] (assoc val :type tag))))
+    (is (= "-- Missing spec -------------------
+
+Cannot find spec for
+
+  {}
+
+with
+
+ Spec multimethod:      `expound.alpha-test/multi-spec-bar-spec`
+ Dispatch value:        `nil`
+
+-------------------------
+Detected 1 error
+"
+           (expound/expound-str :multi-spec/bar {} {:print-specs? false})))))
 
 (s/def :recursive-spec/tag #{:text :group})
 (s/def :recursive-spec/on-tap (s/coll-of map? :kind vector?))
@@ -3099,7 +3119,6 @@ Cannot find spec for
 with
 
  Spec multimethod:      `expound.alpha-test/pet`
- Dispatch function:     `:pet/type`
  Dispatch value:        `:fish`
 
 -- Relevant specs -------
@@ -3144,13 +3163,11 @@ Cannot find spec for
 with
 
  Spec multimethod:      `expound.alpha-test/pet`
- Dispatch function:     `:pet/type`
  Dispatch value:        `:fish`
 
 or with
 
  Spec multimethod:      `expound.alpha-test/animal`
- Dispatch function:     `:animal/type`
  Dispatch value:        `nil`
 
 -- Relevant specs -------
