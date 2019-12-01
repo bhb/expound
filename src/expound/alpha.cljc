@@ -220,8 +220,8 @@
        sp-str))))
 
 (defn ^:private multi-spec-parts [spec-form]
-  (let [[_multi-spec mm retag] spec-form]
-    {:mm mm :retag retag}))
+  (let [[_multi-spec mm] spec-form]
+    {:mm mm}))
 
 (defn ^:private multi-spec [pred spec]
   (->> (s/form spec)
@@ -232,17 +232,39 @@
                      (= pred (second %))))
        first))
 
-(defn ^:private no-method [_spec-name form path problem]
-  (let [sp (s/spec (last (:expound/via problem)))
-        {:keys [mm retag]} (multi-spec-parts
-                            (multi-spec (:pred problem) sp))]
+(defn ^:private no-method [_spec-name _form _path problem]
+  (let [dispatch-val (last (:expound/path problem))
+        sp (s/spec (last (:expound/via problem)))
+        {:keys [mm]} (multi-spec-parts
+                      (multi-spec (:pred problem) sp))]
+    ;; It would be informative if we could print out
+    ;; the dispatch function here, but I don't think we can reliably get it.
+    ;; I would very much like to be wrong about this.
+    ;;
+    ;; Previously, I had misunderstood the purpose of the re-tag function.
+    ;; but it is NOT used to invoke the multi-method. See
+    ;; https://clojuredocs.org/clojure.spec.alpha/multi-spec#example-5b750e5be4b00ac801ed9e60
+    ;;
+    ;; In many common cases, re-tag will be a symbol that happens to be equal
+    ;; to the dispatch function, but there is no guarantee. It's unfortunate to lose
+    ;; information that could be useful in many common cases, but I think it's pretty
+    ;; bad to display misleading information, even in rare cases.
+    ;;
+    ;; For CLJ, we might be able to do
+    ;; (pr-str (.dispatchFn @(resolve mm)))
+    ;; but I'm not sure that we can reliably resolve the multi-method symbol
+    ;;
+    ;; In any case, I'm fairly confident that for CLJS, we cannot resolve the symbol in
+    ;; any context except the REPL, so we couldn't provide this message across implementations
+    ;; (pr-str (dispatch-fn @(resolve mm)))
+    ;;
+    ;; Given the above, I think the safest thing to do is just not attempt to print the dispatch function.
+
     (printer/format
      " Spec multimethod:      `%s`
- Dispatch function:     `%s`
  Dispatch value:        `%s`"
      (pr-str mm)
-     (pr-str retag)
-     (pr-str (if retag (retag (problems/value-in form path)) nil)))))
+     (pr-str dispatch-val))))
 
 (defmulti ^:no-doc problem-group-str (fn [type _spec-name _form _path _problems _opts] type))
 (defmulti ^:no-doc expected-str (fn [type  _spec-name _form _path _problems _opts] type))

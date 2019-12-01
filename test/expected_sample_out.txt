@@ -601,7 +601,6 @@ Cannot find spec for
 with
 
  Spec multimethod:      `expound.sample/el-type`
- Dispatch function:     `:multi-spec/el-type`
  Dispatch value:        `nil`
 
 [36m-- Relevant specs -------[0m
@@ -626,7 +625,6 @@ Cannot find spec for
 with
 
  Spec multimethod:      `expound.sample/el-type`
- Dispatch function:     `:multi-spec/el-type`
  Dispatch value:        `:image`
 
 [36m-- Relevant specs -------[0m
@@ -1188,7 +1186,6 @@ Cannot find spec for
 with
 
  Spec multimethod:      `expound.sample/pet`
- Dispatch function:     `:pet/type`
  Dispatch value:        `:fish`
 
 [36m-- Relevant specs -------[0m
@@ -1213,13 +1210,11 @@ Cannot find spec for
 with
 
  Spec multimethod:      `expound.sample/pet`
- Dispatch function:     `:pet/type`
  Dispatch value:        `:fish`
 
 or with
 
  Spec multimethod:      `expound.sample/animal`
- Dispatch function:     `:animal/type`
  Dispatch value:        `nil`
 
 [36m-- Relevant specs -------[0m
