@@ -3,7 +3,7 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
-## [0.8.1] - 2018-11-30
+## [0.8.1] - 2019-11-30
 
 ### Fixed
 
@@ -13,7 +13,7 @@ All notable changes to this project will be documented in this file. This change
 
 - New documentation comparing `clojure.spec` messages to Expound messages
 
-## [0.8.0] - 2019-12-24
+## [0.8.0] - 2019-11-24
 
 ### Fixed
 - [Bug printing specs with several `or` branches](https://github.com/bhb/expound/issues/93)
