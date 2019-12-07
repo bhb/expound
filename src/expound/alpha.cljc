@@ -401,16 +401,20 @@
               (expected-str type spec-name form path problems opts)))
 
 (defmethod expected-str :expound.problem/not-in-set [_type _spec-name _form _path problems _opts]
-  (let [combined-set (apply set/union (map :pred problems))]
-    (printer/format
-     "should be%s: %s"
-     (if (= 1 (count combined-set)) "" " one of")
-     (ansi/color (->> combined-set
-                      (map #(str "" (pr-str %) ""))
-                      (sort)
-                      (map #(ansi/color % :good))
-                      (string/join ", "))
-                 :good))))
+  (let [{:keys [expound/via]} (first problems)
+        last-spec (last via)]
+    (if (and (qualified-keyword? last-spec) (error-message last-spec))
+      (ansi/color (error-message last-spec) :good)
+      (let [combined-set (apply set/union (map :pred problems))]
+        (printer/format
+         "should be%s: %s"
+         (if (= 1 (count combined-set)) "" " one of")
+         (ansi/color (->> combined-set
+                          (map #(str "" (pr-str %) ""))
+                          (sort)
+                          (map #(ansi/color % :good))
+                          (string/join ", "))
+                     :good))))))
 
 (defmethod problem-group-str :expound.problem/not-in-set [type spec-name form path problems opts]
   (assert (apply = (map :val problems)) (str util/assert-message ": All values should be the same, but they are " problems))
