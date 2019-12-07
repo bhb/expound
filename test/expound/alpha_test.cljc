@@ -4126,3 +4126,54 @@ Detected 1 error\n"
        (is (set/subset? p1 all-problems) {:extra (set/difference p1 all-problems)})
        (is (set/subset? p2 all-problems) {:extra (set/difference p2 all-problems)})
        (is (set/subset? p3 all-problems) {:extra (set/difference p3 all-problems)}))))
+
+(deftest defmsg-test
+  (s/def :defmsg-test/id1 string?)
+  (expound/defmsg :defmsg-test/id1 "should be a string ID")
+  (testing "messages for predicate specs"
+    (is (= "-- Spec failed --------------------
+
+  123
+
+should be a string ID
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            :defmsg-test/id1
+            123
+            {:print-specs? false}))))
+
+  (s/def :defmsg-test/id2 (s/and string?
+                                 #(<= 4 (count %))))
+  (expound/defmsg :defmsg-test/id2 "should be a string ID of length 4 or more")
+  (testing "messages for 'and' specs"
+    (is (= "-- Spec failed --------------------
+
+  \"123\"
+
+should be a string ID of length 4 or more
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            :defmsg-test/id2
+            "123"
+            {:print-specs? false}))))
+
+  (s/def :defmsg-test/statuses #{:ok :failed})
+  (expound/defmsg :defmsg-test/statuses "should be either :ok or :failed")
+  (testing "messages for set specs"
+    (is (= "-- Spec failed --------------------
+
+  :oak
+
+should be either :ok or :failed
+
+-------------------------
+Detected 1 error
+"
+           (expound/expound-str
+            :defmsg-test/statuses
+            :oak
+            {:print-specs? false})))))
