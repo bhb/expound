@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file. This change
 
 - [Bug with printing failures for `multi-spec`s](https://github.com/bhb/expound/issues/122). Unfortunately, I had to remove some [output that was useful but not reliable in all cases](https://github.com/bhb/expound/blob/946f9268c8ed8db72a521b8077aa0926febf7916/src/expound/alpha.cljc#L240-L261)
 
-## [0.8.1] - 2018-11-30
+## [0.8.1] - 2019-11-30
 
 ### Fixed
 
@@ -17,7 +17,7 @@ All notable changes to this project will be documented in this file. This change
 
 - New documentation comparing `clojure.spec` messages to Expound messages
 
-## [0.8.0] - 2019-12-24
+## [0.8.0] - 2019-11-24
 
 ### Fixed
 - [Bug printing specs with several `or` branches](https://github.com/bhb/expound/issues/93)
