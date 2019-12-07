@@ -48,8 +48,9 @@
    {
     :header "Predicate descriptions"
     :description "If you provide a predicate description, Expound will display them"
-    :specs `((def email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$")
-             (s/def :app.user/email (s/and string? #(re-matches email-regex %)))
+    :specs '((def email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$")
+             (defn valid-email? [s] (re-matches email-regex s))
+             (s/def :app.user/email (s/and string? valid-email?))
              (expound/defmsg :app.user/email "should be a valid email address")
              )
     :spec :app.user/email
