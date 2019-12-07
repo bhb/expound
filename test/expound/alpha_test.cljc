@@ -520,6 +520,8 @@ should have additional elements. The next element \":v\" should satisfy
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :cat-spec/kw [:foo])))
+    ;; This isn't ideal, but requires a fix from clojure
+    ;; https://clojure.atlassian.net/browse/CLJ-2364
     (is (= (pf "-- Syntax error -------------------
 
   []
