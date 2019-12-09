@@ -4178,4 +4178,49 @@ Detected 1 error
            (expound/expound-str
             :defmsg-test/statuses
             :oak
-            {:print-specs? false})))))
+            {:print-specs? false}))))
+  (testing "messages for alt specs"
+    (s/def ::x int?)
+    (s/def ::y int?)
+    (expound/defmsg ::x "must be an integer")
+    (is (=
+         "-- Spec failed --------------------
+
+  [\"\" ...]
+   ^^
+
+must be an integer
+
+-------------------------
+Detected 1 error\n"
+         (expound/expound-str (s/alt :one
+                                     (s/cat :x ::x)
+                                     :two
+                                     (s/cat :x ::x
+                                            :y ::y))
+
+                              ["" ""]
+                              {:print-specs? false}))))
+
+  (testing "messages for alt specs (if user duplicates existing message)"
+    (s/def ::x int?)
+    (s/def ::y int?)
+    (expound/defmsg ::x "should satisfy\n\n  int?")
+    (is (=
+         "-- Spec failed --------------------
+
+  [\"\"]
+   ^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 1 error\n"
+         (expound/expound-str (s/alt :one
+                                     ::x
+                                     :two
+                                     ::y)
+                              [""]
+                              {:print-specs? false})))))

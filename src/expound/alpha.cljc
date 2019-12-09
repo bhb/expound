@@ -792,6 +792,7 @@ returned an invalid value.
                            (ansi/color (error-message last-spec) :good)
                            nil)))
                      with-msg))
+         distinct
          (remove nil?)
          (string/join "\n\nor\n\n"))))
 
