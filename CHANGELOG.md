@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file. This change
 
 - [Bug with printing failures for `multi-spec`s](https://github.com/bhb/expound/issues/122). Unfortunately, I had to remove some [output that was useful but not reliable in all cases](https://github.com/bhb/expound/blob/946f9268c8ed8db72a521b8077aa0926febf7916/src/expound/alpha.cljc#L240-L261)
 - [Bug with registering message for set-based specs](https://github.com/bhb/expound/issues/101)
+- [Bug with duplicate custom messages in `alt` or `or` specs](https://github.com/bhb/expound/issues/135)
 
 ## [0.8.1] - 2019-11-30
 
