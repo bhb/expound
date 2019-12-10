@@ -4223,4 +4223,26 @@ Detected 1 error\n"
                                      :two
                                      ::y)
                               [""]
-                              {:print-specs? false})))))
+                              {:print-specs? false}))))
+  (testing "messages for alternatives and set specs"
+    (is (= "-- Spec failed --------------------
+
+  :oak
+
+should be either :ok or :failed
+
+or
+
+should satisfy
+
+  string?
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            (s/or
+             :num
+             :defmsg-test/statuses
+             :s string?)
+            :oak
+            {:print-specs? false})))))
