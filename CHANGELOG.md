@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.8.2] - 2019-12-11
+
+This release was made possible by [Clojurists Together](https://www.clojuriststogether.org/news/q4-2019-funding-announcement/)
+
+### Fixed
+
+- [Bug with printing failures for `multi-spec`s](https://github.com/bhb/expound/issues/122). Unfortunately, I had to remove some [output that was useful but not reliable in all cases](https://github.com/bhb/expound/blob/946f9268c8ed8db72a521b8077aa0926febf7916/src/expound/alpha.cljc#L240-L261)
+- [Bug with registering message for set-based specs](https://github.com/bhb/expound/issues/101)
+- [Bug with duplicate custom messages in `alt` or `or` specs](https://github.com/bhb/expound/issues/135)
+
 ## [0.8.1] - 2019-11-30
 
 ### Fixed
@@ -157,7 +167,8 @@ All notable changes to this project will be documented in this file. This change
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.8.2...HEAD
+[0.8.2]: https://github.com/bhb/expound/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/bhb/expound/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/bhb/expound/compare/v0.7.2...v0.8.0
 [0.7.2]: https://github.com/bhb/expound/compare/v0.7.0...v0.7.2

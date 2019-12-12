@@ -520,6 +520,8 @@ should have additional elements. The next element \":v\" should satisfy
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :cat-spec/kw [:foo])))
+    ;; This isn't ideal, but requires a fix from clojure
+    ;; https://clojure.atlassian.net/browse/CLJ-2364
     (is (= (pf "-- Syntax error -------------------
 
   []
@@ -956,7 +958,6 @@ Cannot find spec for
 with
 
  Spec multimethod:      `expound.alpha-test/el-type`
- Dispatch function:     `:multi-spec/el-type`
  Dispatch value:        `nil`
 
 -- Relevant specs -------
@@ -980,7 +981,6 @@ Cannot find spec for
 with
 
  Spec multimethod:      `expound.alpha-test/el-type`
- Dispatch function:     `:multi-spec/el-type`
  Dispatch value:        `:image`
 
 -- Relevant specs -------
@@ -1015,7 +1015,29 @@ should contain key: :multi-spec/value
 
 -------------------------
 Detected 1 error\n")
-         (expound/expound-str :multi-spec/el {:multi-spec/el-type :text})))))
+         (expound/expound-str :multi-spec/el {:multi-spec/el-type :text}))))
+
+  ;; https://github.com/bhb/expound/issues/122
+  (testing "when re-tag is a function"
+    (defmulti multi-spec-bar-spec :type)
+    (s/def :multi-spec/b string?)
+    (defmethod multi-spec-bar-spec ::b [_] (s/keys :req [::b]))
+    (s/def :multi-spec/bar (s/multi-spec multi-spec-bar-spec (fn [val tag] (assoc val :type tag))))
+    (is (= "-- Missing spec -------------------
+
+Cannot find spec for
+
+  {}
+
+with
+
+ Spec multimethod:      `expound.alpha-test/multi-spec-bar-spec`
+ Dispatch value:        `nil`
+
+-------------------------
+Detected 1 error
+"
+           (expound/expound-str :multi-spec/bar {} {:print-specs? false})))))
 
 (s/def :recursive-spec/tag #{:text :group})
 (s/def :recursive-spec/on-tap (s/coll-of map? :kind vector?))
@@ -3099,7 +3121,6 @@ Cannot find spec for
 with
 
  Spec multimethod:      `expound.alpha-test/pet`
- Dispatch function:     `:pet/type`
  Dispatch value:        `:fish`
 
 -- Relevant specs -------
@@ -3144,13 +3165,11 @@ Cannot find spec for
 with
 
  Spec multimethod:      `expound.alpha-test/pet`
- Dispatch function:     `:pet/type`
  Dispatch value:        `:fish`
 
 or with
 
  Spec multimethod:      `expound.alpha-test/animal`
- Dispatch function:     `:animal/type`
  Dispatch value:        `nil`
 
 -- Relevant specs -------
@@ -4109,3 +4128,121 @@ Detected 1 error\n"
        (is (set/subset? p1 all-problems) {:extra (set/difference p1 all-problems)})
        (is (set/subset? p2 all-problems) {:extra (set/difference p2 all-problems)})
        (is (set/subset? p3 all-problems) {:extra (set/difference p3 all-problems)}))))
+
+(deftest defmsg-test
+  (s/def :defmsg-test/id1 string?)
+  (expound/defmsg :defmsg-test/id1 "should be a string ID")
+  (testing "messages for predicate specs"
+    (is (= "-- Spec failed --------------------
+
+  123
+
+should be a string ID
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            :defmsg-test/id1
+            123
+            {:print-specs? false}))))
+
+  (s/def :defmsg-test/id2 (s/and string?
+                                 #(<= 4 (count %))))
+  (expound/defmsg :defmsg-test/id2 "should be a string ID of length 4 or more")
+  (testing "messages for 'and' specs"
+    (is (= "-- Spec failed --------------------
+
+  \"123\"
+
+should be a string ID of length 4 or more
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            :defmsg-test/id2
+            "123"
+            {:print-specs? false}))))
+
+  (s/def :defmsg-test/statuses #{:ok :failed})
+  (expound/defmsg :defmsg-test/statuses "should be either :ok or :failed")
+  (testing "messages for set specs"
+    (is (= "-- Spec failed --------------------
+
+  :oak
+
+should be either :ok or :failed
+
+-------------------------
+Detected 1 error
+"
+           (expound/expound-str
+            :defmsg-test/statuses
+            :oak
+            {:print-specs? false}))))
+  (testing "messages for alt specs"
+    (s/def ::x int?)
+    (s/def ::y int?)
+    (expound/defmsg ::x "must be an integer")
+    (is (=
+         "-- Spec failed --------------------
+
+  [\"\" ...]
+   ^^
+
+must be an integer
+
+-------------------------
+Detected 1 error\n"
+         (expound/expound-str (s/alt :one
+                                     (s/cat :x ::x)
+                                     :two
+                                     (s/cat :x ::x
+                                            :y ::y))
+
+                              ["" ""]
+                              {:print-specs? false}))))
+
+  (testing "messages for alt specs (if user duplicates existing message)"
+    (s/def ::x int?)
+    (s/def ::y int?)
+    (expound/defmsg ::x "should satisfy\n\n  int?")
+    (is (=
+         "-- Spec failed --------------------
+
+  [\"\"]
+   ^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 1 error\n"
+         (expound/expound-str (s/alt :one
+                                     ::x
+                                     :two
+                                     ::y)
+                              [""]
+                              {:print-specs? false}))))
+  (testing "messages for alternatives and set specs"
+    (is (= "-- Spec failed --------------------
+
+  :oak
+
+should be either :ok or :failed
+
+or
+
+should satisfy
+
+  string?
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            (s/or
+             :num
+             :defmsg-test/statuses
+             :s string?)
+            :oak
+            {:print-specs? false})))))

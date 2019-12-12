@@ -211,9 +211,10 @@ If you provide a predicate description, Expound will display them
 
 
 ```clojure
-(def expound.comparison/email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$")
-(s/def :app.user/email (s/and clojure.core/string? (fn* [p1__1607__1608__auto__] (clojure.core/re-matches expound.comparison/email-regex p1__1607__1608__auto__))))
-(expound.alpha/defmsg :app.user/email "should be a valid email address")
+(def email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$")
+(defn valid-email? [s] (re-matches email-regex s))
+(s/def :app.user/email (s/and string? valid-email?))
+(expound/defmsg :app.user/email "should be a valid email address")
 ```
 
 #### Value
@@ -227,7 +228,7 @@ If you provide a predicate description, Expound will display them
 
 
 ```
-"@example.com" - failed: (re-matches email-regex %) spec: :app.user/email
+"@example.com" - failed: valid-email? spec: :app.user/email
 ```
 
 #### Expound message
