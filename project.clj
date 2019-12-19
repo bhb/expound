@@ -125,6 +125,8 @@
                    ;; need to add the compliled assets to the :clean-targets
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
+             :check {:global-vars {*unchecked-math*     :warn-on-boxed
+                                    *warn-on-reflection* true}}
              :kaocha [:test-common
                       {:dependencies [[lambdaisland/kaocha "0.0-554"]
                                       [lambdaisland/kaocha-cloverage "0.0-41"]]}]

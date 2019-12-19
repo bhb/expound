@@ -69,6 +69,9 @@ jobs:
       - run: bin/install-clojure
       - run: sudo bin/install-node && npm install
       - run: lein check
+      - run:
+          name: 'Check artifact isolation + lack of reflection/boxing warnings'
+          command: lein with-profile -dev,+check check 2>&1 | bin/check-for-warnings.sh
       - run: TEST_CHECK_FACTOR=20 lein with-profile test-common test
       - run: lein clean
       - run: lein with-profile test-web cljsbuild once test 2> >(tee -a stderr.log >&2)
