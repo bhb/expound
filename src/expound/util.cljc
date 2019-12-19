@@ -9,5 +9,3 @@
 (defmacro priml [x]
   #?(:clj `(long ~x)
      :cljs ~x))
-
-
