@@ -71,8 +71,8 @@ jobs:
       - run: lein check
       - run:
           name: 'Check artifact isolation + lack of reflection/boxing warnings'
-          # tail -n +2 to skip the first warning, which I believe is in leiningen itself
-          command: lein with-profile -dev,+check check 2>&1 | tail -n +2 | bin/check-for-warnings.sh
+          # skip the first warning, which I believe is in leiningen itself
+          command: lein with-profile -dev,+check check 2>&1 | grep -v "form-init.*clj" | bin/check-for-warnings.sh
       - run: TEST_CHECK_FACTOR=20 lein with-profile test-common test
       - run: lein clean
       - run: lein with-profile test-web cljsbuild once test 2> >(tee -a stderr.log >&2)
