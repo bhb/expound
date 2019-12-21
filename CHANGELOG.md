@@ -3,6 +3,11 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+
+- Several boxed math warnings. Thanks [`@vemv`](https://github.com/vemv) for the fix!
+
+
 ## [0.8.2] - 2019-12-11
 
 This release was made possible by [Clojurists Together](https://www.clojuriststogether.org/news/q4-2019-funding-announcement/)
