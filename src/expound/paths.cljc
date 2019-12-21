@@ -52,14 +52,17 @@
       ;; detect a `:in` path that points to a key/value pair in a coll-of spec
       (and (map? form)
            (nat-int? k)
-           (< k (count (seq form))))
+           (< (long k)
+              (count (seq form))))
       (in-with-kps* (nth (seq form) k) val rst (conj in' (->KeyValuePathSegment k)))
 
       (and (map? form)
            (nat-int? k)
            (int? idx)
-           (< k (count (seq form)))
-           (< idx (count (nth (seq form) k))))
+           (< (long k)
+              (count (seq form)))
+           (< (long idx)
+              (count (nth (seq form) k))))
       (in-with-kps* (nth (nth (seq form) k) idx) val rst2 (conj in' (->KeyValuePathSegment k) idx))
 
       :else

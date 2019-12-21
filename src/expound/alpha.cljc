@@ -201,7 +201,8 @@
   ([size s label-str]
    (ansi/color
     (let [prefix (str label-str label-str " " s " ")
-          chars-left (- size (count prefix))]
+          chars-left (- (long size)
+                        (count prefix))]
       (->> (repeat chars-left label-str)
            (apply str)
            (str prefix)))
