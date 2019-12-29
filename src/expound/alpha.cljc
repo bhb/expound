@@ -100,10 +100,10 @@
       ;; is useful.
       ;; See https://github.com/bhb/expound#configuring-the-printer
       path
-      (printer/indent (problems/highlighted-value opts
-                                                  {:expound/form form
-                                                   :expound/in path
-                                                   :expound/value value}))
+      (printer/indent (printer/highlighted-value opts
+                                                 {:expound/form form
+                                                  :expound/in path
+                                                  :expound/value value}))
       :else
       (printer/format
        "Part of the value\n\n%s"
