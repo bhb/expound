@@ -1,4 +1,4 @@
-(defproject expound "0.8.2"
+(defproject expound "0.8.3"
   :description "Human-optimized error messages for clojure.spec"
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
@@ -128,7 +128,7 @@
              :check {:global-vars {*unchecked-math*     :warn-on-boxed
                                    *warn-on-reflection* true}}
              :kaocha [:test-common
-                      {:dependencies [[lambdaisland/kaocha "0.0-554"]
+                      {:dependencies [[lambdaisland/kaocha "0.0-565"]
                                       [lambdaisland/kaocha-cloverage "0.0-41"]]}]
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [pjstadig/humane-test-output "0.9.0"]

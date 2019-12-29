@@ -41,11 +41,11 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ### Leiningen/Boot
 
-`[expound "0.8.2"]`
+`[expound "0.8.3"]`
 
 #### deps.edn
 
-`expound {:mvn/version "0.8.2"}`
+`expound {:mvn/version "0.8.3"}`
 
 ### Lumo
 
@@ -143,9 +143,37 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.sp
 (s/explain :example.place/city 123)
 ```
 
+#### ClojureScript considerations
+
 Due to the way that macros are expanded in ClojureScript, you'll need to configure Expound in *Clojure* to use Expound during macro-expansion. This does not apply to self-hosted ClojureScript. Note the `-e` arg when starting ClojureScript:
 
-`clj -Srepro -Sdeps '{:deps {expound {:mvn/version "0.8.2"} org.clojure/test.check {:mvn/version "0.9.0"} org.clojure/clojurescript {:mvn/version "1.10.520"}}}' -e "(require '[expound.alpha :as expound]) (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)" -m cljs.main -re node`
+`clj -Srepro -Sdeps '{:deps {expound {:mvn/version "0.8.3"} org.clojure/test.check {:mvn/version "0.9.0"} org.clojure/clojurescript {:mvn/version "1.10.520"}}}' -e "(require '[expound.alpha :as expound]) (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)" -m cljs.main -re node`
+
+As of [this commit](https://github.com/clojure/clojurescript/commit/5f0fabc65ae7ba201b32cc513a1e5931a80a2bf7#diff-c62a39b0b4b1d81ebd2ed6b5d265e8cf), ClojureScript instrumentation errors only contain data and leave formatting/printing errors to the edge of the system e.g. the REPL. To format errors in the browser, you must set up some global handler to catch errors and call `repl/error->str`. For instance, here is a custom formatter for Chrome devtools that uses Expound:
+
+```
+(require '[cljs.repl :as repl])
+(require '[clojure.spec.alpha :as s])
+(require '[expound.alpha :as expound])
+(set! s/*explain-out* expound/printer)
+
+(def devtools-error-formatter
+  "Uses cljs.repl utilities to format ExceptionInfo objects in Chrome devtools console."
+  #js{:header
+      (fn [object _config]
+        (when (instance? ExceptionInfo object)
+          (let [message (some->> (repl/error->str object)
+                                 (re-find #"[^\n]+"))]
+            #js["span" message])))
+      :hasBody (constantly true)
+      :body (fn [object _config]
+              #js["div" (repl/error->str object)])})
+(defonce _
+         (some-> js/window.devtoolsFormatters
+                 (.unshift devtools-error-formatter)))
+```
+
+See [this ticket](https://github.com/bhb/expound/issues/152) for other solutions in the browser.
 
 ### Printing results for `check`
 
