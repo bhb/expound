@@ -841,10 +841,10 @@ should satisfy
 
 -------------------------
 Detected 3 errors\n")
-         (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-           (s/explain-str :keys-spec/map-spec-1 {:foo 1.2
-                                                 :bar 123
-                                                 :baz true}))))
+         (expound/expound-str :keys-spec/map-spec-1 {:foo 1.2
+                                                     :bar 123
+                                                     :baz true}
+                              {:print-specs? false})))
   (is (= (pf
           "-- Spec failed --------------------
 
@@ -879,10 +879,10 @@ or
 
 -------------------------
 Detected 3 errors\n")
-         (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-           (s/explain-str :keys-spec/map-spec-2 {:foo 1.2
-                                                 :bar 123
-                                                 :qux false}))))
+         (expound/expound-str :keys-spec/map-spec-2 {:foo 1.2
+                                                     :bar 123
+                                                     :qux false}
+                              {:print-specs? false})))
 
   (is (=
        "-- Spec failed --------------------
@@ -931,11 +931,11 @@ or
 
 -------------------------
 Detected 4 errors\n"
-       (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-         (s/explain-str :keys-spec/map-spec-3 {:foo 1.2
-                                               :child-2 {:bar 123
-                                                         :child-1 {:baz true
-                                                                   :qux false}}})))))
+       (expound/expound-str :keys-spec/map-spec-3 {:foo 1.2
+                                                   :child-2 {:bar 123
+                                                             :child-1 {:baz true
+                                                                       :qux false}}}
+                            {:print-specs? false}))))
 
 (s/def :multi-spec/value string?)
 (s/def :multi-spec/children vector?)
@@ -1092,13 +1092,13 @@ should satisfy
 
 -------------------------
 Detected 1 error\n")
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str
-              :recursive-spec/el
-              {:tag :group
-               :children [{:tag :group
-                           :children [{:tag :group
-                                       :props {:on-tap {}}}]}]})))))
+           (expound/expound-str
+            :recursive-spec/el
+            {:tag :group
+             :children [{:tag :group
+                         :children [{:tag :group
+                                     :props {:on-tap {}}}]}]}
+            {:print-specs? false}))))
   (testing "test that our new recursive spec grouping function works with
            alternative paths"
     (is (= (pf
@@ -1136,13 +1136,13 @@ should satisfy
 
 -------------------------
 Detected 1 error\n")
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str
-              :recursive-spec/el-2
-              {:tag-2 :group
-               :children-2 [{:tag-2 :group
-                             :children-2 [{:tag-2 :group
-                                           :props-2 {:on-tap-2 {}}}]}]}))))))
+           (expound/expound-str
+            :recursive-spec/el-2
+            {:tag-2 :group
+             :children-2 [{:tag-2 :group
+                           :children-2 [{:tag-2 :group
+                                         :props-2 {:on-tap-2 {}}}]}]}
+            {:print-specs? false})))))
 
 (s/def :cat-wrapped-in-or-spec/kv (s/and
                                    sequential?
@@ -2520,8 +2520,7 @@ Detected 1 error
                     :clj "(fn
    [%]
    (< (-> % :x) (-> % :y)))"))
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str :conformers-test/sorted-pair [1 0]))))
+             (expound/expound-str :conformers-test/sorted-pair [1 0] {:print-specs? false})))
       (is (= (pf "-- Spec failed --------------------
 
   [... [1 0]]
@@ -2541,8 +2540,7 @@ Detected 1 error\n"
                     :clj "(fn
    [%]
    (< (-> % :x) (-> % :y)))"))
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str (s/coll-of :conformers-test/sorted-pair) [[0 1] [1 0]]))))
+             (expound/expound-str (s/coll-of :conformers-test/sorted-pair) [[0 1] [1 0]] {:print-specs? false})))
       (is (= (pf "-- Spec failed --------------------
 
   {:a [1 0]}
@@ -2562,8 +2560,7 @@ Detected 1 error\n"
                     :clj "(fn
    [%]
    (< (-> % :x) (-> % :y)))"))
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str (s/map-of keyword? :conformers-test/sorted-pair) {:a [1 0]}))))
+             (expound/expound-str (s/map-of keyword? :conformers-test/sorted-pair) {:a [1 0]} {:print-specs? false})))
       (is (= (pf "-- Spec failed --------------------
 
   [... \"a\"]
@@ -2575,8 +2572,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n")
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str :conformers-test/sorted-pair [1 "a"])))))
+             (expound/expound-str :conformers-test/sorted-pair [1 "a"] {:print-specs? false}))))
     (testing "conformers that modify path of values"
       (s/def :conformers-test/vals (s/coll-of (s/and string?
                                                      #(re-matches #"[A-G]+" %))))
@@ -2599,8 +2595,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str :conformers-test/csv "abc,def,ghi")))))
+             (expound/expound-str :conformers-test/csv "abc,def,ghi" {:print-specs? false}))))
 
     ;; this is NOT recommended!
     ;; so I'm not inclined to make this much nicer than
@@ -3618,8 +3613,7 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-         (binding [s/*explain-out* (expound/custom-printer {:theme :none})]
-           (s/explain-str :colorized-output/strings ["" :a ""]))))
+         (expound/expound-str :colorized-output/strings ["" :a ""] {:theme :none})))
   (is (= (pf "<NONE><NONE><CYAN>-- Spec failed --------------------<NONE>
 
   [... <RED>:a<NONE> ...]
@@ -3637,8 +3631,7 @@ should satisfy
 <CYAN>-------------------------<NONE>
 <CYAN>Detected<NONE> <CYAN>1<NONE> <CYAN>error<NONE>
 ")
-         (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
-           (readable-ansi (s/explain-str :colorized-output/strings ["" :a ""]))))))
+         (readable-ansi (expound/expound-str :colorized-output/strings ["" :a ""] {:theme :figwheel-theme})))))
 
 (s/def ::spec-name (s/with-gen
                      qualified-keyword?
