@@ -3,13 +3,15 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.8.3] - 2019-12-29
+
 ### Fixed
 
 - Several boxed math warnings. Thanks [`@vemv`](https://github.com/vemv) for the fix!
 
 ### Added
 
-- Instructions on how to handle instrumentation exceptions in the browser. Thanks [`@mhuebert `](https://github.com/mhuebert)!
+- Instructions on how to handle instrumentation exceptions in the browser. Thanks [`@mhuebert`](https://github.com/mhuebert) for the example code!
 
 
 ## [0.8.2] - 2019-12-11
@@ -176,7 +178,8 @@ This release was made possible by [Clojurists Together](https://www.clojuriststo
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.8.3...HEAD
+[0.8.3]: https://github.com/bhb/expound/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/bhb/expound/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/bhb/expound/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/bhb/expound/compare/v0.7.2...v0.8.0
