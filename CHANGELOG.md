@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file. This change
 
 - Several boxed math warnings. Thanks [`@vemv`](https://github.com/vemv) for the fix!
 
+### Added
+
+- Instructions on how to handle instrumentation exceptions in the browser. Thanks [`@mhuebert `](https://github.com/mhuebert)!
+
 
 ## [0.8.2] - 2019-12-11
 
