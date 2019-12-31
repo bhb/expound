@@ -1,11 +1,12 @@
 (ns expound.printer-test
   (:require [clojure.spec.alpha :as s]
-            [clojure.test :as ct :refer [is deftest use-fixtures]]
+            [clojure.test :as ct :refer [is deftest use-fixtures testing]]
             [expound.printer :as printer]
             [clojure.string :as string]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [expound.test-utils :as test-utils :refer [contains-nan?]]
-            [expound.spec-gen :as sg]))
+            [expound.spec-gen :as sg]
+            [expound.problems :as problems]))
 
 (def num-tests 5)
 
@@ -14,6 +15,7 @@
   test-utils/instrument-all)
 
 (defn example-fn [])
+(defn get-args [& args] args)
 
 (deftest pprint-fn
   (is (= "string?"
@@ -232,3 +234,197 @@
              srows (rest (string/split table #"\n"))]]
       (is (< (count (last srows)) 200)))))
 
+(deftest highlighted-value
+  (testing "atomic value"
+    (is (= "\"Fred\"\n^^^^^^"
+           (printer/highlighted-value
+            {}
+            {:expound/form "Fred"
+             :expound/in []}))))
+  (testing "value in vector"
+    (is (= "[... :b ...]\n     ^^"
+           (printer/highlighted-value
+            {}
+            {:expound/form [:a :b :c]
+             :expound/in [1]}))))
+  (testing "long, composite values are pretty-printed"
+    (is (= (str "{:letters {:a \"aaaaaaaa\",
+           :b \"bbbbbbbb\",
+           :c \"cccccccd\",
+           :d \"dddddddd\",
+           :e \"eeeeeeee\"}}"
+                #?(:clj  "\n          ^^^^^^^^^^^^^^^"
+                   :cljs "\n          ^^^^^^^^^^^^^^^^"))
+           ;; ^- the above works in clojure - maybe not CLJS?
+           (printer/highlighted-value
+            {}
+            {:expound/form
+             {:letters
+              {:a "aaaaaaaa"
+               :b "bbbbbbbb"
+               :c "cccccccd"
+               :d "dddddddd"
+               :e "eeeeeeee"}}
+             :expound/in [:letters]}))))
+  (testing "args to function"
+    (is (= "(1 ... ...)\n ^"
+           (printer/highlighted-value
+            {}
+            {:expound/form (get-args 1 2 3)
+             :expound/in [0]}))))
+  (testing "show all values"
+    (is (= "(1 2 3)\n ^"
+           (printer/highlighted-value
+            {:show-valid-values? true}
+            {:expound/form (get-args 1 2 3)
+             :expound/in [0]}))))
+
+  (testing "special replacement chars are not used"
+    (is (= "\"$ $$ $1 $& $` $'\"\n^^^^^^^^^^^^^^^^^^"
+           (printer/highlighted-value
+            {}
+            (first
+             (:expound/problems
+              (problems/annotate
+               (s/explain-data keyword? "$ $$ $1 $& $` $'"))))))))
+  
+  (testing "nested map-of specs"
+    (is (= "{:a {:b 1}}\n        ^"
+           (printer/highlighted-value
+            {}
+            (first
+             (:expound/problems
+              (problems/annotate
+               (s/explain-data :highlighted-value/nested-map-of {:a {:b 1}})))))))
+    (is (= "{:a {\"a\" ...}}\n     ^^^"
+           (printer/highlighted-value
+            {}
+            (first
+             (:expound/problems
+              (problems/annotate
+               (s/explain-data :highlighted-value/nested-map-of {:a {"a" :b}})))))))
+    (is (= "{1 ...}\n ^"
+           (printer/highlighted-value
+            {}
+            (first
+             (:expound/problems
+              (problems/annotate
+               (s/explain-data :highlighted-value/nested-map-of {1 {:a :b}}))))))))
+
+  (testing "nested keys specs"
+    (is (= "{:address {:city 1}}\n                 ^"
+           (printer/highlighted-value
+            {}
+            (first
+             (:expound/problems
+              (problems/annotate
+               (s/explain-data :highlighted-value/house {:address {:city 1}})))))))
+    (is (= "{:address {\"city\" \"Denver\"}}\n          ^^^^^^^^^^^^^^^^^"
+           (printer/highlighted-value
+            {}
+            (first
+             (:expound/problems
+              (problems/annotate
+               (s/explain-data :highlighted-value/house {:address {"city" "Denver"}})))))))
+    (is (= "{\"address\" {:city \"Denver\"}}\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^"
+           (printer/highlighted-value
+            {}
+            (first
+             (:expound/problems
+              (problems/annotate
+               (s/explain-data :highlighted-value/house {"address" {:city "Denver"}})))))))))
+
+(deftest highlighted-value-on-alt
+  (is (= "[... 0]\n     ^"
+         (printer/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (clojure.spec.alpha/alt :a int?
+                                      :b (clojure.spec.alpha/spec (clojure.spec.alpha/cat :c int?)))
+              [1 0]))))))))
+
+(deftest highlighted-value-on-coll-of
+  ;; sets
+  (is (= "#{1 3 2 :a}\n        ^^"
+         (printer/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              #{1 :a 2 3})))))))
+  (is (= "#{:a}\n  ^^"
+         (printer/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              #{:a})))))))
+
+  ;; lists
+  (is (= "(... :a ... ...)\n     ^^"
+         (printer/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              '(1 :a 2 3))))))))
+  (is (= "(:a)\n ^^"
+         (printer/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              '(:a))))))))
+
+  ;; vectors
+  (is (= "[... :a ... ...]\n     ^^"
+         (printer/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              [1 :a 2 3])))))))
+
+  (is (= "[:a]\n ^^"
+         (printer/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              [:a])))))))
+
+    ;; maps
+  (is (= "[1 :a]\n^^^^^^"
+         (printer/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              {1 :a 2 3})))))))
+
+  (is (= "[:a 1]\n^^^^^^"
+         (printer/highlighted-value
+          {}
+          (first
+           (:expound/problems
+            (problems/annotate
+             (s/explain-data
+              (s/coll-of integer?)
+              {:a 1}))))))))
