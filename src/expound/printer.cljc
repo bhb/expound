@@ -7,6 +7,8 @@
             [expound.ansi :as ansi]
             [expound.paths :as paths]
             [clojure.walk :as walk]
+            #?(:cljs [goog.string.format]) ; https://github.com/bhb/expound/issues/183
+            #?(:cljs [goog.string])        ; https://github.com/bhb/expound/issues/183
             #?(:clj [clojure.main :as main]))
   (:refer-clojure :exclude [format]))
 
