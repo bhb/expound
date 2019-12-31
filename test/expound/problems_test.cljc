@@ -1,5 +1,5 @@
 (ns expound.problems-test
-  (:require [clojure.test :as ct :refer [is testing deftest use-fixtures]]
+  (:require [clojure.test :as ct :refer [is deftest use-fixtures]]
             [clojure.spec.alpha :as s]
             [expound.problems :as problems]
             [expound.test-utils :as test-utils]))
@@ -7,8 +7,6 @@
 (use-fixtures :once
   test-utils/check-spec-assertions
   test-utils/instrument-all)
-
-(defn get-args [& args] args)
 
 (s/def :highlighted-value/nested-map-of (s/map-of keyword? (s/map-of keyword? keyword?)))
 
