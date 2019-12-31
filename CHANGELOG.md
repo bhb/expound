@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+
+- [Regression in formatting code for ClojureScript](https://github.com/bhb/expound/issues/183)
+
 ## [0.8.3] - 2019-12-29
 
 ### Fixed
