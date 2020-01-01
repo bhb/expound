@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.8.4] - 2019-12-31
+
+### Fixed
+
+- [Regression in formatting code for ClojureScript](https://github.com/bhb/expound/issues/183)
+
 ## [0.8.3] - 2019-12-29
 
 ### Fixed
@@ -178,7 +184,8 @@ This release was made possible by [Clojurists Together](https://www.clojuriststo
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.8.4...HEAD
+[0.8.4]: https://github.com/bhb/expound/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/bhb/expound/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/bhb/expound/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/bhb/expound/compare/v0.8.0...v0.8.1
