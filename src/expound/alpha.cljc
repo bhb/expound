@@ -1120,3 +1120,31 @@ returned an invalid value.
   "Given a sequence of results from `clojure.spec.test.alpha/check`, returns a string summarizing the results."
   [check-results]
   (with-out-str (explain-results check-results)))
+
+(comment
+
+  ;; value
+  ["one" "two" 33]
+  ;;   [... ... 33]
+  ;;         ^^
+
+  ;; maybe a map of paths to meta, including distance
+  {
+   [0] {:distance 1 :type :peer}
+   [1] {:distance 1 :type :peer} 
+   [2] {:distance 0 :type :value} ; distance zero is highlighted value
+   [] {:distance 2}  ; not sure how to compute distance, but it does seem "further away"
+   }
+
+  
+
+  ;; what could you do here? maybe over values to find distance x
+  ;; and change it?
+
+  
+
+  
+
+  
+  
+  )
