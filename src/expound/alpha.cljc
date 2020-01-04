@@ -1174,9 +1174,38 @@ returned an invalid value.
    [:keys-spec/name 1] {:distance 0 :role :value, :hidden? false, :highlight? true}
    ;; Is the containers further distance than the keys?
    [] {:distance 3 :role :container}
-   
-   
    }
+
+  (write-out {})
+
+
+  clojure.pprint/*print-pretty*
+  *print-length*
+
+  (println (range 0 30))
+
+  clojure.pprint/*print-pprint-dispatch*
+  
+
+  
+  (binding [clojure.pprint/*print-pretty* true]
+    (clojure.pprint/with-pretty-writer
+
+      (clojure.pprint/write-out (range 0 30)))
+    
+    )
+  ;; how dispatching works on multimethod
+  ;; https://github.com/clojure/clojurescript/blob/23cedecbf4f704f9fee672e395bbfa1e3fe3ee1a/src/main/cljs/cljs/pprint.cljs#L2893-L2909
+  ;; vs
+  ;; https://github.com/clojure/clojure/blob/4ef4b1ed7a2e8bb0aaaacfb0942729252c2c3091/src/clj/clojure/pprint/dispatch.clj#L151-L157
+  ;; in CLJ
+
+  
+  
+  
+
+  
+  
 
   
 
