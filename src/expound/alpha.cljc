@@ -1219,7 +1219,19 @@ returned an invalid value.
     )
 
   (defmethod new-dispatch :value [m]
-    (pprint/pprint-logical-block :prefix "[" :suffix "]"
+    (cond
+
+      (:hidden? m)
+      (.write ^java.io.Writer *out* "...")
+
+      :else
+(pprint/write-out (:x m))
+      
+      )
+    
+
+        
+    #_(pprint/pprint-logical-block :prefix "[" :suffix "]"
       (pprint/print-length-loop [aseq (seq (:x m))]
                                 (when aseq
                                   (pprint/write-out (first aseq))
@@ -1234,8 +1246,17 @@ returned an invalid value.
   
 
   (clojure.pprint/with-pprint-dispatch new-dispatch
-    (clojure.pprint/pprint {:role :value :x (range 0 30)})
+    (clojure.pprint/pprint {:role :value :x "abcdef" :hidden? false})
     )
+
+  (clojure.pprint/with-pprint-dispatch new-dispatch
+    (clojure.pprint/pprint {:role :value :x "abcdef" :hidden? true})
+    )
+
+  ;; HERE: doing some experiments on using pprint to underline and hide values
+
+  
+  
   
 
   
