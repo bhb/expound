@@ -1145,6 +1145,39 @@ returned an invalid value.
   ;; I don't think 'peer' is useful becaue it only applies to
   ;; elements that are peers of distance 0 value
 
+  ;; Expound - a predicate like nil only needs location vs value. Location is where to find it, value is what it is.
+
+
+
+  :kw
+
+  ;; { [] {:distance 0, :type :value}}
+
+  ;; need to design own pretty print algorithm to layout values
+
+
+
+  [:foo 1 :bar :baz]
+
+
+
+  {:age 1 :keys-spec/name :bob}
+;;   {:age ..., :keys-spec/name :bob}
+;;                              ^^^^
+
+  {
+   ;; or whatever path incantation is necessary for finding keys
+   ;; are the keys further away than the value?
+   [:age 0] {:distance 2 :role :key :hidden? false}
+   [:age 1] {:distance 1 :role :value :hidden? true}
+   [:keys-spec/name 0] {:distance 1 :role :value, :hidden? true}
+   [:keys-spec/name 1] {:distance 0 :role :value, :hidden? false, :highlight? true}
+   ;; Is the containers further distance than the keys?
+   [] {:distance 3 :role :container}
+   
+   
+   }
+
   
 
   
