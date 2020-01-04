@@ -1220,6 +1220,11 @@ returned an invalid value.
 
   (defmethod new-dispatch :value [m]
     (cond
+      (zero? (:distance m))
+      (pprint/pprint-logical-block
+       (pprint/write-out (:x m))
+       (.write ^java.io.Writer *out* "^^^^^^^^^")
+       )
 
       (:hidden? m)
       (.write ^java.io.Writer *out* "...")
