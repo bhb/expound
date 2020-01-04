@@ -1126,7 +1126,7 @@ returned an invalid value.
   ;; value
   ["one" "two" 33]
   ;;   [... ... 33]
-  ;;         ^^
+  ;;            ^^
 
   ;; maybe a map of paths to meta, including distance
   {
@@ -1140,6 +1140,12 @@ returned an invalid value.
 
   ;; what could you do here? maybe over values to find distance x
   ;; and change it?
+
+  ;; every value is a container, or a key, or a value
+  ;; I don't think 'peer' is useful becaue it only applies to
+  ;; elements that are peers of distance 0 value
+
+  
 
   
 
