@@ -1200,6 +1200,46 @@ returned an invalid value.
   ;; https://github.com/clojure/clojure/blob/4ef4b1ed7a2e8bb0aaaacfb0942729252c2c3091/src/clj/clojure/pprint/dispatch.clj#L151-L157
   ;; in CLJ
 
+    (require '[clojure.pprint :as pprint])
+
+    ;; hack to redefine method
+    (def new-dispatch nil)
+    
+    (defmulti 
+    new-dispatch
+    "The pretty print dispatch function for simple data structure format."
+    (fn [m]
+      (:role m)
+      )
+    )
+
+
+  (defmethod new-dispatch :default [x]
+    (pprint/simple-dispatch x)
+    )
+
+  (defmethod new-dispatch :value [m]
+    (pprint/pprint-logical-block :prefix "[" :suffix "]"
+      (pprint/print-length-loop [aseq (seq (:x m))]
+                                (when aseq
+                                  (pprint/write-out (first aseq))
+                                  (when (next aseq)
+                                    ;; This will have to change for CLJS
+                                    #_ (-write *out* " ")
+                                    (.write ^java.io.Writer *out* " ")
+                                    (pprint/pprint-newline :linear)
+                                    (recur (next aseq))))))
+    
+    )
+  
+
+  (clojure.pprint/with-pprint-dispatch new-dispatch
+    (clojure.pprint/pprint {:role :value :x (range 0 30)})
+    )
+  
+
+  
+
   
   
   
