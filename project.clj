@@ -6,16 +6,22 @@
   :scm {:name "git" :url "https://github.com/bhb/expound"}
   :dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
                  [org.clojure/clojurescript "1.10.520" :scope "provided"]
-                 [org.clojure/spec.alpha "0.2.176" :scope "provided"]]
+                 [org.clojure/spec.alpha "0.2.176" :scope "provided"]
+                 [org.clojure/alpha.spec "b644e4d8c5553e10544d920306690fffe9b53e15" :scope "provided"]
+                 ]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
   :plugins [
+            [reifyhealth/lein-git-down "0.3.5"] ; Can remove this once spec has maven release
             [com.jakemccrary/lein-test-refresh "0.23.0"]
             [lein-cljfmt "0.6.4"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.18"]
             [lein-hiera "1.1.0"]
             ]
+  :git-down {org.clojure/alpha.spec {:coordinates clojure/spec-alpha2}} ; Can remove this once spec has maven release
+  :repositories [["public-github" {:url "git://github.com"}]] ; Can remove this once spec has maven release
+  :middleware [lein-git-down.plugin/inject-properties] ; Can remove this once spec has maven release
   :cljsbuild {:builds
               [{:id "test"
                 :source-paths ["src" "test"]
