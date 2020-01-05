@@ -1200,42 +1200,7 @@ returned an invalid value.
   ;; https://github.com/clojure/clojure/blob/4ef4b1ed7a2e8bb0aaaacfb0942729252c2c3091/src/clj/clojure/pprint/dispatch.clj#L151-L157
   ;; in CLJ
 
-    (require '[clojure.pprint :as pprint])
-
-    ;; hack to redefine method
-    (def new-dispatch nil)
-    
-    (defmulti 
-    new-dispatch
-    "The pretty print dispatch function for simple data structure format."
-    (fn [m]
-      (:role m)
-      )
-    )
-
-
-  (defmethod new-dispatch :default [x]
-    (pprint/simple-dispatch x)
-    )
-
-  (defmethod new-dispatch :value [m]
-    (cond
-      (zero? (:distance m))
-      (pprint/pprint-logical-block
-       (pprint/write-out (:x m))
-       (.write ^java.io.Writer *out* "^^^^^^^^^")
-       )
-
-      (:hidden? m)
-      (.write ^java.io.Writer *out* "...")
-
-      :else
-(pprint/write-out (:x m))
-      
-      )
-    
-
-        
+  ;; example of printing
     #_(pprint/pprint-logical-block :prefix "[" :suffix "]"
       (pprint/print-length-loop [aseq (seq (:x m))]
                                 (when aseq
@@ -1246,20 +1211,97 @@ returned an invalid value.
                                     (.write ^java.io.Writer *out* " ")
                                     (pprint/pprint-newline :linear)
                                     (recur (next aseq))))))
+
+    (require '[clojure.pprint :as pprint])
+
+    ;; hack to redefine method
+    (def new-dispatch nil)
+    
+    (defmulti new-dispatch
+      "TODO - name"
+      (fn [m]
+        (:role m)
+        )
+      )
+
+    ;; this is promising but how do I connect each form
+    ;; with metadata? obviously each form is not unique overall
+
+    ;; since this is breaking change, probably don't release except for in expound.alpha2
+
+
+    ;; the way this used to work is that we walked the tree using 'summary value' and printed it out as
+    ;; we went, using the through the structure and re-created it recursively
+    ;;
+
+    ;; this is tricky because naively printing out the form recursively will not
+    ;; capture the metadata in the data
+    ;; it's an open question whether we can really reliably create that metadata,
+    ;; but that's a problem for another day.
+
+    ;; HERE - how to recursively print out data structure and grab meta-data
+    ;; data strucutre is implicit in structure which is a good thing
+    ;; additionally if we want to print out index of bad value, (location)
+    ;; then we need more than the current value
+
+    ;; let's rethink location.
+    ;; is showing location as part of data structure useful?
+    ;; yes, because mapping a path to a data structure omits the container types
+    ;; etc
+    
+
+
+  (defmethod new-dispatch :default [x]
+    (pprint/simple-dispatch x)
+    )
+
+  (defmethod new-dispatch :value [m]
+    (cond
+
+      (zero? (:distance m))
+      (pprint/pprint-logical-block
+       (pprint/write-out (:x m))
+       (pprint/pprint-newline :mandatory)
+       (.write ^java.io.Writer *out* "^^^^^^^^^")
+       )
+
+      (:hidden? m)
+      (.write ^java.io.Writer *out* "...")
+
+      :else
+      (pprint/write-out (:x m))
+      
+      )
+    
+
     
     )
   
 
   (clojure.pprint/with-pprint-dispatch new-dispatch
-    (clojure.pprint/pprint {:role :value :x "abcdef" :hidden? false})
+    (clojure.pprint/pprint {:role :value :x "abcdef" :hidden? false :distance 0})
     )
 
   (clojure.pprint/with-pprint-dispatch new-dispatch
-    (clojure.pprint/pprint {:role :value :x "abcdef" :hidden? true})
+    (clojure.pprint/pprint {:role :value :x "abcdef" :hidden? true :distance 0})
     )
 
-  ;; HERE: doing some experiments on using pprint to underline and hide values
+  
+  ;; Yes, clojure records can have metadata
+  (defrecord Foo [x y])
 
+  (let [f (with-meta (Foo. 1 2) {:bye true})
+        
+        ]
+    [(.x f) (.y f) (meta f)]
+    
+    )
+
+  ;; HERE - how to embed entire thing in deeper data structure?
+  
+
+
+  
   
   
   
