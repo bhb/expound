@@ -1244,10 +1244,25 @@ returned an invalid value.
     ;; additionally if we want to print out index of bad value, (location)
     ;; then we need more than the current value
 
+    ;; TODO: transfer these notes to ADR
     ;; let's rethink location.
-    ;; is showing location as part of data structure useful?
-    ;; yes, because mapping a path to a data structure omits the container types
-    ;; etc
+    ;; why is showing location as part of data structure useful?
+    ;; because mapping a path to a data structure omits the container types
+    ;; [0 0 0 1] doesn't say if those are lists, vecs or (unlikely but possible)
+    ;; maps so user has to figure that out in their head.
+    ;; The question we're trying to answer is: where is the invalid value located?
+    ;; This is fundamentally a function of the context value, the specific value
+    ;; (need better terminology for this), and also I think, the problem type itself
+    ;;
+    ;; Actually the problem of describing the location is arguably NOT related to the
+    ;; problem type. We always want to consistently show where the problem is, but
+    ;; depending on the problem type, we might be able to summarize the problem value?
+
+    ;; context value - the entire value that is checked
+    ;; problem value - the specific value that is failing
+
+    ;; Hm, that's not quite true, buecase
+   
     
 
 
@@ -1298,21 +1313,9 @@ returned an invalid value.
     )
 
   ;; HERE - how to embed entire thing in deeper data structure?
-  
-
 
   
-  
-  
-  
-
-  
-
-  
-  
-  
-
-  
+    
   
 
   
