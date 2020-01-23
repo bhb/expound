@@ -1253,43 +1253,76 @@ returned an invalid value.
     ;; The question we're trying to answer is: where is the invalid value located?
     ;; This is fundamentally a function of the context value, the specific value
     ;; (need better terminology for this), and also I think, the problem type itself
+
+    ;; context value - the entire value that is checked
+    ;; problem value - the specific value that is failing
+
     ;;
     ;; Actually the problem of describing the location is arguably NOT related to the
     ;; problem type. We always want to consistently show where the problem is, but
     ;; depending on the problem type, we might be able to summarize the problem value?
 
-    ;; context value - the entire value that is checked
-    ;; problem value - the specific value that is failing
 
-    ;; Hm, that's not quite true, buecase
+    ;; Hm, that's not quite true, because there are actually three concerns here.
+    ;; 1. "context value" - this helps us show location of the "problem value"
+    ;; 2. "problem value" - help understand problem (by display enough info), also helps identify
+    ;;     problem value (imagine a giant map which should be nil, do we need to print it all? Or
+    ;;     can we summarize it for that predicate?)
+    ;;     so it's printing enough of the problem value in order to understand problem.
+    ;;     Problem value and problem are connected, but
+    ;;     The problem here is that people identify values via location and the problem value itself,
+    ;;     so it's not clear that we can summarize generally, since it may be more useful to say "oh, the thing that has x"
+    ;;     vs "the thing located at spot x"
+    ;;     This is especially relevant for recursive values where things can be nil, do we need to show the entire top-level value
+    ;;     just to say it's nil?
+    ;;     Maybe a summary is sufficient with suffient location info?
+    ;;     If the values in the context are tagged with distance, we could also tag problem values with depth.
+
+    ;; What if we had type, distance, depth. 
+    
+    ;; 3. problem - separate from above, describes what is wrong
+
+    ;; Are there other ways to show context?
    
     
-
-
   (defmethod new-dispatch :default [x]
     (pprint/simple-dispatch x)
     )
+  
+  
 
   (defmethod new-dispatch :value [m]
     (cond
-
       (zero? (:distance m))
       (pprint/pprint-logical-block
        (pprint/write-out (:x m))
-       (pprint/pprint-newline :mandatory)
+       (pprint/pprint-newline :linear)
+       ;; HERE ... this won't work because we could
+       ;; have additional data on this line
        (.write ^java.io.Writer *out* "^^^^^^^^^")
        )
 
       (:hidden? m)
-      (.write ^java.io.Writer *out* "...")
+      (pprint/pprint-logical-block
+       (.write ^java.io.Writer *out* "...")
+       (.write ^java.io.Writer *out* " ")
+       (pprint/pprint-newline :linear)
+       )
 
       :else
-      (pprint/write-out (:x m))
+      (pprint/pprint-logical-block
+       (pprint/write-out (:x m))
+       (.write ^java.io.Writer *out* " ")
+       (pprint/pprint-newline :linear)
+       )
       
       )
-    
+    )
 
-    
+  (defmethod new-dispatch :collection [xs]
+    (doseq [x (:x xs)]
+      (pprint/write-out x)
+      )
     )
   
 
@@ -1300,6 +1333,28 @@ returned an invalid value.
   (clojure.pprint/with-pprint-dispatch new-dispatch
     (clojure.pprint/pprint {:role :value :x "abcdef" :hidden? true :distance 0})
     )
+
+  (clojure.pprint/with-pprint-dispatch new-dispatch
+    (clojure.pprint/pprint {:role :value :x "abcdef" :hidden? true :distance 1})
+    )
+
+  (clojure.pprint/with-pprint-dispatch new-dispatch
+    (clojure.pprint/pprint
+     {:role :collection
+      :x [
+          {:role :value :x "a" :hidden? true :distance 1}
+          {:role :value :x "b" :hidden? false :distance 0}
+          {:role :value :x "c" :hidden? true :distance 1}
+          ]
+      :hidden? false
+      :distance? 1
+      }
+     )
+    )
+
+  
+
+  
 
   
   ;; Yes, clojure records can have metadata
