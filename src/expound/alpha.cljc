@@ -1357,7 +1357,7 @@ returned an invalid value.
         ;; This isn't a great idea because this string takes width and therefore will
         ;; mess with printing width
 
-        re #"(.*)expound.problems/relevant(.*)expound.problems/relevant(.*)"
+        re #"(.*):expound.problems/relevant(.*):expound.problems/relevant(.*)"
         ;;[before after] (clojure.string/split s re)
         [line before val after] (re-find re s)
         ]
@@ -1368,17 +1368,22 @@ returned an invalid value.
      :after after
      }
 
-    #_(println (str before
+    (println (str before
                   val
                   after
                   "\n"
-                  "     ^^^"
+                  "    ^^^"
                   ))
     )
 
+  
 
-
-  ;; we could do highlighting not only underneath, but next to value if it is multi-line
+  ;; we could do highlighting not only underneath, but next to value if it is multi-line e.g. >
+  ;; >
+  ;; >
+  ;; Of course, this could be super large for very large values
+  ;;
+  ;; making distance and depth different values would of course make it tricky to vary them independently in settings
 
   
   ;; Yes, clojure records can have metadata

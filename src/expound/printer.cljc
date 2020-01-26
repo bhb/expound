@@ -5,6 +5,7 @@
             [clojure.set :as set]
             [expound.util :as util]
             [expound.ansi :as ansi]
+            [clojure.pprint :as pprint]
             #?(:clj [clojure.main :as main]))
   (:refer-clojure :exclude [format]))
 
@@ -323,3 +324,78 @@
           (map #(str (apply str (repeat rest-lines-indent " ")) %))
           (into [(str (apply str (repeat first-line-indent " ")) line)])
           (string/join "\n")))))
+
+
+(def marker :expound.problems/relevant)
+
+(defmulti new-dispatch
+      "TODO: name"
+  (fn [m]
+    
+    (:role m)
+    )
+  )
+
+(defmethod new-dispatch :default [x]
+  (pprint/simple-dispatch x))
+
+;; TODO: rename
+(defmethod new-dispatch :scalar [m]
+  (let [{:keys [value distance _depth]} m]
+    (cond
+      (zero? distance)
+      (pprint/pprint-logical-block
+       (pprint/write-out marker)
+       (pprint/write-out value)
+       (pprint/pprint-newline :linear)
+       (pprint/write-out marker)
+       (.write ^java.io.Writer *out* " ")
+       )
+
+      (:hidden? m)
+      (pprint/pprint-logical-block
+       (.write ^java.io.Writer *out* "...")
+       (.write ^java.io.Writer *out* " ")
+       (pprint/pprint-newline :linear)
+       )
+
+      :else
+      (pprint/pprint-logical-block
+       (pprint/write-out value)
+       (.write ^java.io.Writer *out* " ")
+       (pprint/pprint-newline :linear)
+       )
+      ))
+  )
+
+(defmethod new-dispatch :collection [xs]
+    (doseq [x (:x xs)]
+      (pprint/write-out x)
+      )
+    )
+
+(defn value2 [xs]
+  (pprint/with-pprint-dispatch new-dispatch
+    (let [out (java.io.StringWriter.)]
+      (pprint/pprint xs out)
+      (.toString out))
+    )
+  )
+
+(comment
+  (pprint/with-pprint-dispatch new-dispatch
+    (let [out (java.io.StringWriter.)]
+      (pprint/pprint {:role :scalar
+           :value 1
+           :distance 0
+           :depth 0
+           })
+      (.toString out))
+    )
+  
+  (value2 {:role :scalar
+           :value 1
+           :distance 0
+           :depth 0
+           })
+  )

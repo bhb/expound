@@ -232,3 +232,15 @@
              srows (rest (string/split table #"\n"))]]
       (is (< (count (last srows)) 200)))))
 
+
+(deftest value2
+  ;; prints basic value with no highlighting
+  (is (=
+       ""
+       (printer/value2 {:role :scalar
+                        :value 1
+                        :distance 0
+                        :depth 0
+                        })
+       ))
+  )
