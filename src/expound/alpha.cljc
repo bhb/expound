@@ -1288,18 +1288,20 @@ returned an invalid value.
   (defmethod new-dispatch :default [x]
     (pprint/simple-dispatch x)
     )
-  
-  
+
+  ;; This might work well because it won't affect print width
+  (def marker :expound.problems/relevant)
+  (println marker)
 
   (defmethod new-dispatch :value [m]
     (cond
       (zero? (:distance m))
       (pprint/pprint-logical-block
+       (pprint/write-out marker)
        (pprint/write-out (:x m))
        (pprint/pprint-newline :linear)
-       ;; HERE ... this won't work because we could
-       ;; have additional data on this line
-       (.write ^java.io.Writer *out* "^^^^^^^^^")
+       (pprint/write-out marker)
+       (.write ^java.io.Writer *out* " ")
        )
 
       (:hidden? m)
@@ -1338,23 +1340,45 @@ returned an invalid value.
     (clojure.pprint/pprint {:role :value :x "abcdef" :hidden? true :distance 1})
     )
 
-  (clojure.pprint/with-pprint-dispatch new-dispatch
-    (clojure.pprint/pprint
-     {:role :collection
-      :x [
-          {:role :value :x "a" :hidden? true :distance 1}
-          {:role :value :x "b" :hidden? false :distance 0}
-          {:role :value :x "c" :hidden? true :distance 1}
-          ]
-      :hidden? false
-      :distance? 1
-      }
-     )
+  (let [s (with-out-str
+    (clojure.pprint/with-pprint-dispatch new-dispatch
+      (clojure.pprint/pprint
+       {:role :collection
+        :x [
+            {:role :value :x "a" :hidden? true :distance 1}
+            {:role :value :x "b" :hidden? false :distance 0}
+            {:role :value :x "c" :hidden? true :distance 1}
+            ]
+        :hidden? false
+        :distance? 1
+        }
+       )
+      ))
+        ;; This isn't a great idea because this string takes width and therefore will
+        ;; mess with printing width
+
+        re #"(.*)expound.problems/relevant(.*)expound.problems/relevant(.*)"
+        ;;[before after] (clojure.string/split s re)
+        [line before val after] (re-find re s)
+        ]
+
+    {:s s
+     :val val
+     :before before
+     :after after
+     }
+
+    #_(println (str before
+                  val
+                  after
+                  "\n"
+                  "     ^^^"
+                  ))
     )
 
-  
 
-  
+
+  ;; we could do highlighting not only underneath, but next to value if it is multi-line
 
   
   ;; Yes, clojure records can have metadata
@@ -1369,16 +1393,5 @@ returned an invalid value.
 
   ;; HERE - how to embed entire thing in deeper data structure?
 
-  
-    
-  
-
-  
-
-  
-
-  
-
-  
   
   )
