@@ -342,6 +342,7 @@
 ;; TODO: rename
 (defmethod new-dispatch :scalar [m]
   (let [{:keys [value distance _depth]} m]
+    (def dvalue value)
     (cond
       (zero? distance)
       (pprint/pprint-logical-block
@@ -369,18 +370,69 @@
   )
 
 (defmethod new-dispatch :collection [xs]
-    (doseq [x (:x xs)]
+    (doseq [x (:value xs)]
       (pprint/write-out x)
       )
+  )
+
+(defn swidth [s]
+  (apply max
+     (map
+      count
+      (string/split-lines s)))
+  )
+
+(comment
+  (let [s "adfasdf\n234\n34"]
+
+    
+    
     )
 
-(defn value2 [xs]
-  (pprint/with-pprint-dispatch new-dispatch
-    (let [out (java.io.StringWriter.)]
-      (pprint/pprint xs out)
-      (.toString out))
-    )
+  (apply str (repeat 5 " "))
   )
+
+;; TODO: rename
+(defn hiccup [s]
+  (map
+   (fn [x] [:span (string/trim x)])
+   (map
+    string/trimr
+    (string/split-lines s)))
+  )
+
+(defn highlight-value [s]
+  (let  [re #"(.*):expound.problems/relevant(.*):expound.problems/relevant(.*)"
+         [_line before val after] (re-find re s)
+
+         indent (apply str (repeat (swidth before) " "))
+         underline (apply str (repeat (swidth val) "^"))
+         ] 
+        (str before
+             val
+             after
+             "\n"
+             indent
+             underline
+             ))
+  )
+
+(defn value2 [xs]
+  (let [s (pprint/with-pprint-dispatch new-dispatch
+                     (let [out (java.io.StringWriter.)]
+                       (pprint/pprint xs out)
+                       (.toString out)))]
+
+    
+    (hiccup (highlight-value s))
+    
+    )
+    )
+
+
+;; TODO: do I need to return a list of indented elements?
+;; post processing:
+;; [:span "fobbar"]
 
 (comment
   (pprint/with-pprint-dispatch new-dispatch
@@ -392,10 +444,15 @@
            })
       (.toString out))
     )
+
+  (highlight-value ":expound.problems/relevant1:expound.problems/relevant \n")
   
   (value2 {:role :scalar
            :value 1
            :distance 0
            :depth 0
            })
+
+  dvalue
+  
   )

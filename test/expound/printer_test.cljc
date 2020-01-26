@@ -236,7 +236,8 @@
 (deftest value2
   ;; prints basic value with no highlighting
   (is (=
-       ""
+       [[:span "1"]
+        [:span "^"]]
        (printer/value2 {:role :scalar
                         :value 1
                         :distance 0
