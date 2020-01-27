@@ -244,4 +244,57 @@
                         :depth 0
                         })
        ))
+  ;; should the input be in hiccup-style values
+
+  ["a" 1 "b"]
+  ;; where 1 is the bad value
+
+  {:role :collection
+   :distance 1
+   :value [
+           {:role :value
+            :value "a"
+            :distance 1
+            :depth 0
+            }
+           {:role :value
+            :value 1
+            :distance 0
+            :depth 0
+            }
+           {:role :value
+            :value "b"
+            :distance 1
+            :depth 0
+            }
+           ]
+   }
+  ;; pros:
+  ;; - collection type is explicit
+  ;; - no indirection for information about value
+  ;; cons: 
+  ;;       - not sure what happens for custom types e.g. records
+  ;;       - hard to see actual structure
+  ;;       - verbose
+  
+
+  
+
+  
+  
+  
+  ;; highlights value within collection
+  (is (=
+       [[:span "1"]
+        [:span "^"]]
+       (printer/value2
+        [:span
+         {:role :collection
+          :distance 1
+          :depth 0
+          }
+         ]
+        )
+       ))
+  
   )
