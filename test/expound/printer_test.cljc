@@ -235,7 +235,7 @@
 
 (deftest value2
   ;; prints basic value with no highlighting
-  (is (=
+  #_(is (=
        [[:span "1"]
         [:span "^"]]
        (printer/value2 {:role :scalar
@@ -243,6 +243,24 @@
                         :distance 0
                         :depth 0
                         })
+       ))
+
+  (is (=
+       [[:span "1"]
+        ]
+       (printer/value2
+        #_{:role :scalar
+         :value 1
+         :distance 0
+         :depth 0
+           }
+        [:scalar
+         {:distance 0
+          :depth 0
+          }
+         1
+         ]
+        )
        ))
   ;; should the input be in hiccup-style values
 
@@ -276,25 +294,95 @@
   ;;       - not sure what happens for custom types e.g. records
   ;;       - hard to see actual structure
   ;;       - verbose
-  
+
+  ;; could I flatten the data structure based on well-defined order?
+
+  [{:role :vector
+    :distance 1
+    }
+   {:role :value
+    :value "a"
+    :distance 1
+    :depth 0
+    }
+   {:role :value
+    :value 1
+    :distance 0
+    :depth 0
+    }
+   {:role :value
+    :value "b"
+    :distance 1
+    :depth 0
+    }]
+
+  ;; no, this doesn't work because we don't know when to "pop"
+  ;; from the inner vector
 
   
+  [:vector
+   {:distance 1}
+   [:index {:distance 1} 0]
+   [:value {:distance 1} "a"]
+   [:index {:distance 1} 1]
+   [:value {:distance 0} 1]
+   [:index {:distance 0} 2]
+   [:value {:distance 0} "b"]
+   ]
+
+  ;; pros
+  ;; - easier to read??
+  ;; - might match total format more uniformly (is that important?)
+  ;; - structure is more directly accessible, not buried inside 'value' key
+  ;; cons
+  ;; - 'role' and 'value' are implicit
+  ;;
+
+  ;; maybe there are levels of stratified design?
+  ;; 1. one level is semantics of errors
+  ;; (2)?. another embedded layer is semantics of error values
+  ;; 3. lower layer is text (similar to fipp)
+  ;; (there is a layer to convert former to lower)
 
   
   
+
+  ;; what if I just let people register their own
+  ;; pprint callback for records? still wouldn't help with
+  ;; array printing or all the rest.
+
+  ;; if i let someone print out their own records, what if
+  ;; they have an array of records and only one is bad? they
+  ;; still need to know about distance and depth
   
   ;; highlights value within collection
+
+  ;; hm, the difference between scalars (the type of data)
+  ;; and value (the role in the tree) isn't super clear
   (is (=
-       [[:span "1"]
-        [:span "^"]]
+       [
+        [:span "[[\"a\" 1 \"b\" ]"]
+        ;;; hmm, the problem here is that the highlighting
+        ;; is not a normal indentation, it must track the next
+        ;; value above in a non-normal indentation way, so
+        ;; it's not clear we can return as data.
+        ;; we could of course just return a bunch of vectors with whitespace
+        ;; ahead of them but it's not clear what that gives us
+        [:span "^"]
+        ]
        (printer/value2
-        [:span
-         {:role :collection
-          :distance 1
-          :depth 0
-          }
+        [:vector
+         {:distance 1}
+         [:index {:distance 1} 0]
+         [:value {:distance 1} "a"]
+         [:index {:distance 1} 1]
+         [:value {:distance 0} 1]
+         [:index {:distance 0} 2]
+         [:value {:distance 0} "b"]
          ]
         )
        ))
+  
+  
   
   )

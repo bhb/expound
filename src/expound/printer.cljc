@@ -328,11 +328,18 @@
 
 (def marker :expound.problems/relevant)
 
+(comment
+  (vector? :xyz)
+  (def new-dispatch nil))
+
 (defmulti new-dispatch
       "TODO: name"
-  (fn [m]
-    
-    (:role m)
+  (fn [x]
+
+    (if (vector? x)
+      (first x)
+      :default
+      )
     )
   )
 
@@ -340,9 +347,9 @@
   (pprint/simple-dispatch x))
 
 ;; TODO: rename
-(defmethod new-dispatch :scalar [m]
-  (let [{:keys [value distance _depth]} m]
-    (def dvalue value)
+(defmethod new-dispatch :scalar [[_ m value]]
+  
+  (let [{:keys [distance _depth]} m]
     (cond
       (zero? distance)
       (pprint/pprint-logical-block
@@ -369,10 +376,20 @@
       ))
   )
 
-(defmethod new-dispatch :collection [xs]
-    (doseq [x (:value xs)]
-      (pprint/write-out x)
-      )
+(defmethod new-dispatch :vector [[_ m & children]]
+  (.write ^java.io.Writer *out* "[")
+  (doseq [x children]
+    (pprint/write-out x)
+    )
+  (.write ^java.io.Writer *out* "]")
+  )
+
+(defmethod new-dispatch :index [[_ _m _children]]
+  ;; do not print indexes for now
+  )
+
+(defmethod new-dispatch :value [[_ m v]]
+  (pprint/write-out [:scalar m v])
   )
 
 (defn swidth [s]
@@ -384,9 +401,6 @@
 
 (comment
   (let [s "adfasdf\n234\n34"]
-
-    
-    
     )
 
   (apply str (repeat 5 " "))
@@ -402,26 +416,33 @@
   )
 
 (defn highlight-value [s]
-  (let  [re #"(.*):expound.problems/relevant(.*):expound.problems/relevant(.*)"
-         [_line before val after] (re-find re s)
+  (let  [re1 #"(.*):expound.problems/relevant(.*):expound.problems/relevant(.*)"
 
+         [line before val after] (re-find re1 s)
+         [lines_before lines_after] (string/split s (re-pattern (string/re-quote-replacement line)))
          indent (apply str (repeat (swidth before) " "))
          underline (apply str (repeat (swidth val) "^"))
          ] 
-        (str before
-             val
-             after
-             "\n"
-             indent
-             underline
-             ))
+    (str lines_before
+         before
+         val
+         after
+         "\n"
+         indent
+         underline
+         lines_after
+         ))
+  )
+
+(defn value2* [xs]
+  (pprint/with-pprint-dispatch new-dispatch
+                     (let [out (java.io.StringWriter.)]
+                       (pprint/pprint xs out)
+                       (.toString out)))
   )
 
 (defn value2 [xs]
-  (let [s (pprint/with-pprint-dispatch new-dispatch
-                     (let [out (java.io.StringWriter.)]
-                       (pprint/pprint xs out)
-                       (.toString out)))]
+  (let [s (value2* xs)]
 
     
     (hiccup (highlight-value s))
@@ -429,6 +450,10 @@
     )
     )
 
+;; what is the problem(s)?
+;; some values don't omit enough information
+;; other values omit too much information
+;; i can't allow users to vary this while I determine sensible defaults
 
 ;; TODO: do I need to return a list of indented elements?
 ;; post processing:
@@ -447,12 +472,51 @@
 
   (highlight-value ":expound.problems/relevant1:expound.problems/relevant \n")
   
-  (value2 {:role :scalar
+  #_(value2 {:role :scalar
            :value 1
            :distance 0
            :depth 0
-           })
+             })
 
-  dvalue
+  (value2 [:scalar
+           {:distance 0
+            :depth 0
+            }
+           1
+           ])
+
+  (value2* [:vector
+           {:distance 1}
+           [:index {:distance 1} 0]
+           [:value {:distance 1} "a"]
+           [:index {:distance 1} 1]
+           [:value {:distance 0} 1]
+           [:index {:distance 0} 2]
+           [:value {:distance 0} "b"]
+            ])
+
+  (highlight-value "[\"a\"\n :expound.problems/relevant1\n :expound.problems/relevant :expound.problems/relevant\"b\"\n                            :expound.problems/relevant ]\n")
+
+  (value2 [:vector
+           {:distance 1}
+           [:index {:distance 1} 0]
+           [:value {:distance 1} "a"]
+           [:index {:distance 1} 1]
+           [:value {:distance 0} 1]
+           [:index {:distance 1} 2]
+           [:value {:distance 1} "b"]
+           ])
+
+  (value2 [:vector
+           {:distance 1}
+           [:index {:distance 1} 0]
+           [:value {:distance 1} "a"]
+           [:index {:distance 1} 1]
+           [:value {:distance 0} 1]
+           [:index {:distance 1} 2]
+           [:value {:distance 1} "b"]
+           ])
+
+  
   
   )

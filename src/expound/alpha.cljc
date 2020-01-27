@@ -1285,13 +1285,12 @@ returned an invalid value.
     ;; Are there other ways to show context?
    
     
-  (defmethod new-dispatch :default [x]
+    (defmethod new-dispatch :default [x]
     (pprint/simple-dispatch x)
     )
 
   ;; This might work well because it won't affect print width
   (def marker :expound.problems/relevant)
-  (println marker)
 
   (defmethod new-dispatch :value [m]
     (cond
@@ -1375,6 +1374,7 @@ returned an invalid value.
                   "    ^^^"
                   ))
     )
+  
 
   
 
