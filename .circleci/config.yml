@@ -76,7 +76,8 @@ jobs:
       #     command: lein with-profile -dev,+check check 2>&1 | grep -v "form-init.*clj" | bin/check-for-warnings.sh
       - run: TEST_CHECK_FACTOR=20 lein with-profile test-common test
       - run: lein clean
-      - run: lein with-profile test-web cljsbuild once test 2> >(tee -a stderr.log >&2)
+      # TODO: reenable when CLJS has spec2 implementation
+      # - run: lein with-profile test-web cljsbuild once test 2> >(tee -a stderr.log >&2)
       - run: cat stderr.log | grep -v "Options passed to ClojureScript compiler" | bin/check-for-warnings.sh
       - run: bin/tests
       - run: bin/golden_master_test.sh
@@ -163,9 +164,10 @@ workflows:
       - test_current:
           requires:
             - build
-      - test_cljs_old:
-          requires:
-            - build
+      # TODO: reenable when CLJS has spec2 implementation
+      # - test_cljs_old:
+      #     requires:
+      #       - build
       - test_clj_old:
           requires:
             - build
