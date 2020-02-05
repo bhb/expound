@@ -283,7 +283,7 @@
         type (:expound.spec.problem/type problem)]
     (value-str type spec-name form in problems opts)))
 
-(defn conformed-value [problems invalid-value]
+(defn ^:private conformed-value [problems invalid-value]
   (let [conformed-val (-> problems first :val)]
     (if (= conformed-val invalid-value)
       ""
@@ -580,7 +580,7 @@
       (vec-remove old-groups)
       (conj (problem-group old-groups group))))
 
-(defn conj-groups
+(defn ^:private conj-groups
   "Consolidate a group into a group collection if it's either part of an s/or,
   s/alt or recursive spec."
   [groups group]
