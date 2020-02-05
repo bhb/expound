@@ -16,9 +16,9 @@
             [com.gfredericks.test.chuck :as chuck]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [expound.alpha :as expound]
-            [expound.ansi :as ansi]
-            [expound.printer :as printer]
-            [expound.problems :as problems]
+            [expound.alpha.ansi :as ansi]
+            [expound.alpha.printer :as printer]
+            [expound.alpha.problems :as problems]
             [expound.spec-gen :as sg]
             [expound.test-utils :as test-utils]
             [spec-tools.data-spec :as ds]
@@ -896,8 +896,9 @@ should satisfy
 
 -- Spec failed --------------------
 
-  {:foo ..., :child-2 {:bar 123, :child-1 ...}}
-                            ^^^
+  {:foo ...,
+   :child-2 {:bar 123, :child-1 ...}}
+                  ^^^
 
 should satisfy
 
@@ -1114,8 +1115,9 @@ should satisfy
 or value
 
   {:tag-2 ...,
-   :children-2 [{:tag-2 ..., :children-2 [{:tag-2 :group, :props-2 {:on-tap-2 {}}}]}]}
-                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   :children-2
+   [{:tag-2 ..., :children-2 [{:tag-2 :group, :props-2 {:on-tap-2 {}}}]}]}
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 should satisfy
 
@@ -1127,15 +1129,17 @@ or value
    :children-2
    [{:tag-2 ...,
      :children-2
-     [{:tag-2 ..., :props-2 {:on-tap-2 {}}}]}]}
-                                       ^^
+     [{:tag-2 ...,
+       :props-2 {:on-tap-2 {}}}]}]}
+                           ^^
 
 should satisfy
 
   vector?
 
 -------------------------
-Detected 1 error\n")
+Detected 1 error\n"
+            )
            (expound/expound-str
             :recursive-spec/el-2
             {:tag-2 :group

@@ -1,4 +1,4 @@
-(ns ^:no-doc expound.ansi
+(ns ^:no-doc expound.alpha.ansi
   (:require [clojure.string :as string]))
 
 ;; Copied from strictly-specking, since I see no reason

@@ -1,7 +1,7 @@
-(ns expound.problems-test
+(ns expound.alpha.problems-test
   (:require [clojure.test :as ct :refer [is deftest use-fixtures]]
             [clojure.spec.alpha :as s]
-            [expound.problems :as problems]
+            [expound.alpha.problems :as problems]
             [expound.test-utils :as test-utils]))
 
 (use-fixtures :once

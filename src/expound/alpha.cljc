@@ -1,13 +1,13 @@
 (ns expound.alpha
   "Generates human-readable errors for `clojure.spec`"
-  (:require [expound.problems :as problems]
+  (:require [expound.alpha.problems :as problems]
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.set :as set]
             [clojure.walk :as walk]
-            [expound.printer :as printer]
-            [expound.util :as util]
-            [expound.ansi :as ansi]
+            [expound.alpha.printer :as printer]
+            [expound.alpha.util :as util]
+            [expound.alpha.ansi :as ansi]
             [clojure.spec.gen.alpha :as gen]))
 
 ;;;;;; registry ;;;;;;

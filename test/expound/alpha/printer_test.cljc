@@ -1,12 +1,12 @@
-(ns expound.printer-test
+(ns expound.alpha.printer-test
   (:require [clojure.spec.alpha :as s]
             [clojure.test :as ct :refer [is deftest use-fixtures testing]]
-            [expound.printer :as printer]
+            [expound.alpha.printer :as printer]
             [clojure.string :as string]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [expound.test-utils :as test-utils :refer [contains-nan?]]
             [expound.spec-gen :as sg]
-            [expound.problems :as problems]))
+            [expound.alpha.problems :as problems]))
 
 (def num-tests 5)
 
@@ -20,7 +20,7 @@
 (deftest pprint-fn
   (is (= "string?"
          (printer/pprint-fn (::s/spec (s/explain-data string? 1)))))
-  (is (= "expound.printer-test/example-fn"
+  (is (= "expound.alpha.printer-test/example-fn"
          (printer/pprint-fn example-fn)))
   (is (= "<anonymous function>"
          (printer/pprint-fn #(inc (inc %)))))
@@ -348,7 +348,7 @@
 
 (deftest highlighted-value-on-coll-of
   ;; sets
-  (is (= "#{1 3 2 :a}\n        ^^"
+  (is (= "#{1 :a 3 2}\n    ^^"
          (printer/highlighted-value
           {}
           (first

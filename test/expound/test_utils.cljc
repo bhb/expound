@@ -10,7 +10,7 @@
             [expound.alpha :as expound]
             [clojure.test :as ct]
             [com.gfredericks.test.chuck.clojure-test :as chuck]
-            [expound.util :as util]
+            [expound.alpha.util :as util]
             [clojure.test.check.generators :as gen]))
 
 ;; test.chuck defines a reporter for the shrunk results, but only for the

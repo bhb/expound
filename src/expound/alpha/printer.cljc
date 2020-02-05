@@ -1,11 +1,11 @@
-(ns ^:no-doc expound.printer
+(ns ^:no-doc expound.alpha.printer
   (:require [clojure.string :as string]
             [clojure.spec.alpha :as s]
             [clojure.pprint :as pprint]
             [clojure.set :as set]
-            [expound.util :as util]
-            [expound.ansi :as ansi]
-            [expound.paths :as paths]
+            [expound.alpha.util :as util]
+            [expound.alpha.ansi :as ansi]
+            [expound.alpha.paths :as paths]
             [clojure.walk :as walk]
             #?(:cljs [goog.string.format]) ; https://github.com/bhb/expound/issues/183
             #?(:cljs [goog.string])        ; https://github.com/bhb/expound/issues/183
@@ -337,20 +337,20 @@
 (defn blank-form [form]
   (cond
     (map? form)
-    (zipmap (keys form) (repeat :expound.problems/irrelevant))
+    (zipmap (keys form) (repeat :expound.alpha.problems/irrelevant))
 
     (vector? form)
-    (vec (repeat (count form) :expound.problems/irrelevant))
+    (vec (repeat (count form) :expound.alpha.problems/irrelevant))
 
     (set? form)
     form
 
     (or (list? form)
         (seq? form))
-    (apply list (repeat (count form) :expound.problems/irrelevant))
+    (apply list (repeat (count form) :expound.alpha.problems/irrelevant))
 
     :else
-    :expound.problems/irrelevant))
+    :expound.alpha.problems/irrelevant))
 
 (s/fdef summary-form
   :args (s/cat :show-valid-values? boolean?
@@ -362,13 +362,13 @@
         displayed-form (if show-valid-values? form (blank-form form))]
     (cond
       (empty? in)
-      :expound.problems/relevant
+      :expound.alpha.problems/relevant
 
       (and (map? form) (paths/kps? k))
       (-> displayed-form
           (dissoc (:key k))
           (assoc (summary-form show-valid-values? (:key k) rst)
-                 :expound.problems/irrelevant))
+                 :expound.alpha.problems/irrelevant))
 
       (and (map? form) (paths/kvps? k))
       (recur show-valid-values? (nth (seq form) (:idx k)) rst)
@@ -394,7 +394,7 @@
                     (assoc k (summary-form show-valid-values? (nth (seq form) k) rst))))
 
       (and (int? k) (string? form))
-      (string/join (assoc (vec form) k :expound.problems/relevant))
+      (string/join (assoc (vec form) k :expound.alpha.problems/relevant))
 
       :else
       (throw (ex-info "Cannot find path segment in form. This can be caused by using conformers to transform values, which is not supported in Expound"
@@ -415,9 +415,9 @@
   (let [{:keys [:expound/form :expound/in]} problem
         {:keys [show-valid-values?] :or {show-valid-values? false}} opts
         printed-val (pprint-str (paths/value-in form in))
-        relevant (str "(" :expound.problems/relevant "|(" :expound.problems/kv-relevant "\\s+" :expound.problems/kv-relevant "))")
+        relevant (str "(" :expound.alpha.problems/relevant "|(" :expound.alpha.problems/kv-relevant "\\s+" :expound.alpha.problems/kv-relevant "))")
         regex (re-pattern (str "(.*)" relevant ".*"))
-        s (binding [*print-namespace-maps* false] (pprint-str (walk/prewalk-replace {:expound.problems/irrelevant '...} (summary-form show-valid-values? form in))))
+        s (binding [*print-namespace-maps* false] (pprint-str (walk/prewalk-replace {:expound.alpha.problems/irrelevant '...} (summary-form show-valid-values? form in))))
         [line prefix & _more] (re-find regex s)
         highlighted-line (-> line
                              (string/replace (re-pattern relevant) (escape-replacement

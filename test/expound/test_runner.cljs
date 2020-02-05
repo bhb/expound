@@ -1,9 +1,9 @@
 (ns expound.test-runner
   (:require [jx.reporter.karma :refer-macros [run-tests run-all-tests]]
             [expound.alpha-test]
-            [expound.paths-test]
-            [expound.printer-test]
-            [expound.problems-test]
+            [expound.alpha.paths-test]
+            [expound.alpha.printer-test]
+            [expound.alpha.problems-test]
             [expound.test-utils]
             [expound.specs-test]
             [expound.spell-spec-test]))

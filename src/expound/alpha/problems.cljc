@@ -1,5 +1,5 @@
-(ns ^:no-doc expound.problems
-  (:require [expound.paths :as paths]
+(ns ^:no-doc expound.alpha.problems
+  (:require [expound.alpha.paths :as paths]
             [clojure.spec.alpha :as s])
   (:refer-clojure :exclude [type]))
 

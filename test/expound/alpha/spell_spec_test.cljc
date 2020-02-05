@@ -1,7 +1,7 @@
 ;; copied from
 ;; https://github.com/bhauman/spell-spec/blob/master/test/spell_spec/expound_test.cljc
 ;; so I don't break the extension API
-(ns expound.spell-spec-test
+(ns expound.alpha.spell-spec-test
   (:require [#?(:clj clojure.test :cljs cljs.test)
              :refer [deftest is testing]]
             [#?(:clj clojure.spec.alpha
@@ -53,7 +53,7 @@
         result (exp/expound-str spec data)]
     (is (string/includes? result "Misspelled map key"))
     (is (string/includes? result "should probably be"))
-    (is (string/includes? result ":expound.spell-spec-test/hello\n"))))
+    (is (string/includes? result ":expound.alpha.spell-spec-test/hello\n"))))
 
 (s/def ::hello integer?)
 (s/def ::there integer?)

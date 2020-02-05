@@ -1,8 +1,8 @@
-(ns expound.paths-test
+(ns expound.alpha.paths-test
   (:require [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [clojure.test.check.generators :as gen]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
-            [expound.paths :as paths]
+            [expound.alpha.paths :as paths]
             [expound.test-utils :as test-utils]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [clojure.test.check.generators :as gen]

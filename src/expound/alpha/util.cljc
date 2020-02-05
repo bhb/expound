@@ -1,4 +1,4 @@
-(ns ^:no-doc expound.util)
+(ns ^:no-doc expound.alpha.util)
 
 (def assert-message "Internal Expound assertion failed. Please report this bug at https://github.com/bhb/expound/issues")
 
