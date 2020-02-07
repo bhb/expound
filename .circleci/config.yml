@@ -78,7 +78,7 @@ jobs:
       - run: lein clean
       # TODO: reenable when CLJS has spec2 implementation
       # - run: lein with-profile test-web cljsbuild once test 2> >(tee -a stderr.log >&2)
-      - run: cat stderr.log | grep -v "Options passed to ClojureScript compiler" | bin/check-for-warnings.sh
+      # - run: cat stderr.log | grep -v "Options passed to ClojureScript compiler" | bin/check-for-warnings.sh
       - run: bin/tests
       - run: bin/golden_master_test.sh
       - run: bin/deps_test.sh
