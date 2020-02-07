@@ -1,3 +1,4 @@
+[["org.clojure"] ["alpha.spec"]]
 [["org.clojure"] ["clojure"]]
 [["org.clojure"] ["clojurescript"]]
 [["org.clojure"] ["spec.alpha"]]
