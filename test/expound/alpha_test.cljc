@@ -615,6 +615,13 @@ Detected 1 error\n")
 
 (s/def :keys-spec/user4 (s/keys :req []))
 
+(defmulti key-spec-mspec :tag)
+(s/def :key-spec/mspec (s/multi-spec key-spec-mspec :tag))
+(s/def :key-spec/i int?)
+(s/def :key-spec/s string?)
+(defmethod key-spec-mspec :int [_] (s/keys :req-un [::tag ::i]))
+(defmethod key-spec-mspec :string [_] (s/keys :req-un [::tag ::s]))
+
 (deftest keys-spec
   (testing "missing keys"
     (is (= (pf "-- Spec failed --------------------
@@ -717,12 +724,6 @@ Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
            (expound/expound-str (s/keys :req-un [:keys-spec/name :keys-spec/age]) {})))
-    (defmulti key-spec-mspec :tag)
-    (s/def :key-spec/mspec (s/multi-spec key-spec-mspec :tag))
-    (s/def :key-spec/i int?)
-    (s/def :key-spec/s string?)
-    (defmethod key-spec-mspec :int [_] (s/keys :req-un [::tag ::i]))
-    (defmethod key-spec-mspec :string [_] (s/keys :req-un [::tag ::s]))
     ;; We can't inspect the contents of a multi-spec (to figure out
     ;; which spec we mean by :i), so this is the best we can do.
     (is (= "-- Spec failed --------------------
@@ -946,6 +947,11 @@ Detected 4 errors\n"
   (s/keys :req [:multi-spec/children]))
 (s/def :multi-spec/el (s/multi-spec el-type :multi-spec/el-type))
 
+(defmulti multi-spec-bar-spec :type)
+(s/def :multi-spec/b string?)
+(defmethod multi-spec-bar-spec ::b [_] (s/keys :req [::b]))
+(s/def :multi-spec/bar (s/multi-spec multi-spec-bar-spec (fn [val tag] (assoc val :type tag))))
+
 (deftest multi-spec
   (testing "missing dispatch key"
     (is (=
@@ -1019,10 +1025,6 @@ Detected 1 error\n")
 
   ;; https://github.com/bhb/expound/issues/122
   (testing "when re-tag is a function"
-    (defmulti multi-spec-bar-spec :type)
-    (s/def :multi-spec/b string?)
-    (defmethod multi-spec-bar-spec ::b [_] (s/keys :req [::b]))
-    (s/def :multi-spec/bar (s/multi-spec multi-spec-bar-spec (fn [val tag] (assoc val :type tag))))
     (is (= "-- Missing spec -------------------
 
 Cannot find spec for
@@ -1882,6 +1884,10 @@ Detected 1 error
                                   :s :alt-spec/s
                                   :k (s/keys :req-un [:alt-spec/i :alt-spec/s])))
 
+(defmulti alt-spec-mspec :tag)
+(s/def :alt-spec/mspec (s/multi-spec alt-spec-mspec :tag))
+(defmethod alt-spec-mspec :x [_] (s/keys :req-un [:alt-spec/one-many-int]))
+
 (deftest alt-spec
   (testing "alternatives at different paths in spec"
     (is (=
@@ -2170,9 +2176,6 @@ Detected 1 error
         [""]
         {:print-specs? false})))
 
-  (defmulti alt-spec-mspec :tag)
-  (s/def :alt-spec/mspec (s/multi-spec alt-spec-mspec :tag))
-  (defmethod alt-spec-mspec :x [_] (s/keys :req-un [:alt-spec/one-many-int]))
   (is (=
        ;; This output is not what we want: ideally, the two alternates
        ;; should be grouped into a single problem.
@@ -3293,7 +3296,6 @@ Detected 1 error
 (s/fdef results-str-fn2
   :args (s/cat :x nat-int? :y nat-int?)
   :fn #(let [x (-> % :args :x)
-             y (-> % :args :y)
              ret (-> % :ret)]
          (< x ret)))
 (defn results-str-fn2 [x y]
@@ -4017,14 +4019,14 @@ should satisfy
                                                            :theme :figwheel-theme})]
           (s/explain-str ::spec (s/form (s/get-spec sp))))))))
 
-(defmethod expound/problem-group-str ::test-problem1 [_type spec-name val path problems opts]
+(defmethod expound/problem-group-str ::test-problem1 [_type _spec-name _val _path _problems _opts]
   "fake-problem-group-str")
 
 (defmethod expound/problem-group-str ::test-problem2 [type spec-name val path problems opts]
   (str "fake-problem-group-str\n"
        (expound/expected-str type spec-name val path problems opts)))
 
-(defmethod expound/expected-str ::test-problem2 [_type spec-name val path problems opts]
+(defmethod expound/expected-str ::test-problem2 [_type _spec-name _val _path _problems _opts]
   "fake-expected-str")
 
 (deftest extensibility-test

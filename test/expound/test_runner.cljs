@@ -1,5 +1,5 @@
 (ns expound.test-runner
-  (:require [jx.reporter.karma :refer-macros [run-tests run-all-tests]]
+  (:require [jx.reporter.karma :refer-macros [run-all-tests]]
             [expound.alpha-test]
             [expound.paths-test]
             [expound.printer-test]
@@ -13,7 +13,7 @@
 ;; runs all tests in all namespaces
 ;; This is what runs by default
 (defn ^:export run-all [karma]
-  (jx.reporter.karma/run-all-tests karma))
+  (run-all-tests karma))
 
 ;; runs all tests in all namespaces - only namespaces with names matching
 ;; the regular expression will be tested

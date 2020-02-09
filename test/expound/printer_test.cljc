@@ -2,8 +2,7 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.test :as ct :refer [is deftest use-fixtures testing]]
             [expound.printer :as printer]
-            [clojure.string :as string]
-            [com.gfredericks.test.chuck.clojure-test :refer [checking]]
+            #?(:clj [com.gfredericks.test.chuck.clojure-test :refer [checking]])
             [expound.test-utils :as test-utils :refer [contains-nan?]]
             [expound.spec-gen :as sg]
             [expound.problems :as problems]))
