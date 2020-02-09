@@ -2350,12 +2350,16 @@ Detected 2 errors\n"
       ;; because the algorithm to fix up the 'in' paths depends
       ;; on the non-conforming value existing somewhere within
       ;; the top-level form
-      (when-not (some
-                 #{"clojure.spec.alpha/fspec"}
-                 (->> spec
-                      inline-specs
-                      (tree-seq coll? identity)
-                      (map str)))
+      (when-not
+          ;; a conformer generally won't work against any arbitrary value
+          ;; e.g. we can't conform 0 with the conformer 'seq'
+       (or (contains? #{:conformers-test/string-AB} spec)
+           (some
+            #{"clojure.spec.alpha/fspec"}
+            (->> spec
+                 inline-specs
+                 (tree-seq coll? identity)
+                 (map str))))
         (when-not (s/valid? spec form)
           (let [expected-err-msg (str "Spec assertion failed\n"
                                       (binding [s/*explain-out* (expound/custom-printer {:print-specs? true})]
@@ -2390,12 +2394,15 @@ Detected 2 errors\n"
           (chuck/times num-tests)
           [spec sg/spec-gen
            mutate-path (gen/vector gen/pos-int)]
-          (when-not (some
-                     #{"clojure.spec.alpha/fspec"}
-                     (->> spec
-                          inline-specs
-                          (tree-seq coll? identity)
-                          (map str)))
+          (when-not
+           (or
+            (contains? #{:conformers-test/string-AB} spec)
+            (some
+             #{"clojure.spec.alpha/fspec"}
+             (->> spec
+                  inline-specs
+                  (tree-seq coll? identity)
+                  (map str))))
             (when (contains? (s/registry) spec)
               (try
                 (let [valid-form (first (s/exercise spec 1))
@@ -4239,3 +4246,17 @@ Detected 1 error\n"
              :s string?)
             :oak
             {:print-specs? false})))))
+
+(comment
+  (s/def :conformers-test/string-AB-seq (s/cat :a #{\A} :b #{\B}))
+
+  (s/def :conformers-test/string-AB
+    (s/and
+     ;; conform as sequence (seq function)
+     (s/conformer seq)
+     ;; re-use previous sequence spec
+     :conformers-test/string-AB-seq))
+
+  (def u #uuid "4172a448-b60a-4071-b3e9-cd77bbf67c4a")
+
+  (expound/expound :conformers-test/string-AB u))

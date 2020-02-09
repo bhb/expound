@@ -287,7 +287,7 @@
              (:expound/problems
               (problems/annotate
                (s/explain-data keyword? "$ $$ $1 $& $` $'"))))))))
-  
+
   (testing "nested map-of specs"
     (is (= "{:a {:b 1}}\n        ^"
            (printer/highlighted-value
