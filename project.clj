@@ -93,6 +93,7 @@
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                   [com.gfredericks/test.chuck "0.2.10"]
                                   [cider/cider-nrepl "0.22.4"]
+                                  [speculative "0.0.3"]
                                   ]
                    :injections [(require 'sc.api)]
                    :plugins [
