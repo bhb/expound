@@ -3,6 +3,7 @@
             [clojure.test :as ct :refer [is deftest use-fixtures testing]]
             [expound.printer :as printer]
             #?(:clj [com.gfredericks.test.chuck.clojure-test :refer [checking]])
+            #?(:clj [clojure.string :as string])
             [expound.test-utils :as test-utils :refer [contains-nan?]]
             [expound.spec-gen :as sg]
             [expound.problems :as problems]))
