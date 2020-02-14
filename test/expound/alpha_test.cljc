@@ -3296,6 +3296,7 @@ Detected 1 error
 (s/fdef results-str-fn2
   :args (s/cat :x nat-int? :y nat-int?)
   :fn #(let [x (-> % :args :x)
+             _y (-> % :args :y)
              ret (-> % :ret)]
          (< x ret)))
 (defn results-str-fn2 [x y]
@@ -3412,7 +3413,7 @@ should satisfy
    (let
     [x
      (-> %% :args :x)
-     y
+     _y
      (-> %% :args :y)
      ret
      (-> %% :ret)]
@@ -3449,7 +3450,7 @@ should satisfy
    (let
     [x
      (-> % :args :x)
-     y
+     _y
      (-> % :args :y)
      ret
      (-> % :ret)]
@@ -3484,7 +3485,7 @@ should satisfy
    (let
     [x
      (-> % :args :x)
-     y
+     _y
      (-> % :args :y)
      ret
      (-> % :ret)]
