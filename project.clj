@@ -93,7 +93,11 @@
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                   [com.gfredericks/test.chuck "0.2.10"]
                                   [cider/cider-nrepl "0.22.4"]
-                                  [speculative "0.0.3"]
+                                  ;; Disabling speculative because
+                                  ;; instaparse runs into problem with re-matcher (appears to be used by test.chuck)
+                                  ;; Also, running with all specs enabled slows doesn testing, so I need a better way
+                                  ;; to only instrument in some cases, or the functions only within expound
+                                  ;; [speculative "0.0.3"]
                                   ]
                    :injections [(require 'sc.api)]
                    :plugins [
