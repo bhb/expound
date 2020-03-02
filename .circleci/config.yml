@@ -67,7 +67,8 @@ jobs:
 
       - run: bin/install-chrome
       - run: bin/install-clojure
-      - run: sudo bin/install-node && npm install
+      # FIXME: the sha is not matching??
+      # - run: sudo bin/install-node && npm install
       - run: lein check
       # TODO: re-enable when spec2 fixes reflection warnings
       # - run:
