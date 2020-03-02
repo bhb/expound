@@ -18,4 +18,10 @@ expound/specs.cljc
 expound/ansi.cljc
 expound/alpha2/
 expound/alpha2/core.cljc
+expound/alpha2/ansi.cljc
+expound/alpha2/printer.cljc
+expound/alpha2/problems.cljc
+expound/alpha2/util.cljc
+expound/alpha2/paths.cljc
+expound/alpha2/specs.cljc
 expound/alpha2.cljc
