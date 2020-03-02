@@ -139,7 +139,7 @@
              :check {:global-vars {*unchecked-math*     :warn-on-boxed
                                    *warn-on-reflection* true}}
              :kaocha [:test-common
-                      {:dependencies [[lambdaisland/kaocha "0.0-565"]
+                      {:dependencies [[lambdaisland/kaocha "0.0-590"]
                                       [lambdaisland/kaocha-cloverage "0.0-41"]]}]
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [pjstadig/humane-test-output "0.9.0"]

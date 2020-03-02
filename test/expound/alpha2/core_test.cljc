@@ -1,12 +1,8 @@
-(ns expound.alpha-test
-  (:require #?@(:clj
-                ;; just to include the specs
-                [[clojure.core.specs.alpha]
-                 [ring.core.spec]
-                 [onyx.spec]])
+(ns expound.alpha2.core-test
+  (:require 
             [clojure.set :as set]
-            [clojure.spec.alpha :as s]
-            [clojure.spec.test.alpha :as st]
+            [clojure.alpha.spec :as s]
+            [clojure.alpha.spec.test :as st]
             [clojure.string :as string]
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [clojure.test.check.generators :as gen]
@@ -15,15 +11,12 @@
             [clojure.walk :as walk]
             [com.gfredericks.test.chuck :as chuck]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
-            [expound.alpha :as expound]
-            [expound.ansi :as ansi]
-            [expound.printer :as printer]
-            [expound.problems :as problems]
-            [expound.spec-gen :as sg]
-            [expound.test-utils :as test-utils]
-            [spec-tools.data-spec :as ds]
-            #?(:clj [orchestra.spec.test :as orch.st]
-               :cljs [orchestra-cljs.spec.test :as orch.st])))
+            [expound.alpha2.core :as expound]
+            [expound.alpha2.ansi :as ansi]
+            [expound.alpha2.printer :as printer]
+            [expound.alpha2.problems :as problems]
+            ;;[expound.alpha2.spec-gen :as sg]
+            [expound.alpha2.test-utils :as test-utils]))
 
 (def num-tests 5)
 
@@ -61,13 +54,13 @@
 
 ;; https://github.com/bhb/expound/issues/8
 (deftest expound-output-ends-in-newline
-  (is (= "\n" (str (last (expound/expound-str string? 1)))))
-  (is (= "\n" (str (last (expound/expound-str string? ""))))))
+  (is (= "\n" (str (last (expound/expound-str (s/spec string?) 1)))))
+  (is (= "\n" (str (last (expound/expound-str (s/spec string?) ""))))))
 
 (deftest expound-prints-expound-str
   (is (=
-       (expound/expound-str string? 1)
-       (with-out-str (expound/expound string? 1)))))
+       (expound/expound-str (s/spec string?) 1)
+       (with-out-str (expound/expound (s/spec string?) 1)))))
 
 (deftest predicate-spec
   (is (= (pf "-- Spec failed --------------------
@@ -80,7 +73,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n")
-         (expound/expound-str string? 1))))
+         (expound/expound-str (s/spec string?) 1))))
 
 (s/def :simple-type-based-spec/str string?)
 
@@ -144,11 +137,11 @@ should be one of: :one, :two
 -- Relevant specs -------
 
 :set-based-spec/one-or-two:
-  (pf.spec.alpha/or
+  (pf.alpha.spec/or
    :one
-   (pf.spec.alpha/cat :a #{:one})
+   (pf.alpha.spec/cat :a #{:one})
    :two
-   (pf.spec.alpha/cat :b #{:two}))
+   (pf.alpha.spec/cat :b #{:two}))
 
 -------------------------
 Detected 1 error\n")
@@ -172,7 +165,7 @@ should satisfy
 :set-based-spec/tag:
   #{:bar :foo}
 :set-based-spec/nilable-tag:
-  (pf.spec.alpha/nilable :set-based-spec/tag)
+  (pf.alpha.spec/nilable :set-based-spec/tag)
 
 -------------------------
 Detected 1 error\n")
@@ -212,7 +205,7 @@ should satisfy
 :nested-type-based-spec/str:
   pf.core/string?
 :nested-type-based-spec/strs:
-  (pf.spec.alpha/coll-of :nested-type-based-spec/str)
+  (pf.alpha.spec/coll-of :nested-type-based-spec/str)
 
 -------------------------
 Detected 1 error\n")
@@ -237,7 +230,7 @@ should satisfy
 :nested-type-based-spec-special-summary-string/int:
   pf.core/int?
 :nested-type-based-spec-special-summary-string/ints:
-  (pf.spec.alpha/coll-of
+  (pf.alpha.spec/coll-of
    :nested-type-based-spec-special-summary-string/int)
 
 -------------------------
@@ -271,7 +264,7 @@ or
 -- Relevant specs -------
 
 :or-spec/str-or-int:
-  (pf.spec.alpha/or :int pf.core/int? :str pf.core/string?)
+  (pf.alpha.spec/or :int pf.core/int? :str pf.core/string?)
 
 -------------------------
 Detected 1 error\n")
@@ -293,9 +286,9 @@ or
 -- Relevant specs -------
 
 :or-spec/str-or-int:
-  (pf.spec.alpha/or :int pf.core/int? :str pf.core/string?)
+  (pf.alpha.spec/or :int pf.core/int? :str pf.core/string?)
 :or-spec/vals:
-  (pf.spec.alpha/coll-of :or-spec/str-or-int)
+  (pf.alpha.spec/coll-of :or-spec/str-or-int)
 
 -------------------------
 Detected 1 error\n")
@@ -344,11 +337,11 @@ should contain keys: :or-spec/int, :or-spec/str
 -- Relevant specs -------
 
 :or-spec/m-with-int:
-  (pf.spec.alpha/keys :req [:or-spec/int])
+  (pf.alpha.spec/keys :req [:or-spec/int])
 :or-spec/m-with-str:
-  (pf.spec.alpha/keys :req [:or-spec/str])
+  (pf.alpha.spec/keys :req [:or-spec/str])
 :or-spec/m-with-str-or-int:
-  (pf.spec.alpha/or
+  (pf.alpha.spec/or
    :m-with-str
    :or-spec/m-with-str
    :m-with-int
@@ -390,9 +383,9 @@ should satisfy
 -- Relevant specs -------
 
 :and-spec/name:
-  (pf.spec.alpha/and
+  (pf.alpha.spec/and
    pf.core/string?
-   (pf.core/fn [%%] (pf.core/pos? (pf.core/count %%))))
+   (fn [%%] (pf.core/pos? (pf.core/count %%))))
 
 -------------------------
 Detected 1 error\n")
@@ -412,11 +405,11 @@ should satisfy
 -- Relevant specs -------
 
 :and-spec/name:
-  (pf.spec.alpha/and
+  (pf.alpha.spec/and
    pf.core/string?
-   (pf.core/fn [%%] (pf.core/pos? (pf.core/count %%))))
+   (fn [%%] (pf.core/pos? (pf.core/count %%))))
 :and-spec/names:
-  (pf.spec.alpha/coll-of :and-spec/name)
+  (pf.alpha.spec/coll-of :and-spec/name)
 
 -- Spec failed --------------------
 
@@ -430,11 +423,11 @@ should satisfy
 -- Relevant specs -------
 
 :and-spec/name:
-  (pf.spec.alpha/and
+  (pf.alpha.spec/and
    pf.core/string?
-   (pf.core/fn [%%] (pf.core/pos? (pf.core/count %%))))
+   (fn [%%] (pf.core/pos? (pf.core/count %%))))
 :and-spec/names:
-  (pf.spec.alpha/coll-of :and-spec/name)
+  (pf.alpha.spec/coll-of :and-spec/name)
 
 -------------------------
 Detected 2 errors\n"
@@ -458,7 +451,7 @@ should satisfy
 -- Relevant specs -------
 
 :coll-of-spec/big-int-coll:
-  (pf.spec.alpha/coll-of pf.core/int? :min-count 10)
+  (pf.alpha.spec/coll-of pf.core/int? :min-count 10)
 
 -------------------------
 Detected 1 error\n"
@@ -485,7 +478,7 @@ should have additional elements. The next element \":k\" should satisfy
 -- Relevant specs -------
 
 :cat-spec/kw:
-  (pf.spec.alpha/cat :k pf.core/keyword? :v pf.core/any?)
+  (pf.alpha.spec/cat :k pf.core/keyword? :v pf.core/any?)
 
 -------------------------
 Detected 1 error\n")
@@ -499,7 +492,7 @@ should have additional elements. The next element \":type\" should be one of: :b
 -- Relevant specs -------
 
 :cat-spec/set:
-  (pf.spec.alpha/cat :type #{:bar :foo} :str pf.core/string?)
+  (pf.alpha.spec/cat :type #{:bar :foo} :str pf.core/string?)
 
 -------------------------
 Detected 1 error\n")
@@ -515,7 +508,7 @@ should have additional elements. The next element \":v\" should satisfy
 -- Relevant specs -------
 
 :cat-spec/kw:
-  (pf.spec.alpha/cat :k pf.core/keyword? :v pf.core/any?)
+  (pf.alpha.spec/cat :k pf.core/keyword? :v pf.core/any?)
 
 -------------------------
 Detected 1 error\n")
@@ -528,14 +521,14 @@ Detected 1 error\n")
 
 should have additional elements. The next element should satisfy
 
-  (pf.spec.alpha/alt :s string? :i int?)
+  (pf.alpha.spec/alt :s string? :i int?)
 
 -- Relevant specs -------
 
 :cat-spec/alt*:
-  (pf.spec.alpha/alt :s pf.core/string? :i pf.core/int?)
+  (pf.alpha.spec/alt :s pf.core/string? :i pf.core/int?)
 :cat-spec/alt:
-  (pf.spec.alpha/+ :cat-spec/alt*)
+  (pf.alpha.spec/+ :cat-spec/alt*)
 
 -------------------------
 Detected 1 error\n")
@@ -546,13 +539,13 @@ Detected 1 error\n")
 
 should have additional elements. The next element should satisfy
 
-  (pf.spec.alpha/alt :s string? :i int?)
+  (pf.alpha.spec/alt :s string? :i int?)
 
 -- Relevant specs -------
 
 :cat-spec/alt-inline:
-  (pf.spec.alpha/+
-   (pf.spec.alpha/alt :s pf.core/string? :i pf.core/int?))
+  (pf.alpha.spec/+
+   (pf.alpha.spec/alt :s pf.core/string? :i pf.core/int?))
 
 -------------------------
 Detected 1 error\n")
@@ -568,7 +561,7 @@ should have additional elements. The next element \":x\" should satisfy
 -- Relevant specs -------
 
 :cat-spec/any:
-  (pf.spec.alpha/cat :x (pf.spec.alpha/+ pf.core/any?))
+  (pf.alpha.spec/cat :x (pf.alpha.spec/+ pf.core/any?))
 
 -------------------------
 Detected 1 error\n")
@@ -584,7 +577,7 @@ has extra input
 -- Relevant specs -------
 
 :cat-spec/kw:
-  (pf.spec.alpha/cat :k pf.core/keyword? :v pf.core/any?)
+  (pf.alpha.spec/cat :k pf.core/keyword? :v pf.core/any?)
 
 -------------------------
 Detected 1 error\n")
@@ -644,10 +637,9 @@ should contain keys: :age, :keys-spec/name
 -------------------------
 Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
-                  :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
+                  :clj "(clojure.alpha.spec/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
            (expound/expound-str :keys-spec/user {}))))
-  ;; FIXME when bug with using 'or' in spec is fixed
-  ;; 
+  ;; Will fail until "Bug with using symbols in specs" is fixed
   #_(testing "missing compound keys"
     (is (= (pf "-- Spec failed --------------------
 
@@ -672,7 +664,7 @@ should contain keys:
 -- Relevant specs -------
 
 :keys-spec/user2:
-  (pf.spec.alpha/keys
+  (pf.alpha.spec/keys
    :req
    [(and :keys-spec/name :keys-spec/age)]
    :req-un
@@ -681,7 +673,8 @@ should contain keys:
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :keys-spec/user2 {})))
-    (is (= (pf "-- Spec failed --------------------
+    ;; Will fail until "Bug with using symbols in specs" is fixed
+    #_(is (= (pf "-- Spec failed --------------------
 
   {}
 
@@ -700,7 +693,7 @@ should contain keys:
 -- Relevant specs -------
 
 :keys-spec/user3:
-  (pf.spec.alpha/keys
+  (pf.alpha.spec/keys
    :req-un
    [(or :key-spec/zip (and :key-spec/state :key-spec/city))])
 
@@ -724,7 +717,7 @@ should contain keys: :age, :name
 -------------------------
 Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
-                  :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
+                  :clj "(clojure.alpha.spec/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
            (expound/expound-str (s/keys :req-un [:keys-spec/name :keys-spec/age]) {})))
     ;; We can't inspect the contents of a multi-spec (to figure out
     ;; which spec we mean by :i), so this is the best we can do.
@@ -765,7 +758,7 @@ should satisfy
 -------------------------
 Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
-                  :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
+                  :clj "(clojure.alpha.spec/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
            (expound/expound-str :keys-spec/user {:age 1 :keys-spec/name :bob}))))
   (testing "contains compound specs"
     (s/def :keys-spec/states (s/coll-of :key-spec/state :kind vector?))
@@ -899,8 +892,9 @@ should satisfy
 
 -- Spec failed --------------------
 
-  {:foo ..., :child-2 {:bar 123, :child-1 ...}}
-                            ^^^
+  {:foo ...,
+   :child-2 {:bar 123, :child-1 ...}}
+                  ^^^
 
 should satisfy
 
@@ -910,8 +904,9 @@ should satisfy
 
   {:foo ...,
    :child-2
-   {:bar ..., :child-1 {:baz true, :qux ...}}}
-                             ^^^^
+   {:bar ...,
+    :child-1 {:baz true, :qux ...}}}
+                   ^^^^
 
 should satisfy
 
@@ -921,8 +916,9 @@ should satisfy
 
   {:foo ...,
    :child-2
-   {:bar ..., :child-1 {:baz ..., :qux false}}}
-                                       ^^^^^
+   {:bar ...,
+    :child-1 {:baz ..., :qux false}}}
+                             ^^^^^
 
 should satisfy
 
@@ -965,14 +961,14 @@ Cannot find spec for
 
 with
 
- Spec multimethod:      `expound.alpha-test/el-type`
+ Spec multimethod:      `expound.alpha2.core-test/el-type`
  Dispatch value:        `nil`
 
 -- Relevant specs -------
 
 :multi-spec/el:
-  (pf.spec.alpha/multi-spec
-   expound.alpha-test/el-type
+  (pf.alpha.spec/multi-spec
+   expound.alpha2.core-test/el-type
    :multi-spec/el-type)
 
 -------------------------
@@ -988,14 +984,14 @@ Cannot find spec for
 
 with
 
- Spec multimethod:      `expound.alpha-test/el-type`
+ Spec multimethod:      `expound.alpha2.core-test/el-type`
  Dispatch value:        `:image`
 
 -- Relevant specs -------
 
 :multi-spec/el:
-  (pf.spec.alpha/multi-spec
-   expound.alpha-test/el-type
+  (pf.alpha.spec/multi-spec
+   expound.alpha2.core-test/el-type
    :multi-spec/el-type)
 
 -------------------------
@@ -1017,8 +1013,8 @@ should contain key: :multi-spec/value
 -- Relevant specs -------
 
 :multi-spec/el:
-  (pf.spec.alpha/multi-spec
-   expound.alpha-test/el-type
+  (pf.alpha.spec/multi-spec
+   expound.alpha2.core-test/el-type
    :multi-spec/el-type)
 
 -------------------------
@@ -1035,7 +1031,7 @@ Cannot find spec for
 
 with
 
- Spec multimethod:      `expound.alpha-test/multi-spec-bar-spec`
+ Spec multimethod:      `expound.alpha2.core-test/multi-spec-bar-spec`
  Dispatch value:        `nil`
 
 -------------------------
@@ -1118,8 +1114,9 @@ should satisfy
 or value
 
   {:tag-2 ...,
-   :children-2 [{:tag-2 ..., :children-2 [{:tag-2 :group, :props-2 {:on-tap-2 {}}}]}]}
-                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   :children-2
+   [{:tag-2 ..., :children-2 [{:tag-2 :group, :props-2 {:on-tap-2 {}}}]}]}
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 should satisfy
 
@@ -1131,15 +1128,18 @@ or value
    :children-2
    [{:tag-2 ...,
      :children-2
-     [{:tag-2 ..., :props-2 {:on-tap-2 {}}}]}]}
-                                       ^^
+     [{:tag-2 ...,
+       :props-2 {:on-tap-2 {}}}]}]}
+                           ^^
 
 should satisfy
 
   vector?
 
 -------------------------
-Detected 1 error\n")
+Detected 1 error
+"
+            )
            (expound/expound-str
             :recursive-spec/el-2
             {:tag-2 :group
@@ -1176,13 +1176,13 @@ should satisfy
 -- Relevant specs -------
 
 :cat-wrapped-in-or-spec/kv:
-  (pf.spec.alpha/and
+  (pf.alpha.spec/and
    pf.core/sequential?
-   (pf.spec.alpha/cat :k pf.core/keyword? :v pf.core/any?))
+   (pf.alpha.spec/cat :k pf.core/keyword? :v pf.core/any?))
 :cat-wrapped-in-or-spec/kv-or-string:
-  (pf.spec.alpha/or
+  (pf.alpha.spec/or
    :map
-   (pf.spec.alpha/keys :req [:cat-wrapped-in-or-spec/type])
+   (pf.alpha.spec/keys :req [:cat-wrapped-in-or-spec/type])
    :kv
    :cat-wrapped-in-or-spec/kv)
 
@@ -1208,7 +1208,7 @@ should satisfy
 :map-of-spec/age:
   pf.core/pos-int?
 :map-of-spec/name->age:
-  (pf.spec.alpha/map-of :map-of-spec/name :map-of-spec/age)
+  (pf.alpha.spec/map-of :map-of-spec/name :map-of-spec/age)
 
 -------------------------
 Detected 1 error\n")
@@ -1227,13 +1227,14 @@ should satisfy
 :map-of-spec/name:
   pf.core/string?
 :map-of-spec/name->age:
-  (pf.spec.alpha/map-of :map-of-spec/name :map-of-spec/age)
+  (pf.alpha.spec/map-of :map-of-spec/name :map-of-spec/age)
 
 -------------------------
 Detected 1 error\n")
          (expound/expound-str :map-of-spec/name->age {:sally 30}))))
 
-(deftest generated-simple-spec
+;; TODO: spec generation needs to be rebuilt from ground up
+#_(deftest generated-simple-spec
   (checking
    "simple spec"
    (chuck/times num-tests)
@@ -1242,7 +1243,7 @@ Detected 1 error\n")
     form gen/any-printable]
    (is (string? (expound/expound-str simple-spec form)))))
 
-(deftest generated-coll-of-specs
+#_(deftest generated-coll-of-specs
   (checking
    "'coll-of' spec"
    (chuck/times num-tests)
@@ -1253,7 +1254,7 @@ Detected 1 error\n")
     form gen/any-printable]
    (is (string? (expound/expound-str spec form)))))
 
-(deftest generated-and-specs
+#_(deftest generated-and-specs
   (checking
    "'and' spec"
    (chuck/times num-tests)
@@ -1264,7 +1265,7 @@ Detected 1 error\n")
     form gen/any-printable]
    (is (string? (expound/expound-str spec form)))))
 
-(deftest generated-or-specs
+#_(deftest generated-or-specs
   (checking
    "'or' spec generates string"
    (chuck/times num-tests)
@@ -1311,7 +1312,7 @@ Detected 1 error\n")
               (count (re-seq #"\nor\n" (expound/expound-str spec form))))
            (str "Failed to print out all problems\nspec: " sp-form "\nproblems: " (printer/pprint-str (::s/problems ed)) "\nmessage: " (expound/expound-str spec form)))))))
 
-(deftest generated-map-of-specs
+#_(deftest generated-map-of-specs
   (checking
    "'map-of' spec"
    (chuck/times num-tests)
@@ -1325,7 +1326,7 @@ Detected 1 error\n")
     form test-utils/any-printable-wo-nan]
    (is (string? (expound/expound-str spec form)))))
 
-(s/def :expound.ds/spec-key (s/or :kw keyword?
+#_(s/def :expound.ds/spec-key (s/or :kw keyword?
                                   :req (s/tuple
                                         #{:expound.ds/req-key}
                                         (s/map-of
@@ -1339,7 +1340,7 @@ Detected 1 error\n")
                                          keyword?
                                          :count 1))))
 
-(defn real-spec [form]
+#_(defn real-spec [form]
   (walk/prewalk
    (fn [x]
      (if (vector? x)
@@ -1357,12 +1358,12 @@ Detected 1 error\n")
        x))
    form))
 
-(s/def :expound.ds/maybe-spec
+#_(s/def :expound.ds/maybe-spec
   (s/tuple
    #{:expound.ds/maybe-spec}
    :expound.ds/spec))
 
-(s/def :expound.ds/simple-specs
+#_(s/def :expound.ds/simple-specs
   #{string?
     vector?
     int?
@@ -1374,21 +1375,21 @@ Detected 1 error\n")
     neg-int?
     nat-int?})
 
-(s/def :expound.ds/vector-spec (s/coll-of
+#_(s/def :expound.ds/vector-spec (s/coll-of
                                 :expound.ds/spec
                                 :count 1
                                 :kind vector?))
 
-(s/def :expound.ds/set-spec (s/coll-of
+#_(s/def :expound.ds/set-spec (s/coll-of
                              :expound.ds/spec
                              :count 1
                              :kind set?))
 
-(s/def :expound.ds/map-spec
+#_(s/def :expound.ds/map-spec
   (s/map-of :expound.ds/spec-key
             :expound.ds/spec))
 
-(s/def :expound.ds/spec
+#_(s/def :expound.ds/spec
   (s/or
    :map :expound.ds/map-spec
    :vector :expound.ds/vector-spec
@@ -1396,7 +1397,7 @@ Detected 1 error\n")
    :simple :expound.ds/simple-specs
    :maybe :expound.ds/maybe-spec))
 
-(deftest generated-data-specs
+#_(deftest generated-data-specs
   (checking
    "generated data specs"
    (chuck/times num-tests)
@@ -1504,7 +1505,7 @@ Detected 1 error\n")
   (st/instrument `test-instrument-adder)
   #?(:cljs (is (=
                 (if (spec-error-in-ex-msg?)
-                  "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+                  "Call to #'expound.alpha2.core-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1520,15 +1521,15 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-                  "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
+                  "Call to #'expound.alpha2.core-test/test-instrument-adder did not conform to spec.")
                 (.-message (try
                              (binding [s/*explain-out* expound/printer]
                                (test-instrument-adder "" :x))
                              (catch :default e e)))))
      :clj
      (is (= (if (spec-error-in-ex-msg?)
-              "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
-alpha_test.cljc:LINUM
+              "Call to #'expound.alpha2.core-test/test-instrument-adder did not conform to spec:
+core_test.cljc:LINUM
 
 -- Spec failed --------------------
 
@@ -1543,7 +1544,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-              "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
+              "Call to #'expound.alpha2.core-test/test-instrument-adder did not conform to spec.")
             (no-linum
              (:cause
               (Throwable->map (try
@@ -1557,7 +1558,7 @@ Detected 1 error\n"
             (catch #?(:cljs :default :clj Exception)
                    e (ex-data e)))]
       (is (= (str #?(:cljs "<filename missing>:<line number missing>"
-                     :clj "alpha_test.cljc:LINUM")
+                     :clj "core_test.cljc:LINUM")
                   "
 
 -- Spec failed --------------------
@@ -1578,10 +1579,11 @@ Detected 1 error\n")
 
   (st/unstrument `test-instrument-adder))
 
-(deftest test-instrument-with-orchestra-args-spec-failure
+;; TODO: enable when orchestra is updated
+#_(deftest test-instrument-with-orchestra-args-spec-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to expound.alpha2.core-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1602,7 +1604,7 @@ Detected 1 error\n"
                                (test-instrument-adder "" :x))
                              (catch :default e e)))))
      :clj
-     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= "Call to expound.alpha2.core-test/test-instrument-adder did not conform to spec:
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1629,10 +1631,11 @@ Detected 1 error\n"
 ;; Note - you may need to comment out this test out when
 ;; using figwheel.main for testing, since the compilation
 ;; warning seems to impact the building of other tests
-(deftest test-instrument-with-orchestra-args-syntax-failure
+;; TODO: enable when orch is ready
+#_(deftest test-instrument-with-orchestra-args-syntax-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to expound.alpha2.core-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Syntax error -------------------
@@ -1652,7 +1655,7 @@ Detected 1 error\n"
                                (test-instrument-adder 1))
                              (catch :default e e)))))
      :clj
-     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= "Call to expound.alpha2.core-test/test-instrument-adder did not conform to spec:
 alpha_test.cljc:LINUM
 
 -- Syntax error -------------------
@@ -1675,10 +1678,11 @@ Detected 1 error\n"
                                 (catch Exception e e))))))))
   (orch.st/unstrument `test-instrument-adder))
 
-(deftest test-instrument-with-orchestra-ret-failure
+;; TODO: enable when orch is ready
+#_(deftest test-instrument-with-orchestra-ret-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to expound.alpha2.core-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1698,7 +1702,7 @@ Detected 1 error\n"
                                (test-instrument-adder -1 -2))
                              (catch :default e e)))))
      :clj
-     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= "Call to expound.alpha2.core-test/test-instrument-adder did not conform to spec:
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1721,10 +1725,11 @@ Detected 1 error\n"
                                 (catch Exception e e))))))))
   (orch.st/unstrument `test-instrument-adder))
 
-(deftest test-instrument-with-orchestra-fn-failure
+;; TODO: enable when orch is ready
+#_(deftest test-instrument-with-orchestra-fn-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to expound.alpha2.core-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1744,7 +1749,7 @@ Detected 1 error\n"
                                (test-instrument-adder 1 0))
                              (catch :default e e)))))
      :clj
-     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= "Call to expound.alpha2.core-test/test-instrument-adder did not conform to spec:
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1769,12 +1774,13 @@ Detected 1 error\n"
                                 (catch Exception e e))))))))
   (orch.st/unstrument `test-instrument-adder))
 
-(deftest test-instrument-with-custom-value-printer
+;; TODO: enable when orch is ready
+#_(deftest test-instrument-with-custom-value-printer
   (st/instrument `test-instrument-adder)
   #?(:cljs
      (is (=
           (if (spec-error-in-ex-msg?)
-            "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+            "Call to #'expound.alpha2.core-test/test-instrument-adder did not conform to spec:
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1790,7 +1796,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-            "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
+            "Call to #'expound.alpha2.core-test/test-instrument-adder did not conform to spec.")
 
           (.-message (try
                        (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
@@ -1799,7 +1805,7 @@ Detected 1 error\n"
      :clj
      (is (=
           (if (spec-error-in-ex-msg?)
-            "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+            "Call to #'expound.alpha2.core-test/test-instrument-adder did not conform to spec:
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1815,7 +1821,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-            "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
+            "Call to #'expound.alpha2.core-test/test-instrument-adder did not conform to spec.")
           (no-linum
            (:cause
             (Throwable->map (try
@@ -1864,7 +1870,7 @@ should satisfy
 -- Relevant specs -------
 
 :custom-printer/strings:
-  (pf.spec.alpha/coll-of pf.core/string?)
+  (pf.alpha.spec/coll-of pf.core/string?)
 
 -------------------------
 Detected 1 error
@@ -1919,8 +1925,9 @@ Detected 1 error\n"
           ["foo"]
           {:print-specs? false})))
     (s/def :alt-spec/one-many-int (s/cat :bs (s/alt :one int?
-                                                    :many (s/spec (s/+ int?)))))
-    (is (= (pf "-- Spec failed --------------------
+                                                    :many (s/nest (s/+ int?)))))
+    ;; See spec2_bugs.md / Bug with s/nest
+    #_(is (= (pf "-- Spec failed --------------------
 
   [[\"1\"]]
    ^^^^^
@@ -1941,13 +1948,13 @@ should satisfy
 -- Relevant specs -------
 
 :alt-spec/one-many-int:
-  (pf.spec.alpha/cat
+  (pf.alpha.spec/cat
    :bs
-   (pf.spec.alpha/alt
+   (pf.alpha.spec/alt
     :one
     pf.core/int?
     :many
-    (pf.spec.alpha/spec (pf.spec.alpha/+ pf.core/int?))))
+    (pf.alpha.spec/spec (pf.alpha.spec/+ pf.core/int?))))
 
 -------------------------
 Detected 1 error\n")
@@ -1955,9 +1962,11 @@ Detected 1 error\n")
              (s/explain-str
               :alt-spec/one-many-int
               [["1"]]))))
+    
     (s/def :alt-spec/one-many-int-or-str (s/cat :bs (s/alt :one :alt-spec/int-alt-str
-                                                           :many (s/spec (s/+ :alt-spec/int-alt-str)))))
-    (is (= "-- Spec failed --------------------
+                                                           :many (s/nest (s/+ :alt-spec/int-alt-str)))))
+    ;; See spec2_bugs.md / Bug with s/nest
+    #_(is (= "-- Spec failed --------------------
 
   [[:one]]
    ^^^^^^
@@ -1993,7 +2002,8 @@ Detected 1 error\n"
                                       :s string?))
     (s/def :alt-spec/one-many-int-or-str (s/cat :bs (s/alt :one :alt-spec/int-or-str
                                                            :many (s/spec (s/+ :alt-spec/int-or-str)))))
-    (is (= "-- Spec failed --------------------
+    ;; See spec2_bugs.md / Bug with s/nest
+    #_(is (= "-- Spec failed --------------------
 
   [[:one]]
    ^^^^^^
@@ -2025,7 +2035,8 @@ Detected 1 error\n"
              (s/explain-str
               :alt-spec/one-many-int-or-str
               [[:one]])))))
-  (is (= (pf "-- Spec failed --------------------
+  ;; See spec2_bugs.md / Bug with s/nest
+  #_(is (= (pf "-- Spec failed --------------------
 
   [:hi]
    ^^^
@@ -2045,7 +2056,7 @@ or
 
 -------------------------
 Detected 1 error\n"
-             #?(:clj "(clojure.spec.alpha/alt
+             #?(:clj "(clojure.alpha.spec/alt
    :int
    clojure.core/int?
    :string
@@ -2177,8 +2188,8 @@ Detected 1 error
         (s/nilable (s/cat :n (s/alt :int int? :float float?)))
         [""]
         {:print-specs? false})))
-
-  (is (=
+  ;; See spec2_bugs.md / Bug with s/nest
+  #_(is (=
        ;; This output is not what we want: ideally, the two alternates
        ;; should be grouped into a single problem.
        ;; I'm adding it as a spec to avoid regressions and to keep it as
@@ -2220,7 +2231,7 @@ Detected 2 errors\n"
 
         {:print-specs? false}))))
 
-#?(:clj
+#_#?(:clj
    (def spec-gen (gen/elements (->> (s/registry)
                                     (map key)
                                     sg/topo-sort
@@ -2316,7 +2327,8 @@ Detected 2 errors\n"
        x))
    (s/form keyword)))
 
-#?(:clj
+;; TODO: reenable
+#_#?(:clj
    (deftest real-spec-tests
      (checking
       "for any real-world spec and any data, explain-str returns a string"
@@ -2336,14 +2348,14 @@ Detected 2 errors\n"
           ;; e.g. we can't conform 0 with the conformer 'seq'
        (or (contains? #{:conformers-test/string-AB} spec)
            (some
-            #{"clojure.spec.alpha/fspec"}
+            #{"clojure.alpha.spec/fspec"}
             (->> spec
                  inline-specs
                  (tree-seq coll? identity)
                  (map str))))
         (is (string? (expound/expound-str spec form)))))))
 
-#?(:clj
+#_#?(:clj
    (deftest assert-on-real-spec-tests
      (checking
       "for any real-world spec and any data, assert returns an error that matches explain-str"
@@ -2360,7 +2372,7 @@ Detected 2 errors\n"
           ;; e.g. we can't conform 0 with the conformer 'seq'
        (or (contains? #{:conformers-test/string-AB} spec)
            (some
-            #{"clojure.spec.alpha/fspec"}
+            #{"clojure.alpha.spec/fspec"}
             (->> spec
                  inline-specs
                  (tree-seq coll? identity)
@@ -2403,7 +2415,7 @@ Detected 2 errors\n"
            (or
             (contains? #{:conformers-test/string-AB} spec)
             (some
-             #{"clojure.spec.alpha/fspec"}
+             #{"clojure.alpha.spec/fspec"}
              (->> spec
                   inline-specs
                   (tree-seq coll? identity)
@@ -2463,7 +2475,8 @@ Detected 2 errors\n"
 (defn parse-csv [s]
   (map string/upper-case (string/split s #",")))
 
-(deftest conformers-test
+;; Conformers 
+#_(deftest conformers-test
   ;; Example from http://cjohansen.no/a-unified-specification/
   (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})
             *print-namespace-maps* false]
@@ -2623,13 +2636,13 @@ Detected 1 error\n"
 
 should satisfy
 
-  (pf.spec.alpha/conformer
+  (pf.alpha.spec/conformer
    (fn
     [%%]
     (if
      (string? %%)
      (keyword %%)
-     :pf.spec.alpha/invalid)))
+     :pf.alpha.spec/invalid)))
 
 -------------------------
 Detected 1 error
@@ -2644,13 +2657,13 @@ Detected 1 error
 
 should satisfy
 
-  (pf.spec.alpha/conformer
+  (pf.alpha.spec/conformer
    (fn
     [%%]
     (if
      (string? %%)
      (keyword %%)
-     :pf.spec.alpha/invalid)))
+     :pf.alpha.spec/invalid)))
 
 -------------------------
 Detected 1 error
@@ -2669,13 +2682,13 @@ Detected 1 error
 
 should satisfy
 
-  (pf.spec.alpha/conformer
+  (pf.alpha.spec/conformer
    (fn
     [%%]
     (if
      (string? %%)
      (keyword %%)
-     :pf.spec.alpha/invalid)))
+     :pf.alpha.spec/invalid)))
 
 -------------------------
 Detected 1 error
@@ -2690,13 +2703,13 @@ Detected 1 error
 
 should satisfy
 
-  (pf.spec.alpha/conformer
-   (fn
+  (pf.alpha.spec/conformer
+   (fn*
     [%%]
     (if
      (string? %%)
      (keyword %%)
-     :pf.spec.alpha/invalid)))
+     :pf.alpha.spec/invalid)))
 
 -------------------------
 Detected 1 error
@@ -2766,9 +2779,7 @@ should satisfy
 Detected 1 error
 "
                  #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
-                    :clj "(fn
-   [%]
-   (< (-> % :x) (-> % :y)))"))
+                    :clj "(fn [%] (< (-> % :x) (-> % :y)))"))
              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
                (s/explain-str (s/map-of :conformers-test/sorted-pair any?) {[0 1] [1 0]
                                                                             [1 0] [1 0]})))))))
@@ -2791,11 +2802,11 @@ should satisfy
 -- Relevant specs -------
 
 :duplicate-preds/str-or-str:
-  (pf.spec.alpha/or
+  (pf.alpha.spec/or
    :str1
-   (pf.core/fn [%%] (pf.core/string? %%))
+   (fn [%%] (pf.core/string? %%))
    :str2
-   (pf.core/fn [%%] (pf.core/string? %%)))
+   (fn [%%] (pf.core/string? %%)))
 
 -------------------------
 Detected 1 error
@@ -2819,11 +2830,12 @@ Detected 1 error
         (nil-or-failure (f))
         (nil-or-failure (f)))))
 
-(deftest fspec-exception-test
+;; fspec is not working due to spec2 putting a function in 'in' path
+#_(deftest fspec-exception-test
   (testing "args that throw exception"
     (is (= (pf "-- Exception ----------------------
 
-  expound.alpha-test/my-div
+  expound.alpha2.core-test/my-div
 
 threw exception
 
@@ -2836,13 +2848,9 @@ with args:
 -- Relevant specs -------
 
 :fspec-test/div:
-  (pf.spec.alpha/fspec
+  (pf.alpha.spec/fspec
    :args
-   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
-   :ret
-   pf.core/any?
-   :fn
-   nil)
+   (pf.alpha.spec/cat :x pf.core/int? :y pf.core/pos-int?))
 
 -------------------------
 Detected 1 error\n")
@@ -2852,7 +2860,7 @@ Detected 1 error\n")
 
     (is (= (pf "-- Exception ----------------------
 
-  [expound.alpha-test/my-div]
+  [expound.alpha2.core-test/my-div]
    ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 threw exception
@@ -2866,9 +2874,9 @@ with args:
 -- Relevant specs -------
 
 :fspec-test/div:
-  (pf.spec.alpha/fspec
+  (pf.alpha.spec/fspec
    :args
-   (pf.spec.alpha/cat :x pf.core/int? :y pf.core/pos-int?)
+   (pf.alpha.spec/cat :x pf.core/int? :y pf.core/pos-int?)
    :ret
    pf.core/any?
    :fn
@@ -2886,11 +2894,12 @@ Detected 1 error\n")
 (defn my-plus [x y]
   (+ x y))
 
-(deftest fspec-ret-test
+;; fspec is not working due to spec2 putting a function in 'in' path
+#_(deftest fspec-ret-test
   (testing "invalid ret"
     (is (= (pf "-- Function spec failed -----------
 
-  expound.alpha-test/my-plus
+  expound.alpha2.core-test/my-plus
 
 returned an invalid value
 
@@ -2906,7 +2915,7 @@ Detected 1 error\n")
 
     (is (= (pf "-- Function spec failed -----------
 
-  [expound.alpha-test/my-plus]
+  [expound.alpha2.core-test/my-plus]
    ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 returned an invalid value
@@ -2953,11 +2962,23 @@ Detected 1 error
 (defn my-minus [x y]
   (- x y))
 
-(deftest fspec-fn-test
+;; spec2 has changed the 'in' path here from [0]
+;; to [<fn instance>]. Not sure if this is intentional or not
+;; so I'm going to wait to enable this until we figure out
+;;
+;; Example
+#_(in-ns 'expound.alpha-test)
+#_(expound.problems/annotate (s/explain-data (s/coll-of :fspec-fn-test/minus) [my-minus]))
+;; was :in [0], :expound/in [0]
+#_(in-ns 'expound.alpha2.core-test)
+#_(expound.alpha2.problems/annotate (s/explain-data (s/coll-of :fspec-fn-test/minus) [my-minus]))
+;; now :in [function]
+;; expound/in nil
+#_(deftest fspec-fn-test
   (testing "invalid ret"
     (is (= (pf "-- Function spec failed -----------
 
-  expound.alpha-test/my-minus
+  expound.alpha2.core-test/my-minus
 
 failed spec. Function arguments and return value
 
@@ -2971,17 +2992,15 @@ should satisfy
 Detected 1 error\n"
 
                #?(:clj
-                  "(fn
-   [%]
-   (< (:ret %) (-> % :args :x)))"
+                  "(fn [%] (< (:ret %) (-> % :args :x)))"
                   :cljs "(fn [%] (< (:ret %) (-> % :args :x)))"))
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
              (until-unsuccessful #(s/explain-str :fspec-fn-test/minus my-minus)))))
 
     (is (= (pf "-- Function spec failed -----------
 
-  [expound.alpha-test/my-minus]
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [expound.alpha2.core-test/my-minus]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 failed spec. Function arguments and return value
 
@@ -3001,7 +3020,8 @@ Detected 1 error\n"
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
              (until-unsuccessful #(s/explain-str (s/coll-of :fspec-fn-test/minus) [my-minus])))))))
 
-(deftest ifn-fspec-test
+;; Now in for fspec failures returns function
+#_(deftest ifn-fspec-test
   (testing "keyword ifn / ret failure"
     (is (= "-- Function spec failed -----------
 
@@ -3077,7 +3097,7 @@ Detected 1 error\n"
                     Double/POSITIVE_INFINITY Double/POSITIVE_INFINITY
                     Double/NEGATIVE_INFINITY Double/NEGATIVE_INFINITY}])]
               [5 gen/any-printable]])]
-      (is (string? (expound/expound-str (constantly false) form))))))
+      (is (string? (expound/expound-str (s/spec (fn [_x] false)) form))))))
 
 #?(:cljs
    (deftest form-containing-incomparables
@@ -3127,15 +3147,15 @@ Cannot find spec for
 
 with
 
- Spec multimethod:      `expound.alpha-test/pet`
+ Spec multimethod:      `expound.alpha2.core-test/pet`
  Dispatch value:        `:fish`
 
 -- Relevant specs -------
 
 :multispec-in-compound-spec/pet1:
-  (pf.spec.alpha/and
+  (pf.alpha.spec/and
    pf.core/map?
-   (pf.spec.alpha/multi-spec expound.alpha-test/pet :pet/type))
+   (pf.alpha.spec/multi-spec expound.alpha2.core-test/pet :pet/type))
 
 -------------------------
 Detected 1 error\n")
@@ -3147,7 +3167,7 @@ Detected 1 error\n")
 
   ;; should be described by a spec multimethod, but
 
-  ;;   expound.alpha-test/pet
+  ;;   expound.alpha2.core-test/pet
 
   ;; is missing a method for value
 
@@ -3157,7 +3177,7 @@ Detected 1 error\n")
 
   ;; should be described by a spec multimethod, but
 
-  ;;   expound.alpha-test/pet
+  ;;   expound.alpha2.core-test/pet
 
   ;; is missing a method for value
 
@@ -3171,29 +3191,35 @@ Cannot find spec for
 
 with
 
- Spec multimethod:      `expound.alpha-test/pet`
+ Spec multimethod:      `expound.alpha2.core-test/pet`
  Dispatch value:        `:fish`
 
 or with
 
- Spec multimethod:      `expound.alpha-test/animal`
+ Spec multimethod:      `expound.alpha2.core-test/animal`
  Dispatch value:        `nil`
 
 -- Relevant specs -------
 
 :multispec-in-compound-spec/pet2:
-  (pf.spec.alpha/or
+  (pf.alpha.spec/or
    :map1
-   (pf.spec.alpha/multi-spec expound.alpha-test/pet :pet/type)
+   (pf.alpha.spec/multi-spec expound.alpha2.core-test/pet :pet/type)
    :map2
-   (pf.spec.alpha/multi-spec expound.alpha-test/animal :animal/type))
+   (pf.alpha.spec/multi-spec
+    expound.alpha2.core-test/animal
+    :animal/type))
 
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
 
-(expound/def :predicate-messages/string string? "should be a string")
-(expound/def :predicate-messages/vector vector? "should be a vector")
+(s/def :predicate-messages/string string?)
+(expound/defmsg :predicate-messages/string "should be a string")
+(s/def :predicate-messages/vector vector?)
+(expound/defmsg :predicate-messages/vector "should be a vector")
+
+(def email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$")
 
 (deftest predicate-messages
   (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
@@ -3260,9 +3286,9 @@ Detected 1 error
                                   :s :predicate-messages/string
                                   :v vector?) 'foo))))
     (testing "compound predicates"
-      (let [email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$"]
-        (expound/def :predicate-messages/email (s/and string? #(re-matches email-regex %)) "should be a valid email address")
-        (is (= "-- Spec failed --------------------
+      (s/def :predicate-messages/email (s/and string? #(re-matches email-regex %)))
+      (expound/defmsg :predicate-messages/email "should be a valid email address")
+      (is (= "-- Spec failed --------------------
 
   \"sally@\"
 
@@ -3271,10 +3297,11 @@ should be a valid email address
 -------------------------
 Detected 1 error
 "
-               (s/explain-str
-                :predicate-messages/email
-                "sally@"))))
-      (expound/def :predicate-messages/score (s/int-in 0 100) "should be between 0 and 100")
+             (s/explain-str
+              :predicate-messages/email
+              "sally@")))
+      (s/def :predicate-messages/score (s/int-in 0 100))
+      (expound/defmsg :predicate-messages/score "should be between 0 and 100")
       (is (= "-- Spec failed --------------------
 
   101
@@ -3346,7 +3373,8 @@ Detected 1 error
   :ret int?)
 (defn results-str-missing-args-spec [] 1)
 
-(deftest explain-results
+;; TODO: renable - we just need to switch orch.st with clojure spec version
+#_(deftest explain-results
   (testing "explaining results with non-expound printer"
     (is (thrown-with-msg?
          #?(:cljs :default :clj Exception)
@@ -3356,11 +3384,11 @@ Detected 1 error
 
   (testing "single bad result (failing return spec)"
     (is (= (pf
-            "== Checked expound.alpha-test/results-str-fn1 
+            "== Checked expound.alpha2.core-test/results-str-fn1 
 
 -- Function spec failed -----------
 
-  (expound.alpha-test/results-str-fn1 0 0)
+  (expound.alpha2.core-test/results-str-fn1 0 0)
 
 returned an invalid value.
 
@@ -3376,11 +3404,11 @@ Detected 1 error
            (binding [s/*explain-out* expound/printer]
              (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1))))))
     (is (= (pf
-            "== Checked expound.alpha-test/results-str-fn7 
+            "== Checked expound.alpha2.core-test/results-str-fn7 
 
 -- Function spec failed -----------
 
-  (expound.alpha-test/results-str-fn7 {})
+  (expound.alpha2.core-test/results-str-fn7 {})
 
 returned an invalid value.
 
@@ -3398,11 +3426,11 @@ Detected 1 error
            (binding [s/*explain-out* expound/printer]
              (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn7)))))))
   (testing "single bad result (failing fn spec)"
-    (is (= (pf "== Checked expound.alpha-test/results-str-fn2 
+    (is (= (pf "== Checked expound.alpha2.core-test/results-str-fn2 
 
 -- Function spec failed -----------
 
-  (expound.alpha-test/results-str-fn2 0 0)
+  (expound.alpha2.core-test/results-str-fn2 0 0)
 
 failed spec. Function arguments and return value
 
@@ -3427,7 +3455,7 @@ Detected 1 error
            (binding [s/*explain-out* expound/printer]
              (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn2)))))))
   (testing "single valid result"
-    (is (= "== Checked expound.alpha-test/results-str-fn3 
+    (is (= "== Checked expound.alpha2.core-test/results-str-fn3 
 
 Success!
 "
@@ -3435,11 +3463,11 @@ Success!
              (expound/explain-results-str (st/check `results-str-fn3))))))
   #?(:clj
      (testing "multiple results"
-       (is (= "== Checked expound.alpha-test/results-str-fn2 
+       (is (= "== Checked expound.alpha2.core-test/results-str-fn2 
 
 -- Function spec failed -----------
 
-  (expound.alpha-test/results-str-fn2 0 0)
+  (expound.alpha2.core-test/results-str-fn2 0 0)
 
 failed spec. Function arguments and return value
 
@@ -3462,7 +3490,7 @@ should satisfy
 Detected 1 error
 
 
-== Checked expound.alpha-test/results-str-fn3 
+== Checked expound.alpha2.core-test/results-str-fn3 
 
 Success!
 "
@@ -3499,11 +3527,11 @@ Detected 1 error
            (binding [s/*explain-out* expound/printer]
              (expound/explain-result-str (st/check-fn `results-str-fn1 (s/spec `results-str-fn2)))))))
   #?(:clj (testing "custom printer"
-            (is (= "== Checked expound.alpha-test/results-str-fn4 
+            (is (= "== Checked expound.alpha2.core-test/results-str-fn4 
 
 -- Function spec failed -----------
 
-  (expound.alpha-test/results-str-fn4 0)
+  (expound.alpha2.core-test/results-str-fn4 0)
 
 returned an invalid value.
 
@@ -3520,17 +3548,17 @@ Detected 1 error
                    (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
                      (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn4))))))))
   (testing "exceptions raised during check"
-    (is (= "== Checked expound.alpha-test/results-str-fn5 
+    (is (= "== Checked expound.alpha2.core-test/results-str-fn5 
 
-  (expound.alpha-test/results-str-fn5 1 1)
+  (expound.alpha2.core-test/results-str-fn5 1 1)
 
  threw error"
            (binding [s/*explain-out* expound/printer]
              (take-lines 5 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn5))))))))
   (testing "colorized output"
-    (is (= (pf "<CYAN>== Checked expound.alpha-test/results-str-fn5 <NONE>
+    (is (= (pf "<CYAN>== Checked expound.alpha2.core-test/results-str-fn5 <NONE>
 
-<RED>  (expound.alpha-test/results-str-fn5 1 1)<NONE>
+<RED>  (expound.alpha2.core-test/results-str-fn5 1 1)<NONE>
 
  threw error")
            (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
@@ -3538,15 +3566,15 @@ Detected 1 error
 
   (testing "failure to generate"
     (is (=
-         #?(:clj "== Checked expound.alpha-test/results-str-fn6 
+         #?(:clj "== Checked expound.alpha2.core-test/results-str-fn6 
 
 Unable to construct generator for [:f] in
 
-  (clojure.spec.alpha/cat :f clojure.core/fn?)
+  (clojure.alpha.spec/cat :f clojure.core/fn?)
 "
             ;; CLJS doesn't contain correct data for check failure
 
-            :cljs "== Checked expound.alpha-test/results-str-fn6 
+            :cljs "== Checked expound.alpha2.core-test/results-str-fn6 
 
 Unable to construct gen at: [:f] for: fn? in
 
@@ -3555,11 +3583,11 @@ Unable to construct gen at: [:f] for: fn? in
          (binding [s/*explain-out* expound/printer]
            (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn6)))))))
   (testing "no-fn failure"
-    (is (= #?(:clj "== Checked expound.alpha-test/results-str-missing-fn 
+    (is (= #?(:clj "== Checked expound.alpha2.core-test/results-str-missing-fn 
 
 Failed to check function.
 
-  expound.alpha-test/results-str-missing-fn
+  expound.alpha2.core-test/results-str-missing-fn
 
 is not defined
 "
@@ -3574,18 +3602,19 @@ is not defined
            (binding [s/*explain-out* expound/printer]
              (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-fn)))))))
   (testing "no args spec"
-    (is (= (pf "== Checked expound.alpha-test/results-str-missing-args-spec 
+    (is (= (pf "== Checked expound.alpha2.core-test/results-str-missing-args-spec 
 
 Failed to check function.
 
-  (pf.spec.alpha/fspec :ret pf.core/int?)
+  (pf.alpha.spec/fspec :ret pf.core/int?)
 
 should contain an :args spec
 ")
            (binding [s/*explain-out* expound/printer]
              (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-args-spec))))))))
 
-#?(:clj (deftest explain-results-gen
+;; TODO: replace with st/with-instrument-disabled
+#_#?(:clj (deftest explain-results-gen
           (checking
            "all functions can be checked and printed"
            (chuck/times num-tests)
@@ -3620,7 +3649,7 @@ should satisfy
 -- Relevant specs -------
 
 :colorized-output/strings:
-  (pf.spec.alpha/coll-of pf.core/string?)
+  (pf.alpha.spec/coll-of pf.core/string?)
 
 -------------------------
 Detected 1 error
@@ -3638,19 +3667,20 @@ should satisfy
 <CYAN>-- Relevant specs -------<NONE>
 
 :colorized-output/strings:
-  (pf.spec.alpha/coll-of pf.core/string?)
+  (pf.alpha.spec/coll-of pf.core/string?)
 
 <CYAN>-------------------------<NONE>
 <CYAN>Detected<NONE> <CYAN>1<NONE> <CYAN>error<NONE>
 ")
          (readable-ansi (expound/expound-str :colorized-output/strings ["" :a ""] {:theme :figwheel-theme})))))
 
-(s/def ::spec-name (s/with-gen
+;; TODO: totally rebuild generated specs
+#_(s/def ::spec-name (s/with-gen
                      qualified-keyword?
                      #(gen/let [kw gen/keyword]
                         (keyword (str "expound-generated-spec/" (name kw))))))
 
-(s/def ::fn-spec (s/with-gen
+#_(s/def ::fn-spec (s/with-gen
                    (s/or
                     :sym symbol?
                     :anon (s/cat :fn #{`fn `fn*}
@@ -3660,7 +3690,7 @@ should satisfy
                                  :args (s/+ any?)))
                    #(gen/return `any?)))
 
-(s/def ::pred-spec
+#_(s/def ::pred-spec
   (s/with-gen
     ::fn-spec
     #(gen/elements
@@ -3689,19 +3719,19 @@ should satisfy
        `uuid?
        `vector?])))
 
-(s/def ::and-spec (s/cat
+#_(s/def ::and-spec (s/cat
                    :and #{`s/and}
                    :branches (s/+
                               ::spec)))
 
-(s/def ::or-spec (s/cat
+#_(s/def ::or-spec (s/cat
                   :or #{`s/or}
                   :branches (s/+
                              (s/cat
                               :kw keyword?
                               :spec ::spec))))
 
-(s/def ::set-spec (s/with-gen
+#_(s/def ::set-spec (s/with-gen
                     (s/coll-of
                      any?
                      :kind set?
@@ -3714,7 +3744,7 @@ should satisfy
                               :k keyword?)
                              :kind set?))))
 
-(s/def ::spec (s/or
+#_(s/def ::spec (s/or
                :amp ::amp-spec
                :alt ::alt-spec
                :and ::and-spec
@@ -3743,7 +3773,7 @@ should satisfy
                           :f ::fn-spec)
                :tuple-spec ::tuple-spec))
 
-(s/def ::every-opts (s/*
+#_(s/def ::every-opts (s/*
                      (s/alt
                       :kind (s/cat
                              :k #{:kind}
@@ -3770,27 +3800,27 @@ should satisfy
                                 :k #{:gen-max}
                                 :v nat-int?))))
 
-(s/def ::every-spec (s/cat
+#_(s/def ::every-spec (s/cat
                      :every #{`s/every}
                      :spec ::spec
                      :opts ::every-opts))
 
-(s/def ::coll-spec (s/cat
+#_(s/def ::coll-spec (s/cat
                     :coll-of #{`s/coll-of}
                     :spec (s/spec ::spec)
                     :opts ::every-opts))
 
-(s/def ::map-of-spec (s/cat
+#_(s/def ::map-of-spec (s/cat
                       :map-of #{`s/map-of}
                       :k ::spec
                       :w ::spec
                       :opts ::every-opts))
 
-(s/def ::nilable-spec (s/cat
+#_(s/def ::nilable-spec (s/cat
                        :nilable #{`s/nilable}
                        :spec ::spec))
 
-(s/def ::name-combo
+#_(s/def ::name-combo
   (s/or
    :one ::spec-name
    :combo (s/cat
@@ -3799,7 +3829,7 @@ should satisfy
            (s/+
             ::name-combo))))
 
-(s/def ::keys-spec (s/cat
+#_(s/def ::keys-spec (s/cat
                     :keys #{`s/keys `s/keys*}
 
                     :reqs (s/*
@@ -3815,7 +3845,7 @@ should satisfy
                                     ::spec-name
                                     :kind vector?)))))
 
-(s/def ::amp-spec
+#_(s/def ::amp-spec
   (s/cat :op #{`s/&}
          :spec ::spec
          :preds (s/*
@@ -3824,26 +3854,26 @@ should satisfy
                          :defined ::spec-name)
                    #(gen/return `any?)))))
 
-(s/def ::alt-spec
+#_(s/def ::alt-spec
   (s/cat :op #{`s/alt}
          :key-pred-forms (s/+
                           (s/cat
                            :key keyword?
                            :pred (s/spec ::spec)))))
 
-(s/def ::regex-unary-spec
+#_(s/def ::regex-unary-spec
   (s/cat :op #{`s/+ `s/* `s/?} :pred (s/spec ::spec)))
 
-(s/def ::cat-pred-spec
+#_(s/def ::cat-pred-spec
   (s/or
    :spec (s/spec ::spec)
    :regex-unary ::regex-unary-spec
    :amp ::amp-spec
    :alt ::alt-spec))
 
-(defmulti fake-multimethod :fake-tag)
+#_(defmulti fake-multimethod :fake-tag)
 
-(s/def ::multispec-spec
+#_(s/def ::multispec-spec
   (s/cat
    :mult-spec #{`s/multi-spec}
    :mm (s/with-gen
@@ -3854,7 +3884,7 @@ should satisfy
                 :k keyword?)
           #(gen/return :fake-tag))))
 
-(s/def ::cat-spec (s/cat
+#_(s/def ::cat-spec (s/cat
                    :cat #{`s/cat}
                    :key-pred-forms
                    (s/*
@@ -3862,7 +3892,7 @@ should satisfy
                      :key keyword?
                      :pred ::cat-pred-spec))))
 
-(s/def ::fspec-spec (s/cat
+#_(s/def ::fspec-spec (s/cat
                      :cat #{`s/fspec}
                      :args (s/cat
                             :args #{:args}
@@ -3876,25 +3906,25 @@ should satisfy
                            :fn #{:fn}
                            :spec (s/nilable ::spec)))))
 
-(s/def ::tuple-spec (s/cat
+#_(s/def ::tuple-spec (s/cat
                      :tuple #{`s/tuple}
                      :preds (s/+
                              ::spec)))
 
-(s/def ::merge-spec (s/cat
+#_(s/def ::merge-spec (s/cat
                      :merge #{`s/merge}
                      :pred-forms (s/* ::spec)))
 
-(s/def ::spec-def (s/cat
+#_(s/def ::spec-def (s/cat
                    :def #{`s/def}
                    :name ::spec-name
                    :spec (s/spec ::spec)))
 
-#?(:clj (s/def ::spec-defs (s/coll-of ::spec-def
+#_#?(:clj (s/def ::spec-defs (s/coll-of ::spec-def
                                       :min-count 1
                                       :gen-max 3)))
 
-(defn exercise-count [spec]
+#_(defn exercise-count [spec]
   (case spec
     (::spec-def ::fspec-spec ::regex-unary-spec ::spec-defs ::alt-spec) 1
 
@@ -3902,8 +3932,8 @@ should satisfy
 
     4))
 
-(deftest spec-specs-can-generate
-  (doseq [spec-spec (filter keyword? (sg/topo-sort (filter #(= "expound.alpha-test" (namespace %))
+#_(deftest spec-specs-can-generate
+  (doseq [spec-spec (filter keyword? (sg/topo-sort (filter #(= "expound.alpha2.core-test" (namespace %))
                                                            (keys (s/registry)))))]
     (is
      (doall (s/exercise spec-spec (exercise-count spec-spec)))
@@ -3950,9 +3980,9 @@ should satisfy
 
                    (let [spec (second (last spec-defs))
                          form (last (last spec-defs))
-                         disallowed #{"clojure.spec.alpha/fspec"
-                                      "clojure.spec.alpha/multi-spec"
-                                      "clojure.spec.alpha/with-gen"}]
+                         disallowed #{"clojure.alpha.spec/fspec"
+                                      "clojure.alpha.spec/multi-spec"
+                                      "clojure.alpha.spec/with-gen"}]
                      (when-not (or (some
                                     disallowed
                                     (map str (tree-seq coll? identity form)))
@@ -3997,7 +4027,7 @@ should satisfy
                                             (fn [k] (= "expound-generated-spec" (namespace k)))
                                             (keys (s/registry))))))))
 
-(deftest valid-spec-spec
+#_(deftest valid-spec-test
   (checking
    "spec for specs validates against real specs"
    (chuck/times num-tests)
@@ -4035,24 +4065,24 @@ should satisfy
 (deftest extensibility-test
   (testing "can overwrite entire message"
     (let [printer-str #'expound/printer-str
-          ed (assoc-in (s/explain-data int? "")
-                       [::s/problems 0 :expound.spec.problem/type]
+          ed (assoc-in (s/explain-data (s/spec int?) "")
+                       [:clojure.spec.alpha/problems 0 :expound.spec.problem/type]
                        ::test-problem1)]
 
       (is (= "fake-problem-group-str\n\n-------------------------\nDetected 1 error\n"
              (printer-str {:print-specs? false} ed)))))
   (testing "can overwrite 'expected' str"
     (let [printer-str #'expound/printer-str
-          ed (assoc-in (s/explain-data int? "")
-                       [::s/problems 0 :expound.spec.problem/type]
+          ed (assoc-in (s/explain-data (s/spec int?) "")
+                       [:clojure.spec.alpha/problems 0 :expound.spec.problem/type]
                        ::test-problem2)]
 
       (is (= "fake-problem-group-str\nfake-expected-str\n\n-------------------------\nDetected 1 error\n"
              (printer-str {:print-specs? false} ed)))))
   (testing "if type has no mm implemented, throw an error"
     (let [printer-str #'expound/printer-str
-          ed (assoc-in (s/explain-data int? "")
-                       [::s/problems 0 :expound.spec.problem/type]
+          ed (assoc-in (s/explain-data (s/spec int?) "")
+                       [:clojure.spec.alpha/problems 0 :expound.spec.problem/type]
                        ::test-problem3)]
 
       (is (thrown-with-msg?
@@ -4086,6 +4116,8 @@ Detected 1 error\n"
 
                                     ed))))))))
 
+
+
 (deftest sorted-map-values
   (is (= "-- Spec failed --------------------
 
@@ -4098,7 +4130,7 @@ should satisfy
 -------------------------
 Detected 1 error\n"
          (expound/expound-str
-          number?
+          (s/spec number?)
           (sorted-map "bar" 1))))
   (is (= "-- Spec failed --------------------
 
@@ -4111,7 +4143,7 @@ should satisfy
 -------------------------
 Detected 1 error\n"
          (expound/expound-str
-          number?
+          (s/spec number?)
           {:foo (sorted-map "bar"
 
                             1)}))))
@@ -4123,7 +4155,10 @@ Detected 1 error\n"
        (map #(select-keys % [:expound.spec.problem/type :expound/in]))
        (set)))
 
-#?(:clj
+;; TODO: this cannot work until ring adds its specs to the new
+;; spec2 registry, unless I find a way to "copy" specs from one
+;; registry to another
+#_#?(:clj
    (deftest or-includes-problems-for-each-branch
      (let [p1 (select-expound-info :ring.sync/handler (fn handler [_req] {}))
            p2 (select-expound-info :ring.async/handler (fn handler [_req] {}))
