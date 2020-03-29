@@ -45,8 +45,7 @@
    :op (fn [op] (#{'or 'and} op))
    :specs (s/+ :expound.spec/kw-or-conjunction)))
 (s/def :expound.spec/key-spec
-  (s/cat :keys #{clojure.alpha.spec/keys
-                 }
+  (s/cat :keys #{clojure.alpha.spec/keys}
          :clauses (s/*
                    (s/cat :qualifier #{:req-un :req :opt-un :opt}
                           :specs (s/coll-of :expound.spec/kw-or-conjunction)))))
@@ -58,50 +57,44 @@
 (s/def :expound.spec/contains-key-pred-base (s/or
                                              :simple (s/cat
                                                       :contains #{contains?}
-                                                      :arg #{%}
-                                                      :kw keyword?)
-                                             ))
+                                                      :arg simple-symbol?
+                                                      :kw keyword?)))
 
 (s/def :expound.spec/contains-key-pred3 (s/or
-                                              :simple (s/cat
-                                                      :contains #{contains?}
-                                                      :arg #{%}
-                                                      :kw keyword?)
-                                             :compound (s/cat
-                                                   :op #{and or}
-                                                   :clauses (s/+ :expound.spec/contains-key-pred-base))
-                                             ))
+                                         :simple (s/cat
+                                                  :contains #{contains?}
+                                                  :arg simple-symbol?
+                                                  :kw keyword?)
+                                         :compound (s/cat
+                                                    :op #{and or}
+                                                    :clauses (s/+ :expound.spec/contains-key-pred-base))))
 
 (s/def :expound.spec/contains-key-pred2 (s/or
-                                             :simple (s/cat
-                                                      :contains #{contains?}
-                                                      :arg #{%}
-                                                      :kw keyword?)
-                                             :compound (s/cat
-                                                   :op #{and or}
-                                                   :clauses (s/+ :expound.spec/contains-key-pred3))
-                                             ))
+                                         :simple (s/cat
+                                                  :contains #{contains?}
+                                                  :arg simple-symbol?
+                                                  :kw keyword?)
+                                         :compound (s/cat
+                                                    :op #{and or}
+                                                    :clauses (s/+ :expound.spec/contains-key-pred3))))
 
 (s/def :expound.spec/contains-key-pred1 (s/or
-                                             :simple (s/cat
-                                                      :contains #{contains?}
-                                                      :arg #{%}
-                                                      :kw keyword?)
-                                             :compound (s/cat
-                                                   :op #{and or}
-                                                   :clauses (s/+ :expound.spec/contains-key-pred2))
-                                             ))
+                                         :simple (s/cat
+                                                  :contains #{contains?}
+                                                  :arg simple-symbol?
+                                                  :kw keyword?)
+                                         :compound (s/cat
+                                                    :op #{and or}
+                                                    :clauses (s/+ :expound.spec/contains-key-pred2))))
 
 (s/def :expound.spec/contains-key-pred (s/or
                                         :simple (s/cat
                                                  :contains #{contains?}
-                                                 :arg #{%}
+                                                 :arg simple-symbol?
                                                  :kw keyword?)
                                         :compound (s/cat
                                                    :op #{and or}
-                                                   :clauses (s/+ :expound.spec/contains-key-pred1)))
-
-  )
+                                                   :clauses (s/+ :expound.spec/contains-key-pred1))))
 
 (declare format)
 
@@ -199,8 +192,6 @@
 
 (defn singleton? [xs]
   (= 1 (count xs)))
-
-
 
 (defn specs-from-form [via]
   (let [form (some-> via last s/form)

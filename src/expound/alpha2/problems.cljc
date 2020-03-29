@@ -38,9 +38,8 @@
                      in3
 
                      (or (= '(apply fn) (:pred problem))
-                         (#{:ret} (first (:path problem)))
-                         
-                         )
+                         (#{:ret} (first (:path problem))))
+
                      (:in problem)
 
                      :else

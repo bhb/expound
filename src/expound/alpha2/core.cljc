@@ -75,13 +75,13 @@
 
 ;; TODO: new spec
 #_(s/fdef value-in-context
-  :args (s/cat
-         :opts map?
-         :spec-name (s/nilable #{:args :fn :ret ::s/pred})
-         :form any?
-         :path :expound/path
-         :value any?)
-  :ret string?)
+    :args (s/cat
+           :opts map?
+           :spec-name (s/nilable #{:args :fn :ret ::s/pred})
+           :form any?
+           :path :expound/path
+           :value any?)
+    :ret string?)
 (defn ^:private value-in-context
   "Given a form and a path into that form, returns a string
    that helps the user understand where that path is located
@@ -128,8 +128,8 @@
 
 ;; TODO: rewrite fdef spec
 #_(s/fdef specs
-  :args (s/cat :problems :expound.spec/problems)
-  :ret :expound.spec/specs)
+    :args (s/cat :problems :expound.spec/problems)
+    :ret :expound.spec/specs)
 (defn ^:private specs
   "Given a collection of problems, returns the specs for those problems, with duplicates removed"
   [problems]
@@ -509,8 +509,8 @@
         #{`s/nilable} (cond
                         (empty? path) true
                         (contains? #{:clojure.spec.alpha/pred :clojure.spec.alpha/nil} k) (some
-                                                           #(contains-alternate-at-path? % rest-path)
-                                                           rest-form)
+                                                                                           #(contains-alternate-at-path? % rest-path)
+                                                                                           rest-form)
 
                         :else false)
 
@@ -1000,8 +1000,8 @@ returned an invalid value.
 
 ;; TODO: create new spec
 #_(s/fdef error-message
-  :args (s/cat :k qualified-keyword?)
-  :ret (s/nilable string?))
+    :args (s/cat :k qualified-keyword?)
+    :ret (s/nilable string?))
 (defn error-message
   "Given a spec named `k`, return its human-readable error message."
   [k]
@@ -1009,8 +1009,8 @@ returned an invalid value.
 
 ;; TODO: create new spec
 #_(s/fdef custom-printer
-  :args (s/cat :opts :expound.printer/opts)
-  :ret ifn?)
+    :args (s/cat :opts :expound.printer/opts)
+    :ret ifn?)
 (defn custom-printer
   "Returns a printer.
 
@@ -1025,8 +1025,8 @@ returned an invalid value.
 
 ;; TODO: create new spec
 #_(s/fdef printer
-  :args (s/cat :explain-data map?)
-  :ret nil?)
+    :args (s/cat :explain-data map?)
+    :ret nil?)
 (defn printer
   "Prints `explain-data` in a human-readable format."
   [explain-data]
@@ -1034,10 +1034,10 @@ returned an invalid value.
 
 ;; TODO: create new spec
 #_(s/fdef expound-str
-  :args (s/cat :spec :expound.spec/spec
-               :form any?
-               :opts (s/? :expound.printer/opts))
-  :ret string?)
+    :args (s/cat :spec :expound.spec/spec
+                 :form any?
+                 :opts (s/? :expound.printer/opts))
+    :ret string?)
 (defn expound-str
   "Given a `spec` and a `form`, either returns success message or a human-readable error message."
   ([spec form]
@@ -1047,10 +1047,10 @@ returned an invalid value.
 
 ;; TODO: create new spec
 #_(s/fdef expound
-  :args (s/cat :spec :expound.spec/spec
-               :form any?
-               :opts (s/? :expound.printer/opts))
-  :ret nil?)
+    :args (s/cat :spec :expound.spec/spec
+                 :form any?
+                 :opts (s/? :expound.printer/opts))
+    :ret nil?)
 (defn expound
   "Given a `spec` and a `form`, either prints a success message or a human-readable error message."
   ([spec form]
@@ -1060,9 +1060,9 @@ returned an invalid value.
 
 ;; TODO: new spec
 #_(s/fdef defmsg
-  :args (s/cat :k qualified-keyword?
-               :error-message string?)
-  :ret nil?)
+    :args (s/cat :k qualified-keyword?
+                 :error-message string?)
+    :ret nil?)
 (defn defmsg
   "Associates the spec named `k` with `error-message`."
   [k error-message]
@@ -1071,8 +1071,8 @@ returned an invalid value.
 
 ;; TODO: new spec
 #_(s/fdef explain-result
-  :args (s/cat :check-result (s/nilable map?))
-  :ret nil?)
+    :args (s/cat :check-result (s/nilable map?))
+    :ret nil?)
 (defn explain-result
   "Given a result from `clojure.spec.test.alpha/check`, prints a summary of the result."
   [check-result]
@@ -1082,8 +1082,8 @@ returned an invalid value.
 
 ;; TODO: new spec
 #_(s/fdef explain-result-str
-  :args (s/cat :check-result (s/nilable map?))
-  :ret string?)
+    :args (s/cat :check-result (s/nilable map?))
+    :ret string?)
 (defn explain-result-str
   "Given a result from `clojure.spec.test.alpha/check`, returns a string summarizing the result."
   [check-result]
@@ -1091,8 +1091,8 @@ returned an invalid value.
 
 ;; TODO: new spec
 #_(s/fdef explain-results
-  :args (s/cat :check-results (s/coll-of (s/nilable map?)))
-  :ret nil?)
+    :args (s/cat :check-results (s/coll-of (s/nilable map?)))
+    :ret nil?)
 (defn explain-results
   "Given a sequence of results from `clojure.spec.test.alpha/check`, prints a summary of the results."
   [check-results]
@@ -1103,8 +1103,8 @@ returned an invalid value.
 
 ;; TODO: new spec
 #_(s/fdef explain-results-str
-  :args (s/cat :check-results (s/coll-of (s/nilable map?)))
-  :ret string?)
+    :args (s/cat :check-results (s/coll-of (s/nilable map?)))
+    :ret string?)
 (defn explain-results-str
   "Given a sequence of results from `clojure.spec.test.alpha/check`, returns a string summarizing the results."
   [check-results]

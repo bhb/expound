@@ -1,8 +1,7 @@
 (ns expound.alpha2.spec-gen
   (:require [clojure.alpha.spec :as s]
             [com.stuartsierra.dependency :as deps]
-            [clojure.test.check.generators :as gen]
-            ))
+            [clojure.test.check.generators :as gen]))
 
 ;; I want to do something like
 ;; (s/def :specs.coll-of/into #{[] '() #{}})
@@ -11,6 +10,7 @@
 ;; of vectors and lists.
 ;; FIXME - force a specific type of into/kind one for each test
 ;; (one for vectors, one for lists, etc)
+
 
 (s/def :specs.coll-of/into #{[] #{}})
 (s/def :specs.coll-of/kind #{vector? list? set?})
@@ -88,7 +88,7 @@
     specs)))
 
 #_#?(:clj
-   (def spec-gen (gen/elements (->> (s/registry)
-                                    (map key)
-                                    topo-sort
-                                    (filter keyword?)))))
+     (def spec-gen (gen/elements (->> (s/registry)
+                                      (map key)
+                                      topo-sort
+                                      (filter keyword?)))))

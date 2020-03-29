@@ -649,7 +649,7 @@ Detected 1 error\n"
   ;; FIXME when bug with using 'or' in spec is fixed
   ;; 
   #_(testing "missing compound keys"
-    (is (= (pf "-- Spec failed --------------------
+      (is (= (pf "-- Spec failed --------------------
 
   {}
 
@@ -680,8 +680,8 @@ should contain keys:
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :keys-spec/user2 {})))
-    (is (= (pf "-- Spec failed --------------------
+             (expound/expound-str :keys-spec/user2 {})))
+      (is (= (pf "-- Spec failed --------------------
 
   {}
 
@@ -706,7 +706,7 @@ should contain keys:
 
 -------------------------
 Detected 1 error\n")
-           (expound/expound-str :keys-spec/user3 {}))))
+             (expound/expound-str :keys-spec/user3 {}))))
 
   (testing "inline spec with req-un"
     (is (= (pf "-- Spec failed --------------------
