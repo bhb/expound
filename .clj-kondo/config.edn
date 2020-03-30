@@ -1,7 +1,8 @@
 {
  :linters
  {:unused-namespace {:exclude [com.gfredericks.test.chuck.clojure-test expound.spec-gen]}
-  :unresolved-symbol {:exclude [(com.gfredericks.test.chuck.clojure-test/checking)]}
+  :unresolved-symbol {:exclude [(com.gfredericks.test.chuck.clojure-test/checking)
+                                (clojure.alpha.spec/fdef)]}
   :deprecated-var {:exclude
                    {expound.alpha/def
                     {:defs [expound.alpha/def]

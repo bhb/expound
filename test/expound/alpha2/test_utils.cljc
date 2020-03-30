@@ -1,12 +1,12 @@
 (ns expound.alpha2.test-utils
   (:require [clojure.alpha.spec :as s]
-            #?(:cljs
-               [clojure.spec.test.alpha :as st]
+            #_#?(:cljs
+                 [clojure.spec.test.alpha :as st]
                ;; FIXME
                ;; orchestra is supposed to work with cljs but
                ;; it isn't working for me right now
-               #_[orchestra-cljs.spec.test :as st]
-               :clj [orchestra.spec.test :as st])
+                 #_[orchestra-cljs.spec.test :as st]
+                 :clj [orchestra.spec.test :as st])
             [expound.alpha :as expound]
             [clojure.test :as ct]
             [com.gfredericks.test.chuck.clojure-test :as chuck]
