@@ -972,7 +972,7 @@ returned an invalid value.
 
 (defn ^:private printer-str [opts data]
   (let [opts' (merge {:show-valid-values? false
-                      :print-specs? true}
+                      :print-specs? false}
                      opts)
         enable-color? (or (not= :none (get opts :theme :none))
                           ansi/*enable-color*)]
@@ -1008,6 +1008,7 @@ returned an invalid value.
   (get @registry-ref k))
 
 ;; TODO: create new spec
+;; TODO: use 'show' or 'print' consistently
 #_(s/fdef custom-printer
     :args (s/cat :opts :expound.printer/opts)
     :ret ifn?)

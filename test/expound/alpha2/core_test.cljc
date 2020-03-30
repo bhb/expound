@@ -62,19 +62,6 @@
        (expound/expound-str (s/spec string?) 1)
        (with-out-str (expound/expound (s/spec string?) 1)))))
 
-(deftest predicate-spec
-  (is (= (pf "-- Spec failed --------------------
-
-  1
-
-should satisfy
-
-  string?
-
--------------------------
-Detected 1 error\n")
-         (expound/expound-str (s/spec string?) 1))))
-
 (s/def :simple-type-based-spec/str string?)
 
 (deftest simple-type-based-spec
@@ -84,7 +71,8 @@ Detected 1 error\n")
 
   (testing "invalid value"
     (is (=
-         (pf "-- Spec failed --------------------
+         (pf
+          "-- Spec failed --------------------
 
   1
 
@@ -98,8 +86,9 @@ should satisfy
   pf.core/string?
 
 -------------------------
-Detected 1 error\n")
-         (expound/expound-str :simple-type-based-spec/str 1)))))
+Detected 1 error
+")
+         (expound/expound-str :simple-type-based-spec/str 1 {:print-specs? true})))))
 
 (s/def :set-based-spec/tag #{:foo :bar})
 (s/def :set-based-spec/nilable-tag (s/nilable :set-based-spec/tag))
@@ -117,11 +106,6 @@ Detected 1 error\n")
 
 should be one of: :bar, :foo
 
--- Relevant specs -------
-
-:set-based-spec/tag:
-  #{:bar :foo}
-
 -------------------------
 Detected 1 error\n"
            (expound/expound-str :set-based-spec/tag :baz))))
@@ -133,15 +117,6 @@ Detected 1 error\n"
    ^^^^^^
 
 should be one of: :one, :two
-
--- Relevant specs -------
-
-:set-based-spec/one-or-two:
-  (pf.alpha.spec/or
-   :one
-   (pf.alpha.spec/cat :a #{:one})
-   :two
-   (pf.alpha.spec/cat :b #{:two}))
 
 -------------------------
 Detected 1 error\n")
@@ -160,13 +135,6 @@ should satisfy
 
   nil?
 
--- Relevant specs -------
-
-:set-based-spec/tag:
-  #{:bar :foo}
-:set-based-spec/nilable-tag:
-  (pf.alpha.spec/nilable :set-based-spec/tag)
-
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :set-based-spec/nilable-tag :baz))))
@@ -176,11 +144,6 @@ Detected 1 error\n")
   :baz
 
 should be: :foobar
-
--- Relevant specs -------
-
-:set-based-spec/set-of-one:
-  #{:foobar}
 
 -------------------------
 Detected 1 error\n")
@@ -200,13 +163,6 @@ should satisfy
 
   string?
 
--- Relevant specs -------
-
-:nested-type-based-spec/str:
-  pf.core/string?
-:nested-type-based-spec/strs:
-  (pf.alpha.spec/coll-of :nested-type-based-spec/str)
-
 -------------------------
 Detected 1 error\n")
        (expound/expound-str :nested-type-based-spec/strs ["one" "two" 33]))))
@@ -224,14 +180,6 @@ Detected 1 error\n")
 should satisfy
 
   int?
-
--- Relevant specs -------
-
-:nested-type-based-spec-special-summary-string/int:
-  pf.core/int?
-:nested-type-based-spec-special-summary-string/ints:
-  (pf.alpha.spec/coll-of
-   :nested-type-based-spec-special-summary-string/int)
 
 -------------------------
 Detected 1 error\n")
@@ -261,11 +209,6 @@ or
 
   string?
 
--- Relevant specs -------
-
-:or-spec/str-or-int:
-  (pf.alpha.spec/or :int pf.core/int? :str pf.core/string?)
-
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :or-spec/str-or-int :kw))))
@@ -282,13 +225,6 @@ should satisfy
 or
 
   string?
-
--- Relevant specs -------
-
-:or-spec/str-or-int:
-  (pf.alpha.spec/or :int pf.core/int? :str pf.core/string?)
-:or-spec/vals:
-  (pf.alpha.spec/coll-of :or-spec/str-or-int)
 
 -------------------------
 Detected 1 error\n")
@@ -334,19 +270,6 @@ should contain keys: :or-spec/int, :or-spec/str
 |--------------+---------|
 | :or-spec/str | string? |
 
--- Relevant specs -------
-
-:or-spec/m-with-int:
-  (pf.alpha.spec/keys :req [:or-spec/int])
-:or-spec/m-with-str:
-  (pf.alpha.spec/keys :req [:or-spec/str])
-:or-spec/m-with-str-or-int:
-  (pf.alpha.spec/or
-   :m-with-str
-   :or-spec/m-with-str
-   :m-with-int
-   :or-spec/m-with-int)
-
 -------------------------
 Detected 1 error
 ")
@@ -380,13 +303,6 @@ should satisfy
 
   (fn [%%] (pos? (count %%)))
 
--- Relevant specs -------
-
-:and-spec/name:
-  (pf.alpha.spec/and
-   pf.core/string?
-   (fn [%%] (pf.core/pos? (pf.core/count %%))))
-
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :and-spec/name ""))))
@@ -402,15 +318,6 @@ should satisfy
 
   %s
 
--- Relevant specs -------
-
-:and-spec/name:
-  (pf.alpha.spec/and
-   pf.core/string?
-   (fn [%%] (pf.core/pos? (pf.core/count %%))))
-:and-spec/names:
-  (pf.alpha.spec/coll-of :and-spec/name)
-
 -- Spec failed --------------------
 
   [... ... ... 1]
@@ -419,15 +326,6 @@ should satisfy
 should satisfy
 
   string?
-
--- Relevant specs -------
-
-:and-spec/name:
-  (pf.alpha.spec/and
-   pf.core/string?
-   (fn [%%] (pf.core/pos? (pf.core/count %%))))
-:and-spec/names:
-  (pf.alpha.spec/coll-of :and-spec/name)
 
 -------------------------
 Detected 2 errors\n"
@@ -447,11 +345,6 @@ Detected 2 errors\n"
 should satisfy
 
   (<= 10 (count %%) %s)
-
--- Relevant specs -------
-
-:coll-of-spec/big-int-coll:
-  (pf.alpha.spec/coll-of pf.core/int? :min-count 10)
 
 -------------------------
 Detected 1 error\n"
@@ -475,11 +368,6 @@ should have additional elements. The next element \":k\" should satisfy
 
   keyword?
 
--- Relevant specs -------
-
-:cat-spec/kw:
-  (pf.alpha.spec/cat :k pf.core/keyword? :v pf.core/any?)
-
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :cat-spec/kw [])))
@@ -488,11 +376,6 @@ Detected 1 error\n")
   []
 
 should have additional elements. The next element \":type\" should be one of: :bar, :foo
-
--- Relevant specs -------
-
-:cat-spec/set:
-  (pf.alpha.spec/cat :type #{:bar :foo} :str pf.core/string?)
 
 -------------------------
 Detected 1 error\n")
@@ -504,11 +387,6 @@ Detected 1 error\n")
 should have additional elements. The next element \":v\" should satisfy
 
   any?
-
--- Relevant specs -------
-
-:cat-spec/kw:
-  (pf.alpha.spec/cat :k pf.core/keyword? :v pf.core/any?)
 
 -------------------------
 Detected 1 error\n")
@@ -523,13 +401,6 @@ should have additional elements. The next element should satisfy
 
   (pf.alpha.spec/alt :s string? :i int?)
 
--- Relevant specs -------
-
-:cat-spec/alt*:
-  (pf.alpha.spec/alt :s pf.core/string? :i pf.core/int?)
-:cat-spec/alt:
-  (pf.alpha.spec/+ :cat-spec/alt*)
-
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :cat-spec/alt [])))
@@ -540,12 +411,6 @@ Detected 1 error\n")
 should have additional elements. The next element should satisfy
 
   (pf.alpha.spec/alt :s string? :i int?)
-
--- Relevant specs -------
-
-:cat-spec/alt-inline:
-  (pf.alpha.spec/+
-   (pf.alpha.spec/alt :s pf.core/string? :i pf.core/int?))
 
 -------------------------
 Detected 1 error\n")
@@ -558,11 +423,6 @@ should have additional elements. The next element \":x\" should satisfy
 
   any?
 
--- Relevant specs -------
-
-:cat-spec/any:
-  (pf.alpha.spec/cat :x (pf.alpha.spec/+ pf.core/any?))
-
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :cat-spec/any []))))
@@ -573,11 +433,6 @@ Detected 1 error\n")
            ^^^^
 
 has extra input
-
--- Relevant specs -------
-
-:cat-spec/kw:
-  (pf.alpha.spec/cat :k pf.core/keyword? :v pf.core/any?)
 
 -------------------------
 Detected 1 error\n")
@@ -629,11 +484,6 @@ should contain keys: :age, :keys-spec/name
 |-----------------+---------|
 | :keys-spec/name | string? |
 
--- Relevant specs -------
-
-:keys-spec/user:
-  %s
-
 -------------------------
 Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
@@ -661,15 +511,6 @@ should contain keys:
 |-----------------+----------|
 | :keys-spec/name | string?  |
 
--- Relevant specs -------
-
-:keys-spec/user2:
-  (pf.alpha.spec/keys
-   :req
-   [(and :keys-spec/name :keys-spec/age)]
-   :req-un
-   [(or :key-spec/zip (and :key-spec/state :key-spec/city))])
-
 -------------------------
 Detected 1 error\n")
              (expound/expound-str :keys-spec/user2 {})))
@@ -689,13 +530,6 @@ should contain keys:
 | :state | string?  |
 |--------+----------|
 | :zip   | pos-int? |
-
--- Relevant specs -------
-
-:keys-spec/user3:
-  (pf.alpha.spec/keys
-   :req-un
-   [(or :key-spec/zip (and :key-spec/state :key-spec/city))])
 
 -------------------------
 Detected 1 error\n")
@@ -747,13 +581,6 @@ Detected 1 error\n"
 should satisfy
 
   string?
-
--- Relevant specs -------
-
-:keys-spec/name:
-  pf.core/string?
-:keys-spec/user:
-  %s
 
 -------------------------
 Detected 1 error\n"
@@ -964,13 +791,6 @@ with
  Spec multimethod:      `expound.alpha2.core-test/el-type`
  Dispatch value:        `nil`
 
--- Relevant specs -------
-
-:multi-spec/el:
-  (pf.alpha.spec/multi-spec
-   expound.alpha2.core-test/el-type
-   :multi-spec/el-type)
-
 -------------------------
 Detected 1 error\n")
          (expound/expound-str :multi-spec/el {}))))
@@ -987,13 +807,6 @@ with
  Spec multimethod:      `expound.alpha2.core-test/el-type`
  Dispatch value:        `:image`
 
--- Relevant specs -------
-
-:multi-spec/el:
-  (pf.alpha.spec/multi-spec
-   expound.alpha2.core-test/el-type
-   :multi-spec/el-type)
-
 -------------------------
 Detected 1 error\n")
          (expound/expound-str :multi-spec/el {:multi-spec/el-type :image}))))
@@ -1009,13 +822,6 @@ should contain key: :multi-spec/value
 | key               | spec    |
 |===================+=========|
 | :multi-spec/value | string? |
-
--- Relevant specs -------
-
-:multi-spec/el:
-  (pf.alpha.spec/multi-spec
-   expound.alpha2.core-test/el-type
-   :multi-spec/el-type)
 
 -------------------------
 Detected 1 error\n")
@@ -1172,19 +978,6 @@ should satisfy
 
   sequential?
 
--- Relevant specs -------
-
-:cat-wrapped-in-or-spec/kv:
-  (pf.alpha.spec/and
-   pf.core/sequential?
-   (pf.alpha.spec/cat :k pf.core/keyword? :v pf.core/any?))
-:cat-wrapped-in-or-spec/kv-or-string:
-  (pf.alpha.spec/or
-   :map
-   (pf.alpha.spec/keys :req [:cat-wrapped-in-or-spec/type])
-   :kv
-   :cat-wrapped-in-or-spec/kv)
-
 -------------------------
 Detected 1 error\n")
          (expound/expound-str :cat-wrapped-in-or-spec/kv-or-string {"foo" "hi"}))))
@@ -1202,13 +995,6 @@ should satisfy
 
   pos-int?
 
--- Relevant specs -------
-
-:map-of-spec/age:
-  pf.core/pos-int?
-:map-of-spec/name->age:
-  (pf.alpha.spec/map-of :map-of-spec/name :map-of-spec/age)
-
 -------------------------
 Detected 1 error\n")
          (expound/expound-str :map-of-spec/name->age {"Sally" "30"})))
@@ -1220,13 +1006,6 @@ Detected 1 error\n")
 should satisfy
 
   string?
-
--- Relevant specs -------
-
-:map-of-spec/name:
-  pf.core/string?
-:map-of-spec/name->age:
-  (pf.alpha.spec/map-of :map-of-spec/name :map-of-spec/age)
 
 -------------------------
 Detected 1 error\n")
@@ -1430,11 +1209,6 @@ should satisfy
 
   string?
 
--- Relevant specs -------
-
-:test-assert/name:
-  cljs.core/string?
-
 -------------------------
 Detected 1 error\n"
                   (.-message e)))))
@@ -1452,11 +1226,6 @@ should satisfy
 
   string?
 
--- Relevant specs -------
-
-:test-assert/name:
-  clojure.core/string?
-
 -------------------------
 Detected 1 error\n"
                   ;; FIXME - move assertion out of catch, similar to instrument tests
@@ -1471,11 +1240,6 @@ Detected 1 error\n"
 should satisfy
 
   string?
-
--- Relevant specs -------
-
-:test-explain-str/name:
-  pf.core/string?
 
 -------------------------
 Detected 1 error\n")
@@ -1866,11 +1630,6 @@ should satisfy
 
   string?
 
--- Relevant specs -------
-
-:custom-printer/strings:
-  (pf.alpha.spec/coll-of pf.core/string?)
-
 -------------------------
 Detected 1 error
 ")
@@ -1943,17 +1702,6 @@ or value
 should satisfy
 
   int?
-
--- Relevant specs -------
-
-:alt-spec/one-many-int:
-  (pf.alpha.spec/cat
-   :bs
-   (pf.alpha.spec/alt
-    :one
-    pf.core/int?
-    :many
-    (pf.alpha.spec/spec (pf.alpha.spec/+ pf.core/int?))))
 
 -------------------------
 Detected 1 error\n")
@@ -2047,11 +1795,6 @@ should satisfy
 or
 
   string?
-
--- Relevant specs -------
-
-:alt-spec/int-alt-str:
-  %s
 
 -------------------------
 Detected 1 error\n"
@@ -2798,15 +2541,6 @@ should satisfy
 
   (fn [%%] (string? %%))
 
--- Relevant specs -------
-
-:duplicate-preds/str-or-str:
-  (pf.alpha.spec/or
-   :str1
-   (fn [%%] (pf.core/string? %%))
-   :str2
-   (fn [%%] (pf.core/string? %%)))
-
 -------------------------
 Detected 1 error
 ")
@@ -2844,13 +2578,6 @@ with args:
 
   0, 1
 
--- Relevant specs -------
-
-:fspec-test/div:
-  (pf.alpha.spec/fspec
-   :args
-   (pf.alpha.spec/cat :x pf.core/int? :y pf.core/pos-int?))
-
 -------------------------
 Detected 1 error\n")
 
@@ -2869,17 +2596,6 @@ threw exception
 with args:
 
   0, 1
-
--- Relevant specs -------
-
-:fspec-test/div:
-  (pf.alpha.spec/fspec
-   :args
-   (pf.alpha.spec/cat :x pf.core/int? :y pf.core/pos-int?)
-   :ret
-   pf.core/any?
-   :fn
-   nil)
 
 -------------------------
 Detected 1 error\n")
@@ -3149,13 +2865,6 @@ with
  Spec multimethod:      `expound.alpha2.core-test/pet`
  Dispatch value:        `:fish`
 
--- Relevant specs -------
-
-:multispec-in-compound-spec/pet1:
-  (pf.alpha.spec/and
-   pf.core/map?
-   (pf.alpha.spec/multi-spec expound.alpha2.core-test/pet :pet/type))
-
 -------------------------
 Detected 1 error\n")
            (expound/expound-str :multispec-in-compound-spec/pet1 {:pet/type :fish}))))
@@ -3197,17 +2906,6 @@ or with
 
  Spec multimethod:      `expound.alpha2.core-test/animal`
  Dispatch value:        `nil`
-
--- Relevant specs -------
-
-:multispec-in-compound-spec/pet2:
-  (pf.alpha.spec/or
-   :map1
-   (pf.alpha.spec/multi-spec expound.alpha2.core-test/pet :pet/type)
-   :map2
-   (pf.alpha.spec/multi-spec
-    expound.alpha2.core-test/animal
-    :animal/type))
 
 -------------------------
 Detected 1 error\n")
@@ -3645,11 +3343,6 @@ should satisfy
 
   string?
 
--- Relevant specs -------
-
-:colorized-output/strings:
-  (pf.alpha.spec/coll-of pf.core/string?)
-
 -------------------------
 Detected 1 error
 ")
@@ -3671,7 +3364,7 @@ should satisfy
 <CYAN>-------------------------<NONE>
 <CYAN>Detected<NONE> <CYAN>1<NONE> <CYAN>error<NONE>
 ")
-         (readable-ansi (expound/expound-str :colorized-output/strings ["" :a ""] {:theme :figwheel-theme})))))
+         (readable-ansi (expound/expound-str :colorized-output/strings ["" :a ""] {:theme :figwheel-theme :print-specs? true})))))
 
 ;; TODO: totally rebuild generated specs
 #_(s/def ::spec-name (s/with-gen
