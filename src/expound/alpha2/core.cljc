@@ -16,13 +16,12 @@
 
 ;;;;;; internal specs ;;;;;;
 
-;; TODO: re-enable internal specs
 (s/def ::singleton (s/coll-of any? :count 1))
-;; (s/def :expound.spec/spec keyword?)
-;; (s/def :expound.spec/specs (s/coll-of :expound.spec/spec))
-;; (s/def :expound.spec.problem/via (s/coll-of :expound.spec/spec :kind vector?))
-;; (s/def :expound.spec/problem (s/keys :req-un [:expound.spec.problem/via]))
-;; (s/def :expound.spec/problems (s/coll-of :expound.spec/problem))
+(s/def :expound.spec/spec keyword?)
+(s/def :expound.spec/specs (s/coll-of :expound.spec/spec))
+(s/def :expound.spec.problem/via (s/coll-of :expound.spec/spec :kind vector?))
+(s/def :expound.spec/problem (s/keys :req-un [:expound.spec.problem/via]))
+(s/def :expound.spec/problems (s/coll-of :expound.spec/problem))
 
 (s/def :expound.printer/show-valid-values? boolean?)
 (s/def :expound.printer/value-str-fn (s/with-gen ifn?
@@ -125,8 +124,7 @@
       (into [spec] via)
       via)))
 
-;; TODO: rewrite fdef spec
-#_(s/fdef specs
+(s/fdef specs
     :args (s/cat :problems :expound.spec/problems)
     :ret :expound.spec/specs)
 (defn ^:private specs
@@ -1005,7 +1003,7 @@ returned an invalid value.
   [k]
   (get @registry-ref k))
 
-;; TODO: use 'show' or 'print' consistently
+;; FIXME: use 'show' or 'print' consistently
 (s/fdef custom-printer
         :args (s/cat :opts :expound.printer/opts)
         :ret ifn?)
@@ -1021,8 +1019,7 @@ returned an invalid value.
   (fn [explain-data]
     (print (printer-str opts explain-data))))
 
-;; TODO: create new spec
-#_(s/fdef printer
+(s/fdef printer
     :args (s/cat :explain-data map?)
     :ret nil?)
 (defn printer
@@ -1030,8 +1027,7 @@ returned an invalid value.
   [explain-data]
   ((custom-printer {}) explain-data))
 
-;; TODO: create new spec
-#_(s/fdef expound-str
+(s/fdef expound-str
     :args (s/cat :spec :expound.spec/spec
                  :form any?
                  :opts (s/? :expound.printer/opts))
@@ -1043,8 +1039,7 @@ returned an invalid value.
   ([spec form opts]
    (printer-str opts (s/explain-data spec form))))
 
-;; TODO: create new spec
-#_(s/fdef expound
+(s/fdef expound
     :args (s/cat :spec :expound.spec/spec
                  :form any?
                  :opts (s/? :expound.printer/opts))
@@ -1056,8 +1051,7 @@ returned an invalid value.
   ([spec form opts]
    (print (expound-str spec form opts))))
 
-;; TODO: new spec
-#_(s/fdef defmsg
+(s/fdef defmsg
     :args (s/cat :k qualified-keyword?
                  :error-message string?)
     :ret nil?)
@@ -1067,8 +1061,7 @@ returned an invalid value.
   (swap! registry-ref assoc k error-message)
   nil)
 
-;; TODO: new spec
-#_(s/fdef explain-result
+(s/fdef explain-result
     :args (s/cat :check-result (s/nilable map?))
     :ret nil?)
 (defn explain-result
@@ -1078,8 +1071,7 @@ returned an invalid value.
     (throw (ex-info "Cannot print check results with default printer. Use 'set!' or 'binding' to use Expound printer." {})))
   (s/*explain-out* check-result))
 
-;; TODO: new spec
-#_(s/fdef explain-result-str
+(s/fdef explain-result-str
     :args (s/cat :check-result (s/nilable map?))
     :ret string?)
 (defn explain-result-str
@@ -1087,8 +1079,7 @@ returned an invalid value.
   [check-result]
   (with-out-str (explain-result check-result)))
 
-;; TODO: new spec
-#_(s/fdef explain-results
+(s/fdef explain-results
     :args (s/cat :check-results (s/coll-of (s/nilable map?)))
     :ret nil?)
 (defn explain-results
@@ -1099,8 +1090,7 @@ returned an invalid value.
     (print "\n\n"))
   (explain-result (last check-results)))
 
-;; TODO: new spec
-#_(s/fdef explain-results-str
+(s/fdef explain-results-str
     :args (s/cat :check-results (s/coll-of (s/nilable map?)))
     :ret string?)
 (defn explain-results-str
