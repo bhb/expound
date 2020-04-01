@@ -7,7 +7,7 @@
             [expound.alpha2.printer :as printer]
             [expound.alpha2.util :as util]
             [expound.alpha2.ansi :as ansi]
-            ;;[clojure.alpha.spec.gen :as gen]
+            [clojure.alpha.spec.gen :as gen]
             ))
 
 ;;;;;; registry ;;;;;;
@@ -24,16 +24,16 @@
 ;; (s/def :expound.spec/problem (s/keys :req-un [:expound.spec.problem/via]))
 ;; (s/def :expound.spec/problems (s/coll-of :expound.spec/problem))
 
-;; (s/def :expound.printer/show-valid-values? boolean?)
-;; (s/def :expound.printer/value-str-fn (s/with-gen ifn?
-;;                                        #(gen/return (fn [_ _ _ _] "NOT IMPLEMENTED"))))
-;; (s/def :expound.printer/print-specs? boolean?)
-;; (s/def :expound.printer/theme #{:figwheel-theme :none})
-;; (s/def :expound.printer/opts (s/keys
-;;                               :opt-un [:expound.printer/show-valid-values?
-;;                                        :expound.printer/value-str-fn
-;;                                        :expound.printer/print-specs?
-;;                                        :expound.printer/theme]))
+(s/def :expound.printer/show-valid-values? boolean?)
+(s/def :expound.printer/value-str-fn (s/with-gen ifn?
+                                       #(gen/return (fn [_ _ _ _] "NOT IMPLEMENTED"))))
+(s/def :expound.printer/print-specs? boolean?)
+(s/def :expound.printer/theme #{:figwheel-theme :none})
+(s/def :expound.printer/opts (s/keys
+                              :opt-un [:expound.printer/show-valid-values?
+                                       :expound.printer/value-str-fn
+                                       :expound.printer/print-specs?
+                                       :expound.printer/theme]))
 
 ;; (s/def :expound.spec/spec (s/or
 ;;                            :set set?
@@ -73,8 +73,7 @@
 
 (def ^:private ^:dynamic *value-str-fn* (fn [_ _ _ _] "NOT IMPLEMENTED"))
 
-;; TODO: new spec
-#_(s/fdef value-in-context
+(s/fdef value-in-context
     :args (s/cat
            :opts map?
            :spec-name (s/nilable #{:args :fn :ret ::s/pred})
@@ -998,8 +997,7 @@ returned an invalid value.
 
 ;;;;;; public ;;;;;;
 
-;; TODO: create new spec
-#_(s/fdef error-message
+(s/fdef error-message
     :args (s/cat :k qualified-keyword?)
     :ret (s/nilable string?))
 (defn error-message
@@ -1007,11 +1005,10 @@ returned an invalid value.
   [k]
   (get @registry-ref k))
 
-;; TODO: create new spec
 ;; TODO: use 'show' or 'print' consistently
-#_(s/fdef custom-printer
-    :args (s/cat :opts :expound.printer/opts)
-    :ret ifn?)
+(s/fdef custom-printer
+        :args (s/cat :opts :expound.printer/opts)
+        :ret ifn?)
 (defn custom-printer
   "Returns a printer.
 

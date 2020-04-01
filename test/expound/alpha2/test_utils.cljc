@@ -1,12 +1,12 @@
 (ns expound.alpha2.test-utils
   (:require [clojure.alpha.spec :as s]
-            #_#?(:cljs
-                 [clojure.spec.test.alpha :as st]
+            #?(:cljs
+               [clojure.spec.test.alpha :as st]
                ;; FIXME
                ;; orchestra is supposed to work with cljs but
                ;; it isn't working for me right now
-                 #_[orchestra-cljs.spec.test :as st]
-                 :clj [orchestra.spec.test :as st])
+               #_[orchestra-cljs.spec.test :as st]
+               :clj [orchestra.spec.test :as st])
             [expound.alpha :as expound]
             [clojure.test :as ct]
             [com.gfredericks.test.chuck.clojure-test :as chuck]
@@ -29,10 +29,9 @@
 
 (defn instrument-all [test-fn]
   (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
-    ;; TODO: re-enable instrumentation
-    #_(st/instrument)
+    (st/instrument)
     (test-fn)
-    #_(st/unstrument)))
+    (st/unstrument)))
 
 (defn contains-nan? [x]
   (boolean (some util/nan? (tree-seq coll? identity x))))
