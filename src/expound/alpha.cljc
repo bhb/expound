@@ -1028,7 +1028,7 @@ returned an invalid value.
     (print (printer-str opts explain-data))))
 
 (s/fdef printer
-  :args (s/cat :explain-data map?)
+  :args (s/cat :explain-data (s/nilable map?))
   :ret nil?)
 (defn printer
   "Prints `explain-data` in a human-readable format."
