@@ -4241,7 +4241,6 @@ Detected 1 error\n"
             {:print-specs? false})))))
 
 (deftest printer
-  ;; call with explain-data
   (st/instrument ['expound/printer])
   (binding [s/*explain-out* expound/printer]
     (is (string? (s/explain-str int? "a")))
