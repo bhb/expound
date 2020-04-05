@@ -4242,8 +4242,8 @@ Detected 1 error\n"
 
 (deftest printer
   ;; call with explain-data
-  (st/instrument [expound/printer])
+  (st/instrument ['expound/printer])
   (binding [s/*explain-out* expound/printer]
     (is (string? (s/explain-str int? "a")))
     (is (= "Success!\n" (s/explain-str int? 1))))
-  (st/unstrument [expound/printer]))
+  (st/unstrument ['expound/printer]))
