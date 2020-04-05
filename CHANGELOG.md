@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed 
+
+- [Invalid spec for 'printer' function](https://github.com/bhb/expound/issues/191)
+
 ## [0.8.4] - 2019-12-31
 
 ### Fixed

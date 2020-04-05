@@ -4239,3 +4239,12 @@ Detected 1 error\n"
              :s string?)
             :oak
             {:print-specs? false})))))
+
+(deftest printer
+  ;; call with explain-data
+  (st/instrument ['expound/printer])
+  (binding [s/*explain-out* expound/printer]
+    (is (string? (s/explain-str int? "a")))
+    (is (= "Success!\n" (s/explain-str int? 1)))
+    (is (= "Success!\n" (with-out-str (expound/printer (s/explain-data int? 1))))))
+  (st/unstrument ['expound/printer]))
