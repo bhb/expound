@@ -12,4 +12,4 @@
 
 The "Relevant specs" section [is hidden by default](https://twitter.com/bbrinck/status/1204595098207444993).
 
-You can enable it with `print-specs?`
+You can enable it with `show-specs?`

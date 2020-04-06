@@ -88,7 +88,7 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-         (expound/expound-str :simple-type-based-spec/str 1 {:print-specs? true})))))
+         (expound/expound-str :simple-type-based-spec/str 1 {:show-specs? true})))))
 
 (s/def :set-based-spec/tag #{:foo :bar})
 (s/def :set-based-spec/nilable-tag (s/nilable :set-based-spec/tag))
@@ -570,7 +570,7 @@ Detected 1 error\n"
            (expound/expound-str
             :key-spec/mspec
             {:tag :int}
-            {:print-specs? false}))))
+            {:show-specs? false}))))
 
   (testing "invalid key"
     (is (= (pf "-- Spec failed --------------------
@@ -614,7 +614,7 @@ should contain keys: :address, :locations, :states
 -------------------------
 Detected 1 error
 "
-         (expound/expound-str :keys-spec/locations {} {:print-specs? false})))))
+         (expound/expound-str :keys-spec/locations {})))))
 
 (s/def :keys-spec/foo string?)
 (s/def :keys-spec/bar string?)
@@ -666,8 +666,7 @@ should satisfy
 Detected 3 errors\n")
          (expound/expound-str :keys-spec/map-spec-1 {:foo 1.2
                                                      :bar 123
-                                                     :baz true}
-                              {:print-specs? false})))
+                                                     :baz true})))
   (is (= (pf
           "-- Spec failed --------------------
 
@@ -704,8 +703,7 @@ or
 Detected 3 errors\n")
          (expound/expound-str :keys-spec/map-spec-2 {:foo 1.2
                                                      :bar 123
-                                                     :qux false}
-                              {:print-specs? false})))
+                                                     :qux false})))
 
   (is (=
        "-- Spec failed --------------------
@@ -760,8 +758,7 @@ Detected 4 errors\n"
        (expound/expound-str :keys-spec/map-spec-3 {:foo 1.2
                                                    :child-2 {:bar 123
                                                              :child-1 {:baz true
-                                                                       :qux false}}}
-                            {:print-specs? false}))))
+                                                                       :qux false}}}))))
 
 (s/def :multi-spec/value string?)
 (s/def :multi-spec/children vector?)
@@ -843,7 +840,7 @@ with
 -------------------------
 Detected 1 error
 "
-           (expound/expound-str :multi-spec/bar {} {:print-specs? false})))))
+           (expound/expound-str :multi-spec/bar {})))))
 
 (s/def :recursive-spec/tag #{:text :group})
 (s/def :recursive-spec/on-tap (s/coll-of map? :kind vector?))
@@ -903,8 +900,7 @@ Detected 1 error\n")
             {:tag :group
              :children [{:tag :group
                          :children [{:tag :group
-                                     :props {:on-tap {}}}]}]}
-            {:print-specs? false}))))
+                                     :props {:on-tap {}}}]}]}))))
   (testing "test that our new recursive spec grouping function works with
            alternative paths"
     (is (= (pf
@@ -950,8 +946,7 @@ Detected 1 error
             {:tag-2 :group
              :children-2 [{:tag-2 :group
                            :children-2 [{:tag-2 :group
-                                         :props-2 {:on-tap-2 {}}}]}]}
-            {:print-specs? false})))))
+                                         :props-2 {:on-tap-2 {}}}]}]})))))
 
 (s/def :cat-wrapped-in-or-spec/kv (s/and
                                    sequential?
@@ -1680,8 +1675,7 @@ Detected 1 error\n"
           (s/or
            :i int?
            :seq (s/cat :x1 int? :x2 int?))
-          ["foo"]
-          {:print-specs? false})))
+          ["foo"])))
     (s/def :alt-spec/one-many-int (s/cat :bs (s/alt :one int?
                                                     :many (s/nest (s/+ int?)))))
     ;; See spec2_bugs.md / Bug with s/nest
@@ -1741,7 +1735,7 @@ or
 
 -------------------------
 Detected 1 error\n"
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (binding [s/*explain-out* (expound/custom-printer {})]
                (s/explain-str
                 :alt-spec/one-many-int-or-str
                 [[:one]]))))
@@ -1778,7 +1772,7 @@ or
 
 -------------------------
 Detected 1 error\n"
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (binding [s/*explain-out* (expound/custom-printer {})]
                (s/explain-str
                 :alt-spec/one-many-int-or-str
                 [[:one]])))))
@@ -1842,8 +1836,7 @@ Detected 3 errors
 
          (expound/expound-str
           :alt-spec/alt-or-map
-          {:i "" :s 1}
-          {:print-specs? false})))
+          {:i "" :s 1})))
 
   (is (= "-- Spec failed --------------------
 
@@ -1867,7 +1860,7 @@ or
   (fn [n] (= n \"float\"))
 
 -------------------------
-Detected 1 error\n" (expound/expound-str :alt-spec/num-or-str [true] {:print-specs? false})))
+Detected 1 error\n" (expound/expound-str :alt-spec/num-or-str [true])))
   ;; If two s/alt specs have the same tags, we shouldn't confuse them.
   (is (= "-- Spec failed --------------------
 
@@ -1897,7 +1890,7 @@ or
 
 -------------------------
 Detected 2 errors\n"
-         (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+         (binding [s/*explain-out* (expound/custom-printer {})]
            (s/explain-str (s/keys :req-un [:alt-spec/num-types :alt-spec/str-types])
                           {:num-types [true] :str-types [false]}))))
 
@@ -1928,8 +1921,7 @@ Detected 1 error
 "
        (expound/expound-str
         (s/nilable (s/cat :n (s/alt :int int? :float float?)))
-        [""]
-        {:print-specs? false})))
+        [""])))
   ;; See spec2_bugs.md / Bug with s/nest
   #_(is (=
        ;; This output is not what we want: ideally, the two alternates
@@ -1969,9 +1961,7 @@ Detected 2 errors\n"
            :req-un [:alt-spec/mspec])
           {:mspec
            {:tag :x
-            :one-many-int [["1"]]}}
-
-          {:print-specs? false}))))
+            :one-many-int [["1"]]}}))))
 
 #_#?(:clj
      (def spec-gen (gen/elements (->> (s/registry)
@@ -2121,7 +2111,7 @@ Detected 2 errors\n"
                    (map str))))
           (when-not (s/valid? spec form)
             (let [expected-err-msg (str "Spec assertion failed\n"
-                                        (binding [s/*explain-out* (expound/custom-printer {:print-specs? true})]
+                                        (binding [s/*explain-out* (expound/custom-printer {:show-specs? true})]
                                           (s/explain-str spec form)))]
               (is (thrown-with-msg?
                    #?(:cljs :default :clj Exception)
@@ -2220,7 +2210,7 @@ Detected 2 errors\n"
 ;; Conformers 
 #_(deftest conformers-test
   ;; Example from http://cjohansen.no/a-unified-specification/
-    (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})
+    (binding [s/*explain-out* (expound/custom-printer {})
               *print-namespace-maps* false]
       (testing "conform string to int"
         (is (string?
@@ -2287,7 +2277,7 @@ Detected 1 error
                       :clj "(fn
    [%]
    (< (-> % :x) (-> % :y)))"))
-               (expound/expound-str :conformers-test/sorted-pair [1 0] {:print-specs? false})))
+               (expound/expound-str :conformers-test/sorted-pair [1 0])))
         (is (= (pf "-- Spec failed --------------------
 
   [... [1 0]]
@@ -2307,7 +2297,7 @@ Detected 1 error\n"
                       :clj "(fn
    [%]
    (< (-> % :x) (-> % :y)))"))
-               (expound/expound-str (s/coll-of :conformers-test/sorted-pair) [[0 1] [1 0]] {:print-specs? false})))
+               (expound/expound-str (s/coll-of :conformers-test/sorted-pair) [[0 1] [1 0]])))
         (is (= (pf "-- Spec failed --------------------
 
   {:a [1 0]}
@@ -2327,7 +2317,7 @@ Detected 1 error\n"
                       :clj "(fn
    [%]
    (< (-> % :x) (-> % :y)))"))
-               (expound/expound-str (s/map-of keyword? :conformers-test/sorted-pair) {:a [1 0]} {:print-specs? false})))
+               (expound/expound-str (s/map-of keyword? :conformers-test/sorted-pair) {:a [1 0]})))
         (is (= (pf "-- Spec failed --------------------
 
   [... \"a\"]
@@ -2339,7 +2329,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n")
-               (expound/expound-str :conformers-test/sorted-pair [1 "a"] {:print-specs? false}))))
+               (expound/expound-str :conformers-test/sorted-pair [1 "a"]))))
       (testing "conformers that modify path of values"
         (s/def :conformers-test/vals (s/coll-of (s/and string?
                                                        #(re-matches #"[A-G]+" %))))
@@ -2362,7 +2352,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-               (expound/expound-str :conformers-test/csv "abc,def,ghi" {:print-specs? false}))))
+               (expound/expound-str :conformers-test/csv "abc,def,ghi"))))
 
     ;; this is NOT recommended!
     ;; so I'm not inclined to make this much nicer than
@@ -2389,7 +2379,7 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (binding [s/*explain-out* (expound/custom-printer {})]
                  (s/explain-str :conformers-test/coerced-kw nil))))
 
         (is (= (pf "-- Spec failed --------------------
@@ -2410,7 +2400,7 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (binding [s/*explain-out* (expound/custom-printer {})]
                  (s/explain-str (s/coll-of :conformers-test/coerced-kw) ["a" "b" "c" 0])))))
     ;; Also not recommended
       (s/def :conformers-test/str-kw? (s/and (s/conformer #(if (string? %)
@@ -2435,7 +2425,7 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (binding [s/*explain-out* (expound/custom-printer {})]
                  (s/explain-str :conformers-test/coerced-kw nil))))
 
         (is (= (pf "-- Spec failed --------------------
@@ -2456,7 +2446,7 @@ should satisfy
 -------------------------
 Detected 1 error
 ")
-               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (binding [s/*explain-out* (expound/custom-printer {})]
                  (s/explain-str (s/coll-of :conformers-test/coerced-kw) ["a" "b" "c" 0])))))
 
       (s/def :conformers-test/name string?)
@@ -2478,7 +2468,7 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (binding [s/*explain-out* (expound/custom-printer {})]
                  (s/explain-str :conformers-test/person [:age 30 :name :Stan])))))
 
       (testing "spec defined with keys* and copies of bad value elsewhere in the data"
@@ -2498,7 +2488,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (binding [s/*explain-out* (expound/custom-printer {})]
                  (s/explain-str (s/tuple
                                  keyword?
                                  :conformers-test/person) [:Stan [:age 30 :name :Stan]])))))
@@ -2522,7 +2512,7 @@ Detected 1 error
 "
                    #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
                       :clj "(fn [%] (< (-> % :x) (-> % :y)))"))
-               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (binding [s/*explain-out* (expound/custom-printer {})]
                  (s/explain-str (s/map-of :conformers-test/sorted-pair any?) {[0 1] [1 0]
                                                                               [1 0] [1 0]})))))))
 
@@ -2626,7 +2616,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n")
-             (until-unsuccessful #(expound/expound-str :fspec-ret-test/plus my-plus {:print-specs? false}))))
+             (until-unsuccessful #(expound/expound-str :fspec-ret-test/plus my-plus))))
 
       (is (= (pf "-- Function spec failed -----------
 
@@ -2643,7 +2633,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n")
-             (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus] {:print-specs? false}))))
+             (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus]))))
       (s/def :fspec-ret-test/return-map (s/fspec
                                          :args (s/cat)
                                          :ret (s/keys :req-un [:fspec-ret-test/my-int])))
@@ -2665,8 +2655,7 @@ should contain key: :my-int
 Detected 1 error
 ")
              (until-unsuccessful #(expound/expound-str :fspec-ret-test/return-map
-                                                       (fn [] {})
-                                                       {:print-specs? false}))))))
+                                                       (fn [] {})))))))
 
 (s/def :fspec-fn-test/minus (s/fspec
                              :args (s/cat :x int? :y int?)
@@ -2709,7 +2698,7 @@ Detected 1 error\n"
                  #?(:clj
                     "(fn [%] (< (:ret %) (-> % :args :x)))"
                     :cljs "(fn [%] (< (:ret %) (-> % :args :x)))"))
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (binding [s/*explain-out* (expound/custom-printer {})]
                (until-unsuccessful #(s/explain-str :fspec-fn-test/minus my-minus)))))
 
       (is (= (pf "-- Function spec failed -----------
@@ -2732,7 +2721,7 @@ Detected 1 error\n"
    [%]
    (< (:ret %) (-> % :args :x)))"
                     :cljs "(fn [%] (< (:ret %) (-> % :args :x)))"))
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (binding [s/*explain-out* (expound/custom-printer {})]
                (until-unsuccessful #(s/explain-str (s/coll-of :fspec-fn-test/minus) [my-minus])))))))
 
 ;; Now in for fspec failures returns function
@@ -2753,7 +2742,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (binding [s/*explain-out* (expound/custom-printer {})]
                (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
                                                    [:foo])))))
       (testing "set ifn / ret failure"
@@ -2772,7 +2761,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (binding [s/*explain-out* (expound/custom-printer {})]
                  (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
                                                      [#{}])))))))
     #?(:clj
@@ -2792,7 +2781,7 @@ with args:
 
 -------------------------
 Detected 1 error\n"
-                (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+                (binding [s/*explain-out* (expound/custom-printer {})]
                   (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
                                                       [[]]))))))))
 
@@ -2919,7 +2908,7 @@ Detected 1 error\n")
 (def email-regex #"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,63}$")
 
 (deftest predicate-messages
-  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+  (binding [s/*explain-out* (expound/custom-printer {})]
     (testing "predicate with error message"
       (is (= "-- Spec failed --------------------
 
@@ -3364,7 +3353,7 @@ should satisfy
 <CYAN>-------------------------<NONE>
 <CYAN>Detected<NONE> <CYAN>1<NONE> <CYAN>error<NONE>
 ")
-         (readable-ansi (expound/expound-str :colorized-output/strings ["" :a ""] {:theme :figwheel-theme :print-specs? true})))))
+         (readable-ansi (expound/expound-str :colorized-output/strings ["" :a ""] {:theme :figwheel-theme :show-specs? true})))))
 
 ;; TODO: totally rebuild generated specs
 #_(s/def ::spec-name (s/with-gen
@@ -3740,7 +3729,6 @@ should satisfy
           "Spec name: " sp "\n"
           "Error: "
           (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true
-                                                             :print-specs? false
                                                              :theme :figwheel-theme})]
             (s/explain-str ::spec (s/form (s/get-spec sp))))))))
 
@@ -3762,7 +3750,7 @@ should satisfy
                        ::test-problem1)]
 
       (is (= "fake-problem-group-str\n\n-------------------------\nDetected 1 error\n"
-             (printer-str {:print-specs? false} ed)))))
+             (printer-str {} ed)))))
   (testing "can overwrite 'expected' str"
     (let [printer-str #'expound/printer-str
           ed (assoc-in (s/explain-data (s/spec int?) "")
@@ -3770,7 +3758,7 @@ should satisfy
                        ::test-problem2)]
 
       (is (= "fake-problem-group-str\nfake-expected-str\n\n-------------------------\nDetected 1 error\n"
-             (printer-str {:print-specs? false} ed)))))
+             (printer-str  {} ed)))))
   (testing "if type has no mm implemented, throw an error"
     (let [printer-str #'expound/printer-str
           ed (assoc-in (s/explain-data (s/spec int?) "")
@@ -3780,7 +3768,7 @@ should satisfy
       (is (thrown-with-msg?
            #?(:cljs :default :clj Exception)
            #"No method in multimethod"
-           (printer-str {:print-specs? false} ed))))))
+           (printer-str  {} ed))))))
 
 #?(:clj (deftest macroexpansion-errors
           (if (spec-error-in-ex-msg?)
@@ -3804,9 +3792,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-                     (with-out-str ((expound/custom-printer {:print-specs? false})
-
-                                    ed))))))))
+                     (with-out-str ((expound/custom-printer {}) ed))))))))
 
 (deftest sorted-map-values
   (is (= "-- Spec failed --------------------
@@ -3873,8 +3859,7 @@ should be a string ID
 Detected 1 error\n"
            (expound/expound-str
             :defmsg-test/id1
-            123
-            {:print-specs? false}))))
+            123))))
 
   (s/def :defmsg-test/id2 (s/and string?
                                  #(<= 4 (count %))))
@@ -3890,8 +3875,7 @@ should be a string ID of length 4 or more
 Detected 1 error\n"
            (expound/expound-str
             :defmsg-test/id2
-            "123"
-            {:print-specs? false}))))
+            "123"))))
 
   (s/def :defmsg-test/statuses #{:ok :failed})
   (expound/defmsg :defmsg-test/statuses "should be either :ok or :failed")
@@ -3907,8 +3891,7 @@ Detected 1 error
 "
            (expound/expound-str
             :defmsg-test/statuses
-            :oak
-            {:print-specs? false}))))
+            :oak))))
   (testing "messages for alt specs"
     (s/def ::x int?)
     (s/def ::y int?)
@@ -3929,8 +3912,7 @@ Detected 1 error\n"
                                      (s/cat :x ::x
                                             :y ::y))
 
-                              ["" ""]
-                              {:print-specs? false}))))
+                              ["" ""]))))
 
   (testing "messages for alt specs (if user duplicates existing message)"
     (s/def ::x int?)
@@ -3952,8 +3934,7 @@ Detected 1 error\n"
                                      ::x
                                      :two
                                      ::y)
-                              [""]
-                              {:print-specs? false}))))
+                              [""]))))
   (testing "messages for alternatives and set specs"
     (is (= "-- Spec failed --------------------
 
@@ -3974,8 +3955,7 @@ Detected 1 error\n"
              :num
              :defmsg-test/statuses
              :s string?)
-            :oak
-            {:print-specs? false})))))
+            :oak)))))
 
 (s/def :schema-test/city string?)
 (s/def :schema-test/state string?)
@@ -3996,7 +3976,7 @@ should contain key: :schema-test/city
 -------------------------
 Detected 1 error
 "
-         (expound/expound-str (s/select :schema-test/address [:schema-test/city]) {} {:print-specs? false})))
+         (expound/expound-str (s/select :schema-test/address [:schema-test/city]) {})))
   ;; only require state
   (is (= "-- Spec failed --------------------
 
@@ -4011,5 +3991,5 @@ should contain key: :schema-test/state
 -------------------------
 Detected 1 error
 "
-         (expound/expound-str (s/select :schema-test/address [:schema-test/state]) {} {:print-specs? false}))))
+         (expound/expound-str (s/select :schema-test/address [:schema-test/state]) {}))))
 

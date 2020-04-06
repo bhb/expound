@@ -37,7 +37,6 @@
 
 (def ^:dynamic *enable-color* false)
 
-
 (defn esc
   "Returns an ANSI escope string which will apply the given collection of SGR
   codes."
