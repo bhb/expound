@@ -23,7 +23,7 @@
     "self-host"
   ],
   "devDependencies": {
-    "karma": "^3.0.0",
+    "karma": "^5.0.5",
     "karma-chrome-launcher": "^2.2.0",
     "karma-cljs-test": "^0.1.0",
     "lodash": "^4.17.11",

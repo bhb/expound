@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-NODE_VERSION=6.11.2
+NODE_VERSION=14.2.0
 ARCH=x64
 
 curl -SLO https://nodejs.org/dist/v$NODE_VERSION/node-v$NODE_VERSION-linux-$ARCH.tar.xz
 
 EXPECTED_SHA=$(grep "node-v$NODE_VERSION-linux-$ARCH.tar.xz" SHASUMS256.txt.asc)
-ACTUAL_SHA=$(sha256sum node-v6.11.2-linux-x64.tar.xz)
+ACTUAL_SHA=$(sha256sum node-v14.2.0-linux-x64.tar.xz)
 
 echo "Expected: $EXPECTED_SHA"
 echo "Actual:   $ACTUAL_SHA"
