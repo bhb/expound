@@ -1,4 +1,4 @@
-(defproject expound "0.8.4"
+(defproject expound "0.8.5-SNAPSHOT"
   :description "Human-optimized error messages for clojure.spec"
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
@@ -6,16 +6,22 @@
   :scm {:name "git" :url "https://github.com/bhb/expound"}
   :dependencies [[org.clojure/clojure "1.10.1" :scope "provided"]
                  [org.clojure/clojurescript "1.10.520" :scope "provided"]
-                 [org.clojure/spec.alpha "0.2.176" :scope "provided"]]
+                 [org.clojure/spec.alpha "0.2.176" :scope "provided"]
+                 [org.clojure/alpha.spec "b644e4d8c5553e10544d920306690fffe9b53e15" :scope "provided"]
+                 ]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
   :plugins [
+            [reifyhealth/lein-git-down "0.3.5"] ; Can remove this once spec has maven release
             [com.jakemccrary/lein-test-refresh "0.23.0"]
             [lein-cljfmt "0.6.4"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-figwheel "0.5.18"]
             [lein-hiera "1.1.0"]
             ]
+  :git-down {org.clojure/alpha.spec {:coordinates clojure/spec-alpha2}} ; Can remove this once spec has maven release
+  :repositories [["public-github" {:url "git://github.com"}]] ; Can remove this once spec has maven release
+  :middleware [lein-git-down.plugin/inject-properties] ; Can remove this once spec has maven release
   :cljsbuild {:builds
               [{:id "test"
                 :source-paths ["src" "test"]
@@ -86,7 +92,12 @@
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                   [com.gfredericks/test.chuck "0.2.10"]
-                                  [cider/cider-nrepl "0.22.4"]
+                                  [cider/cider-nrepl "0.24.0"]
+                                  ;; Disabling speculative because
+                                  ;; instaparse runs into problem with re-matcher (appears to be used by test.chuck)
+                                  ;; Also, running with all specs enabled slows doesn testing, so I need a better way
+                                  ;; to only instrument in some cases, or the functions only within expound
+                                  ;; [speculative "0.0.3"]
                                   ]
                    :injections [(require 'sc.api)]
                    :plugins [
@@ -128,7 +139,7 @@
              :check {:global-vars {*unchecked-math*     :warn-on-boxed
                                    *warn-on-reflection* true}}
              :kaocha [:test-common
-                      {:dependencies [[lambdaisland/kaocha "0.0-565"]
+                      {:dependencies [[lambdaisland/kaocha "0.0-590"]
                                       [lambdaisland/kaocha-cloverage "0.0-41"]]}]
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [pjstadig/humane-test-output "0.9.0"]

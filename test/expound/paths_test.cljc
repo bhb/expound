@@ -1,11 +1,9 @@
 (ns expound.paths-test
-  (:require [clojure.test :as ct :refer [is testing deftest use-fixtures]]
+  (:require [clojure.test :as ct :refer [is deftest use-fixtures]]
             [clojure.test.check.generators :as gen]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
             [expound.paths :as paths]
             [expound.test-utils :as test-utils]
-            [com.gfredericks.test.chuck.clojure-test :refer [checking]]
-            [clojure.test.check.generators :as gen]
             [com.gfredericks.test.chuck :as chuck]))
 
 (def num-tests 100)
@@ -35,7 +33,7 @@
     i gen/pos-int
     :let [x (nth-value form i)
           paths (paths/paths-to-value form x [] [])]]
-   (is (not (empty? paths)))
+   (is (seq paths))
    (doseq [path paths]
      (is (= x
             (paths/value-in form

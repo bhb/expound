@@ -31,7 +31,7 @@
        (throw (Exception. (main/err->msg e#))))))
 
 (defn go [check-results?]
-  (set! s/*explain-out* (expound/custom-printer {:theme :figwheel-theme}))
+  (set! s/*explain-out* (expound/custom-printer {:theme :figwheel-theme :print-specs? true}))
   (st/instrument)
   (s/check-asserts true)
 

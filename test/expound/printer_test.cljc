@@ -2,8 +2,8 @@
   (:require [clojure.spec.alpha :as s]
             [clojure.test :as ct :refer [is deftest use-fixtures testing]]
             [expound.printer :as printer]
-            [clojure.string :as string]
-            [com.gfredericks.test.chuck.clojure-test :refer [checking]]
+            #?(:clj [com.gfredericks.test.chuck.clojure-test :refer [checking]])
+            #?(:clj [clojure.string :as string])
             [expound.test-utils :as test-utils :refer [contains-nan?]]
             [expound.spec-gen :as sg]
             [expound.problems :as problems]))
@@ -287,7 +287,7 @@
              (:expound/problems
               (problems/annotate
                (s/explain-data keyword? "$ $$ $1 $& $` $'"))))))))
-  
+
   (testing "nested map-of specs"
     (is (= "{:a {:b 1}}\n        ^"
            (printer/highlighted-value

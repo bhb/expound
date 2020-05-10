@@ -1,0 +1,60 @@
+(ns expound.alpha2.specs
+  (:require #?(:cljs [expound.alpha :as ex :include-macros true]
+               :clj [expound.alpha :as ex])
+            [clojure.spec.alpha :as s]))
+
+;;;; public specs ;;;;;;
+
+(s/def ::bool boolean?)
+#?(:clj (s/def ::bytes bytes?))
+(s/def ::double double?)
+(s/def ::ident ident?)
+(s/def ::indexed indexed?)
+(s/def ::int int?)
+(s/def ::kw keyword?)
+(s/def ::map map?)
+(s/def ::nat-int nat-int?)
+(s/def ::neg-int neg-int?)
+(s/def ::pos-int pos-int?)
+(s/def ::qualified-ident qualified-ident?)
+(s/def ::qualified-kw qualified-keyword?)
+(s/def ::qualified-sym qualified-symbol?)
+(s/def ::seqable seqable?)
+(s/def ::simple-ident simple-ident?)
+(s/def ::simple-kw simple-keyword?)
+(s/def ::simple-sym simple-symbol?)
+(s/def ::str string?)
+(s/def ::sym symbol?)
+(s/def ::uri uri?)
+(s/def ::uuid uuid?)
+(s/def ::vec vector?)
+
+(ex/defmsg ::bool "should be either true or false")
+#?(:clj (ex/defmsg ::bytes "should be an array of bytes"))
+(ex/defmsg ::double "should be a double")
+(ex/defmsg ::ident "should be an identifier (a symbol or keyword)")
+(ex/defmsg ::indexed "should be an indexed collection")
+(ex/defmsg ::int "should be an integer")
+(ex/defmsg ::kw "should be a keyword")
+(ex/defmsg ::map "should be a map")
+(ex/defmsg ::nat-int "should be an integer equal to, or greater than, zero")
+(ex/defmsg ::neg-int "should be a negative integer")
+(ex/defmsg ::pos-int "should be a positive integer")
+(ex/defmsg ::qualified-ident "should be an identifier (a symbol or keyword) with a namespace")
+(ex/defmsg ::qualified-kw "should be a keyword with a namespace")
+(ex/defmsg ::qualified-sym "should be a symbol with a namespace")
+(ex/defmsg ::seqable "should be a seqable collection")
+(ex/defmsg ::simple-ident "should be an identifier (a symbol or keyword) with no namespace")
+(ex/defmsg ::simple-kw "should be a keyword with no namespace")
+(ex/defmsg ::simple-sym "should be a symbol with no namespace")
+(ex/defmsg ::str "should be a string")
+(ex/defmsg ::sym "should be a symbol")
+(ex/defmsg ::uri "should be a URI")
+(ex/defmsg ::uuid "should be a UUID")
+(ex/defmsg ::vec "should be a vector")
+
+(def ^:no-doc public-specs
+  [::bool #?(:clj ::bytes) ::double ::ident ::indexed ::int ::kw
+   ::map ::nat-int ::neg-int ::pos-int ::qualified-ident
+   ::qualified-kw ::qualified-sym ::seqable ::simple-ident
+   ::simple-kw ::simple-sym ::str ::sym ::uuid ::uri ::vec])
