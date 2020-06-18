@@ -1,4 +1,4 @@
-(ns expound.specs
+(ns ^:no-doc expound.specs
   (:require #?(:cljs [expound.alpha :as ex :include-macros true]
                :clj [expound.alpha :as ex])
             [clojure.spec.alpha :as s]))

@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.8.4] - 2020-06-17
+
+### Fixed 
+
+- [Invalid spec for 'printer' function](https://github.com/bhb/expound/issues/191)
+
 ## [0.8.4] - 2019-12-31
 
 ### Fixed
@@ -184,7 +190,8 @@ This release was made possible by [Clojurists Together](https://www.clojuriststo
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.8.4...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.8.5...HEAD
+[0.8.5]: https://github.com/bhb/expound/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/bhb/expound/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/bhb/expound/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/bhb/expound/compare/v0.8.1...v0.8.2

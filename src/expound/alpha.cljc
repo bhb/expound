@@ -283,7 +283,7 @@
         type (:expound.spec.problem/type problem)]
     (value-str type spec-name form in problems opts)))
 
-(defn conformed-value [problems invalid-value]
+(defn ^:private conformed-value [problems invalid-value]
   (let [conformed-val (-> problems first :val)]
     (if (= conformed-val invalid-value)
       ""
@@ -580,7 +580,7 @@
       (vec-remove old-groups)
       (conj (problem-group old-groups group))))
 
-(defn conj-groups
+(defn ^:private conj-groups
   "Consolidate a group into a group collection if it's either part of an s/or,
   s/alt or recursive spec."
   [groups group]
@@ -1028,7 +1028,7 @@ returned an invalid value.
     (print (printer-str opts explain-data))))
 
 (s/fdef printer
-  :args (s/cat :explain-data map?)
+  :args (s/cat :explain-data (s/nilable map?))
   :ret nil?)
 (defn printer
   "Prints `explain-data` in a human-readable format."
