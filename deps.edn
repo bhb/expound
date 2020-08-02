@@ -23,6 +23,11 @@
                   :main-opts ["-m" "cljfmt-runner.check"]}
            :lint/fix {:main-opts ["-m" "cljfmt-runner.fix"]}
 
+           ;; clojure -A:carve --opts '{:paths ["src" "test"] :api-namespaces [expound.alpha expound.specs]}'
+           :carve {:extra-deps {borkdude/carve {:git/url "https://github.com/borkdude/carve"
+                                     :sha "4b5010a09e030dbd998faff718d12400748ab3b9"}}
+                   :main-opts ["-m" "carve.main"]}
+
            ;; clojure -A:test:figwheel-repl
            ;; open http://localhost:9500/figwheel-extra-main/auto-testing
            :figwheel-repl {:extra-paths ["resources" "target"]

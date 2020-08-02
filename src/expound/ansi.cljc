@@ -56,8 +56,6 @@
   [string & codes]
   (str (esc codes) string (escape :none)))
 
-(def ansi-code? sgr-code)
-
 (def ^:dynamic *print-styles*
   {:highlight   [:bold]
    :good        [:green]
