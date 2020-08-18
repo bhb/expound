@@ -4241,3 +4241,21 @@ Detected 1 error\n"
     (is (= "Success!\n" (s/explain-str int? 1)))
     (is (= "Success!\n" (with-out-str (expound/printer (s/explain-data int? 1))))))
   (st/unstrument ['expound/printer]))
+
+(deftest undefined-key
+  (is (= "-- Spec failed --------------------
+
+  {}
+
+should contain key: :undefined-key/does-not-exist
+
+| key                           | spec                          |
+|===============================+===============================|
+| :undefined-key/does-not-exist | :undefined-key/does-not-exist |
+
+-------------------------
+Detected 1 error
+"
+         (expound/expound-str (s/keys :req [:undefined-key/does-not-exist])
+                              {}
+                              {:print-specs? false}))))
