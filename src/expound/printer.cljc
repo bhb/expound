@@ -247,9 +247,12 @@
     (pprint/write x :stream nil)))
 
 (defn expand-spec [spec]
-  (if (s/get-spec spec)
-    (pprint-str (s/form spec))
-    spec))
+  (let [expanded-spec (if (s/get-spec spec)
+                        (s/form spec)
+                        spec)]
+    (if (string? expanded-spec)
+      expanded-spec
+      (pprint-str expanded-spec))))
 
 (defn simple-spec-or-name [spec-name]
   (let [expanded (expand-spec spec-name)
