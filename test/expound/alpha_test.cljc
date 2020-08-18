@@ -2215,12 +2215,6 @@ Detected 2 errors\n"
 
         {:print-specs? false}))))
 
-#?(:clj
-   (def spec-gen (gen/elements (->> (s/registry)
-                                    (map key)
-                                    sg/topo-sort
-                                    (filter keyword?)))))
-
 (defn mutate-coll [x]
   (cond
     (map? x)
@@ -3897,27 +3891,27 @@ should satisfy
      (doall (s/exercise spec-spec (exercise-count spec-spec)))
      (str "Failed to generate examples for spec " spec-spec))))
 
-(defn sample-seq
-  "Return a sequence of realized values from `generator`."
-  [generator seed]
-  (s/assert some? generator)
-  (let [max-size 1
-        r (if seed
-            (random/make-random seed)
-            (random/make-random))
-        size-seq (gen/make-size-range-seq max-size)]
-    (map #(rose/root (gen/call-gen generator %1 %2))
-         (gen/lazy-random-states r)
-         size-seq)))
+#_(defn sample-seq
+    "Return a sequence of realized values from `generator`."
+    [generator seed]
+    (s/assert some? generator)
+    (let [max-size 1
+          r (if seed
+              (random/make-random seed)
+              (random/make-random))
+          size-seq (gen/make-size-range-seq max-size)]
+      (map #(rose/root (gen/call-gen generator %1 %2))
+           (gen/lazy-random-states r)
+           size-seq)))
 
-(defn missing-specs [spec-defs]
-  (let [defined (set (map second spec-defs))
-        used (set
-              (filter
-               #(and (qualified-keyword? %)
-                     (= "expound-generated-spec" (namespace %)))
-               (tree-seq coll? seq spec-defs)))]
-    (set/difference used defined)))
+#_(defn missing-specs [spec-defs]
+    (let [defined (set (map second spec-defs))
+          used (set
+                (filter
+                 #(and (qualified-keyword? %)
+                       (= "expound-generated-spec" (namespace %)))
+                 (tree-seq coll? seq spec-defs)))]
+      (set/difference used defined)))
 
 #?(:clj 1 #_(deftest eval-gen-test
           ;; FIXME - this is a useful test but not 100% reliable yet

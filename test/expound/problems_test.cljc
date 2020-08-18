@@ -28,7 +28,3 @@
              :expound/problems
              first
              (select-keys [:expound/in :val :reason])))))
-
-(defn nth-value [form i]
-  (let [seq (remove map-entry? (tree-seq coll? seq form))]
-    (nth seq (mod i (count seq)))))
