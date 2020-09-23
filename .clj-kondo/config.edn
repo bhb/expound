@@ -1,0 +1,2 @@
+{:linters {:deprecated-var {:exclude {expound.alpha/def {:namespaces [".*-test$", "expound.spec-gen"]}}}}
+ :hooks {:analyze-call {com.gfredericks.test.chuck.clojure-test/checking hooks.checking/checking}}}

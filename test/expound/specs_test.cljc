@@ -1,7 +1,7 @@
 (ns expound.specs-test
   (:require [expound.specs]
             [clojure.spec.alpha :as s]
-            [clojure.test :as ct :refer [is testing deftest use-fixtures]]
+            [clojure.test :as ct :refer [is deftest use-fixtures]]
             [expound.test-utils :as test-utils]
             [expound.alpha :as expound]))
 
