@@ -1,5 +1,5 @@
 (ns expound.test-runner
-  (:require [jx.reporter.karma :refer-macros [run-tests run-all-tests]]
+  (:require [jx.reporter.karma :refer-macros [#_run-tests #_run-all-tests]]
             [expound.alpha-test]
             [expound.paths-test]
             [expound.printer-test]

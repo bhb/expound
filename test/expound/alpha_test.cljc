@@ -4,14 +4,18 @@
                 [[clojure.core.specs.alpha]
                  [ring.core.spec]
                  [onyx.spec]])
+
+            ;; Deps for specs that generate specs, which are currently disabled
+            #_[clojure.test.check.random :as random]
+            #_[clojure.test.check.rose-tree :as rose]
+
             [clojure.set :as set]
             [clojure.spec.alpha :as s]
             [clojure.spec.test.alpha :as st]
             [clojure.string :as string]
             [clojure.test :as ct :refer [is testing deftest use-fixtures]]
             [clojure.test.check.generators :as gen]
-            [clojure.test.check.random :as random]
-            [clojure.test.check.rose-tree :as rose]
+
             [clojure.walk :as walk]
             [com.gfredericks.test.chuck :as chuck]
             [com.gfredericks.test.chuck.clojure-test :refer [checking]]
@@ -615,6 +619,9 @@ Detected 1 error\n")
 
 (s/def :keys-spec/user4 (s/keys :req []))
 
+(defmulti key-spec-mspec :tag)
+(defmethod key-spec-mspec :int [_] (s/keys :req-un [::tag ::i]))
+(defmethod key-spec-mspec :string [_] (s/keys :req-un [::tag ::s]))
 (deftest keys-spec
   (testing "missing keys"
     (is (= (pf "-- Spec failed --------------------
@@ -717,12 +724,9 @@ Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
            (expound/expound-str (s/keys :req-un [:keys-spec/name :keys-spec/age]) {})))
-    (defmulti key-spec-mspec :tag)
     (s/def :key-spec/mspec (s/multi-spec key-spec-mspec :tag))
     (s/def :key-spec/i int?)
     (s/def :key-spec/s string?)
-    (defmethod key-spec-mspec :int [_] (s/keys :req-un [::tag ::i]))
-    (defmethod key-spec-mspec :string [_] (s/keys :req-un [::tag ::s]))
     ;; We can't inspect the contents of a multi-spec (to figure out
     ;; which spec we mean by :i), so this is the best we can do.
     (is (= "-- Spec failed --------------------
@@ -946,6 +950,8 @@ Detected 4 errors\n"
   (s/keys :req [:multi-spec/children]))
 (s/def :multi-spec/el (s/multi-spec el-type :multi-spec/el-type))
 
+(defmulti multi-spec-bar-spec :type)
+(defmethod multi-spec-bar-spec ::b [_] (s/keys :req [::b]))
 (deftest multi-spec
   (testing "missing dispatch key"
     (is (=
@@ -1019,9 +1025,7 @@ Detected 1 error\n")
 
   ;; https://github.com/bhb/expound/issues/122
   (testing "when re-tag is a function"
-    (defmulti multi-spec-bar-spec :type)
     (s/def :multi-spec/b string?)
-    (defmethod multi-spec-bar-spec ::b [_] (s/keys :req [::b]))
     (s/def :multi-spec/bar (s/multi-spec multi-spec-bar-spec (fn [val tag] (assoc val :type tag))))
     (is (= "-- Missing spec -------------------
 
@@ -1234,7 +1238,6 @@ Detected 1 error\n")
    "simple spec"
    (chuck/times num-tests)
    [simple-spec sg/simple-spec-gen
-    :let [sp-form (s/form simple-spec)]
     form gen/any-printable]
    (is (string? (expound/expound-str simple-spec form)))))
 
@@ -1245,7 +1248,6 @@ Detected 1 error\n")
    [simple-spec sg/simple-spec-gen
     every-args (s/gen :specs/every-args)
     :let [spec (sg/apply-coll-of simple-spec every-args)]
-    :let [sp-form (s/form spec)]
     form gen/any-printable]
    (is (string? (expound/expound-str spec form)))))
 
@@ -1256,7 +1258,6 @@ Detected 1 error\n")
    [simple-spec1 sg/simple-spec-gen
     simple-spec2 sg/simple-spec-gen
     :let [spec (s/and simple-spec1 simple-spec2)]
-    :let [sp-form (s/form spec)]
     form gen/any-printable]
    (is (string? (expound/expound-str spec form)))))
 
@@ -1266,8 +1267,7 @@ Detected 1 error\n")
    (chuck/times num-tests)
    [simple-spec1 sg/simple-spec-gen
     simple-spec2 sg/simple-spec-gen
-    :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)
-          sp-form (s/form spec)]
+    :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
     form gen/any-printable]
    (is (string? (expound/expound-str spec form))))
   (checking
@@ -1316,8 +1316,7 @@ Detected 1 error\n")
     simple-spec3 sg/simple-spec-gen
     every-args1 (s/gen :specs/every-args)
     every-args2 (s/gen :specs/every-args)
-    :let [spec (sg/apply-map-of simple-spec1 (sg/apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)
-          sp-form (s/form spec)]
+    :let [spec (sg/apply-map-of simple-spec1 (sg/apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)]
     form test-utils/any-printable-wo-nan]
    (is (string? (expound/expound-str spec form)))))
 
@@ -1882,6 +1881,10 @@ Detected 1 error
                                   :s :alt-spec/s
                                   :k (s/keys :req-un [:alt-spec/i :alt-spec/s])))
 
+(defmulti alt-spec-mspec :tag)
+(s/def :alt-spec/mspec (s/multi-spec alt-spec-mspec :tag))
+(defmethod alt-spec-mspec :x [_] (s/keys :req-un [:alt-spec/one-many-int]))
+
 (deftest alt-spec
   (testing "alternatives at different paths in spec"
     (is (=
@@ -2169,10 +2172,6 @@ Detected 1 error
         (s/nilable (s/cat :n (s/alt :int int? :float float?)))
         [""]
         {:print-specs? false})))
-
-  (defmulti alt-spec-mspec :tag)
-  (s/def :alt-spec/mspec (s/multi-spec alt-spec-mspec :tag))
-  (defmethod alt-spec-mspec :x [_] (s/keys :req-un [:alt-spec/one-many-int]))
   (is (=
        ;; This output is not what we want: ideally, the two alternates
        ;; should be grouped into a single problem.
@@ -3280,7 +3279,6 @@ Detected 1 error
 (s/fdef results-str-fn2
   :args (s/cat :x nat-int? :y nat-int?)
   :fn #(let [x (-> % :args :x)
-             y (-> % :args :y)
              ret (-> % :ret)]
          (< x ret)))
 (defn results-str-fn2 [x y]
@@ -3395,12 +3393,7 @@ should satisfy
   (fn
    [%%]
    (let
-    [x
-     (-> %% :args :x)
-     y
-     (-> %% :args :y)
-     ret
-     (-> %% :ret)]
+    [x (-> %% :args :x) ret (-> %% :ret)]
     (< x ret)))
 
 -------------------------
@@ -3432,12 +3425,7 @@ should satisfy
   (fn
    [%]
    (let
-    [x
-     (-> % :args :x)
-     y
-     (-> % :args :y)
-     ret
-     (-> % :ret)]
+    [x (-> % :args :x) ret (-> % :ret)]
     (< x ret)))
 
 -------------------------
@@ -3467,12 +3455,7 @@ should satisfy
   (fn
    [%]
    (let
-    [x
-     (-> % :args :x)
-     y
-     (-> % :args :y)
-     ret
-     (-> % :ret)]
+    [x (-> % :args :x) ret (-> % :ret)]
     (< x ret)))
 
 -------------------------
@@ -4004,14 +3987,14 @@ should satisfy
                                                            :theme :figwheel-theme})]
           (s/explain-str ::spec (s/form (s/get-spec sp))))))))
 
-(defmethod expound/problem-group-str ::test-problem1 [_type spec-name val path problems opts]
+(defmethod expound/problem-group-str ::test-problem1 [_type _spec-name _val _path _problems _opts]
   "fake-problem-group-str")
 
 (defmethod expound/problem-group-str ::test-problem2 [type spec-name val path problems opts]
   (str "fake-problem-group-str\n"
        (expound/expected-str type spec-name val path problems opts)))
 
-(defmethod expound/expected-str ::test-problem2 [_type spec-name val path problems opts]
+(defmethod expound/expected-str ::test-problem2 [_type _spec-name _val _path _problems _opts]
   "fake-expected-str")
 
 (deftest extensibility-test
@@ -4114,7 +4097,10 @@ Detected 1 error\n"
 
        (is (set/subset? p1 all-problems) {:extra (set/difference p1 all-problems)})
        (is (set/subset? p2 all-problems) {:extra (set/difference p2 all-problems)})
-       (is (set/subset? p3 all-problems) {:extra (set/difference p3 all-problems)}))))
+       (is (set/subset? p3 all-problems) {:extra (set/difference p3 all-problems)})))
+   :cljs
+   (set/index #{} [:x]) ; noop to keep clj-kondo happy
+   )
 
 (deftest defmsg-test
   (s/def :defmsg-test/id1 string?)
