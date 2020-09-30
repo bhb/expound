@@ -824,6 +824,12 @@ returned an invalid value.
       (::s/args ed)
       :args
 
+      (::s/ret ed)
+      :ret
+
+      (::s/fn ed)
+      :fn
+
       :else
       ;; for earlier versions
       (-> ed ::s/problems first :path first))

@@ -46,6 +46,37 @@
 (defn take-lines [n s]
   (string/join "\n" (take n (string/split-lines s))))
 
+(defn formatted-exception [printer-options f]
+  (let [printer (expound/custom-printer printer-options)
+        exception-data (binding [s/*explain-out* printer]
+                         (try
+                           (f)
+                           (catch #?(:cljs :default :clj Exception)
+                                  e
+                             #?(:cljs {:message (.-message e)
+                                       :data (.-data e)}
+
+                                :clj (Throwable->map e)))))
+        ed #?(:cljs (-> exception-data :data)
+              :clj (-> exception-data :via last :data))
+        cause# (-> #?(:cljs (:message exception-data)
+                      :clj (:cause exception-data))
+                   (clojure.string/replace #"Call to (.*) did not conform to spec:"
+                                           "Call to #'$1 did not conform to spec."))]
+
+    (str cause#
+         (if (re-find  #"Detected \d+ error" cause#)
+           ""
+           (str "\n"
+                (with-out-str (printer ed)))))))
+
+(defn orch-unstrument-test-fns [f]
+  (orch.st/unstrument [`results-str-fn1
+                       `results-str-fn2
+                       `results-str-fn4
+                       `results-str-fn7])
+  (f))
+
 (def inverted-ansi-codes
   (reduce
    (fn [m [k v]]
@@ -1489,18 +1520,10 @@ Detected 1 error\n")
 (defn no-linum [s]
   (string/replace s #"(.cljc?):\d+" "$1:LINUM"))
 
-(defn spec-error-in-ex-msg? []
-  #?(:cljs
-     (contains? #{"1.10.238" "1.10.339"} *clojurescript-version*)
-     :clj
-     (contains? #{{:major 1, :minor 9, :incremental 0, :qualifier nil}}
-                *clojure-version*)))
-
 (deftest test-instrument
   (st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                (if (spec-error-in-ex-msg?)
-                  "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1516,14 +1539,9 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-                  "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
-                (.-message (try
-                             (binding [s/*explain-out* expound/printer]
-                               (test-instrument-adder "" :x))
-                             (catch :default e e)))))
+                (formatted-exception {:print-specs? false} #(test-instrument-adder "" :x))))
      :clj
-     (is (= (if (spec-error-in-ex-msg?)
-              "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1539,45 +1557,14 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-              "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
             (no-linum
-             (:cause
-              (Throwable->map (try
-                                (binding [s/*explain-out* expound/printer]
-                                  (test-instrument-adder "" :x))
-                                (catch Exception e e))))))))
-  (when-not (spec-error-in-ex-msg?)
-    (let [explain-data
-          (try
-            (test-instrument-adder "" :x)
-            (catch #?(:cljs :default :clj Exception)
-                   e (ex-data e)))]
-      (is (= (str #?(:cljs "<filename missing>:<line number missing>"
-                     :clj "alpha_test.cljc:LINUM")
-                  "
-
--- Spec failed --------------------
-
-Function arguments
-
-  (\"\" ...)
-   ^^
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error\n")
-             (no-linum
-              (with-out-str (expound/printer explain-data)))))))
-
+             (formatted-exception {:print-specs? false :show-valid-values? false} #(test-instrument-adder "" :x))))))
   (st/unstrument `test-instrument-adder))
 
 (deftest test-instrument-with-orchestra-args-spec-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1593,12 +1580,8 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-                (.-message (try
-                             (binding [s/*explain-out* expound/printer]
-                               (test-instrument-adder "" :x))
-                             (catch :default e e)))))
-     :clj
-     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+                (no-linum (formatted-exception {:print-specs? false} #(test-instrument-adder "" :x)))))
+     :clj (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1614,12 +1597,11 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-            (no-linum
-             (:cause
-              (Throwable->map (try
-                                (binding [s/*explain-out* expound/printer]
-                                  (test-instrument-adder "" :x))
-                                (catch Exception e e))))))))
+                 (no-linum
+                  (formatted-exception
+                   {}
+                   #(test-instrument-adder "" :x))))))
+
   (orch.st/unstrument `test-instrument-adder))
 
 ;; Note - you may need to comment out this test out when
@@ -1628,7 +1610,7 @@ Detected 1 error\n"
 (deftest test-instrument-with-orchestra-args-syntax-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Syntax error -------------------
@@ -1643,12 +1625,9 @@ should have additional elements. The next element \":y\" should satisfy
 
 -------------------------
 Detected 1 error\n"
-                (.-message (try
-                             (binding [s/*explain-out* expound/printer]
-                               (test-instrument-adder 1))
-                             (catch :default e e)))))
+                (no-linum (formatted-exception {:print-specs? false} #(test-instrument-adder 1)))))
      :clj
-     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Syntax error -------------------
@@ -1664,17 +1643,15 @@ should have additional elements. The next element \":y\" should satisfy
 -------------------------
 Detected 1 error\n"
             (no-linum
-             (:cause
-              (Throwable->map (try
-                                (binding [s/*explain-out* expound/printer]
-                                  (test-instrument-adder 1))
-                                (catch Exception e e))))))))
+             (formatted-exception
+              {:print-specs? false}
+              #(test-instrument-adder 1))))))
   (orch.st/unstrument `test-instrument-adder))
 
 (deftest test-instrument-with-orchestra-ret-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1689,12 +1666,14 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-                (.-message (try
-                             (binding [s/*explain-out* expound/printer]
-                               (test-instrument-adder -1 -2))
-                             (catch :default e e)))))
+                (formatted-exception {}
+                                     #(test-instrument-adder -1 -2))
+                #_(.-message (try
+                               (binding [s/*explain-out* expound/printer]
+                                 (test-instrument-adder -1 -2))
+                               (catch :default e e)))))
      :clj
-     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1710,17 +1689,15 @@ should satisfy
 -------------------------
 Detected 1 error\n"
             (no-linum
-             (:cause
-              (Throwable->map (try
-                                (binding [s/*explain-out* expound/printer]
-                                  (test-instrument-adder -1 -2))
-                                (catch Exception e e))))))))
+             (formatted-exception
+              {:print-specs? false}
+              #(test-instrument-adder -1 -2))))))
   (orch.st/unstrument `test-instrument-adder))
 
 (deftest test-instrument-with-orchestra-fn-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1735,12 +1712,9 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-                (.-message (try
-                             (binding [s/*explain-out* expound/printer]
-                               (test-instrument-adder 1 0))
-                             (catch :default e e)))))
+                (formatted-exception {} #(test-instrument-adder 1 0))))
      :clj
-     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec:
+     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1758,19 +1732,15 @@ should satisfy
 -------------------------
 Detected 1 error\n"
             (no-linum
-             (:cause
-              (Throwable->map (try
-                                (binding [s/*explain-out* expound/printer]
-                                  (test-instrument-adder 1 0))
-                                (catch Exception e e))))))))
+             (formatted-exception {:print-specs? false} #(test-instrument-adder 1 0))))))
+
   (orch.st/unstrument `test-instrument-adder))
 
 (deftest test-instrument-with-custom-value-printer
   (st/instrument `test-instrument-adder)
   #?(:cljs
      (is (=
-          (if (spec-error-in-ex-msg?)
-            "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+          "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1786,16 +1756,11 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-            "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
-
-          (.-message (try
-                       (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
-                         (test-instrument-adder "" :x))
-                       (catch :default e e)))))
+          (no-linum
+           (formatted-exception {:print-specs? false :show-valid-values? true} #(test-instrument-adder "" :x)))))
      :clj
      (is (=
-          (if (spec-error-in-ex-msg?)
-            "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec:
+          "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1811,38 +1776,8 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-            "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.")
           (no-linum
-           (:cause
-            (Throwable->map (try
-                              (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
-                                (test-instrument-adder "" :x))
-                              (catch Exception e e))))))))
-  (when-not (spec-error-in-ex-msg?)
-    (let [explain-data
-          (try
-            (test-instrument-adder "" :x)
-            (catch #?(:cljs :default :clj Exception)
-                   e (ex-data e)))]
-      (is (= (str #?(:cljs "<filename missing>:<line number missing>"
-                     :clj "alpha_test.cljc:LINUM")
-                  "
-
--- Spec failed --------------------
-
-Function arguments
-
-  (\"\" :x)
-   ^^
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error\n")
-             (no-linum
-              (with-out-str ((expound/custom-printer {:show-valid-values? true}) explain-data)))))))
+           (formatted-exception {:print-specs? false :show-valid-values? true} #(test-instrument-adder "" :x))))))
 
   (st/unstrument `test-instrument-adder))
 
@@ -3356,7 +3291,7 @@ should satisfy
 Detected 1 error
 ")
            (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn1))))))
+             (expound/explain-results-str (orch-unstrument-test-fns #(st/check `results-str-fn1))))))
     (is (= (pf
             "== Checked expound.alpha-test/results-str-fn7 
 
@@ -3378,7 +3313,7 @@ should contain key: :k
 Detected 1 error
 ")
            (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn7)))))))
+             (expound/explain-results-str (orch-unstrument-test-fns #(st/check `results-str-fn7)))))))
   (testing "single bad result (failing fn spec)"
     (is (= (pf "== Checked expound.alpha-test/results-str-fn2 
 
@@ -3407,7 +3342,7 @@ should satisfy
 Detected 1 error
 ")
            (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn2)))))))
+             (expound/explain-results-str (orch-unstrument-test-fns #(st/check `results-str-fn2)))))))
   (testing "single valid result"
     (is (= "== Checked expound.alpha-test/results-str-fn3 
 
@@ -3449,7 +3384,7 @@ Detected 1 error
 Success!
 "
               (binding [s/*explain-out* expound/printer]
-                (expound/explain-results-str (orch.st/with-instrument-disabled (st/check [`results-str-fn2 `results-str-fn3]))))))))
+                (expound/explain-results-str (orch-unstrument-test-fns #(st/check [`results-str-fn2 `results-str-fn3]))))))))
 
   (testing "check-fn"
     (is (= "== Checked <unknown> ========================
@@ -3500,7 +3435,7 @@ should satisfy
 Detected 1 error
 "
                    (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
-                     (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn4))))))))
+                     (expound/explain-results-str (orch-unstrument-test-fns #(st/check `results-str-fn4))))))))
   (testing "exceptions raised during check"
     (is (= "== Checked expound.alpha-test/results-str-fn5 
 
@@ -3508,7 +3443,7 @@ Detected 1 error
 
  threw error"
            (binding [s/*explain-out* expound/printer]
-             (take-lines 5 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn5))))))))
+             (take-lines 5 (expound/explain-results-str (st/check `results-str-fn5)))))))
   (testing "colorized output"
     (is (= (pf "<CYAN>== Checked expound.alpha-test/results-str-fn5 <NONE>
 
@@ -3516,7 +3451,7 @@ Detected 1 error
 
  threw error")
            (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
-             (readable-ansi (take-lines 5 (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn5)))))))))
+             (readable-ansi (take-lines 5 (expound/explain-results-str (st/check `results-str-fn5))))))))
 
   (testing "failure to generate"
     (is (=
@@ -3535,7 +3470,7 @@ Unable to construct gen at: [:f] for: fn? in
   (cljs.spec.alpha/cat :f cljs.core/fn?)
 ")
          (binding [s/*explain-out* expound/printer]
-           (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-fn6)))))))
+           (expound/explain-results-str (st/check `results-str-fn6))))))
   (testing "no-fn failure"
     (is (= #?(:clj "== Checked expound.alpha-test/results-str-missing-fn 
 
@@ -3554,7 +3489,7 @@ Failed to check function.
 is not defined
 ")
            (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-fn)))))))
+             (expound/explain-results-str (st/check `results-str-missing-fn))))))
   (testing "no args spec"
     (is (= (pf "== Checked expound.alpha-test/results-str-missing-args-spec 
 
@@ -3565,7 +3500,7 @@ Failed to check function.
 should contain an :args spec
 ")
            (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (orch.st/with-instrument-disabled (st/check `results-str-missing-args-spec))))))))
+             (expound/explain-results-str (st/with-instrument-disabled (st/check `results-str-missing-args-spec))))))))
 
 #?(:clj (deftest explain-results-gen
           (checking
@@ -3583,7 +3518,7 @@ should contain an :args spec
            (is (string?
                 (binding [s/*explain-out* expound/printer]
                   (expound/explain-results-str
-                   (orch.st/with-instrument-disabled
+                   (st/with-instrument-disabled
                      (st/check sym-to-check
                                {:clojure.spec.test.check/opts {:num-tests 10}})))))
                (str "Failed to check " sym-to-check)))))
@@ -4043,17 +3978,10 @@ should satisfy
            (printer-str {:print-specs? false} ed))))))
 
 #?(:clj (deftest macroexpansion-errors
-          (if (spec-error-in-ex-msg?)
-            (is (thrown-with-msg?
-                 #?(:cljs :default :clj Exception)
-                 ;;#"(?i)should satisfy\s+even-number-of-forms\?"
-                 #"even-number-of-forms\?"
-                 (macroexpand '(clojure.core/let [a] 2))))
-            (let [ed (try
-                       (macroexpand '(clojure.core/let [a] 2))
-                       (catch Exception e
-                         (-> (Throwable->map e) :via last :data)))]
-              (is (= "-- Spec failed --------------------
+          (let [actual (formatted-exception {:print-specs? false} #(macroexpand '(clojure.core/let [a] 2)))]
+            (is (or
+                 (= "Call to #'clojure.core/let did not conform to spec.
+-- Spec failed --------------------
 
   ([a] ...)
    ^^^
@@ -4064,9 +3992,38 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-                     (with-out-str ((expound/custom-printer {:print-specs? false})
+                    actual)
+                 (= "Call to clojure.core/let did not conform to spec.
+-- Spec failed --------------------
 
-                                    ed))))))))
+  ([a] ...)
+   ^^^
+
+should satisfy
+
+  even-number-of-forms?
+
+-------------------------
+Detected 1 error\n"
+                    actual))))
+          (let [ed (try
+                     (macroexpand '(clojure.core/let [a] 2))
+                     (catch Exception e
+                       (-> (Throwable->map e) :via last :data)))]
+            (is (= "-- Spec failed --------------------
+
+  ([a] ...)
+   ^^^
+
+should satisfy
+
+  even-number-of-forms?
+
+-------------------------
+Detected 1 error\n"
+                   (with-out-str ((expound/custom-printer {:print-specs? false})
+
+                                  ed)))))))
 
 (deftest sorted-map-values
   (is (= "-- Spec failed --------------------

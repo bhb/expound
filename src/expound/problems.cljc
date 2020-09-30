@@ -50,7 +50,8 @@
 
 (defn- adjust-path [failure problem]
   (assoc problem :expound/path
-         (if (= :instrument failure)
+         ;; Orchestra 2019.02.06-1 prefixed the path, but as of 2020.07.12-1, it is not included
+         (if (and (= :instrument failure) (#{:ret :args} (first (:path problem))))
            (vec (rest (:path problem)))
            (:path problem))))
 
@@ -109,6 +110,10 @@
 (defn ^:private extra-input? [_failure problem]
   (contains? #{"Extra input"} (:reason problem)))
 
+(s/fdef ptype
+  :args (s/cat :failure (s/nilable #{:instrument :check-failed :assertion-failed})
+               :problem :expound.spec/problem
+               :skip-location? boolean?))
 (defn ^:private ptype [failure problem skip-locations?]
   (cond
     (:expound.spec.problem/type problem)
