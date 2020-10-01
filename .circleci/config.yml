@@ -120,6 +120,7 @@ jobs:
       - run: lein clean && lein with-profile test-web,clj-1.9.0,cljs-1.10.339 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,clj-1.10.0,cljs-1.10.439 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,clj-1.10.0,cljs-1.10.516 cljsbuild once test && bin/tests
+      - run: lein clean && lein with-profile test-web,orch-2019.02.06-1 cljsbuild once test && bin/tests
 
   test_clj_old:
     docker:
@@ -149,6 +150,7 @@ jobs:
           - v1-dependencies-
       - run: lein with-profile test-common,clj-1.9.0,spec-0.2.168 test
       - run: lein with-profile test-common,clj-1.10.0,spec-0.2.176 test
+      - run: lein with-profile test-common,clj-1.10.0,orch-2019.02.06-1 test
 
 workflows:
   version: 2

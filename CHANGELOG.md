@@ -7,6 +7,10 @@ All notable changes to this project will be documented in this file. This change
 
 - [Bug with printing specs that are undefined in ClojureScript](https://github.com/bhb/expound/issues/198)
 
+### Added
+
+- [Support for Orchestra 2020.07.12-1](https://github.com/bhb/expound/issues/199)
+
 ## [0.8.5] - 2020-06-17
 
 ### Fixed 
