@@ -30,7 +30,6 @@
    (chuck/times num-tests)
    [form test-utils/any-printable-wo-nan
     i gen/pos-int
-    ;; HERE - figure out how to parse :let as let in hooks
     :let [x (nth-value form i)
           paths (paths/paths-to-value form x [] [])]]
    (is (seq paths))
