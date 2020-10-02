@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.8.6] - 2020-10-01
+
 ### Fixed
 
 - [Bug with printing specs that are undefined in ClojureScript](https://github.com/bhb/expound/issues/198)
@@ -198,7 +200,8 @@ This release was made possible by [Clojurists Together](https://www.clojuriststo
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.8.5...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.8.6...HEAD
+[0.8.6]: https://github.com/bhb/expound/compare/v0.8.5...v0.8.6
 [0.8.5]: https://github.com/bhb/expound/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/bhb/expound/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/bhb/expound/compare/v0.8.2...v0.8.3
