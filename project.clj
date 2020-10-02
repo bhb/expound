@@ -1,4 +1,4 @@
-(defproject expound "0.8.5"
+(defproject expound "0.8.6"
   :description "Human-optimized error messages for clojure.spec"
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
@@ -77,7 +77,7 @@
                                   [binaryage/devtools "0.9.10"]
                                   [figwheel-sidecar "0.5.18"]
                                   [cider/piggieback "0.4.0"]
-                                  [orchestra "2019.02.06-1"]
+                                  [orchestra "2020.07.12-1"]
                                   [org.clojure/core.specs.alpha "0.2.44"]
                                   [vvvvalvalval/scope-capture "0.3.2"]
                                   [org.clojure/test.check "0.10.0"]
@@ -133,7 +133,7 @@
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [pjstadig/humane-test-output "0.9.0"]
                                           [com.gfredericks/test.chuck "0.2.10"]
-                                          [orchestra "2019.02.06-1"]
+                                          [orchestra "2020.07.12-1"]
                                           [io.aviso/pretty "0.1.37"]
                                           [org.clojure/core.specs.alpha "0.2.44"]
                                           [com.stuartsierra/dependency "0.2.0"]
@@ -159,7 +159,9 @@
              :cljs-1.10.439 {:dependencies [[org.clojure/clojurescript "1.10.439"]]}
              :cljs-1.10.516 {:dependencies [[org.clojure/clojurescript "1.10.516"]]}
              :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}
-             :spec-0.2.176  {:dependencies [[org.clojure/spec.alpha "0.2.176"]]}}
+             :spec-0.2.176  {:dependencies [[org.clojure/spec.alpha "0.2.176"]]}
+             :orch-2019.02.06-1 {:dependencies [[orchestra "2019.02.06-1"]]}
+             }
   :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner"]
             "run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
             "run-tests-auto" ["do"
