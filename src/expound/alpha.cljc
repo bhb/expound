@@ -4,7 +4,7 @@
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.set :as set]
-            [clojure.walk :as walk]
+            [com.rpl.specter :as sp]
             [expound.printer :as printer]
             [expound.util :as util]
             [expound.ansi :as ansi]
@@ -560,17 +560,47 @@
                                  (:problems grp2)
                                  [grp2]))})
 
+(defn ^:private find-when
+  "Given a nested data structure and a predicate, return a vector of
+   paths to all locations where the predicate is true."
+  [data pred]
+  (let [walker (sp/recursive-path [] p
+                 (sp/cond-path
+                  ;; If a vector is encountered
+                  sequential?
+                  [sp/INDEXED-VALS
+                   (sp/if-path [sp/LAST (sp/pred pred)]
+                               sp/FIRST
+                               [(sp/collect-one sp/FIRST) sp/LAST p])]
+
+                  ;; If a map is encountered
+                  map?
+                  [sp/ALL
+                   (sp/if-path [sp/LAST (sp/pred pred)]
+                               sp/FIRST
+                               [(sp/collect-one sp/FIRST) sp/LAST p])]))
+        ret (sp/select walker data)]
+    ;; If a non-vector path is returned (i.e., just one value)
+    ;; Wrap it in a vector
+    (mapv #(if-not (vector? %) (vector %) %) ret)))
+
+
+(defn ^:private target-form? [form]
+  (and (map? form)
+       (not (sorted? form))
+       (contains? #{:expound.problem-group/many-values
+                    :expound.problem-group/one-value}
+                  (:expound.spec.problem/type form))
+       (= 1 (count (:problems form)))))
+
+
 (defn ^:private lift-singleton-groups [groups]
-  (walk/postwalk
-   (fn [form]
-     (if (and (map? form)
-              (not (sorted? form))
-              (contains? #{:expound.problem-group/many-values
-                           :expound.problem-group/one-value} (:expound.spec.problem/type form))
-              (= 1 (count (:problems form))))
-       (first (:problems form))
-       form))
-   groups))
+  (let [target-paths (find-when groups target-form?)]
+    (reduce
+     (fn [g path]
+       (update-in g path #(-> % :problems first)))
+     groups
+     target-paths)))
 
 (defn ^:private vec-remove [v x]
   (vec (remove #{x} v)))
@@ -1077,7 +1107,7 @@ returned an invalid value.
 
 #?(:clj
    (defmacro def
-     "DEPRECATED: Prefer `defmsg` 
+     "DEPRECATED: Prefer `defmsg`
 
   Define a spec with an optional `error-message`.
 
