@@ -4203,52 +4203,53 @@ Detected 1 error
                               {}
                               {:print-specs? false}))))
 
-(deftype FakeDB [m]
+#?(:clj
+   (deftype FakeDB [m]
 
-  clojure.lang.Seqable
-  (seq [_]
-    (seq m))
+     clojure.lang.Seqable
+     (seq [_]
+       (seq m))
 
-  clojure.lang.IPersistentCollection
+     clojure.lang.IPersistentCollection
 
-  (count [_]
-    (count m))
-  (cons [_ o]
-    (throw (Exception. "FakeDB doesn't implement 'cons'")))
-  (empty [_]
-    (FakeDB. {}))
-  (equiv [_ o]
-    (=
-     m
-     (:m o)))
+     (count [_]
+       (count m))
+     (cons [_ o]
+       (throw (Exception. "FakeDB doesn't implement 'cons'")))
+     (empty [_]
+       (FakeDB. {}))
+     (equiv [_ o]
+       (=
+        m
+        (:m o)))
 
-  clojure.lang.Associative
-  (containsKey [_ k] (contains? m k))
-  (entryAt [_ k] (get m k))
+     clojure.lang.Associative
+     (containsKey [_ k] (contains? m k))
+     (entryAt [_ k] (get m k))
 
-  clojure.lang.IPersistentMap
-  (assoc [this k v] (throw (Exception. "FakeDB doesn't implement 'assoc'")))
-  (assocEx [this k v] (throw (Exception. "FakeDB doesn't implement 'assocEx'")))
-  (without [this k] (throw (Exception. "FakeDB doesn't implement 'without'")))
+     clojure.lang.IPersistentMap
+     (assoc [this k v] (throw (Exception. "FakeDB doesn't implement 'assoc'")))
+     (assocEx [this k v] (throw (Exception. "FakeDB doesn't implement 'assocEx'")))
+     (without [this k] (throw (Exception. "FakeDB doesn't implement 'without'")))
 
-  clojure.lang.ILookup
-  (valAt [_ k]
-    (get m k))
-  (valAt [_ k not-found]
-    (get m k not-found)))
+     clojure.lang.ILookup
+     (valAt [_ k]
+       (get m k))
+     (valAt [_ k not-found]
+       (get m k not-found))))
 
 (s/def ::db-val (s/or :i int? :s string?))
 
 ;; https://github.com/bhb/expound/issues/205
-(deftest unwalkable-values
-  ;; run bin/test-datomic for real test of datomic DB,
-  ;; but this at least simulates the failure. We should not
-  ;; try to walk arbitrary values
-  (let [db (FakeDB. {:a 1})]
-    (is (= true (map? db)))
-    (is (= "Success!\n"
-           (expound/expound-str some? db)))
-    (is (= "-- Spec failed --------------------
+#?(:clj (deftest unwalkable-values
+          ;; run bin/test-datomic for real test of datomic DB,
+          ;; but this at least simulates the failure. We should not
+          ;; try to walk arbitrary values
+          (let [db (FakeDB. {:a 1})]
+            (is (= true (map? db)))
+            (is (= "Success!\n"
+                   (expound/expound-str some? db)))
+            (is (= "-- Spec failed --------------------
 
   [{:a 1}]
    ^^^^^^
@@ -4262,5 +4263,5 @@ should contain key: :expound.alpha-test/db-val
 -------------------------
 Detected 1 error
 "
-           (expound/expound-str (s/cat :db (s/keys
-                                            :req [::db-val])) [db])))))
+                   (expound/expound-str (s/cat :db (s/keys
+                                                    :req [::db-val])) [db]))))))
