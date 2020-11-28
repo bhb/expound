@@ -1,4 +1,4 @@
-(defproject expound "0.8.6"
+(defproject expound "0.8.7-SNAPSHOT"
   :description "Human-optimized error messages for clojure.spec"
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
@@ -77,7 +77,7 @@
                                   [binaryage/devtools "0.9.10"]
                                   [figwheel-sidecar "0.5.18"]
                                   [cider/piggieback "0.4.0"]
-                                  [orchestra "2020.07.12-1"]
+                                  [orchestra "2020.09.18-1"]
                                   [org.clojure/core.specs.alpha "0.2.44"]
                                   [vvvvalvalval/scope-capture "0.3.2"]
                                   [org.clojure/test.check "0.10.0"]
@@ -133,7 +133,7 @@
              :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
                                           [pjstadig/humane-test-output "0.9.0"]
                                           [com.gfredericks/test.chuck "0.2.10"]
-                                          [orchestra "2020.07.12-1"]
+                                          [orchestra "2020.09.18-1"]
                                           [io.aviso/pretty "0.1.37"]
                                           [org.clojure/core.specs.alpha "0.2.44"]
                                           [com.stuartsierra/dependency "0.2.0"]
