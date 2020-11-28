@@ -83,8 +83,6 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 
 ```clojure
 (require '[clojure.spec.alpha :as s])
-;; for clojurescript:
-;; (require '[cljs.spec.alpha :as s])
 (require '[expound.alpha :as expound])
 
 (s/def :example.place/city string?)
@@ -106,12 +104,10 @@ Replace calls to `clojure.spec.alpha/explain` with `expound.alpha/expound` and t
 
 ### `*explain-out*`
 
-To use other Spec functions, set `clojure.spec.alpha/*explain-out*` (or `cljs.spec.alpha/*explain-out*` for ClojureScript) to `expound/printer`.
+To use other Spec functions, set `clojure.spec.alpha/*explain-out*` to `expound/printer`.
 
 ```clojure
 (require '[clojure.spec.alpha :as s])
-;; for clojurescript:
-;; (require '[cljs.spec.alpha :as s])
 (require '[expound.alpha :as expound])
 
 (s/def :example.place/city string?)
@@ -177,7 +173,7 @@ See [this ticket](https://github.com/bhb/expound/issues/152) for other solutions
 
 ### Printing results for `check`
 
-Re-binding `s/*explain-out*` has no effect on the results of `cljs.spec.test.alpha/summarize-results`, but Expound provides the function `expound/explain-results` to print the results from `clojure.spec.test.alpha/check`.
+Re-binding `s/*explain-out*` has no effect on the results of `clojure.spec.test.alpha/summarize-results`, but Expound provides the function `expound/explain-results` to print the results from `clojure.spec.test.alpha/check`.
 
 ```clojure
 (require '[expound.alpha :as expound]
@@ -344,8 +340,8 @@ Clojure test allows you to declare a custom multi-method for its `clojure.test/r
 
 ```clojure
 (ns pkg.test-runner
-  (:require [cljs.spec.alpha :as s]
-            [cljs.test :as test :refer-macros [run-tests]]
+  (:require [clojure.spec.alpha :as s]
+            [clojure.test :as test :refer-macros [run-tests]]
             [expound.alpha :as expound]
             ;; require your namespaces here
             [pkg.namespace-test]))
@@ -364,7 +360,7 @@ Clojure test allows you to declare a custom multi-method for its `clojure.test/r
   (when-let [message (:message m)] (println message))
   (let [actual (:actual m)
         ex-data (ex-data actual)]
-    (if (:cljs.spec.alpha/failure ex-data)
+    (if (:clojure.spec.alpha/failure ex-data)
       (do (println "expected:" (pr-str (:expected m)))
           (print "  actual:\n")
           (print (.-message actual)))
