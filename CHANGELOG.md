@@ -3,6 +3,10 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+
+- [Bug with walking all specced values unnecessarily](https://github.com/bhb/expound/issues/205)
+
 ## [0.8.6] - 2020-10-01
 
 ### Fixed
