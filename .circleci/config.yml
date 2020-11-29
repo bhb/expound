@@ -116,9 +116,9 @@ jobs:
       # The version number (1.10.439) is important - it's the last version in which CLJS itself
       # did NOT include 'goog.string.format' so it's the last version that will reproduce https://github.com/bhb/expound/issues/183
       - run: clojure -Sdeps '{:deps {org.clojure/clojurescript {:mvn/version "1.10.439"}}}' -m cljs.main -re node -i test/cljs_test.cljs
-      - run: lein clean && lein with-profile test-web,clj-1.9.0,cljs-1.10.238 cljsbuild once test && bin/tests
-      - run: lein clean && lein with-profile test-web,clj-1.9.0,cljs-1.10.339 cljsbuild once test && bin/tests
-      - run: lein clean && lein with-profile test-web,clj-1.10.0,cljs-1.10.439 cljsbuild once test && bin/tests
+      - run: lein clean && lein with-profile test-web,clj-1.9.0,cljs-1.10.238,orch-2020.07.12-1 cljsbuild once test && bin/tests
+      - run: lein clean && lein with-profile test-web,clj-1.9.0,cljs-1.10.339,orch-2020.07.12-1 cljsbuild once test && bin/tests
+      - run: lein clean && lein with-profile test-web,clj-1.10.0,cljs-1.10.439,orch-2020.07.12-1 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,clj-1.10.0,cljs-1.10.516 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,orch-2019.02.06-1 cljsbuild once test && bin/tests
 

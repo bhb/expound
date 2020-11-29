@@ -161,6 +161,7 @@
              :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}
              :spec-0.2.176  {:dependencies [[org.clojure/spec.alpha "0.2.176"]]}
              :orch-2019.02.06-1 {:dependencies [[orchestra "2019.02.06-1"]]}
+             :orch-2020.07.12-1 {:dependencies [[orchestra "2020.07.12-1"]]}
              }
   :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner"]
             "run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
