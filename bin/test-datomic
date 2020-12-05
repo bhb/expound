@@ -11,7 +11,7 @@
    OPTS='
    '
 
-   exec clojure $OPTS -Sdeps "$DEPS" "$0" "$@"
+   exec clojure $OPTS -Sdeps "$DEPS" -M "$0" "$@"
    )
 
 ;; I can't add this to the normal test suite since I cannot
