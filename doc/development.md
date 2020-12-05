@@ -77,7 +77,7 @@ or
 
 ### clojars
 
-Double check version is changed in `project.clj` and `lein deploy clojars`
+Double check version is changed in `project.clj` and `lein deploy clojars` (use deploy token instead of password)
 
 ### NPM
 
