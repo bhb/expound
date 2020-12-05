@@ -1,0 +1,66 @@
+#!/bin/sh
+
+#_(
+   #_DEPS is same format as deps.edn. Multiline is okay.
+   DEPS='
+   {:deps {com.datomic/dev-local {:mvn/version "0.9.225"}
+           expound/expound {:local/root ".."}
+           }}
+   '
+   #_You can put other options here
+   OPTS='
+   '
+
+   exec clojure $OPTS -Sdeps "$DEPS" -M "$0" "$@"
+   )
+
+;; I can't add this to the normal test suite since I cannot
+;; add the datomic dev-local jar to the github repo (due to licensing issues)
+
+;; To run this, you need to get a copy of datomic dev tools.
+;; Instructions here:
+;; https://docs.datomic.com/cloud/dev-local.html#getting-started
+;; 1. Get email
+;; 2. Run ./install within zip
+;; 3. Set up ~/.datomic/dev-local.edn (as described in doc above)
+
+(require '[expound.alpha :as expound]
+         '[datomic.client.api :as d]
+         '[clojure.test :as ct :refer [is testing deftest use-fixtures]]
+         '[clojure.spec.alpha :as s])
+
+(s/def ::foo (s/or :i int? :s string?))
+
+(deftest datomic-integration
+  (let [args {:server-type :dev-local
+              :system "test"
+              :db-name "movies"
+              }
+
+        client (d/client args)
+        _ (d/create-database client args)
+        conn (d/connect client args)
+        db (d/db conn)]
+
+    ;; DB implements map, but can't be walked
+    (is (= true (map? db)))
+    (is (= "Success!\n"
+           (expound/expound-str some? db)))
+    (is (= "-- Spec failed --------------------
+
+  [#datomic.core.db.Db{:id \"movies\", :basisT 5, :indexBasisT 0, :index-root-id nil, :asOfT nil, :sinceT nil, :raw nil}]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+should contain key: :user/foo
+
+| key       | spec                    |
+|===========+=========================|
+| :user/foo | (or :i int? :s string?) |
+
+-------------------------
+Detected 1 error
+"
+           (expound/expound-str (s/cat :db (s/keys
+                                            :req [::foo])) [db])))))
+(ct/run-tests)
+(shutdown-agents)

@@ -4,7 +4,6 @@
             [clojure.spec.alpha :as s]
             [clojure.string :as string]
             [clojure.set :as set]
-            [clojure.walk :as walk]
             [expound.printer :as printer]
             [expound.util :as util]
             [expound.ansi :as ansi]
@@ -560,17 +559,29 @@
                                  (:problems grp2)
                                  [grp2]))})
 
+(defn ^:private target-form? [form]
+  (and (map? form)
+       (not (sorted? form))
+       (contains? #{:expound.problem-group/many-values
+                    :expound.problem-group/one-value}
+                  (:expound.spec.problem/type form))
+       (= 1 (count (:problems form)))))
+
+(defn ^:private groups-walk [f form]
+  (cond
+    (and (map? form)
+         (contains? #{:expound.problem-group/many-values
+                      :expound.problem-group/one-value}
+                    (:expound.spec.problem/type form))
+         (contains? form :problems))
+    (f (update form :problems #(into (empty %) (map (partial groups-walk f) %))))
+
+    :else form))
+
 (defn ^:private lift-singleton-groups [groups]
-  (walk/postwalk
-   (fn [form]
-     (if (and (map? form)
-              (not (sorted? form))
-              (contains? #{:expound.problem-group/many-values
-                           :expound.problem-group/one-value} (:expound.spec.problem/type form))
-              (= 1 (count (:problems form))))
-       (first (:problems form))
-       form))
-   groups))
+  (mapv (partial groups-walk #(if (target-form? %)
+                                (first (:problems %))
+                                %)) groups))
 
 (defn ^:private vec-remove [v x]
   (vec (remove #{x} v)))
@@ -1077,7 +1088,7 @@ returned an invalid value.
 
 #?(:clj
    (defmacro def
-     "DEPRECATED: Prefer `defmsg` 
+     "DEPRECATED: Prefer `defmsg`
 
   Define a spec with an optional `error-message`.
 
