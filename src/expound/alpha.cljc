@@ -6,8 +6,7 @@
             [clojure.set :as set]
             [expound.printer :as printer]
             [expound.util :as util]
-            [expound.ansi :as ansi]
-            [clojure.spec.gen.alpha :as gen]))
+            [expound.ansi :as ansi]))
 
 ;;;;;; registry ;;;;;;
 
@@ -23,8 +22,7 @@
 (s/def :expound.spec/problems (s/coll-of :expound.spec/problem))
 
 (s/def :expound.printer/show-valid-values? boolean?)
-(s/def :expound.printer/value-str-fn (s/with-gen ifn?
-                                       #(gen/return (fn [_ _ _ _] "NOT IMPLEMENTED"))))
+(s/def :expound.printer/value-str-fn ifn?)
 (s/def :expound.printer/print-specs? boolean?)
 (s/def :expound.printer/theme #{:figwheel-theme :none})
 (s/def :expound.printer/opts (s/keys
@@ -35,14 +33,9 @@
 
 (s/def :expound.spec/spec (s/or
                            :set set?
-                           :pred (s/with-gen ifn?
-                                   #(gen/elements [boolean? string? int? keyword? symbol?]))
+                           :pred ifn?
                            :kw qualified-keyword?
-                           :spec (s/with-gen s/spec?
-                                   #(gen/elements
-                                     (for [pr [boolean? string? int? keyword? symbol?]]
-                                       (s/spec pr))))))
-
+                           :spec s/spec?))
 ;;;;;; themes ;;;;;;
 
 (def ^:private figwheel-theme

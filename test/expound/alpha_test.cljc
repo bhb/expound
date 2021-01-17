@@ -29,6 +29,24 @@
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
+
+;;;; override specs and add generators
+;;;; this allows us to load expound with babaska and spartan.spec
+(s/def :expound.printer/value-str-fn (s/with-gen ifn?
+                                       #(gen/return (fn [_ _ _ _] "NOT IMPLEMENTED"))))
+
+(s/def :expound.spec/spec (s/or
+                           :set set?
+                           :pred (s/with-gen ifn?
+                                   #(gen/elements [boolean? string? int? keyword? symbol?]))
+                           :kw qualified-keyword?
+                           :spec (s/with-gen s/spec?
+                                   #(gen/elements
+                                     (for [pr [boolean? string? int? keyword? symbol?]]
+                                       (s/spec pr))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (def num-tests 5)
 
 (use-fixtures :once
