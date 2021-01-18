@@ -29,6 +29,12 @@
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
+(deftest int-in-test
+  (binding [s/*explain-out* s/explain-printer]
+    (s/def ::int-in (s/int-in 0 10))
+    (is (s/valid? ::int-in 9))
+    (is (= "11 - failed: (int-in-range? 0 10 %) spec: :expound.alpha-test/int-in\n" (s/explain-str ::int-in 11)))))
+
 
 ;;;; override specs and add generators
 ;;;; this allows us to load expound with babaska and spartan.spec
