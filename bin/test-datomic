@@ -48,8 +48,8 @@
            (expound/expound-str some? db)))
     (is (= "-- Spec failed --------------------
 
-  [#datomic.core.db.Db{:id \"movies\", :basisT 5, :indexBasisT 0, :index-root-id nil, :asOfT nil, :sinceT nil, :raw nil}]
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  [#datomic.core.db.Db{:id \"movies\", :basisT 21, :indexBasisT 0, :index-root-id nil, :asOfT nil, :sinceT nil, :raw nil}]
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 should contain key: :user/foo
 
@@ -61,6 +61,82 @@ should contain key: :user/foo
 Detected 1 error
 "
            (expound/expound-str (s/cat :db (s/keys
-                                            :req [::foo])) [db])))))
+                                            :req [::foo])) [db])))
+
+    (s/def ::id int?)
+    (is (= "-- Spec failed --------------------
+
+  [#datomic.core.db.Db{:id \"movies\", :basisT 21, :indexBasisT 0, :index-root-id nil, :asOfT nil, :sinceT nil, :raw nil}]
+                           ^^^^^^^^
+
+should satisfy
+
+  int?
+
+-- Relevant specs -------
+
+:user/id:
+  clojure.core/int?
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+                     (s/cat :db (s/keys
+                                 :req-un [::id]))
+                     [db]
+                     {
+                      :show-valid-values? true
+                      })))
+
+    (s/def ::id int?)
+    (is (= "-- Spec failed --------------------
+
+  [{:indexBasisT ...,
+    :birth-level ...,
+    :mid-index ...,
+    :since ...,
+    :schema-level ...,
+    :index ...,
+    :indexed-datoms ...,
+    :raw ...,
+    :basisT ...,
+    :system-eids ...,
+    :history ...,
+    :ids ...,
+    :indexing ...,
+    :history? ...,
+    :elements ...,
+    :index-rev ...,
+    :memidx ...,
+    :keys ...,
+    :as-of ...,
+    :id \"movies\",
+        ^^^^^^^^
+    :nextEidx ...,
+    :sinceT ...,
+    :t ...,
+    :index-root-id ...,
+    :filt ...,
+    :asOfT ...}]
+
+should satisfy
+
+  int?
+
+-- Relevant specs -------
+
+:user/id:
+  clojure.core/int?
+
+-------------------------
+Detected 1 error
+"
+           (expound/expound-str
+                     (s/cat :db (s/keys
+                                 :req-un [::id]))
+                     [db]
+                     {
+                      :show-valid-values? false
+                      })))))
 (ct/run-tests)
 (shutdown-agents)
