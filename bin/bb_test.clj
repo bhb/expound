@@ -1,83 +1,37 @@
-(ns expound.alpha-test
-  (:require #?@(:clj
-                ;; just to include the specs
-                [[clojure.core.specs.alpha]
-                 [ring.core.spec]
-                 [onyx.spec]])
+;; TODO - carve out CLJS
 
-            ;; Deps for specs that generate specs, which are currently disabled
-            #_[clojure.test.check.random :as random]
-            #_[clojure.test.check.rose-tree :as rose]
-
-            [clojure.set :as set]
-            [clojure.spec.alpha :as s]
-            [clojure.spec.test.alpha :as st]
+(ns bb
+  (:require [babashka.deps :as deps]
+            [clojure.test :refer [is testing deftest]]
             [clojure.string :as string]
-            [clojure.test :as ct :refer [is testing deftest use-fixtures]]
-            [clojure.test.check.generators :as gen]
+            [clojure.walk :as walk]))
 
-            [clojure.walk :as walk]
-            [com.gfredericks.test.chuck :as chuck]
-            [com.gfredericks.test.chuck.clojure-test :refer [checking]]
-            [expound.alpha :as expound]
-            [expound.ansi :as ansi]
-            [expound.printer :as printer]
-            [expound.problems :as problems]
-            [expound.spec-gen :as sg]
-            [expound.test-utils :as test-utils]
-            [spec-tools.data-spec :as ds]
-            #?(:clj [orchestra.spec.test :as orch.st]
-               :cljs [orchestra-cljs.spec.test :as orch.st])))
+(deps/add-deps
+ '{:deps {borkdude/spartan.spec {:git/url "https://github.com/borkdude/spartan.spec"
+                                 :sha "d3b4e98ec2b8504868e5a6193515c5d23df15264"}
+          expound/expound {:local/root "."}}})
 
-;;;; override specs and add generators
-;;;; this allows us to load expound with babaska and spartan.spec
-(s/def :expound.printer/value-str-fn (s/with-gen ifn?
-                                       #(gen/return (fn [_ _ _ _] "NOT IMPLEMENTED"))))
-
-(s/def :expound.spec/spec (s/or
-                           :set set?
-                           :pred (s/with-gen ifn?
-                                   #(gen/elements [boolean? string? int? keyword? symbol?]))
-                           :kw qualified-keyword?
-                           :spec (s/with-gen s/spec?
-                                   #(gen/elements
-                                     (for [pr [boolean? string? int? keyword? symbol?]]
-                                       (s/spec pr))))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def num-tests 5)
-
-(use-fixtures :once
-  test-utils/check-spec-assertions
-  test-utils/instrument-all)
-
-;; Missing onyx specs
-(s/def :trigger/materialize any?)
-(s/def :flow/short-circuit any?)
+;; Loading spartan.spec will create a namespace clojure.spec.alpha for compatibility:
+(require 'spartan.spec
+         '[clojure.spec.alpha :as s]
+         '[expound.alpha :as expound]
+         '[expound.printer :as printer]
+         '[expound.problems :as problems]
+         '[expound.ansi :as ansi])
 
 (defn pf
   "Fixes platform-specific namespaces and also formats using printf syntax"
   [s & args]
   (apply printer/format
-         #?(:cljs (string/replace s "pf." "cljs.")
-            :clj (string/replace s "pf." "clojure."))
+         (string/replace s "pf." "clojure.")
          args))
-
-(defn take-lines [n s]
-  (string/join "\n" (take n (string/split-lines s))))
 
 (defn formatted-exception [printer-options f]
   (let [printer (expound/custom-printer printer-options)
         exception-data (binding [s/*explain-out* printer]
                          (try
                            (f)
-                           (catch #?(:cljs :default :clj Exception)
-                                  e
-                             #?(:cljs {:message (.-message e)
-                                       :data (.-data e)}
-
-                                :clj (Throwable->map e)))))
+                           (catch Exception e (Throwable->map e))))
         ed #?(:cljs (-> exception-data :data)
               :clj (-> exception-data :via last :data))
         cause# (-> #?(:cljs (:message exception-data)
@@ -90,13 +44,6 @@
            ""
            (str "\n"
                 (with-out-str (printer ed)))))))
-
-(defn orch-unstrument-test-fns [f]
-  (orch.st/unstrument [`results-str-fn1
-                       `results-str-fn2
-                       `results-str-fn4
-                       `results-str-fn7])
-  (f))
 
 (def inverted-ansi-codes
   (reduce
@@ -111,7 +58,6 @@
    #"\x1b\[([0-9]*)m"
    #(str "<" (string/upper-case (name (get inverted-ansi-codes (second %)))) ">")))
 
-;; https://github.com/bhb/expound/issues/8
 (deftest expound-output-ends-in-newline
   (is (= "\n" (str (last (expound/expound-str string? 1)))))
   (is (= "\n" (str (last (expound/expound-str string? ""))))))
@@ -429,6 +375,7 @@ Detected 1 error
 
 (s/def :and-spec/name (s/and string? #(pos? (count %))))
 (s/def :and-spec/names (s/coll-of :and-spec/name))
+
 (deftest and-spec
   (testing "simple value"
     (is (= (pf "-- Spec failed --------------------
@@ -444,7 +391,7 @@ should satisfy
 :and-spec/name:
   (pf.spec.alpha/and
    pf.core/string?
-   (pf.core/fn [%%] (pf.core/pos? (pf.core/count %%))))
+   (fn [%%] (pf.core/pos? (pf.core/count %%))))
 
 -------------------------
 Detected 1 error\n")
@@ -466,7 +413,7 @@ should satisfy
 :and-spec/name:
   (pf.spec.alpha/and
    pf.core/string?
-   (pf.core/fn [%%] (pf.core/pos? (pf.core/count %%))))
+   (fn [%%] (pf.core/pos? (pf.core/count %%))))
 :and-spec/names:
   (pf.spec.alpha/coll-of :and-spec/name)
 
@@ -484,7 +431,7 @@ should satisfy
 :and-spec/name:
   (pf.spec.alpha/and
    pf.core/string?
-   (pf.core/fn [%%] (pf.core/pos? (pf.core/count %%))))
+   (fn [%%] (pf.core/pos? (pf.core/count %%))))
 :and-spec/names:
   (pf.spec.alpha/coll-of :and-spec/name)
 
@@ -524,6 +471,7 @@ Detected 1 error\n"
 (s/def :cat-spec/alt (s/+ :cat-spec/alt*))
 (s/def :cat-spec/alt-inline (s/+ (s/alt :s string? :i int?)))
 (s/def :cat-spec/any (s/cat :x (s/+ any?))) ;; Not a useful spec, but worth testing
+
 (deftest cat-spec
   (testing "too few elements"
     (is (= (pf "-- Syntax error -------------------
@@ -574,7 +522,8 @@ Detected 1 error\n")
            (expound/expound-str :cat-spec/kw [:foo])))
     ;; This isn't ideal, but requires a fix from clojure
     ;; https://clojure.atlassian.net/browse/CLJ-2364
-    (is (= (pf "-- Syntax error -------------------
+    ;; Commenting out since I don't think Clojure has this right either
+    #_(is (= (pf "-- Syntax error -------------------
 
   []
 
@@ -670,6 +619,7 @@ Detected 1 error\n")
 (defmulti key-spec-mspec :tag)
 (defmethod key-spec-mspec :int [_] (s/keys :req-un [::tag ::i]))
 (defmethod key-spec-mspec :string [_] (s/keys :req-un [::tag ::s]))
+
 (deftest keys-spec
   (testing "missing keys"
     (is (= (pf "-- Spec failed --------------------
@@ -694,7 +644,8 @@ Detected 1 error\n"
                #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
                   :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
            (expound/expound-str :keys-spec/user {}))))
-  (testing "missing compound keys"
+  ;; FIXME - I'm guessing spartan.spec doesn't work for compound keys i.e. (and :state :city)
+  #_(testing "missing compound keys"
     (is (= (pf "-- Spec failed --------------------
 
   {}
@@ -754,7 +705,8 @@ should contain keys:
 Detected 1 error\n")
            (expound/expound-str :keys-spec/user3 {}))))
 
-  (testing "inline spec with req-un"
+  ;; spartan.spec doesn't support multi-spec yet
+  #_(testing "inline spec with req-un"
     (is (= (pf "-- Spec failed --------------------
 
   {}
@@ -989,18 +941,23 @@ Detected 4 errors\n"
                                                                        :qux false}}}
                             {:print-specs? false}))))
 
-(s/def :multi-spec/value string?)
-(s/def :multi-spec/children vector?)
-(defmulti el-type :multi-spec/el-type)
-(defmethod el-type :text [_x]
-  (s/keys :req [:multi-spec/value]))
-(defmethod el-type :group [_x]
-  (s/keys :req [:multi-spec/children]))
-(s/def :multi-spec/el (s/multi-spec el-type :multi-spec/el-type))
 
-(defmulti multi-spec-bar-spec :type)
-(defmethod multi-spec-bar-spec ::b [_] (s/keys :req [::b]))
-(deftest multi-spec
+
+
+;; https://github.com/borkdude/spartan.spec/issues/14
+;; (s/def :multi-spec/value string?)
+;; (s/def :multi-spec/children vector?)
+;; (defmulti el-type :multi-spec/el-type)
+;; (defmethod el-type :text [_x]
+;;   (s/keys :req [:multi-spec/value]))
+;; (defmethod el-type :group [_x]
+;;   (s/keys :req [:multi-spec/children]))
+;; (s/def :multi-spec/el (s/multi-spec el-type :multi-spec/el-type))
+
+;; (defmulti multi-spec-bar-spec :type)
+;; (defmethod multi-spec-bar-spec ::b [_] (s/keys :req [::b]))
+
+#_(deftest multi-spec
   (testing "missing dispatch key"
     (is (=
          (pf "-- Missing spec -------------------
@@ -1151,10 +1108,10 @@ Detected 1 error\n")
                          :children [{:tag :group
                                      :props {:on-tap {}}}]}]}
             {:print-specs? false}))))
-  (testing "test that our new recursive spec grouping function works with
-           alternative paths"
+
+  (testing "test that our new recursive spec grouping function works with alternative paths"
     (is (= (pf
-            "-- Spec failed --------------------
+             "-- Spec failed --------------------
 
   {:tag-2 ..., :children-2 [{:tag-2 :group, :children-2 [{:tag-2 :group, :props-2 {:on-tap-2 {}}}]}]}
                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1187,7 +1144,8 @@ should satisfy
   vector?
 
 -------------------------
-Detected 1 error\n")
+Detected 1 error
+")
            (expound/expound-str
             :recursive-spec/el-2
             {:tag-2 :group
@@ -1281,93 +1239,6 @@ should satisfy
 Detected 1 error\n")
          (expound/expound-str :map-of-spec/name->age {:sally 30}))))
 
-(deftest generated-simple-spec
-  (checking
-   "simple spec"
-   (chuck/times num-tests)
-   [simple-spec sg/simple-spec-gen
-    form gen/any-printable]
-   (is (string? (expound/expound-str simple-spec form)))))
-
-(deftest generated-coll-of-specs
-  (checking
-   "'coll-of' spec"
-   (chuck/times num-tests)
-   [simple-spec sg/simple-spec-gen
-    every-args (s/gen :specs/every-args)
-    :let [spec (sg/apply-coll-of simple-spec every-args)]
-    form gen/any-printable]
-   (is (string? (expound/expound-str spec form)))))
-
-(deftest generated-and-specs
-  (checking
-   "'and' spec"
-   (chuck/times num-tests)
-   [simple-spec1 sg/simple-spec-gen
-    simple-spec2 sg/simple-spec-gen
-    :let [spec (s/and simple-spec1 simple-spec2)]
-    form gen/any-printable]
-   (is (string? (expound/expound-str spec form)))))
-
-(deftest generated-or-specs
-  (checking
-   "'or' spec generates string"
-   (chuck/times num-tests)
-   [simple-spec1 sg/simple-spec-gen
-    simple-spec2 sg/simple-spec-gen
-    :let [spec (s/or :or1 simple-spec1 :or2 simple-spec2)]
-    form gen/any-printable]
-   (is (string? (expound/expound-str spec form))))
-  (checking
-   "nested 'or' spec reports on all problems"
-   (chuck/times num-tests)
-   [simple-specs (gen/vector-distinct
-                  (gen/elements [:specs/string
-                                 :specs/vector
-                                 :specs/int
-                                 :specs/boolean
-                                 :specs/keyword
-                                 :specs/map
-                                 :specs/symbol
-                                 :specs/pos-int
-                                 :specs/neg-int
-                                 :specs/zero])
-                  {:num-elements 4})
-    :let [[simple-spec1
-           simple-spec2
-           simple-spec3
-           simple-spec4] simple-specs
-          spec (s/or :or1
-                     (s/or :or1.1
-                           simple-spec1
-                           :or1.2
-                           simple-spec2)
-                     :or2
-                     (s/or :or2.1
-                           simple-spec3
-                           :or2.2
-                           simple-spec4))
-          sp-form (s/form spec)]
-    form gen/any-printable]
-   (let [ed (s/explain-data spec form)]
-     (when-not (zero? (count (::s/problems ed)))
-       (is (= (dec (count (::s/problems ed)))
-              (count (re-seq #"\nor\n" (expound/expound-str spec form))))
-           (str "Failed to print out all problems\nspec: " sp-form "\nproblems: " (printer/pprint-str (::s/problems ed)) "\nmessage: " (expound/expound-str spec form)))))))
-
-(deftest generated-map-of-specs
-  (checking
-   "'map-of' spec"
-   (chuck/times num-tests)
-   [simple-spec1 sg/simple-spec-gen
-    simple-spec2 sg/simple-spec-gen
-    simple-spec3 sg/simple-spec-gen
-    every-args1 (s/gen :specs/every-args)
-    every-args2 (s/gen :specs/every-args)
-    :let [spec (sg/apply-map-of simple-spec1 (sg/apply-map-of simple-spec2 simple-spec3 every-args1) every-args2)]
-    form test-utils/any-printable-wo-nan]
-   (is (string? (expound/expound-str spec form)))))
-
 (s/def :expound.ds/spec-key (s/or :kw keyword?
                                   :req (s/tuple
                                         #{:expound.ds/req-key}
@@ -1381,24 +1252,6 @@ Detected 1 error\n")
                                          #{:k}
                                          keyword?
                                          :count 1))))
-
-(defn real-spec [form]
-  (walk/prewalk
-   (fn [x]
-     (if (vector? x)
-       (case (first x)
-         :expound.ds/opt-key
-         (ds/map->OptionalKey (second x))
-
-         :expound.ds/req-key
-         (ds/map->RequiredKey (second x))
-
-         :expound.ds/maybe-spec
-         (ds/maybe (second x))
-
-         x)
-       x))
-   form))
 
 (s/def :expound.ds/maybe-spec
   (s/tuple
@@ -1438,16 +1291,6 @@ Detected 1 error\n")
    :set :expound.ds/set-spec
    :simple :expound.ds/simple-specs
    :maybe :expound.ds/maybe-spec))
-
-(deftest generated-data-specs
-  (checking
-   "generated data specs"
-   (chuck/times num-tests)
-   [data-spec (s/gen :expound.ds/spec)
-    form test-utils/any-printable-wo-nan
-    prefix (s/gen qualified-keyword?)
-    :let [gen-spec (ds/spec prefix (real-spec data-spec))]]
-   (is (string? (expound/expound-str gen-spec form)))))
 
 ;; FIXME - keys
 ;; FIXME - cat + alt, + ? *
@@ -1525,277 +1368,12 @@ Detected 1 error\n")
          (binding [s/*explain-out* expound/printer]
            (s/explain-str :test-explain-str/name :hello)))))
 
-(s/fdef test-instrument-adder
-  :args (s/cat :x int? :y int?)
-  :fn #(> (:ret %) (-> % :args :x))
-  :ret pos-int?)
 (defn test-instrument-adder [& args]
   (let [[x y] args]
     (+ x y)))
 
 (defn no-linum [s]
   (string/replace s #"(.cljc?):\d+" "$1:LINUM"))
-
-(deftest test-instrument
-  (st/instrument `test-instrument-adder)
-  #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
-<filename missing>:<line number missing>
-
--- Spec failed --------------------
-
-Function arguments
-
-  (\"\" ...)
-   ^^
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error\n"
-                (formatted-exception {:print-specs? false} #(test-instrument-adder "" :x))))
-     :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
-alpha_test.cljc:LINUM
-
--- Spec failed --------------------
-
-Function arguments
-
-  (\"\" ...)
-   ^^
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error\n"
-            (no-linum
-             (formatted-exception {:print-specs? false :show-valid-values? false} #(test-instrument-adder "" :x))))))
-  (st/unstrument `test-instrument-adder))
-
-(deftest test-instrument-with-orchestra-args-spec-failure
-  (orch.st/instrument `test-instrument-adder)
-  #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
-<filename missing>:<line number missing>
-
--- Spec failed --------------------
-
-Function arguments
-
-  (\"\" ...)
-   ^^
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error\n"
-                (no-linum (formatted-exception {:print-specs? false} #(test-instrument-adder "" :x)))))
-     :clj (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
-alpha_test.cljc:LINUM
-
--- Spec failed --------------------
-
-Function arguments
-
-  (\"\" ...)
-   ^^
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error\n"
-                 (no-linum
-                  (formatted-exception
-                   {}
-                   #(test-instrument-adder "" :x))))))
-
-  (orch.st/unstrument `test-instrument-adder))
-
-;; Note - you may need to comment out this test out when
-;; using figwheel.main for testing, since the compilation
-;; warning seems to impact the building of other tests
-(deftest test-instrument-with-orchestra-args-syntax-failure
-  (orch.st/instrument `test-instrument-adder)
-  #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
-<filename missing>:<line number missing>
-
--- Syntax error -------------------
-
-Function arguments
-
-  (1)
-
-should have additional elements. The next element \":y\" should satisfy
-
-  int?
-
--------------------------
-Detected 1 error\n"
-                (no-linum (formatted-exception {:print-specs? false} #(test-instrument-adder 1)))))
-     :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
-alpha_test.cljc:LINUM
-
--- Syntax error -------------------
-
-Function arguments
-
-  (1)
-
-should have additional elements. The next element \":y\" should satisfy
-
-  int?
-
--------------------------
-Detected 1 error\n"
-            (no-linum
-             (formatted-exception
-              {:print-specs? false}
-              #(test-instrument-adder 1))))))
-  (orch.st/unstrument `test-instrument-adder))
-
-(deftest test-instrument-with-orchestra-ret-failure
-  (orch.st/instrument `test-instrument-adder)
-  #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
-<filename missing>:<line number missing>
-
--- Spec failed --------------------
-
-Return value
-
-  -3
-
-should satisfy
-
-  pos-int?
-
--------------------------
-Detected 1 error\n"
-                (formatted-exception {}
-                                     #(test-instrument-adder -1 -2))
-                #_(.-message (try
-                               (binding [s/*explain-out* expound/printer]
-                                 (test-instrument-adder -1 -2))
-                               (catch :default e e)))))
-     :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
-alpha_test.cljc:LINUM
-
--- Spec failed --------------------
-
-Return value
-
-  -3
-
-should satisfy
-
-  pos-int?
-
--------------------------
-Detected 1 error\n"
-            (no-linum
-             (formatted-exception
-              {:print-specs? false}
-              #(test-instrument-adder -1 -2))))))
-  (orch.st/unstrument `test-instrument-adder))
-
-(deftest test-instrument-with-orchestra-fn-failure
-  (orch.st/instrument `test-instrument-adder)
-  #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
-<filename missing>:<line number missing>
-
--- Spec failed --------------------
-
-Function arguments and return value
-
-  {:ret 1, :args {:x 1, :y 0}}
-
-should satisfy
-
-  (fn [%] (> (:ret %) (-> % :args :x)))
-
--------------------------
-Detected 1 error\n"
-                (formatted-exception {} #(test-instrument-adder 1 0))))
-     :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
-alpha_test.cljc:LINUM
-
--- Spec failed --------------------
-
-Function arguments and return value
-
-  {:ret 1, :args {:x 1, :y 0}}
-
-should satisfy
-
-  (fn
-   [%]
-   (> (:ret %) (-> % :args :x)))
-
--------------------------
-Detected 1 error\n"
-            (no-linum
-             (formatted-exception {:print-specs? false} #(test-instrument-adder 1 0))))))
-
-  (orch.st/unstrument `test-instrument-adder))
-
-(deftest test-instrument-with-custom-value-printer
-  (st/instrument `test-instrument-adder)
-  #?(:cljs
-     (is (=
-          "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
-<filename missing>:<line number missing>
-
--- Spec failed --------------------
-
-Function arguments
-
-  (\"\" :x)
-   ^^
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error\n"
-          (no-linum
-           (formatted-exception {:print-specs? false :show-valid-values? true} #(test-instrument-adder "" :x)))))
-     :clj
-     (is (=
-          "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
-alpha_test.cljc:LINUM
-
--- Spec failed --------------------
-
-Function arguments
-
-  (\"\" :x)
-   ^^
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error\n"
-          (no-linum
-           (formatted-exception {:print-specs? false :show-valid-values? true} #(test-instrument-adder "" :x))))))
-
-  (st/unstrument `test-instrument-adder))
 
 (s/def :custom-printer/strings (s/coll-of string?))
 (deftest custom-printer
@@ -1867,6 +1445,7 @@ Detected 1 error\n"
           {:print-specs? false})))
     (s/def :alt-spec/one-many-int (s/cat :bs (s/alt :one int?
                                                     :many (s/spec (s/+ int?)))))
+
     (is (= (pf "-- Spec failed --------------------
 
   [[\"1\"]]
@@ -1904,7 +1483,8 @@ Detected 1 error\n")
               [["1"]]))))
     (s/def :alt-spec/one-many-int-or-str (s/cat :bs (s/alt :one :alt-spec/int-alt-str
                                                            :many (s/spec (s/+ :alt-spec/int-alt-str)))))
-    (is (= "-- Spec failed --------------------
+    ;; FIXME: https://github.com/borkdude/spartan.spec/issues/16
+    #_(is (= "-- Spec failed --------------------
 
   [[:one]]
    ^^^^^^
@@ -2039,7 +1619,8 @@ Detected 3 errors
           {:i "" :s 1}
           {:print-specs? false})))
 
-  (is (= "-- Spec failed --------------------
+  ;; FIXME: https://github.com/borkdude/spartan.spec/issues/16
+  #_(is (= "-- Spec failed --------------------
 
   [true]
    ^^^^
@@ -2063,7 +1644,9 @@ or
 -------------------------
 Detected 1 error\n" (expound/expound-str :alt-spec/num-or-str [true] {:print-specs? false})))
   ;; If two s/alt specs have the same tags, we shouldn't confuse them.
-  (is (= "-- Spec failed --------------------
+  
+  ;; FIXME: https://github.com/borkdude/spartan.spec/issues/16
+  #_(is (= "-- Spec failed --------------------
 
   {:num-types [true], :str-types ...}
                ^^^^
@@ -2124,7 +1707,9 @@ Detected 1 error
         (s/nilable (s/cat :n (s/alt :int int? :float float?)))
         [""]
         {:print-specs? false})))
-  (is (=
+
+  ;; mspecs not supported
+  #_(is (=
        ;; This output is not what we want: ideally, the two alternates
        ;; should be grouped into a single problem.
        ;; I'm adding it as a spec to avoid regressions and to keep it as
@@ -2256,107 +1841,11 @@ Detected 2 errors\n"
        x))
    (s/form keyword)))
 
-#?(:clj
-   (deftest real-spec-tests
-     (checking
-      "for any real-world spec and any data, explain-str returns a string"
-      ;; At 50, it might find a bug in failures for the
-      ;; :ring/handler spec, but keep it plugged in, since it
-      ;; takes a long time to shrink
-      (chuck/times num-tests)
-      [spec sg/spec-gen
-       form gen/any-printable]
-      ;; Can't reliably test fspecs until
-      ;; https://dev.clojure.org/jira/browse/CLJ-2258 is fixed
-      ;; because the algorithm to fix up the 'in' paths depends
-      ;; on the non-conforming value existing somewhere within
-      ;; the top-level form
-      (when-not
-          ;; a conformer generally won't work against any arbitrary value
-          ;; e.g. we can't conform 0 with the conformer 'seq'
-       (or (contains? #{:conformers-test/string-AB} spec)
-           (some
-            #{"clojure.spec.alpha/fspec"}
-            (->> spec
-                 inline-specs
-                 (tree-seq coll? identity)
-                 (map str))))
-        (is (string? (expound/expound-str spec form)))))))
-
-#?(:clj
-   (deftest assert-on-real-spec-tests
-     (checking
-      "for any real-world spec and any data, assert returns an error that matches explain-str"
-      (chuck/times num-tests)
-      [spec sg/spec-gen
-       form gen/any-printable]
-      ;; Can't reliably test fspecs until
-      ;; https://dev.clojure.org/jira/browse/CLJ-2258 is fixed
-      ;; because the algorithm to fix up the 'in' paths depends
-      ;; on the non-conforming value existing somewhere within
-      ;; the top-level form
-      (when-not (some
-                 #{"clojure.spec.alpha/fspec"}
-                 (->> spec
-                      inline-specs
-                      (tree-seq coll? identity)
-                      (map str)))
-        (when-not (s/valid? spec form)
-          (let [expected-err-msg (str "Spec assertion failed\n"
-                                      (binding [s/*explain-out* (expound/custom-printer {:print-specs? true})]
-                                        (s/explain-str spec form)))]
-            (is (thrown-with-msg?
-                 #?(:cljs :default :clj Exception)
-                 (re-pattern (java.util.regex.Pattern/quote expected-err-msg))
-                 (binding [s/*explain-out* expound/printer]
-                   (try
-                     (s/check-asserts true)
-                     (s/assert spec form)
-                     (finally
-                       (s/check-asserts false)))))
-                (str "Expected: " expected-err-msg))))))))
-
-(deftest test-mutate
-  (checking
-   "mutation alters data structure"
-   (chuck/times num-tests)
-   [form gen/any-printable
-    mutate-path (gen/vector gen/pos-int 1 10)]
-   (is (not= form
-             (mutate form mutate-path)))))
-
-#?(:clj
-   1
-   #_(deftest real-spec-tests-mutated-valid-value
-     ;; FIXME - we need to use generate mutated value, instead
-     ;; of adding randomness to test
-       #_(checking
-          "for any real-world spec and any mutated valid data, explain-str returns a string"
-          (chuck/times num-tests)
-          [spec sg/spec-gen
-           mutate-path (gen/vector gen/pos-int)]
-          (when-not (some
-                     #{"clojure.spec.alpha/fspec"}
-                     (->> spec
-                          inline-specs
-                          (tree-seq coll? identity)
-                          (map str)))
-            (when (contains? (s/registry) spec)
-              (try
-                (let [valid-form (first (s/exercise spec 1))
-                      invalid-form (mutate valid-form mutate-path)]
-                  (is (string? (expound/expound-str spec invalid-form))))
-                (catch clojure.lang.ExceptionInfo e
-                  (when (not= :no-gen (::s/failure (ex-data e)))
-                    (when (not= "Couldn't satisfy such-that predicate after 100 tries." (.getMessage e))
-                      (throw e))))))))))
-
 ;; Using conformers for transformation should not crash by default, or at least give useful error message.
 (defn numberify [s]
   (cond
     (number? s) s
-    (re-matches #"^\d+$" s) #?(:cljs (js/parseInt s 10)
-                               :clj (Integer. s))
+    (re-matches #"^\d+$" s) (Integer. s)
     :else ::s/invalid))
 
 (s/def :conformers-test/number (s/conformer numberify))
@@ -2396,7 +1885,8 @@ Detected 2 errors\n"
 (defn parse-csv [s]
   (map string/upper-case (string/split s #",")))
 
-(deftest conformers-test
+;; FIXME: conformers are pretty advanced, I'm OK if they don't work in spartan.spec yet
+#_(deftest conformers-test
   ;; Example from http://cjohansen.no/a-unified-specification/
   (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})
             *print-namespace-maps* false]
@@ -2713,27 +2203,28 @@ Detected 1 error
                                     :str2 #(string? %)))
 (deftest duplicate-preds
   (testing "duplicate preds only appear once"
-    (is (= (pf "-- Spec failed --------------------
+    (is (=
+         "-- Spec failed --------------------
 
   1
 
 should satisfy
 
-  (fn [%%] (string? %%))
+  (fn [%] (string? %))
 
 -- Relevant specs -------
 
 :duplicate-preds/str-or-str:
-  (pf.spec.alpha/or
+  (clojure.spec.alpha/or
    :str1
-   (pf.core/fn [%%] (pf.core/string? %%))
+   (fn [%] (clojure.core/string? %))
    :str2
-   (pf.core/fn [%%] (pf.core/string? %%)))
+   (fn [%] (clojure.core/string? %)))
 
 -------------------------
-Detected 1 error
-")
+Detected 1 error\n"
            (expound/expound-str :duplicate-preds/str-or-str 1)))))
+
 
 (s/def :fspec-test/div (s/fspec
                         :args (s/cat :x int? :y pos-int?)))
@@ -2752,7 +2243,8 @@ Detected 1 error
         (nil-or-failure (f))
         (nil-or-failure (f)))))
 
-(deftest fspec-exception-test
+;; FIXME - support fspec
+#_(deftest fspec-exception-test
   (testing "args that throw exception"
     (is (= (pf "-- Exception ----------------------
 
@@ -2811,6 +2303,7 @@ with args:
 Detected 1 error\n")
            (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-test/div) [my-div]))))))
 
+
 (s/def :fspec-ret-test/my-int pos-int?)
 (s/def :fspec-ret-test/plus (s/fspec
                              :args (s/cat :x int? :y pos-int?)
@@ -2819,7 +2312,8 @@ Detected 1 error\n")
 (defn my-plus [x y]
   (+ x y))
 
-(deftest fspec-ret-test
+;; FIXME: support fspec
+#_(deftest fspec-ret-test
   (testing "invalid ret"
     (is (= (pf "-- Function spec failed -----------
 
@@ -2886,7 +2380,8 @@ Detected 1 error
 (defn my-minus [x y]
   (- x y))
 
-(deftest fspec-fn-test
+;; FIXME: support fspec
+#_(deftest fspec-fn-test
   (testing "invalid ret"
     (is (= (pf "-- Function spec failed -----------
 
@@ -2934,7 +2429,8 @@ Detected 1 error\n"
            (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
              (until-unsuccessful #(s/explain-str (s/coll-of :fspec-fn-test/minus) [my-minus])))))))
 
-(deftest ifn-fspec-test
+;; FIXME: support fspec
+#_(deftest ifn-fspec-test
   (testing "keyword ifn / ret failure"
     (is (= "-- Function spec failed -----------
 
@@ -2994,42 +2490,6 @@ Detected 1 error\n"
                 (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
                                                     [[]]))))))))
 
-#?(:clj
-   (deftest form-containing-incomparables
-     (checking
-      "for any value including NaN, or Infinity, expound returns a string"
-      (chuck/times num-tests)
-      [form (gen/frequency
-             [[1 (gen/elements
-                  [Double/NaN
-                   Double/POSITIVE_INFINITY
-                   Double/NEGATIVE_INFINITY
-                   '(Double/NaN Double/POSITIVE_INFINITY Double/NEGATIVE_INFINITY)
-                   [Double/NaN Double/POSITIVE_INFINITY Double/NEGATIVE_INFINITY]
-                   {Double/NaN Double/NaN
-                    Double/POSITIVE_INFINITY Double/POSITIVE_INFINITY
-                    Double/NEGATIVE_INFINITY Double/NEGATIVE_INFINITY}])]
-              [5 gen/any-printable]])]
-      (is (string? (expound/expound-str (constantly false) form))))))
-
-#?(:cljs
-   (deftest form-containing-incomparables
-     (checking
-      "for any value including NaN, or Infinity, expound returns a string"
-      (chuck/times num-tests)
-      [form (gen/frequency
-             [[1 (gen/elements
-                  [js/NaN
-                   js/Infinity
-                   js/-Infinity
-                   '(js/NaN js/Infinity js/-Infinity)
-                   [js/NaN js/Infinity js/-Infinity]
-                   {js/NaN js/NaN
-                    js/Infinity js/Infinity
-                    js/-Infinity js/-Infinity}])]
-              [5 gen/any-printable]])]
-      (is (string? (expound/expound-str (constantly false) form))))))
-
 (defmulti pet :pet/type)
 (defmethod pet :dog [_]
   (s/keys))
@@ -3050,7 +2510,8 @@ Detected 1 error\n"
                                          :map1 (s/multi-spec pet :pet/type)
                                          :map2 (s/multi-spec animal :animal/type)))
 
-(deftest multispec-in-compound-spec
+;; FIXME: support multipspec
+#_(deftest multispec-in-compound-spec
   (testing "multispec combined with s/and"
     (is (= (pf "-- Missing spec -------------------
 
@@ -3221,307 +2682,34 @@ Detected 1 error
               :predicate-messages/score
               101))))))
 
-(s/fdef results-str-fn1
-  :args (s/cat :x nat-int? :y nat-int?)
-  :ret pos?)
 (defn results-str-fn1 [x y]
   #?(:clj (+' x y)
      :cljs (+ x y)))
 
-(s/fdef results-str-fn2
-  :args (s/cat :x nat-int? :y nat-int?)
-  :fn #(let [x (-> % :args :x)
-             ret (-> % :ret)]
-         (< x ret)))
 (defn results-str-fn2 [x y]
   (+ x y))
 
-(s/fdef results-str-fn3
-  :args (s/cat :x #{0} :y #{0})
-  :ret nat-int?)
 (defn results-str-fn3 [x y]
   (+ x y))
 
-(s/fdef results-str-fn4
-  :args (s/cat :x int?)
-  :ret (s/coll-of int?))
 (defn results-str-fn4 [x]
   [x :not-int])
 
-(s/fdef results-str-fn5
-  :args (s/cat :x #{1} :y #{1})
-  :ret string?)
 (defn results-str-fn5
   [_x _y]
   #?(:clj (throw (Exception. "Ooop!"))
      :cljs (throw (js/Error. "Oops!"))))
 
-(s/fdef results-str-fn6
-  :args (s/cat :f fn?)
-  :ret any?)
 (defn results-str-fn6
   [f]
   (f 1))
 
 (s/def :results-str-fn7/k string?)
-(s/fdef results-str-fn7
-  :args (s/cat :m (s/keys))
-  :ret (s/keys :req-un [:results-str-fn7/k]))
 (defn results-str-fn7
   [m]
   m)
 
-(s/fdef results-str-missing-fn
-  :args (s/cat :x int?))
-
-(s/fdef results-str-missing-args-spec
-  :ret int?)
 (defn results-str-missing-args-spec [] 1)
-
-(deftest explain-results
-  (testing "explaining results with non-expound printer"
-    (is (thrown-with-msg?
-         #?(:cljs :default :clj Exception)
-         #"Cannot print check results"
-         (binding [s/*explain-out* s/explain-printer]
-           (expound/explain-results-str (st/check `results-str-fn1))))))
-
-  (testing "single bad result (failing return spec)"
-    (is (= (pf
-            "== Checked expound.alpha-test/results-str-fn1 
-
--- Function spec failed -----------
-
-  (expound.alpha-test/results-str-fn1 0 0)
-
-returned an invalid value.
-
-  0
-
-should satisfy
-
-  pos?
-
--------------------------
-Detected 1 error
-")
-           (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (orch-unstrument-test-fns #(st/check `results-str-fn1))))))
-    (is (= (pf
-            "== Checked expound.alpha-test/results-str-fn7 
-
--- Function spec failed -----------
-
-  (expound.alpha-test/results-str-fn7 {})
-
-returned an invalid value.
-
-  {}
-
-should contain key: :k
-
-| key | spec    |
-|=====+=========|
-| :k  | string? |
-
--------------------------
-Detected 1 error
-")
-           (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (orch-unstrument-test-fns #(st/check `results-str-fn7)))))))
-  (testing "single bad result (failing fn spec)"
-    (is (= (pf "== Checked expound.alpha-test/results-str-fn2 
-
--- Function spec failed -----------
-
-  (expound.alpha-test/results-str-fn2 0 0)
-
-failed spec. Function arguments and return value
-
-  {:args {:x 0, :y 0}, :ret 0}
-
-should satisfy
-
-  (fn
-   [%%]
-   (let
-    [x (-> %% :args :x) ret (-> %% :ret)]
-    (< x ret)))
-
--------------------------
-Detected 1 error
-")
-           (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (orch-unstrument-test-fns #(st/check `results-str-fn2)))))))
-  (testing "single valid result"
-    (is (= "== Checked expound.alpha-test/results-str-fn3 
-
-Success!
-"
-           (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (st/check `results-str-fn3))))))
-  #?(:clj
-     (testing "multiple results"
-       (is (= "== Checked expound.alpha-test/results-str-fn2 
-
--- Function spec failed -----------
-
-  (expound.alpha-test/results-str-fn2 0 0)
-
-failed spec. Function arguments and return value
-
-  {:args {:x 0, :y 0}, :ret 0}
-
-should satisfy
-
-  (fn
-   [%]
-   (let
-    [x (-> % :args :x) ret (-> % :ret)]
-    (< x ret)))
-
--------------------------
-Detected 1 error
-
-
-== Checked expound.alpha-test/results-str-fn3 
-
-Success!
-"
-              (binding [s/*explain-out* expound/printer]
-                (expound/explain-results-str (orch-unstrument-test-fns #(st/check [`results-str-fn2 `results-str-fn3]))))))))
-
-  (testing "check-fn"
-    (is (= "== Checked <unknown> ========================
-
--- Function spec failed -----------
-
-  (<unknown> 0 0)
-
-failed spec. Function arguments and return value
-
-  {:args {:x 0, :y 0}, :ret 0}
-
-should satisfy
-
-  (fn
-   [%]
-   (let
-    [x (-> % :args :x) ret (-> % :ret)]
-    (< x ret)))
-
--------------------------
-Detected 1 error
-"
-           (binding [s/*explain-out* expound/printer]
-             (expound/explain-result-str (st/check-fn `results-str-fn1 (s/spec `results-str-fn2)))))))
-  #?(:clj (testing "custom printer"
-            (is (= "== Checked expound.alpha-test/results-str-fn4 
-
--- Function spec failed -----------
-
-  (expound.alpha-test/results-str-fn4 0)
-
-returned an invalid value.
-
-  [0 :not-int]
-     ^^^^^^^^
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error
-"
-                   (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true})]
-                     (expound/explain-results-str (orch-unstrument-test-fns #(st/check `results-str-fn4))))))))
-  (testing "exceptions raised during check"
-    (is (= "== Checked expound.alpha-test/results-str-fn5 
-
-  (expound.alpha-test/results-str-fn5 1 1)
-
- threw error"
-           (binding [s/*explain-out* expound/printer]
-             (take-lines 5 (expound/explain-results-str (st/check `results-str-fn5)))))))
-  (testing "colorized output"
-    (is (= (pf "<CYAN>== Checked expound.alpha-test/results-str-fn5 <NONE>
-
-<RED>  (expound.alpha-test/results-str-fn5 1 1)<NONE>
-
- threw error")
-           (binding [s/*explain-out* (expound/custom-printer {:theme :figwheel-theme})]
-             (readable-ansi (take-lines 5 (expound/explain-results-str (st/check `results-str-fn5))))))))
-
-  (testing "failure to generate"
-    (is (=
-         #?(:clj "== Checked expound.alpha-test/results-str-fn6 
-
-Unable to construct generator for [:f] in
-
-  (clojure.spec.alpha/cat :f clojure.core/fn?)
-"
-            ;; CLJS doesn't contain correct data for check failure
-
-            :cljs "== Checked expound.alpha-test/results-str-fn6 
-
-Unable to construct gen at: [:f] for: fn? in
-
-  (cljs.spec.alpha/cat :f cljs.core/fn?)
-")
-         (binding [s/*explain-out* expound/printer]
-           (expound/explain-results-str (st/check `results-str-fn6))))))
-  (testing "no-fn failure"
-    (is (= #?(:clj "== Checked expound.alpha-test/results-str-missing-fn 
-
-Failed to check function.
-
-  expound.alpha-test/results-str-missing-fn
-
-is not defined
-"
-              :cljs "== Checked <unknown> ========================
-
-Failed to check function.
-
-  <unknown>
-
-is not defined
-")
-           (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (st/check `results-str-missing-fn))))))
-  (testing "no args spec"
-    (is (= (pf "== Checked expound.alpha-test/results-str-missing-args-spec 
-
-Failed to check function.
-
-  (pf.spec.alpha/fspec :ret pf.core/int?)
-
-should contain an :args spec
-")
-           (binding [s/*explain-out* expound/printer]
-             (expound/explain-results-str (st/with-instrument-disabled (st/check `results-str-missing-args-spec))))))))
-
-#?(:clj (deftest explain-results-gen
-          (checking
-           "all functions can be checked and printed"
-           (chuck/times num-tests)
-           [sym-to-check (gen/elements (remove
-                                        ;; these functions print to stdout, but return
-                                        ;; nothing
-                                        #{`expound/explain-results
-                                          `expound/explain-result
-                                          `expound/expound
-                                          `expound/printer}
-                                        (st/checkable-syms)))]
-           ;; Just confirm an error is not thrown
-           (is (string?
-                (binding [s/*explain-out* expound/printer]
-                  (expound/explain-results-str
-                   (st/with-instrument-disabled
-                     (st/check sym-to-check
-                               {:clojure.spec.test.check/opts {:num-tests 10}})))))
-               (str "Failed to check " sym-to-check)))))
 
 (s/def :colorized-output/strings (s/coll-of string?))
 (deftest colorized-output
@@ -3562,348 +2750,6 @@ should satisfy
 ")
          (readable-ansi (expound/expound-str :colorized-output/strings ["" :a ""] {:theme :figwheel-theme})))))
 
-(s/def ::spec-name (s/with-gen
-                     qualified-keyword?
-                     #(gen/let [kw gen/keyword]
-                        (keyword (str "expound-generated-spec/" (name kw))))))
-
-(s/def ::fn-spec (s/with-gen
-                   (s/or
-                    :sym symbol?
-                    :anon (s/cat :fn #{`fn `fn*}
-                                 :args-list (s/coll-of any? :kind vector?)
-                                 :body (s/* any?))
-                    :form (s/cat :comp #{`comp `partial}
-                                 :args (s/+ any?)))
-                   #(gen/return `any?)))
-
-(s/def ::pred-spec
-  (s/with-gen
-    ::fn-spec
-    #(gen/elements
-      [`any?
-       `boolean?
-       `bytes?
-       `double?
-       `ident?
-       `indexed?
-       `int?
-       `keyword?
-       `map?
-       `nat-int?
-       `neg-int?
-       `pos-int?
-       `qualified-ident?
-       `qualified-keyword?
-       `qualified-symbol?
-       `seqable?
-       `simple-ident?
-       `simple-keyword?
-       `simple-symbol?
-       `string?
-       `symbol?
-       `uri?
-       `uuid?
-       `vector?])))
-
-(s/def ::and-spec (s/cat
-                   :and #{`s/and}
-                   :branches (s/+
-                              ::spec)))
-
-(s/def ::or-spec (s/cat
-                  :or #{`s/or}
-                  :branches (s/+
-                             (s/cat
-                              :kw keyword?
-                              :spec ::spec))))
-
-(s/def ::set-spec (s/with-gen
-                    (s/coll-of
-                     any?
-                     :kind set?
-                     :min-count 1)
-                    #(s/gen (s/coll-of
-                             (s/or
-                              :s string?
-                              :i int?
-                              :b boolean?
-                              :k keyword?)
-                             :kind set?))))
-
-(s/def ::spec (s/or
-               :amp ::amp-spec
-               :alt ::alt-spec
-               :and ::and-spec
-               :cat ::cat-spec
-               :coll ::coll-spec
-               :defined-spec ::spec-name
-               :every ::every-spec
-               :fspec ::fspec-spec
-               :keys ::keys-spec
-               :map ::map-of-spec
-               :merge ::merge-spec
-               :multi ::multispec-spec
-               :nilable ::nilable-spec
-               :or ::or-spec
-               :regex-unary ::regex-unary-spec
-               :set ::set-spec
-               :simple ::pred-spec
-               :spec-wrapper (s/cat :wrapper #{`s/spec} :spec ::spec)
-               :conformer (s/cat
-                           :conformer #{`s/conformer}
-                           :f ::fn-spec
-                           :unf ::fn-spec)
-               :with-gen (s/cat
-                          :with-gen #{`s/with-gen}
-                          :spec ::spec
-                          :f ::fn-spec)
-               :tuple-spec ::tuple-spec))
-
-(s/def ::every-opts (s/*
-                     (s/alt
-                      :kind (s/cat
-                             :k #{:kind}
-                             :v #{nil
-                                  vector? set? map? list?
-                                  `vector? `set? `map? `list?})
-                      :count (s/cat
-                              :k #{:count}
-                              :v (s/nilable nat-int?))
-                      :min-count (s/cat
-                                  :k #{:min-count}
-                                  :v (s/nilable nat-int?))
-                      :max-count (s/cat
-                                  :k #{:max-count}
-                                  :v (s/nilable nat-int?))
-                      :distinct (s/cat
-                                 :k #{:distinct}
-                                 :v (s/nilable boolean?))
-                      :into (s/cat
-                             :k #{:into}
-                             :v (s/or :coll #{[] {} #{}}
-                                      :list #{'()}))
-                      :gen-max (s/cat
-                                :k #{:gen-max}
-                                :v nat-int?))))
-
-(s/def ::every-spec (s/cat
-                     :every #{`s/every}
-                     :spec ::spec
-                     :opts ::every-opts))
-
-(s/def ::coll-spec (s/cat
-                    :coll-of #{`s/coll-of}
-                    :spec (s/spec ::spec)
-                    :opts ::every-opts))
-
-(s/def ::map-of-spec (s/cat
-                      :map-of #{`s/map-of}
-                      :k ::spec
-                      :w ::spec
-                      :opts ::every-opts))
-
-(s/def ::nilable-spec (s/cat
-                       :nilable #{`s/nilable}
-                       :spec ::spec))
-
-(s/def ::name-combo
-  (s/or
-   :one ::spec-name
-   :combo (s/cat
-           :operator #{'and 'or}
-           :operands
-           (s/+
-            ::name-combo))))
-
-(s/def ::keys-spec (s/cat
-                    :keys #{`s/keys `s/keys*}
-
-                    :reqs (s/*
-                           (s/cat
-                            :op #{:req :req-un}
-                            :names (s/coll-of
-                                    ::name-combo
-                                    :kind vector?)))
-                    :opts (s/*
-                           (s/cat
-                            :op #{:opt :opt-un}
-                            :names (s/coll-of
-                                    ::spec-name
-                                    :kind vector?)))))
-
-(s/def ::amp-spec
-  (s/cat :op #{`s/&}
-         :spec ::spec
-         :preds (s/*
-                 (s/with-gen
-                   (s/or :pred ::pred-spec
-                         :defined ::spec-name)
-                   #(gen/return `any?)))))
-
-(s/def ::alt-spec
-  (s/cat :op #{`s/alt}
-         :key-pred-forms (s/+
-                          (s/cat
-                           :key keyword?
-                           :pred (s/spec ::spec)))))
-
-(s/def ::regex-unary-spec
-  (s/cat :op #{`s/+ `s/* `s/?} :pred (s/spec ::spec)))
-
-(s/def ::cat-pred-spec
-  (s/or
-   :spec (s/spec ::spec)
-   :regex-unary ::regex-unary-spec
-   :amp ::amp-spec
-   :alt ::alt-spec))
-
-(defmulti fake-multimethod :fake-tag)
-
-(s/def ::multispec-spec
-  (s/cat
-   :mult-spec #{`s/multi-spec}
-   :mm (s/with-gen
-         symbol?
-         #(gen/return `fake-multimethod))
-   :tag (s/with-gen
-          (s/or :sym symbol?
-                :k keyword?)
-          #(gen/return :fake-tag))))
-
-(s/def ::cat-spec (s/cat
-                   :cat #{`s/cat}
-                   :key-pred-forms
-                   (s/*
-                    (s/cat
-                     :key keyword?
-                     :pred ::cat-pred-spec))))
-
-(s/def ::fspec-spec (s/cat
-                     :cat #{`s/fspec}
-                     :args (s/cat
-                            :args #{:args}
-                            :spec ::spec)
-                     :ret (s/?
-                           (s/cat
-                            :ret #{:ret}
-                            :spec ::spec))
-                     :fn (s/?
-                          (s/cat
-                           :fn #{:fn}
-                           :spec (s/nilable ::spec)))))
-
-(s/def ::tuple-spec (s/cat
-                     :tuple #{`s/tuple}
-                     :preds (s/+
-                             ::spec)))
-
-(s/def ::merge-spec (s/cat
-                     :merge #{`s/merge}
-                     :pred-forms (s/* ::spec)))
-
-(s/def ::spec-def (s/cat
-                   :def #{`s/def}
-                   :name ::spec-name
-                   :spec (s/spec ::spec)))
-
-#?(:clj (s/def ::spec-defs (s/coll-of ::spec-def
-                                      :min-count 1
-                                      :gen-max 3)))
-
-(defn exercise-count [spec]
-  (case spec
-    (::spec-def ::fspec-spec ::regex-unary-spec ::spec-defs ::alt-spec) 1
-
-    (::cat-spec ::merge-spec ::and-spec ::every-spec ::spec ::coll-spec ::map-of-spec ::or-spec ::tuple-spec ::keys-spec) 2
-
-    4))
-
-(deftest spec-specs-can-generate
-  (doseq [spec-spec (filter keyword? (sg/topo-sort (filter #(= "expound.alpha-test" (namespace %))
-                                                           (keys (s/registry)))))]
-    (is
-     (doall (s/exercise spec-spec (exercise-count spec-spec)))
-     (str "Failed to generate examples for spec " spec-spec))))
-
-#_(defn sample-seq
-    "Return a sequence of realized values from `generator`."
-    [generator seed]
-    (s/assert some? generator)
-    (let [max-size 1
-          r (if seed
-              (random/make-random seed)
-              (random/make-random))
-          size-seq (gen/make-size-range-seq max-size)]
-      (map #(rose/root (gen/call-gen generator %1 %2))
-           (gen/lazy-random-states r)
-           size-seq)))
-
-#_(defn missing-specs [spec-defs]
-    (let [defined (set (map second spec-defs))
-          used (set
-                (filter
-                 #(and (qualified-keyword? %)
-                       (= "expound-generated-spec" (namespace %)))
-                 (tree-seq coll? seq spec-defs)))]
-      (set/difference used defined)))
-
-#?(:clj 1 #_(deftest eval-gen-test
-          ;; FIXME - this is a useful test but not 100% reliable yet
-          ;; so I'm disabling to get this PR in
-              (binding [s/*recursion-limit* 2]
-                (checking
-                 "expound returns string"
-                 5 ;; Hard-code at 5, since generating specs explodes in size quite quickly
-                 [spec-defs (s/gen ::spec-defs)
-                  pred-specs (gen/vector (s/gen ::pred-spec) 5)
-                  seed (s/gen pos-int?)
-                  mutate-path (gen/vector gen/pos-int)]
-                 (try
-                   (doseq [[spec-name spec] (map vector (missing-specs spec-defs) (cycle pred-specs))]
-                     (eval `(s/def ~spec-name ~spec)))
-                   (doseq [spec-def spec-defs]
-                     (eval spec-def))
-
-                   (let [spec (second (last spec-defs))
-                         form (last (last spec-defs))
-                         disallowed #{"clojure.spec.alpha/fspec"
-                                      "clojure.spec.alpha/multi-spec"
-                                      "clojure.spec.alpha/with-gen"}]
-                     (when-not (or (some
-                                    disallowed
-                                    (map str (tree-seq coll? identity form)))
-                                   (some
-                                    disallowed
-                                    (->> spec
-                                         inline-specs
-                                         (tree-seq coll? identity)
-                                         (map str))))
-                       (let [valid-form (first (sample-seq (s/gen spec) seed))
-                             invalid-form (mutate valid-form mutate-path)]
-                         (try
-                           (is (string?
-                                (expound/expound-str spec invalid-form)))
-                           (is (not
-                                (string/includes?
-                                 (expound/expound-str (second (last spec-defs)) invalid-form)
-                                 "should contain keys")))
-                           (catch Exception e
-                             (is (or
-                                  (string/includes?
-                                   (:cause (Throwable->map e))
-                                   "Method code too large!")
-                                  (string/includes?
-                                   (:cause (Throwable->map e))
-                                   "Cannot convert path."))))))))
-                   (finally
-                 ;; Get access to private atom in clojure.spec
-                     (def spec-reg (deref #'s/registry-ref))
-                     (doseq [k (filter
-                                (fn [k] (= "expound-generated-spec" (namespace k)))
-                                (keys (s/registry)))]
-                       (swap! spec-reg dissoc k))))))))
-
 (deftest clean-registry
   (testing "only base spec remains"
     (is (<= (count (filter
@@ -3913,31 +2759,6 @@ should satisfy
         (str "Found leftover specs: " (vec (filter
                                             (fn [k] (= "expound-generated-spec" (namespace k)))
                                             (keys (s/registry))))))))
-
-(deftest valid-spec-spec
-  (checking
-   "spec for specs validates against real specs"
-   (chuck/times num-tests)
-   [sp (gen/elements
-        (sg/topo-sort
-         (remove
-          (fn [k]
-            (string/includes? (pr-str (s/form (s/get-spec k))) "clojure.core.specs.alpha/quotable"))
-          (filter
-           (fn [k] (or
-                    (string/starts-with? (namespace k) "clojure")
-                    (string/starts-with? (namespace k) "expound")
-                    (string/starts-with? (namespace k) "onyx")
-                    (string/starts-with? (namespace k) "ring")))
-           (keys (s/registry))))))]
-   (is (s/valid? ::spec (s/form (s/get-spec sp)))
-       (str
-        "Spec name: " sp "\n"
-        "Error: "
-        (binding [s/*explain-out* (expound/custom-printer {:show-valid-values? true
-                                                           :print-specs? false
-                                                           :theme :figwheel-theme})]
-          (s/explain-str ::spec (s/form (s/get-spec sp))))))))
 
 (defmethod expound/problem-group-str ::test-problem1 [_type _spec-name _val _path _problems _opts]
   "fake-problem-group-str")
@@ -3977,54 +2798,6 @@ should satisfy
            #"No method in multimethod"
            (printer-str {:print-specs? false} ed))))))
 
-#?(:clj (deftest macroexpansion-errors
-          (let [actual (formatted-exception {:print-specs? false} #(macroexpand '(clojure.core/let [a] 2)))]
-            (is (or
-                 (= "Call to #'clojure.core/let did not conform to spec.
--- Spec failed --------------------
-
-  ([a] ...)
-   ^^^
-
-should satisfy
-
-  even-number-of-forms?
-
--------------------------
-Detected 1 error\n"
-                    actual)
-                 (= "Call to clojure.core/let did not conform to spec.
--- Spec failed --------------------
-
-  ([a] ...)
-   ^^^
-
-should satisfy
-
-  even-number-of-forms?
-
--------------------------
-Detected 1 error\n"
-                    actual))))
-          (let [ed (try
-                     (macroexpand '(clojure.core/let [a] 2))
-                     (catch Exception e
-                       (-> (Throwable->map e) :via last :data)))]
-            (is (= "-- Spec failed --------------------
-
-  ([a] ...)
-   ^^^
-
-should satisfy
-
-  even-number-of-forms?
-
--------------------------
-Detected 1 error\n"
-                   (with-out-str ((expound/custom-printer {:print-specs? false})
-
-                                  ed)))))))
-
 (deftest sorted-map-values
   (is (= "-- Spec failed --------------------
 
@@ -4061,20 +2834,6 @@ Detected 1 error\n"
        (:expound/problems)
        (map #(select-keys % [:expound.spec.problem/type :expound/in]))
        (set)))
-
-#?(:clj
-   (deftest or-includes-problems-for-each-branch
-     (let [p1 (select-expound-info :ring.sync/handler (fn handler [_req] {}))
-           p2 (select-expound-info :ring.async/handler (fn handler [_req] {}))
-           p3 (select-expound-info :ring.sync+async/handler (fn handler [_req] {}))
-           all-problems (select-expound-info :ring/handler (fn handler [_req] {}))]
-
-       (is (set/subset? p1 all-problems) {:extra (set/difference p1 all-problems)})
-       (is (set/subset? p2 all-problems) {:extra (set/difference p2 all-problems)})
-       (is (set/subset? p3 all-problems) {:extra (set/difference p3 all-problems)})))
-   :cljs
-   (set/index #{} [:x]) ; noop to keep clj-kondo happy
-   )
 
 (deftest defmsg-test
   (s/def :defmsg-test/id1 string?)
@@ -4195,12 +2954,10 @@ Detected 1 error\n"
             {:print-specs? false})))))
 
 (deftest printer
-  (st/instrument ['expound/printer])
   (binding [s/*explain-out* expound/printer]
     (is (string? (s/explain-str int? "a")))
     (is (= "Success!\n" (s/explain-str int? 1)))
-    (is (= "Success!\n" (with-out-str (expound/printer (s/explain-data int? 1))))))
-  (st/unstrument ['expound/printer]))
+    (is (= "Success!\n" (with-out-str (expound/printer (s/explain-data int? 1)))))))
 
 (deftest undefined-key
   (is (= "-- Spec failed --------------------
@@ -4220,65 +2977,6 @@ Detected 1 error
                               {}
                               {:print-specs? false}))))
 
-#?(:clj
-   (deftype FakeDB [m]
 
-     clojure.lang.Seqable
-     (seq [_]
-       (seq m))
+(clojure.test/run-tests)
 
-     clojure.lang.IPersistentCollection
-
-     (count [_]
-       (count m))
-     (cons [_ _o]
-       (throw (Exception. "FakeDB doesn't implement 'cons'")))
-     (empty [_]
-       (FakeDB. {}))
-     (equiv [_ o]
-       (=
-        m
-        (:m o)))
-
-     clojure.lang.Associative
-     (containsKey [_ k] (contains? m k))
-     (entryAt [_ k] (get m k))
-
-     clojure.lang.IPersistentMap
-     (assoc [_this _k _v] (throw (Exception. "FakeDB doesn't implement 'assoc'")))
-     (assocEx [_this _k _v] (throw (Exception. "FakeDB doesn't implement 'assocEx'")))
-     (without [_this _k] (throw (Exception. "FakeDB doesn't implement 'without'")))
-
-     clojure.lang.ILookup
-     (valAt [_ k]
-       (get m k))
-     (valAt [_ k not-found]
-       (get m k not-found))))
-
-(s/def ::db-val (s/or :i int? :s string?))
-
-;; https://github.com/bhb/expound/issues/205
-#?(:clj (deftest unwalkable-values
-          ;; run bin/test-datomic for real test of datomic DB,
-          ;; but this at least simulates the failure. We should not
-          ;; try to walk arbitrary values
-          (let [db (FakeDB. {:a 1})]
-            (is (= true (map? db)))
-            (is (= "Success!\n"
-                   (expound/expound-str some? db)))
-            (is (= "-- Spec failed --------------------
-
-  [{:a 1}]
-   ^^^^^^
-
-should contain key: :expound.alpha-test/db-val
-
-| key                        | spec                    |
-|============================+=========================|
-| :expound.alpha-test/db-val | (or :i int? :s string?) |
-
--------------------------
-Detected 1 error
-"
-                   (expound/expound-str (s/cat :db (s/keys
-                                                    :req [::db-val])) [db]))))))
