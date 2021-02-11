@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+curl -O https://raw.githubusercontent.com/babashka/babashka/master/install
+chmod +x install
+sudo ./install
