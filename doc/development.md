@@ -71,6 +71,7 @@ or
 1. Update `CHANGELOG.md` (including section for release and links at bottom)
 1. Update version in `README.md`
 1. Update version in `package.json`
+2. `npm install`
 1. `git tag -a v0.7.2 -m "version 0.7.2"`
 1. `git push --tags`
 

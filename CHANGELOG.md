@@ -3,6 +3,13 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.8.7] - 2021-02-11
+
+### Fixed
+
+- [Bug with displaying non-data specced values (e.g. Datomic DB) when `:show-valid-values?` is `true`](https://github.com/bhb/expound/issues/209)
+- Warnings when Expound is loaded in Babashka
+
 ## [0.8.7] - 2020-12-05
 
 ### Fixed
@@ -206,7 +213,8 @@ This release was made possible by [Clojurists Together](https://www.clojuriststo
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.8.7...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.8.8...HEAD
+[0.8.8]: https://github.com/bhb/expound/compare/v0.8.7...v0.8.8
 [0.8.7]: https://github.com/bhb/expound/compare/v0.8.6...v0.8.7
 [0.8.6]: https://github.com/bhb/expound/compare/v0.8.5...v0.8.6
 [0.8.5]: https://github.com/bhb/expound/compare/v0.8.4...v0.8.5
