@@ -19,9 +19,13 @@
 
         ;; 3. Find the unformed value (if there is an unformer)
         in3 (try
-              (paths/in-with-kps form
-                                 (s/unform (last (:via problem)) (:val problem))
-                                 (:in problem) [])
+              #?(:bb false
+                 :clj (paths/in-with-kps form
+                                         (s/unform (last (:via problem)) (:val problem))
+                                         (:in problem) [])
+                 :cljs (paths/in-with-kps form
+                                          (s/unform (last (:via problem)) (:val problem))
+                                          (:in problem) [])) 
               ;; The unform fails if there is no unformer
               ;; and the unform function could throw any type of
               ;; exception (it's provided by user)

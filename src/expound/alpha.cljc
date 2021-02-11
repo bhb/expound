@@ -884,7 +884,9 @@ returned an invalid value.
 
     (-> (s/conform fspec-sp form)
         (update :args (fn [args] (filter #(some? (:v %)) args)))
-        (->> (s/unform fspec-sp)))))
+        (->> #?(:bb (identity)
+                :clj (s/unform fspec-sp)
+                :cljs (s/unform fspec-sp))))))
 
 (defn ^:private print-check-result [check-result]
   (let [{:keys [sym spec failure] :or {sym '<unknown>}} check-result
