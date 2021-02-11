@@ -9,7 +9,7 @@
 (deps/add-deps
  '{:deps {borkdude/spartan.spec {:git/url "https://github.com/borkdude/spartan.spec"
                                  :sha "d3b4e98ec2b8504868e5a6193515c5d23df15264"}
-          expound/expound {:local/root ".."}}})
+          expound/expound {:local/root "."}}})
 
 ;; Loading spartan.spec will create a namespace clojure.spec.alpha for compatibility:
 (require 'spartan.spec
