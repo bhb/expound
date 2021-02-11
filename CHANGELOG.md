@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file. This change
 ### Fixed
 
 - [Bug with displaying non-data specced values (e.g. Datomic DB) when `:show-valid-values?` is `true`](https://github.com/bhb/expound/issues/209)
-- Warnings when Expound is loaded in Babashka
+- Warnings when Expound is required in Babashka
 
 ## [0.8.7] - 2020-12-05
 
