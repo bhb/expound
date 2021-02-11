@@ -7,8 +7,8 @@
             [clojure.walk :as walk]))
 
 (deps/add-deps
- '{:deps {borkdude/spartan.spec {:git/url "https://github.com/bhb/spartan.spec"
-                                 :sha "c59d67454005b8a17a635d2a87d41f7a8ee2c419"}
+ '{:deps {borkdude/spartan.spec {:git/url "https://github.com/borkdude/spartan.spec"
+                                 :sha "d3b4e98ec2b8504868e5a6193515c5d23df15264"}
           expound/expound {:local/root ".."}}})
 
 ;; Loading spartan.spec will create a namespace clojure.spec.alpha for compatibility:
