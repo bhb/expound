@@ -4231,7 +4231,7 @@ Detected 1 error
 
      (count [_]
        (count m))
-     (cons [_ o]
+     (cons [_ _o]
        (throw (Exception. "FakeDB doesn't implement 'cons'")))
      (empty [_]
        (FakeDB. {}))
@@ -4245,9 +4245,9 @@ Detected 1 error
      (entryAt [_ k] (get m k))
 
      clojure.lang.IPersistentMap
-     (assoc [this k v] (throw (Exception. "FakeDB doesn't implement 'assoc'")))
-     (assocEx [this k v] (throw (Exception. "FakeDB doesn't implement 'assocEx'")))
-     (without [this k] (throw (Exception. "FakeDB doesn't implement 'without'")))
+     (assoc [_this _k _v] (throw (Exception. "FakeDB doesn't implement 'assoc'")))
+     (assocEx [_this _k _v] (throw (Exception. "FakeDB doesn't implement 'assocEx'")))
+     (without [_this _k] (throw (Exception. "FakeDB doesn't implement 'without'")))
 
      clojure.lang.ILookup
      (valAt [_ k]
