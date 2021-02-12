@@ -17,7 +17,7 @@
 
     (Note the `-e` arg below)
 
-    `clj -Srepro -Sdeps '{:deps {expound {:mvn/version "0.8.8"} org.clojure/test.check {:mvn/version "0.9.0"} org.clojure/clojurescript {:mvn/version "1.10.520"}}}' -e "(require '[expound.alpha :as expound]) (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)" -m cljs.main -re node`
+    `clj -Srepro -Sdeps '{:deps {expound {:mvn/version "0.8.9"} org.clojure/test.check {:mvn/version "0.9.0"} org.clojure/clojurescript {:mvn/version "1.10.520"}}}' -e "(require '[expound.alpha :as expound]) (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)" -m cljs.main -re node`
 
     Now you will get Expound errors during macro-expansion:
 
