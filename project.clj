@@ -1,4 +1,4 @@
-(defproject expound "0.8.7"
+(defproject expound "0.8.9"
   :description "Human-optimized error messages for clojure.spec"
   :url "https://github.com/bhb/expound"
   :license {:name "Eclipse Public License"
