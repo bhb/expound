@@ -420,7 +420,10 @@
         printed-val (pprint-str (paths/value-in form in))
         relevant (str "(" :expound.problems/relevant "|(" :expound.problems/kv-relevant "\\s+" :expound.problems/kv-relevant "))")
         regex (re-pattern (str "(.*)" relevant ".*"))
-        s (binding [*print-namespace-maps* false] (pprint-str (walk/prewalk-replace {:expound.problems/irrelevant '...} (summary-form show-valid-values? form in))))
+        s (binding [*print-namespace-maps* false]
+            (if (:show-valid-values? opts)
+              (pprint-str (summary-form show-valid-values? form in))
+              (pprint-str (walk/prewalk-replace {:expound.problems/irrelevant '...} (summary-form show-valid-values? form in)))))
         [line prefix & _more] (re-find regex s)
         highlighted-line (-> line
                              (string/replace (re-pattern relevant) (escape-replacement
