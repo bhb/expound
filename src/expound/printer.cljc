@@ -426,7 +426,11 @@
               (pprint-str (walk/prewalk-replace {:expound.problems/irrelevant '...} (summary-form show-valid-values? form in)))))
         [line prefix & _more] (re-find regex s)]
     (if-not line ;; can be nil depending on unforeseen *print-length* / *print-level* values:
-      ""
+      (str
+       printed-val
+       "\n\nin\n\n"
+       (pprint-str form)
+       )
       (let [highlighted-line (-> line
                                  (string/replace (re-pattern relevant) (escape-replacement
                                                                         (re-pattern relevant)

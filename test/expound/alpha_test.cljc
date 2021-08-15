@@ -4282,3 +4282,27 @@ Detected 1 error
 "
                    (expound/expound-str (s/cat :db (s/keys
                                                     :req [::db-val])) [db]))))))
+
+;; https://github.com/bhb/expound/issues/217
+(deftest small-values-for-print-length
+  (binding [*print-length* 5]
+    (is (= "-- Spec failed --------------------
+
+  9
+
+  in
+
+  (0 1 2 3 4 ...)
+
+should satisfy
+
+  (fn [x] (< x 9))
+
+-------------------------
+Detected 1 error
+"
+           (expound/expound-str
+            (clojure.spec.alpha/coll-of (fn [x] (< x 9)))
+            (range 10)
+            )
+           ))))
