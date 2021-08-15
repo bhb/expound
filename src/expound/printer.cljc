@@ -424,12 +424,17 @@
             (if (:show-valid-values? opts)
               (pprint-str (summary-form show-valid-values? form in))
               (pprint-str (walk/prewalk-replace {:expound.problems/irrelevant '...} (summary-form show-valid-values? form in)))))
-        [line prefix & _more] (re-find regex s)
-        highlighted-line (-> line
-                             (string/replace (re-pattern relevant) (escape-replacement
-                                                                    (re-pattern relevant)
-                                                                    (indent 0 (count prefix) (ansi/color printed-val :bad-value))))
-                             (str "\n" (ansi/color (highlight-line prefix printed-val)
-                                                   :pointer)))]
-    ;;highlighted-line
-    (no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))
+        [line prefix & _more] (re-find regex s)]
+    (if-not line ;; can be nil depending on unforeseen *print-length* / *print-level* values:
+      (str
+       printed-val
+       "\n\nin\n\n"
+       (pprint-str form))
+      (let [highlighted-line (-> line
+                                 (string/replace (re-pattern relevant) (escape-replacement
+                                                                        (re-pattern relevant)
+                                                                        (indent 0 (count prefix) (ansi/color printed-val :bad-value))))
+                                 (str "\n" (ansi/color (highlight-line prefix printed-val)
+                                                       :pointer)))]
+        ;;highlighted-line
+        (no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))))
