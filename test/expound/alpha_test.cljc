@@ -4303,6 +4303,4 @@ Detected 1 error
 "
            (expound/expound-str
             (clojure.spec.alpha/coll-of (fn [x] (< x 9)))
-            (range 10)
-            )
-           ))))
+            (range 10))))))

@@ -429,8 +429,7 @@
       (str
        printed-val
        "\n\nin\n\n"
-       (pprint-str form)
-       )
+       (pprint-str form))
       (let [highlighted-line (-> line
                                  (string/replace (re-pattern relevant) (escape-replacement
                                                                         (re-pattern relevant)

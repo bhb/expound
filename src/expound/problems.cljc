@@ -25,7 +25,7 @@
                                          (:in problem) [])
                  :cljs (paths/in-with-kps form
                                           (s/unform (last (:via problem)) (:val problem))
-                                          (:in problem) [])) 
+                                          (:in problem) []))
               ;; The unform fails if there is no unformer
               ;; and the unform function could throw any type of
               ;; exception (it's provided by user)
