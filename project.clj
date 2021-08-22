@@ -37,7 +37,7 @@
                                   [metosin/spec-tools "0.8.2"]
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
-                                  [org.onyxplatform/onyx-spec "0.14.1.1"] ; to test specs
+                                  [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                   [com.gfredericks/test.chuck "0.2.10"]
                                   [cider/cider-nrepl "0.22.4"]
                                   ]
