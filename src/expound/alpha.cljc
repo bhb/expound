@@ -136,7 +136,7 @@
 
 (defn ^:private named? [x]
   #?(:clj (instance? clojure.lang.Named x)
-     :cljs (implements? cljs.core.INamed x)))
+     :cljs (implements? INamed x)))
 
 (defn ^:private pr-pred* [pred]
   (cond
