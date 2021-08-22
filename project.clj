@@ -104,7 +104,8 @@
                         {:source-paths ["test"]
                          :dependencies [[karma-reporter "3.1.0"]]}]
              :cljs-repl {:dependencies [[cider/piggieback "0.4.0"]]}
-             :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]]}
+             :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]
+                                        [metosin/spec-tools "0.7.1"]]}
              :clj-1.10.0 {:dependencies [[org.clojure/clojure "1.10.0"]]}
              :cljs-1.10.238 {:dependencies  [[org.clojure/clojurescript "1.10.238"]]}
              :cljs-1.10.339 {:dependencies [[org.clojure/clojurescript "1.10.339"]]}
