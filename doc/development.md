@@ -30,13 +30,6 @@ open http://localhost:3446/index.html
 `lein with-profile test-web cljsbuild auto test`
 `ls ./resources/public/test-web/test.js | entr -s 'sleep 1; bin/tests'`
 
-### Figwheel
-
-`clojure -A:test:figwheel-repl`
-
-Open <http://localhost:9500/figwheel-extra-main/auto-testing>
-
-
 ## Running CLJ tests
 
 `lein with-profile +test-common test`
