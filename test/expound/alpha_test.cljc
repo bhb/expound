@@ -2866,9 +2866,9 @@ returned an invalid value
 
 should contain key: :my-int
 
-| key     | spec                                              |
-|=========+===================================================|
-| :my-int | <can't find spec for unqualified spec identifier> |
+| key     | spec     |
+|=========+==========|
+| :my-int | pos-int? |
 
 -------------------------
 Detected 1 error
@@ -4304,3 +4304,47 @@ Detected 1 error
            (expound/expound-str
             (clojure.spec.alpha/coll-of (fn [x] (< x 9)))
             (range 10))))))
+
+;; https://github.com/bhb/expound/issues/215
+(s/def :keys-within-operators.user/name string?)
+(s/def :keys-within-operators.user/age pos-int?)
+
+(deftest keys-within-operators
+
+  (is (= "-- Spec failed --------------------
+
+  {}
+
+should contain keys: :age, :keys-within-operators.user/name
+
+| key                              | spec     |
+|==================================+==========|
+| :age                             | pos-int? |
+|----------------------------------+----------|
+| :keys-within-operators.user/name | string?  |
+
+-------------------------
+Detected 1 error\n"
+         (expound/expound-str (s/and (s/keys :req [:keys-within-operators.user/name]
+                                             :req-un [:keys-within-operators.user/age])
+                                     #(contains? % :foo)) {} {:print-specs? false})))
+
+  (is (= "-- Spec failed --------------------
+
+  {}
+
+should contain keys: :age, :foo, :keys-within-operators.user/name
+
+| key                              | spec                                              |
+|==================================+===================================================|
+| :age                             | pos-int?                                          |
+|----------------------------------+---------------------------------------------------|
+| :foo                             | <can't find spec for unqualified spec identifier> |
+|----------------------------------+---------------------------------------------------|
+| :keys-within-operators.user/name | string?                                           |
+
+-------------------------
+Detected 1 error\n"
+         (expound/expound-str (s/or :k1 (s/keys :req [:keys-within-operators.user/name]
+                                                :req-un [:keys-within-operators.user/age])
+                                    :k2  #(contains? % :foo)) {} {:print-specs? false}))))

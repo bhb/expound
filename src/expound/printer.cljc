@@ -23,7 +23,7 @@
   (s/or
    :kw qualified-keyword?
    :conj :expound.spec/spec-conjunction))
-(s/def :expound.spec/key-spec
+(s/def :expound.spec/keys-spec
   (s/cat :keys #{'clojure.spec.alpha/keys
                  'cljs.spec.alpha/keys}
          :clauses (s/*
@@ -37,7 +37,6 @@
                                         :compound (s/cat
                                                    :op #{`or `and}
                                                    :clauses (s/+ :expound.spec/contains-key-pred))))
-
 (declare format)
 
 (defn ^:private str-width [lines]
@@ -126,7 +125,6 @@
 
 ;;;; private
 
-
 (defn keywords [form]
   (->> form
        (tree-seq coll? seq)
@@ -137,20 +135,20 @@
 
 (defn specs-from-form [via]
   (let [form (some-> via last s/form)
-        conformed (s/conform :expound.spec/key-spec form)]
-    ;; The containing spec might not be
-    ;; a simple 'keys' call, in which case we give up
-    (if (and form
-             (not= ::s/invalid conformed))
-      (->> (:clauses conformed)
-           (map :specs)
+        keys-specs (->> (tree-seq coll? seq form)
+                        (filter #(s/valid? :expound.spec/keys-spec  %)))]
+    (if (empty? keys-specs)
+      #{}
+      (->> keys-specs
+           (map #(s/conform :expound.spec/keys-spec %))
+           (mapcat :clauses)
+           (mapcat :specs)
            (tree-seq coll? seq)
            (filter
             (fn [x]
               (and (vector? x) (= :kw (first x)))))
            (map second)
-           set)
-      #{})))
+           set))))
 
 (defn key->spec [keys problems]
   (doseq [p problems]
