@@ -33,7 +33,7 @@
                                   [orchestra "2020.09.18-1"]
                                   [org.clojure/core.specs.alpha "0.2.44"]
                                   [vvvvalvalval/scope-capture "0.3.2"]
-                                  [org.clojure/test.check "0.10.0"]
+                                  [org.clojure/test.check "1.1.0"]
                                   [metosin/spec-tools "0.8.2"]
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
@@ -83,7 +83,7 @@
              :kaocha [:test-common
                       {:dependencies [[lambdaisland/kaocha "0.0-565"]
                                       [lambdaisland/kaocha-cloverage "0.0-41"]]}]
-             :test-common {:dependencies [[org.clojure/test.check "0.10.0-alpha3"]
+             :test-common {:dependencies [[org.clojure/test.check "1.1.0"]
                                           [pjstadig/humane-test-output "0.9.0"]
                                           [com.gfredericks/test.chuck "0.2.10"]
                                           [orchestra "2020.09.18-1"]
