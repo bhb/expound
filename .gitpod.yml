@@ -1,7 +1,8 @@
 # List the start up tasks. Learn more https://www.gitpod.io/docs/config-start-tasks/
 tasks:
-  - before: brew install leiningen
-    init: lein deps
+  - init: | 
+      brew install leiningen
+      lein deps
     command: bin/kaocha --watch
 
 github:
