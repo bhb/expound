@@ -3,7 +3,7 @@
 [![Clojars Project](https://img.shields.io/clojars/v/expound.svg)](https://clojars.org/expound)
 [![cljdoc badge](https://cljdoc.org/badge/expound/expound)](https://cljdoc.org/d/expound/expound/CURRENT)
 [![CircleCI](https://circleci.com/gh/bhb/expound.svg?style=shield)](https://circleci.com/gh/bhb/expound)
-[![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/bhb/expound)
+[![Gitpod ready-to-code](https://img.shields.io/badge/Gitpod-ready--to--code-908a85?logo=gitpod)](https://gitpod.io/#https://github.com/bhb/expound)
 
 Expound formats `clojure.spec` error messages in a way that is optimized for humans to read.
 
