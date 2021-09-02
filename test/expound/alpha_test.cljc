@@ -2389,7 +2389,7 @@ Detected 2 errors\n"
 (s/def :conformers-test/string-AB
   (s/and
    ;; conform as sequence (seq function)
-   (s/conformer seq)
+   (s/conformer #(if (seqable? %) (seq %) %))
    ;; re-use previous sequence spec
    :conformers-test/string-AB-seq))
 
