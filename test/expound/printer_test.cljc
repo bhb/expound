@@ -146,8 +146,8 @@
 | def  | d     |
 |      | e     |
 "
-       (with-out-str (printer/print-table [{:key "abc" :spec "a\nb"}
-                                           {:key "def" :spec "d\ne"}]))))
+       (printer/print-table [{:key "abc" :spec "a\nb"}
+                             {:key "def" :spec "d\ne"}])))
   ;; can select ordering of keys
   (is (=
        "
@@ -157,10 +157,10 @@
 |----+----|
 | {} | () |
 "
-       (with-out-str (printer/print-table
-                      [:b :c]
-                      [{:a 1 :b 2 :c 3}
-                       {:a [] :b {} :c '()}]))))
+       (printer/print-table
+        [:b :c]
+        [{:a 1 :b 2 :c 3}
+         {:a [] :b {} :c '()}])))
 
   ;; ordering is deterministic, not based on hashmap
   ;; semantics
@@ -172,11 +172,10 @@
 |----+----+----+----+----+----+----+----+----+----+----|
 | k  | a  | b  | c  | d  | e  | f  | g  | h  | i  | j  |
 "
-       (with-out-str
-         (printer/print-table
-          [:k :a :b :c :d :e :f :g :h :i :j]
-          [{:a "a" :b "b" :c "c" :d "d" :e "e" :f "f" :g "g" :h "h" :i "i" :j "j" :k "k" :l "l"}
-           {:l "l" :k "k" :j "j" :i "i" :h "h" :g "g" :f "f" :e "e" :d "d" :c "c" :b "b" :a "a"}])))))
+       (printer/print-table
+        [:k :a :b :c :d :e :f :g :h :i :j]
+        [{:a "a" :b "b" :c "c" :d "d" :e "e" :f "f" :g "g" :h "h" :i "i" :j "j" :k "k" :l "l"}
+         {:l "l" :k "k" :j "j" :i "i" :h "h" :g "g" :f "f" :e "e" :d "d" :c "c" :b "b" :a "a"}]))))
 
 (deftest print-table-gen
   (checking
@@ -191,8 +190,7 @@
     :let [rows (mapv
                 #(zipmap keys (get vals %))
                 (range 0 row-count))
-          table (with-out-str
-                  (printer/print-table rows))
+          table (printer/print-table rows)
           srows (rest (string/split table #"\n"))]]
 
    (is (apply = (map count srows))))
@@ -210,10 +208,8 @@
                 #(zipmap keys (get vals %))
                 (range 0 row-count))
           sub-rows (butlast rows)
-          table (with-out-str
-                  (printer/print-table rows))
-          sub-table (with-out-str
-                      (printer/print-table sub-rows))
+          table (printer/print-table rows)
+          sub-table (printer/print-table sub-rows)
           sub-table-last-row (last (string/split sub-table #"\n"))
           table-last-row (last (string/split table #"\n"))]]
       ;; If the line we delete shrinks the width of the table
@@ -229,8 +225,7 @@
       [spec sg/spec-gen
        :let [rows [{:key spec
                     :spec (printer/expand-spec spec)}]
-             table (with-out-str
-                     (printer/print-table rows))
+             table (printer/print-table rows)
              srows (rest (string/split table #"\n"))]]
       (is (< (count (last srows)) 200)))
      :cljs
