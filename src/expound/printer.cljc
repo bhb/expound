@@ -121,7 +121,7 @@
   ([map-rows]
    (print-table (keys (first map-rows)) map-rows))
   ([column-keys map-rows]
-   (print (table-str column-keys map-rows))))
+   (table-str column-keys map-rows)))
 
 ;;;; private
 
@@ -278,7 +278,6 @@
   (->>
    (print-spec-keys* problems)
    (print-table ["key" "spec"])
-   with-out-str
    string/trim))
 
 (defn print-missing-keys [problems]
