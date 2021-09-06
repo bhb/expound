@@ -2321,7 +2321,7 @@ Detected 2 errors\n"
    "mutation alters data structure"
    (chuck/times num-tests)
    [form gen/any-printable
-    mutate-path (gen/vector gen/pos-int 1 10)]
+    mutate-path (gen/vector gen/nat 1 10)]
    (is (not= form
              (mutate form mutate-path)))))
 
