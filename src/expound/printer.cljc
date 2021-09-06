@@ -23,7 +23,7 @@
   (s/or
    :kw qualified-keyword?
    :conj :expound.spec/spec-conjunction))
-(s/def :expound.spec/key-spec
+(s/def :expound.spec/keys-spec
   (s/cat :keys #{'clojure.spec.alpha/keys
                  'cljs.spec.alpha/keys}
          :clauses (s/*
@@ -37,7 +37,6 @@
                                         :compound (s/cat
                                                    :op #{`or `and}
                                                    :clauses (s/+ :expound.spec/contains-key-pred))))
-
 (declare format)
 
 (defn ^:private str-width [lines]
@@ -122,10 +121,9 @@
   ([map-rows]
    (print-table (keys (first map-rows)) map-rows))
   ([column-keys map-rows]
-   (print (table-str column-keys map-rows))))
+   (table-str column-keys map-rows)))
 
 ;;;; private
-
 
 (defn keywords [form]
   (->> form
@@ -137,20 +135,20 @@
 
 (defn specs-from-form [via]
   (let [form (some-> via last s/form)
-        conformed (s/conform :expound.spec/key-spec form)]
-    ;; The containing spec might not be
-    ;; a simple 'keys' call, in which case we give up
-    (if (and form
-             (not= ::s/invalid conformed))
-      (->> (:clauses conformed)
-           (map :specs)
+        keys-specs (->> (tree-seq coll? seq form)
+                        (filter #(s/valid? :expound.spec/keys-spec  %)))]
+    (if (empty? keys-specs)
+      #{}
+      (->> keys-specs
+           (map #(s/conform :expound.spec/keys-spec %))
+           (mapcat :clauses)
+           (mapcat :specs)
            (tree-seq coll? seq)
            (filter
             (fn [x]
               (and (vector? x) (= :kw (first x)))))
            (map second)
-           set)
-      #{})))
+           set))))
 
 (defn key->spec [keys problems]
   (doseq [p problems]
@@ -280,7 +278,6 @@
   (->>
    (print-spec-keys* problems)
    (print-table ["key" "spec"])
-   with-out-str
    string/trim))
 
 (defn print-missing-keys [problems]
@@ -424,12 +421,17 @@
             (if (:show-valid-values? opts)
               (pprint-str (summary-form show-valid-values? form in))
               (pprint-str (walk/prewalk-replace {:expound.problems/irrelevant '...} (summary-form show-valid-values? form in)))))
-        [line prefix & _more] (re-find regex s)
-        highlighted-line (-> line
-                             (string/replace (re-pattern relevant) (escape-replacement
-                                                                    (re-pattern relevant)
-                                                                    (indent 0 (count prefix) (ansi/color printed-val :bad-value))))
-                             (str "\n" (ansi/color (highlight-line prefix printed-val)
-                                                   :pointer)))]
-    ;;highlighted-line
-    (no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))
+        [line prefix & _more] (re-find regex s)]
+    (if-not line ;; can be nil depending on unforeseen *print-length* / *print-level* values:
+      (str
+       printed-val
+       "\n\nin\n\n"
+       (pprint-str form))
+      (let [highlighted-line (-> line
+                                 (string/replace (re-pattern relevant) (escape-replacement
+                                                                        (re-pattern relevant)
+                                                                        (indent 0 (count prefix) (ansi/color printed-val :bad-value))))
+                                 (str "\n" (ansi/color (highlight-line prefix printed-val)
+                                                       :pointer)))]
+        ;;highlighted-line
+        (no-trailing-whitespace (string/replace s line (escape-replacement line highlighted-line)))))))

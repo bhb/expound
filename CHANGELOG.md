@@ -3,6 +3,12 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+### Fixed
+
+- [Bug with displaying errors when `*print-length*` or `*print-level*` is very small](https://github.com/bhb/expound/issues/217). Thanks [`@vemv`](https://github.com/vemv) for the fix!
+- [Bug with finding specs for unqualified keywords in `keys` spec](https://github.com/bhb/expound/issues/215)
+
+
 ## [0.8.9] - 2021-02-11
 
 ### Fixed

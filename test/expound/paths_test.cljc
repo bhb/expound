@@ -29,7 +29,7 @@
    "value-in is inverse of paths-to-value"
    (chuck/times num-tests)
    [form test-utils/any-printable-wo-nan
-    i gen/pos-int
+    i gen/nat
     :let [x (nth-value form i)
           paths (paths/paths-to-value form x [] [])]]
    (is (seq paths))

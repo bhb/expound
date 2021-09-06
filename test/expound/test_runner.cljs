@@ -3,6 +3,7 @@
             [expound.alpha-test]
             [expound.paths-test]
             [expound.printer-test]
+            [expound.print-length-test]
             [expound.problems-test]
             [expound.test-utils]
             [expound.specs-test]
