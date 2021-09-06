@@ -13,7 +13,7 @@
 
 ;; runs all tests in all namespaces
 ;; This is what runs by default
-#_(defn ^:export run-all [karma]
+(defn ^:export run-all [karma]
   (jx.reporter.karma/run-all-tests karma))
 
 ;; runs all tests in all namespaces - only namespaces with names matching
