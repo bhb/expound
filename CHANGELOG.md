@@ -3,6 +3,8 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.8.10] - 2021-09-06
+
 ### Fixed
 
 - [Bug with displaying errors when `*print-length*` or `*print-level*` is very small](https://github.com/bhb/expound/issues/217). Thanks [`@vemv`](https://github.com/vemv) for the fix!
@@ -224,7 +226,8 @@ This release was made possible by [Clojurists Together](https://www.clojuriststo
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.8.9...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.8.10...HEAD
+[0.8.10]: https://github.com/bhb/expound/compare/v0.8.9...v0.8.10
 [0.8.9]: https://github.com/bhb/expound/compare/v0.8.8...v0.8.9
 [0.8.8]: https://github.com/bhb/expound/compare/v0.8.7...v0.8.8
 [0.8.7]: https://github.com/bhb/expound/compare/v0.8.6...v0.8.7
