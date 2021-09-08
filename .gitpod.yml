@@ -6,6 +6,8 @@ tasks:
   - name: Install deps
     init: |
       lein deps
+      lein classpath
+      bin/kaocha
   - name: Run tests
     command: bin/kaocha --watch
 
