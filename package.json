@@ -27,6 +27,6 @@
     "karma-chrome-launcher": "^2.2.0",
     "karma-cljs-test": "^0.1.0",
     "lodash": "^4.17.11",
-    "set-value": "2.0.1"
+    "set-value": "4.0.1"
   }
 }
