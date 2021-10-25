@@ -1,5 +1,3 @@
-;; TODO - carve out CLJS
-
 (ns bb
   (:require [babashka.deps :as deps]
             [clojure.test :refer [is testing deftest]]
@@ -32,10 +30,8 @@
                          (try
                            (f)
                            (catch Exception e (Throwable->map e))))
-        ed #?(:cljs (-> exception-data :data)
-              :clj (-> exception-data :via last :data))
-        cause# (-> #?(:cljs (:message exception-data)
-                      :clj (:cause exception-data))
+        ed (-> exception-data :via last :data)
+        cause# (-> (:cause exception-data)
                    (clojure.string/replace #"Call to (.*) did not conform to spec:"
                                            "Call to #'$1 did not conform to spec."))]
 
@@ -437,8 +433,7 @@ should satisfy
 
 -------------------------
 Detected 2 errors\n"
-             #?(:cljs "(fn [%] (pos? (count %)))"
-                :clj "(fn [%] (pos? (count %)))"))
+             "(fn [%] (pos? (count %)))")
          (expound/expound-str :and-spec/names ["bob" "sally" "" 1])))))
 
 (s/def :coll-of-spec/big-int-coll (s/coll-of int? :min-count 10))
@@ -461,8 +456,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-             #?(:cljs "9007199254740991"
-                :clj "Integer/MAX_VALUE"))
+             "Integer/MAX_VALUE")
          (expound/expound-str :coll-of-spec/big-int-coll [])))))
 
 (s/def :cat-spec/kw (s/cat :k keyword? :v any?))
@@ -641,111 +635,9 @@ should contain keys: :age, :keys-spec/name
 
 -------------------------
 Detected 1 error\n"
-               #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
-                  :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
+               "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])")
            (expound/expound-str :keys-spec/user {}))))
-  ;; FIXME - I'm guessing spartan.spec doesn't work for compound keys i.e. (and :state :city)
-  #_(testing "missing compound keys"
-    (is (= (pf "-- Spec failed --------------------
-
-  {}
-
-should contain keys:
-
-(and (and :keys-spec/name :keys-spec/age) (or :zip (and :state :city)))
-
-| key             | spec     |
-|=================+==========|
-| :city           | string?  |
-|-----------------+----------|
-| :state          | string?  |
-|-----------------+----------|
-| :zip            | pos-int? |
-|-----------------+----------|
-| :keys-spec/age  | int?     |
-|-----------------+----------|
-| :keys-spec/name | string?  |
-
--- Relevant specs -------
-
-:keys-spec/user2:
-  (pf.spec.alpha/keys
-   :req
-   [(and :keys-spec/name :keys-spec/age)]
-   :req-un
-   [(or :key-spec/zip (and :key-spec/state :key-spec/city))])
-
--------------------------
-Detected 1 error\n")
-           (expound/expound-str :keys-spec/user2 {})))
-    (is (= (pf "-- Spec failed --------------------
-
-  {}
-
-should contain keys:
-
-(or :zip (and :state :city))
-
-| key    | spec     |
-|========+==========|
-| :city  | string?  |
-|--------+----------|
-| :state | string?  |
-|--------+----------|
-| :zip   | pos-int? |
-
--- Relevant specs -------
-
-:keys-spec/user3:
-  (pf.spec.alpha/keys
-   :req-un
-   [(or :key-spec/zip (and :key-spec/state :key-spec/city))])
-
--------------------------
-Detected 1 error\n")
-           (expound/expound-str :keys-spec/user3 {}))))
-
-  ;; spartan.spec doesn't support multi-spec yet
-  #_(testing "inline spec with req-un"
-    (is (= (pf "-- Spec failed --------------------
-
-  {}
-
-should contain keys: :age, :name
-
-| key   | spec    |
-|=======+=========|
-| :age  | int?    |
-|-------+---------|
-| :name | string? |
-
--------------------------
-Detected 1 error\n"
-               #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
-                  :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
-           (expound/expound-str (s/keys :req-un [:keys-spec/name :keys-spec/age]) {})))
-    (s/def :key-spec/mspec (s/multi-spec key-spec-mspec :tag))
-    (s/def :key-spec/i int?)
-    (s/def :key-spec/s string?)
-    ;; We can't inspect the contents of a multi-spec (to figure out
-    ;; which spec we mean by :i), so this is the best we can do.
-    (is (= "-- Spec failed --------------------
-
-  {:tag :int}
-
-should contain key: :i
-
-| key | spec                                              |
-|=====+===================================================|
-| :i  | <can't find spec for unqualified spec identifier> |
-
--------------------------
-Detected 1 error\n"
-           (expound/expound-str
-            :key-spec/mspec
-            {:tag :int}
-            {:print-specs? false}))))
-
+  
   (testing "invalid key"
     (is (= (pf "-- Spec failed --------------------
 
@@ -765,8 +657,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-               #?(:cljs "(cljs.spec.alpha/keys :req [:keys-spec/name] :req-un [:keys-spec/age])"
-                  :clj "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])"))
+               "(clojure.spec.alpha/keys\n   :req\n   [:keys-spec/name]\n   :req-un\n   [:keys-spec/age])")
            (expound/expound-str :keys-spec/user {:age 1 :keys-spec/name :bob}))))
   (testing "contains compound specs"
     (s/def :keys-spec/states (s/coll-of :key-spec/state :kind vector?))
@@ -1303,29 +1194,7 @@ Detected 1 error\n")
     (is (= "hello"
            (s/assert :test-assert/name "hello"))))
   (testing "assertion fails"
-    #?(:cljs
-       (try
-         (binding [s/*explain-out* expound/printer]
-           (s/assert :test-assert/name :hello))
-         (catch :default e
-           (is (= "Spec assertion failed\n-- Spec failed --------------------
-
-  :hello
-
-should satisfy
-
-  string?
-
--- Relevant specs -------
-
-:test-assert/name:
-  cljs.core/string?
-
--------------------------
-Detected 1 error\n"
-                  (.-message e)))))
-       :clj
-       (try
+           (try
          (binding [s/*explain-out* expound/printer]
            (s/assert :test-assert/name :hello))
          (catch Exception e
@@ -1346,7 +1215,7 @@ should satisfy
 -------------------------
 Detected 1 error\n"
                   ;; FIXME - move assertion out of catch, similar to instrument tests
-                  (:cause (Throwable->map e)))))))))
+                  (:cause (Throwable->map e))))))))
 
 (s/def :test-explain-str/name string?)
 (deftest test-explain-str
@@ -1572,12 +1441,11 @@ or
 
 -------------------------
 Detected 1 error\n"
-             #?(:clj "(clojure.spec.alpha/alt
+             "(clojure.spec.alpha/alt
    :int
    clojure.core/int?
    :string
-   clojure.core/string?)"
-                :cljs "(cljs.spec.alpha/alt :int cljs.core/int? :string cljs.core/string?)"))
+   clojure.core/string?)")
          (expound/expound-str :alt-spec/int-alt-str [:hi])))
 
   (is (= "-- Spec failed --------------------
@@ -1786,8 +1654,7 @@ Detected 2 errors\n"
     (str x)
 
     (char? x)
-    #?(:cljs (.charCodeAt x)
-       :clj (int x))
+    (int x)
 
     (uuid? x)
     (str x)
@@ -1825,7 +1692,7 @@ Detected 2 errors\n"
 
 (deftest test-assert2
   (is (thrown-with-msg?
-       #?(:cljs :default :clj Exception)
+       Exception
        #"\"Key must be integer\"\n\nshould be one of: \"Extra input\", \"Insufficient input\", \"no method"
        (binding [s/*explain-out* expound/printer]
          (try
@@ -1921,9 +1788,7 @@ Detected 1 error\n"
     ;; for string parsing, so I'm OK with it
     (testing "conform string to seq"
       (is (=
-           ;; clojurescript doesn't have a character type
-           #?(:cljs "-- Spec failed --------------------\n\n  \"A\"C\"\"\n    ^^^\n\nshould be: \"B\"\n\n-------------------------\nDetected 1 error\n"
-              :clj "-- Spec failed --------------------
+           "-- Spec failed --------------------
 
   \"A\\C\"
     ^^
@@ -1932,7 +1797,7 @@ should be: \\B
 
 -------------------------
 Detected 1 error
-")
+"
            (s/explain-str :conformers-test/string-AB "AC"))))
     (testing "s/cat"
       (s/def :conformers-test/sorted-pair (s/and (s/cat :x int? :y int?) #(< (-> % :x) (-> % :y))))
@@ -1951,10 +1816,9 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-                 #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
-                    :clj "(fn
+                 "(fn
    [%]
-   (< (-> % :x) (-> % :y)))"))
+   (< (-> % :x) (-> % :y)))")
              (expound/expound-str :conformers-test/sorted-pair [1 0] {:print-specs? false})))
       (is (= (pf "-- Spec failed --------------------
 
@@ -1971,10 +1835,9 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-                 #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
-                    :clj "(fn
+                 "(fn
    [%]
-   (< (-> % :x) (-> % :y)))"))
+   (< (-> % :x) (-> % :y)))")
              (expound/expound-str (s/coll-of :conformers-test/sorted-pair) [[0 1] [1 0]] {:print-specs? false})))
       (is (= (pf "-- Spec failed --------------------
 
@@ -1991,10 +1854,9 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-                 #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
-                    :clj "(fn
+                 "(fn
    [%]
-   (< (-> % :x) (-> % :y)))"))
+   (< (-> % :x) (-> % :y)))")
              (expound/expound-str (s/map-of keyword? :conformers-test/sorted-pair) {:a [1 0]} {:print-specs? false})))
       (is (= (pf "-- Spec failed --------------------
 
@@ -2188,10 +2050,9 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-                 #?(:cljs "(fn [%] (< (-> % :x) (-> % :y)))"
-                    :clj "(fn
+                 "(fn
    [%]
-   (< (-> % :x) (-> % :y)))"))
+   (< (-> % :x) (-> % :y)))")
              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
                (s/explain-str (s/map-of :conformers-test/sorted-pair any?) {[0 1] [1 0]
                                                                             [1 0] [1 0]})))))))
@@ -2380,116 +2241,6 @@ Detected 1 error
 (defn my-minus [x y]
   (- x y))
 
-;; FIXME: support fspec
-#_(deftest fspec-fn-test
-  (testing "invalid ret"
-    (is (= (pf "-- Function spec failed -----------
-
-  expound.alpha-test/my-minus
-
-failed spec. Function arguments and return value
-
-  {:args {:x 0, :y 0}, :ret 0}
-
-should satisfy
-
-  %s
-
--------------------------
-Detected 1 error\n"
-
-               #?(:clj
-                  "(fn
-   [%]
-   (< (:ret %) (-> % :args :x)))"
-                  :cljs "(fn [%] (< (:ret %) (-> % :args :x)))"))
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (until-unsuccessful #(s/explain-str :fspec-fn-test/minus my-minus)))))
-
-    (is (= (pf "-- Function spec failed -----------
-
-  [expound.alpha-test/my-minus]
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-failed spec. Function arguments and return value
-
-  {:args {:x 0, :y 0}, :ret 0}
-
-should satisfy
-
-  %s
-
--------------------------
-Detected 1 error\n"
-               #?(:clj
-                  "(fn
-   [%]
-   (< (:ret %) (-> % :args :x)))"
-                  :cljs "(fn [%] (< (:ret %) (-> % :args :x)))"))
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (until-unsuccessful #(s/explain-str (s/coll-of :fspec-fn-test/minus) [my-minus])))))))
-
-;; FIXME: support fspec
-#_(deftest ifn-fspec-test
-  (testing "keyword ifn / ret failure"
-    (is (= "-- Function spec failed -----------
-
-  [:foo]
-   ^^^^
-
-returned an invalid value
-
-  nil
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error\n"
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
-                                                 [:foo])))))
-    (testing "set ifn / ret failure"
-      (is (= "-- Function spec failed -----------
-
-  [#{}]
-   ^^^
-
-returned an invalid value
-
-  nil
-
-should satisfy
-
-  int?
-
--------------------------
-Detected 1 error\n"
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
-                                                   [#{}])))))))
-  #?(:clj
-     (testing "vector ifn / exception failure"
-       (is (= "-- Exception ----------------------
-
-  [[]]
-   ^^
-
-threw exception
-
-  nil
-
-with args:
-
-  0
-
--------------------------
-Detected 1 error\n"
-              (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-                (until-unsuccessful #(s/explain-str (s/coll-of (s/fspec :args (s/cat :x int?) :ret int?))
-                                                    [[]]))))))))
-
 (defmulti pet :pet/type)
 (defmethod pet :dog [_]
   (s/keys))
@@ -2509,82 +2260,6 @@ Detected 1 error\n"
 (s/def :multispec-in-compound-spec/pet2 (s/or
                                          :map1 (s/multi-spec pet :pet/type)
                                          :map2 (s/multi-spec animal :animal/type)))
-
-;; FIXME: support multipspec
-#_(deftest multispec-in-compound-spec
-  (testing "multispec combined with s/and"
-    (is (= (pf "-- Missing spec -------------------
-
-Cannot find spec for
-
-  {:pet/type :fish}
-
-with
-
- Spec multimethod:      `expound.alpha-test/pet`
- Dispatch value:        `:fish`
-
--- Relevant specs -------
-
-:multispec-in-compound-spec/pet1:
-  (pf.spec.alpha/and
-   pf.core/map?
-   (pf.spec.alpha/multi-spec expound.alpha-test/pet :pet/type))
-
--------------------------
-Detected 1 error\n")
-           (expound/expound-str :multispec-in-compound-spec/pet1 {:pet/type :fish}))))
-  ;; FIXME - improve this, maybe something like:
-  ;;;;;;;;;;;;;;;;;;;
-
-  ;;   {:pet/type :fish}  
-
-  ;; should be described by a spec multimethod, but
-
-  ;;   expound.alpha-test/pet
-
-  ;; is missing a method for value
-
-  ;;   (:pet/type {:pet/type :fish}) ; => :fish
-
-  ;; or 
-
-  ;; should be described by a spec multimethod, but
-
-  ;;   expound.alpha-test/pet
-
-  ;; is missing a method for value
-
-  ;;  (:animal/type {:pet/type :fish}) ; => nil
-  (testing "multispec combined with s/or"
-    (is (= (pf "-- Missing spec -------------------
-
-Cannot find spec for
-
-  {:pet/type :fish}
-
-with
-
- Spec multimethod:      `expound.alpha-test/pet`
- Dispatch value:        `:fish`
-
-or with
-
- Spec multimethod:      `expound.alpha-test/animal`
- Dispatch value:        `nil`
-
--- Relevant specs -------
-
-:multispec-in-compound-spec/pet2:
-  (pf.spec.alpha/or
-   :map1
-   (pf.spec.alpha/multi-spec expound.alpha-test/pet :pet/type)
-   :map2
-   (pf.spec.alpha/multi-spec expound.alpha-test/animal :animal/type))
-
--------------------------
-Detected 1 error\n")
-           (expound/expound-str :multispec-in-compound-spec/pet2 {:pet/type :fish})))))
 
 (expound/def :predicate-messages/string string? "should be a string")
 (expound/def :predicate-messages/vector vector? "should be a vector")
@@ -2683,8 +2358,7 @@ Detected 1 error
               101))))))
 
 (defn results-str-fn1 [x y]
-  #?(:clj (+' x y)
-     :cljs (+ x y)))
+  (+' x y))
 
 (defn results-str-fn2 [x y]
   (+ x y))
@@ -2697,8 +2371,7 @@ Detected 1 error
 
 (defn results-str-fn5
   [_x _y]
-  #?(:clj (throw (Exception. "Ooop!"))
-     :cljs (throw (js/Error. "Oops!"))))
+  (throw (Exception. "Ooop!")))
 
 (defn results-str-fn6
   [f]
@@ -2794,7 +2467,7 @@ should satisfy
                        ::test-problem3)]
 
       (is (thrown-with-msg?
-           #?(:cljs :default :clj Exception)
+           Exception
            #"No method in multimethod"
            (printer-str {:print-specs? false} ed))))))
 
