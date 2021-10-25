@@ -452,6 +452,20 @@
      (lcs* xs ys))
    paths))
 
+(defn- all-key-symbols [key-form]
+  (->> (s/conform
+        :expound.spec/keys-spec
+        key-form)
+       :clauses
+       (map :specs)
+       (tree-seq coll? seq)
+       (filter
+        (fn [x]
+          (and (vector? x)
+               (= (first x) :kw))))
+
+       (map second)))
+
 (defn ^:private contains-alternate-at-path? [spec-form path]
   (if (not (coll? spec-form))
     false
@@ -465,11 +479,7 @@
                             :else false))
 
         #{`s/keys `s/keys*} (let [keys-args (->> rest-form (apply hash-map))
-                                  node-keys (set (concat
-                                                  (:opt keys-args [])
-                                                  (:req keys-args [])
-                                                  (map #(keyword (name %)) (:opt-un keys-args []))
-                                                  (map #(keyword (name %)) (:req-un keys-args []))))
+                                  node-keys (set (all-key-symbols spec-form))
                                   possible-spec-names (if (qualified-keyword? k)
                                                         [k]
                                                         (filter

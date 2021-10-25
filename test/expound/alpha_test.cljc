@@ -4348,3 +4348,113 @@ Detected 1 error\n"
          (expound/expound-str (s/or :k1 (s/keys :req [:keys-within-operators.user/name]
                                                 :req-un [:keys-within-operators.user/age])
                                     :k2  #(contains? % :foo)) {} {:print-specs? false}))))
+
+(s/def :complex-keys-test/str string?)
+(s/def :complex-keys-test/num int?)
+(s/def :complex-keys-test/num2 int?)
+(s/def :complex-keys-test/map1 (s/keys :req-un [(or :complex-keys-test/str :complex-keys-test/num)]))
+(s/def :complex-keys-test/map2 (s/keys :req-un [(or :complex-keys-test/str (and :complex-keys-test/num
+                                                                                :complex-keys-test/num2))]))
+
+;; See https://github.com/bhb/expound/issues/229
+(deftest complex-keys-test
+  (is (=
+       "-- Spec failed --------------------
+
+  {:str 1, :num ...}
+        ^
+
+should satisfy
+
+  string?
+
+-- Spec failed --------------------
+
+  {:str ..., :num \"1\"}
+                  ^^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 2 errors
+"
+       (expound/expound-str :complex-keys-test/map1
+                            {:str 1
+                             :num "1"}
+                            {:print-specs? false})))
+  (is (=
+       "-- Spec failed --------------------
+
+  {:str 1}
+        ^
+
+should satisfy
+
+  string?
+
+-------------------------
+Detected 1 error
+"
+       (expound/expound-str :complex-keys-test/map2
+                            {:str 1}
+                            {:print-specs? false})))
+  (is (=
+       "-- Spec failed --------------------
+
+  {:num \"1\", :num2 ...}
+        ^^^
+
+should satisfy
+
+  int?
+
+-- Spec failed --------------------
+
+  {:num ..., :num2 \"1\"}
+                   ^^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 2 errors
+"
+       (expound/expound-str :complex-keys-test/map2
+                            {:num "1"
+                             :num2 "1"}
+                            {:print-specs? false})))
+  (is (=
+       "-- Spec failed --------------------
+
+  {:num \"1\"}
+
+should contain keys:
+
+(or :str (and :num :num2))
+
+| key   | spec    |
+|=======+=========|
+| :num  | int?    |
+|-------+---------|
+| :num2 | int?    |
+|-------+---------|
+| :str  | string? |
+
+-- Spec failed --------------------
+
+  {:num \"1\"}
+        ^^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 2 errors
+"
+       (expound/expound-str :complex-keys-test/map2
+                            {:num "1"}
+                            {:print-specs? false}))))
