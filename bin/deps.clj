@@ -12,10 +12,10 @@
                 (map (fn [dep-tags]                                    ; pull out group/name of dependency
              [(:content
                  (first
-                  (filter #(and (= (:tag %) :groupId)) dep-tags)))
+                  (filter #(= (:tag %) :groupId) dep-tags)))
               (:content
                 (first
-                 (filter #(and (= (:tag %) :artifactId)) dep-tags)))]))
+                 (filter #(= (:tag %) :artifactId) dep-tags)))]))
 
                 sort                                                   ; sort
                 )]
