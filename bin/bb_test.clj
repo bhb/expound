@@ -527,7 +527,7 @@ should have additional elements. The next element should satisfy
 
 -------------------------
 Detected 1 error\n"
-           (expound/expound-str :cat-spec/alt [])))
+             (expound/expound-str :cat-spec/alt [])))
     (is (= "-- Syntax error -------------------
 
   []
@@ -838,9 +838,9 @@ Detected 4 errors\n"
 ;; (defmethod multi-spec-bar-spec ::b [_] (s/keys :req [::b]))
 
 #_(deftest multi-spec
-  (testing "missing dispatch key"
-    (is (=
-         "-- Missing spec -------------------
+    (testing "missing dispatch key"
+      (is (=
+           "-- Missing spec -------------------
 
 Cannot find spec for
 
@@ -860,10 +860,10 @@ with
 
 -------------------------
 Detected 1 error\n"
-         (expound/expound-str :multi-spec/el {}))))
-  (testing "invalid dispatch value"
-    (is (=
-         "-- Missing spec -------------------
+           (expound/expound-str :multi-spec/el {}))))
+    (testing "invalid dispatch value"
+      (is (=
+           "-- Missing spec -------------------
 
 Cannot find spec for
 
@@ -883,11 +883,11 @@ with
 
 -------------------------
 Detected 1 error\n"
-         (expound/expound-str :multi-spec/el {:multi-spec/el-type :image}))))
+           (expound/expound-str :multi-spec/el {:multi-spec/el-type :image}))))
 
-  (testing "valid dispatch value, but other error"
-    (is (=
-         "-- Spec failed --------------------
+    (testing "valid dispatch value, but other error"
+      (is (=
+           "-- Spec failed --------------------
 
   {:multi-spec/el-type :text}
 
@@ -906,13 +906,13 @@ should contain key: :multi-spec/value
 
 -------------------------
 Detected 1 error\n"
-         (expound/expound-str :multi-spec/el {:multi-spec/el-type :text}))))
+           (expound/expound-str :multi-spec/el {:multi-spec/el-type :text}))))
 
-  ;; https://github.com/bhb/expound/issues/122
-  (testing "when re-tag is a function"
-    (s/def :multi-spec/b string?)
-    (s/def :multi-spec/bar (s/multi-spec multi-spec-bar-spec (fn [val tag] (assoc val :type tag))))
-    (is (= "-- Missing spec -------------------
+    ;; https://github.com/bhb/expound/issues/122
+    (testing "when re-tag is a function"
+      (s/def :multi-spec/b string?)
+      (s/def :multi-spec/bar (s/multi-spec multi-spec-bar-spec (fn [val tag] (assoc val :type tag))))
+      (is (= "-- Missing spec -------------------
 
 Cannot find spec for
 
@@ -926,7 +926,7 @@ with
 -------------------------
 Detected 1 error
 "
-           (expound/expound-str :multi-spec/bar {} {:print-specs? false})))))
+             (expound/expound-str :multi-spec/bar {} {:print-specs? false})))))
 
 (s/def :recursive-spec/tag #{:text :group})
 (s/def :recursive-spec/on-tap (s/coll-of map? :kind vector?))
@@ -1181,11 +1181,11 @@ Detected 1 error\n"
     (is (= "hello"
            (s/assert :test-assert/name "hello"))))
   (testing "assertion fails"
-           (try
-         (binding [s/*explain-out* expound/printer]
-           (s/assert :test-assert/name :hello))
-         (catch Exception e
-           (is (= "Spec assertion failed
+    (try
+      (binding [s/*explain-out* expound/printer]
+        (s/assert :test-assert/name :hello))
+      (catch Exception e
+        (is (= "Spec assertion failed
 -- Spec failed --------------------
 
   :hello
@@ -1201,8 +1201,8 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-                  ;; FIXME - move assertion out of catch, similar to instrument tests
-                  (:cause (Throwable->map e))))))))
+               ;; FIXME - move assertion out of catch, similar to instrument tests
+               (:cause (Throwable->map e))))))))
 
 (s/def :test-explain-str/name string?)
 (deftest test-explain-str
@@ -1368,10 +1368,10 @@ or
 
 -------------------------
 Detected 1 error\n"
-           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-             (s/explain-str
-              :alt-spec/one-many-int-or-str
-              [[:one]]))))
+             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+               (s/explain-str
+                :alt-spec/one-many-int-or-str
+                [[:one]]))))
     (s/def :alt-spec/int-or-str (s/or :i int?
                                       :s string?))
     (s/def :alt-spec/one-many-int-or-str (s/cat :bs (s/alt :one :alt-spec/int-or-str
@@ -1528,9 +1528,9 @@ or
 
 -------------------------
 Detected 2 errors\n"
-         (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-           (s/explain-str (s/keys :req-un [:alt-spec/num-types :alt-spec/str-types])
-                          {:num-types [true] :str-types [false]}))))
+           (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+             (s/explain-str (s/keys :req-un [:alt-spec/num-types :alt-spec/str-types])
+                            {:num-types [true] :str-types [false]}))))
 
   (is (=
        "-- Spec failed --------------------
@@ -1564,18 +1564,18 @@ Detected 1 error
 
   ;; mspecs not supported
   #_(is (=
-       ;; This output is not what we want: ideally, the two alternates
-       ;; should be grouped into a single problem.
-       ;; I'm adding it as a spec to avoid regressions and to keep it as
-       ;; an example of something I could improve.
-       ;; The reason we can't do better is that we can't reliably look
-       ;; at the form of a multi-spec. It would be nice if spec inserted
-       ;; the actual spec form that was returned by the multi-spec, but
-       ;; as it stands today, we'd have to figure out how to call the multi-
-       ;; method with the actual value. That would be complicated and
-       ;; potentially have unknown side effects from running arbitrary code.
+         ;; This output is not what we want: ideally, the two alternates
+         ;; should be grouped into a single problem.
+         ;; I'm adding it as a spec to avoid regressions and to keep it as
+         ;; an example of something I could improve.
+         ;; The reason we can't do better is that we can't reliably look
+         ;; at the form of a multi-spec. It would be nice if spec inserted
+         ;; the actual spec form that was returned by the multi-spec, but
+         ;; as it stands today, we'd have to figure out how to call the multi-
+         ;; method with the actual value. That would be complicated and
+         ;; potentially have unknown side effects from running arbitrary code.
 
-       "-- Spec failed --------------------
+         "-- Spec failed --------------------
 
   {:mspec {:tag ..., :one-many-int [[\"1\"]]}}
                                     ^^^^^
@@ -1596,14 +1596,14 @@ should satisfy
 -------------------------
 Detected 2 errors\n"
 
-       (expound/expound-str
-        (s/keys
-         :req-un [:alt-spec/mspec])
-        {:mspec
-         {:tag :x
-          :one-many-int [["1"]]}}
+         (expound/expound-str
+          (s/keys
+           :req-un [:alt-spec/mspec])
+          {:mspec
+           {:tag :x
+            :one-many-int [["1"]]}}
 
-        {:print-specs? false}))))
+          {:print-specs? false}))))
 
 (defn mutate-coll [x]
   (cond
@@ -1740,16 +1740,16 @@ Detected 2 errors\n"
 
 ;; FIXME: conformers are pretty advanced, I'm OK if they don't work in spartan.spec yet
 #_(deftest conformers-test
-  ;; Example from http://cjohansen.no/a-unified-specification/
-  (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})
-            *print-namespace-maps* false]
-    (testing "conform string to int"
-      (is (string?
-           (s/explain-str :conformers-test/number "123a"))))
-    ;; Example from https://github.com/bhb/expound/issues/15#issuecomment-326838879
-    (testing "conform maps"
-      (is (string? (s/explain-str :conformers-test/query {})))
-      (is (= "-- Spec failed --------------------
+    ;; Example from http://cjohansen.no/a-unified-specification/
+    (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})
+              *print-namespace-maps* false]
+      (testing "conform string to int"
+        (is (string?
+             (s/explain-str :conformers-test/number "123a"))))
+      ;; Example from https://github.com/bhb/expound/issues/15#issuecomment-326838879
+      (testing "conform maps"
+        (is (string? (s/explain-str :conformers-test/query {})))
+        (is (= "-- Spec failed --------------------
 
 Part of the value
 
@@ -1767,14 +1767,14 @@ should contain key: :user/id
 
 -------------------------
 Detected 1 error\n"
-             (s/explain-str :conformers-test/query {:conformers-test.query/id :conformers-test/lookup-user
-                                                    :conformers-test.query/params {}}))))
-    ;; Minified example based on https://github.com/bhb/expound/issues/15
-    ;; This doesn't look ideal, but really, it's not a good idea to use spec
-    ;; for string parsing, so I'm OK with it
-    (testing "conform string to seq"
-      (is (=
-           "-- Spec failed --------------------
+               (s/explain-str :conformers-test/query {:conformers-test.query/id :conformers-test/lookup-user
+                                                      :conformers-test.query/params {}}))))
+      ;; Minified example based on https://github.com/bhb/expound/issues/15
+      ;; This doesn't look ideal, but really, it's not a good idea to use spec
+      ;; for string parsing, so I'm OK with it
+      (testing "conform string to seq"
+        (is (=
+             "-- Spec failed --------------------
 
   \"A\\C\"
     ^^
@@ -1784,10 +1784,10 @@ should be: \\B
 -------------------------
 Detected 1 error
 "
-           (s/explain-str :conformers-test/string-AB "AC"))))
-    (testing "s/cat"
-      (s/def :conformers-test/sorted-pair (s/and (s/cat :x int? :y int?) #(< (-> % :x) (-> % :y))))
-      (is (= "-- Spec failed --------------------
+             (s/explain-str :conformers-test/string-AB "AC"))))
+      (testing "s/cat"
+        (s/def :conformers-test/sorted-pair (s/and (s/cat :x int? :y int?) #(< (-> % :x) (-> % :y))))
+        (is (= "-- Spec failed --------------------
 
   [1 0]
 
@@ -1804,8 +1804,8 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-             (expound/expound-str :conformers-test/sorted-pair [1 0] {:print-specs? false})))
-      (is (= "-- Spec failed --------------------
+               (expound/expound-str :conformers-test/sorted-pair [1 0] {:print-specs? false})))
+        (is (= "-- Spec failed --------------------
 
   [... [1 0]]
        ^^^^^
@@ -1822,8 +1822,8 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-             (expound/expound-str (s/coll-of :conformers-test/sorted-pair) [[0 1] [1 0]] {:print-specs? false})))
-      (is (= "-- Spec failed --------------------
+               (expound/expound-str (s/coll-of :conformers-test/sorted-pair) [[0 1] [1 0]] {:print-specs? false})))
+        (is (= "-- Spec failed --------------------
 
   {:a [1 0]}
       ^^^^^
@@ -1840,8 +1840,8 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-             (expound/expound-str (s/map-of keyword? :conformers-test/sorted-pair) {:a [1 0]} {:print-specs? false})))
-      (is (= "-- Spec failed --------------------
+               (expound/expound-str (s/map-of keyword? :conformers-test/sorted-pair) {:a [1 0]} {:print-specs? false})))
+        (is (= "-- Spec failed --------------------
 
   [... \"a\"]
        ^^^
@@ -1852,14 +1852,14 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-             (expound/expound-str :conformers-test/sorted-pair [1 "a"] {:print-specs? false}))))
-    (testing "conformers that modify path of values"
-      (s/def :conformers-test/vals (s/coll-of (s/and string?
-                                                     #(re-matches #"[A-G]+" %))))
-      (s/def :conformers-test/csv (s/and string?
-                                         (s/conformer parse-csv)
-                                         :conformers-test/vals))
-      (is (= "-- Spec failed --------------------
+               (expound/expound-str :conformers-test/sorted-pair [1 "a"] {:print-specs? false}))))
+      (testing "conformers that modify path of values"
+        (s/def :conformers-test/vals (s/coll-of (s/and string?
+                                                       #(re-matches #"[A-G]+" %))))
+        (s/def :conformers-test/csv (s/and string?
+                                           (s/conformer parse-csv)
+                                           :conformers-test/vals))
+        (is (= "-- Spec failed --------------------
 
 Part of the value
 
@@ -1875,17 +1875,17 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-             (expound/expound-str :conformers-test/csv "abc,def,ghi" {:print-specs? false}))))
+               (expound/expound-str :conformers-test/csv "abc,def,ghi" {:print-specs? false}))))
 
-    ;; this is NOT recommended!
-    ;; so I'm not inclined to make this much nicer than
-    ;; the default spec output
-    (s/def :conformers-test/coerced-kw (s/and (s/conformer #(if (string? %)
-                                                              (keyword %)
-                                                              ::s/invalid))
-                                              keyword?))
-    (testing "coercion"
-      (is (= "-- Spec failed --------------------
+      ;; this is NOT recommended!
+      ;; so I'm not inclined to make this much nicer than
+      ;; the default spec output
+      (s/def :conformers-test/coerced-kw (s/and (s/conformer #(if (string? %)
+                                                                (keyword %)
+                                                                ::s/invalid))
+                                                keyword?))
+      (testing "coercion"
+        (is (= "-- Spec failed --------------------
 
   nil
 
@@ -1902,10 +1902,10 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str :conformers-test/coerced-kw nil))))
+               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+                 (s/explain-str :conformers-test/coerced-kw nil))))
 
-      (is (= "-- Spec failed --------------------
+        (is (= "-- Spec failed --------------------
 
   [... ... ... 0]
                ^
@@ -1923,15 +1923,15 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str (s/coll-of :conformers-test/coerced-kw) ["a" "b" "c" 0])))))
-    ;; Also not recommended
-    (s/def :conformers-test/str-kw? (s/and (s/conformer #(if (string? %)
-                                                           (keyword %)
-                                                           ::s/invalid)
-                                                        name) keyword?))
-    (testing "coercion with unformer"
-      (is (= "-- Spec failed --------------------
+               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+                 (s/explain-str (s/coll-of :conformers-test/coerced-kw) ["a" "b" "c" 0])))))
+      ;; Also not recommended
+      (s/def :conformers-test/str-kw? (s/and (s/conformer #(if (string? %)
+                                                             (keyword %)
+                                                             ::s/invalid)
+                                                          name) keyword?))
+      (testing "coercion with unformer"
+        (is (= "-- Spec failed --------------------
 
   nil
 
@@ -1948,10 +1948,10 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str :conformers-test/coerced-kw nil))))
+               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+                 (s/explain-str :conformers-test/coerced-kw nil))))
 
-      (is (= "-- Spec failed --------------------
+        (is (= "-- Spec failed --------------------
 
   [... ... ... 0]
                ^
@@ -1969,17 +1969,17 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str (s/coll-of :conformers-test/coerced-kw) ["a" "b" "c" 0])))))
+               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+                 (s/explain-str (s/coll-of :conformers-test/coerced-kw) ["a" "b" "c" 0])))))
 
-    (s/def :conformers-test/name string?)
-    (s/def :conformers-test/age pos-int?)
-    (s/def :conformers-test/person (s/keys* :req-un [:conformers-test/name
-                                                     :conformers-test/age]))
-    ;; FIXME: Implementation could be simpler once
-    ;; https://dev.clojure.org/jira/browse/CLJ-2406 is fixed
-    (testing "spec defined with keys*"
-      (is (= "-- Spec failed --------------------
+      (s/def :conformers-test/name string?)
+      (s/def :conformers-test/age pos-int?)
+      (s/def :conformers-test/person (s/keys* :req-un [:conformers-test/name
+                                                       :conformers-test/age]))
+      ;; FIXME: Implementation could be simpler once
+      ;; https://dev.clojure.org/jira/browse/CLJ-2406 is fixed
+      (testing "spec defined with keys*"
+        (is (= "-- Spec failed --------------------
 
   [... ... ... :Stan]
                ^^^^^
@@ -1991,11 +1991,11 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str :conformers-test/person [:age 30 :name :Stan])))))
+               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+                 (s/explain-str :conformers-test/person [:age 30 :name :Stan])))))
 
-    (testing "spec defined with keys* and copies of bad value elsewhere in the data"
-      (is (= "-- Spec failed --------------------
+      (testing "spec defined with keys* and copies of bad value elsewhere in the data"
+        (is (= "-- Spec failed --------------------
 
 Part of the value
 
@@ -2011,13 +2011,13 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str (s/tuple
-                               keyword?
-                               :conformers-test/person) [:Stan [:age 30 :name :Stan]])))))
+               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+                 (s/explain-str (s/tuple
+                                 keyword?
+                                 :conformers-test/person) [:Stan [:age 30 :name :Stan]])))))
 
-    (testing "ambiguous value"
-      (is (= "-- Spec failed --------------------
+      (testing "ambiguous value"
+        (is (= "-- Spec failed --------------------
 
   {[0 1] ..., [1 0] ...}
               ^^^^^
@@ -2035,9 +2035,9 @@ should satisfy
 -------------------------
 Detected 1 error
 "
-             (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
-               (s/explain-str (s/map-of :conformers-test/sorted-pair any?) {[0 1] [1 0]
-                                                                            [1 0] [1 0]})))))))
+               (binding [s/*explain-out* (expound/custom-printer {:print-specs? false})]
+                 (s/explain-str (s/map-of :conformers-test/sorted-pair any?) {[0 1] [1 0]
+                                                                              [1 0] [1 0]})))))))
 
 (s/def :duplicate-preds/str-or-str (s/or
                                     ;; Use anonymous functions to assure
@@ -2066,7 +2066,7 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-           (expound/expound-str :duplicate-preds/str-or-str 1)))))
+         (expound/expound-str :duplicate-preds/str-or-str 1)))))
 
 
 (s/def :fspec-test/div (s/fspec
@@ -2088,8 +2088,8 @@ Detected 1 error\n"
 
 ;; FIXME - support fspec
 #_(deftest fspec-exception-test
-  (testing "args that throw exception"
-    (is (= "-- Exception ----------------------
+    (testing "args that throw exception"
+      (is (= "-- Exception ----------------------
 
   expound.alpha-test/my-div
 
@@ -2115,10 +2115,10 @@ with args:
 -------------------------
 Detected 1 error\n"
 
-           ;;
-           (until-unsuccessful #(expound/expound-str :fspec-test/div my-div))))
+             ;;
+             (until-unsuccessful #(expound/expound-str :fspec-test/div my-div))))
 
-    (is (= "-- Exception ----------------------
+      (is (= "-- Exception ----------------------
 
   [expound.alpha-test/my-div]
    ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2144,7 +2144,7 @@ with args:
 
 -------------------------
 Detected 1 error\n"
-           (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-test/div) [my-div]))))))
+             (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-test/div) [my-div]))))))
 
 
 (s/def :fspec-ret-test/my-int pos-int?)
@@ -2157,8 +2157,8 @@ Detected 1 error\n"
 
 ;; FIXME: support fspec
 #_(deftest fspec-ret-test
-  (testing "invalid ret"
-    (is (= "-- Function spec failed -----------
+    (testing "invalid ret"
+      (is (= "-- Function spec failed -----------
 
   expound.alpha-test/my-plus
 
@@ -2172,9 +2172,9 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-           (until-unsuccessful #(expound/expound-str :fspec-ret-test/plus my-plus {:print-specs? false}))))
+             (until-unsuccessful #(expound/expound-str :fspec-ret-test/plus my-plus {:print-specs? false}))))
 
-    (is (= "-- Function spec failed -----------
+      (is (= "-- Function spec failed -----------
 
   [expound.alpha-test/my-plus]
    ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -2189,11 +2189,11 @@ should satisfy
 
 -------------------------
 Detected 1 error\n"
-           (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus] {:print-specs? false}))))
-    (s/def :fspec-ret-test/return-map (s/fspec
-                                       :args (s/cat)
-                                       :ret (s/keys :req-un [:fspec-ret-test/my-int])))
-    (is (= "-- Function spec failed -----------
+             (until-unsuccessful #(expound/expound-str (s/coll-of :fspec-ret-test/plus) [my-plus] {:print-specs? false}))))
+      (s/def :fspec-ret-test/return-map (s/fspec
+                                         :args (s/cat)
+                                         :ret (s/keys :req-un [:fspec-ret-test/my-int])))
+      (is (= "-- Function spec failed -----------
 
   <anonymous function>
 
@@ -2210,9 +2210,9 @@ should contain key: :my-int
 -------------------------
 Detected 1 error
 "
-           (until-unsuccessful #(expound/expound-str :fspec-ret-test/return-map
-                                                     (fn [] {})
-                                                     {:print-specs? false}))))))
+             (until-unsuccessful #(expound/expound-str :fspec-ret-test/return-map
+                                                       (fn [] {})
+                                                       {:print-specs? false}))))))
 
 (s/def :fspec-fn-test/minus (s/fspec
                              :args (s/cat :x int? :y int?)
