@@ -1022,6 +1022,11 @@ returned an invalid value.
 (defn error-message
   "Given a spec named `k`, return its human-readable error message."
   [k]
+  (reduce (fn [_ k]
+            (when-let [msg (get @registry-ref k)]
+              (reduced msg)))
+          nil
+          (util/spec-vals k))
   (get @registry-ref k))
 
 (s/fdef custom-printer
@@ -1072,7 +1077,8 @@ returned an invalid value.
    (print (expound-str spec form opts))))
 
 (s/fdef defmsg
-  :args (s/cat :k qualified-keyword?
+  :args (s/cat :k (s/or :ident qualified-ident?
+                        :form any?)
                :error-message string?)
   :ret nil?)
 (defn defmsg

@@ -24,6 +24,7 @@
             [expound.printer :as printer]
             [expound.problems :as problems]
             [expound.spec-gen :as sg]
+            [expound.util :as util]
             [expound.test-utils :as test-utils]
             [spec-tools.data-spec :as ds]
             #?(:clj [orchestra.spec.test :as orch.st]
@@ -4348,3 +4349,27 @@ Detected 1 error\n"
          (expound/expound-str (s/or :k1 (s/keys :req [:keys-within-operators.user/name]
                                                 :req-un [:keys-within-operators.user/age])
                                     :k2  #(contains? % :foo)) {} {:print-specs? false}))))
+
+;;; test key spec walker
+
+(deftest test-spec-vals
+  (s/def ::foo-pred (fn [_] true))
+  (s/def ::foo-string string?)
+
+  (s/def ::bar ::foo-pred)
+  (s/def ::baz ::bar)
+
+  (is (= (util/spec-vals ::bar)
+         [::bar ::foo-pred '(clojure.core/fn [_] true)]))
+
+
+  (s/def ::bar ::foo-string)
+  (is (= (util/spec-vals ::bar)
+         [::bar ::foo-string 'clojure.core/string?]))
+
+
+  (is (= (util/spec-vals ::foo-string)
+         [::foo-string 'clojure.core/string?]))
+
+  (is (= (util/spec-vals ::lone)
+         [::lone])))
