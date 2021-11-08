@@ -181,7 +181,7 @@
 (defn ^:private spec-w-error-message? [via pred]
   (boolean (let [last-spec (last via)]
              (and (not= ::s/unknown pred)
-                  (qualified-keyword? last-spec)
+                  ;; (qualified-keyword? last-spec)
                   (error-message last-spec)
                   (s/get-spec last-spec)))))
 
@@ -1017,7 +1017,7 @@ returned an invalid value.
 ;;;;;; public ;;;;;;
 
 (s/fdef error-message
-  :args (s/cat :k qualified-keyword?)
+  :args (s/cat :k any?)
   :ret (s/nilable string?))
 (defn error-message
   "Given a spec named `k`, return its human-readable error message."
@@ -1026,8 +1026,7 @@ returned an invalid value.
             (when-let [msg (get @registry-ref k)]
               (reduced msg)))
           nil
-          (util/spec-vals k))
-  (get @registry-ref k))
+          (util/spec-vals k)))
 
 (s/fdef custom-printer
   :args (s/cat :opts :expound.printer/opts)
