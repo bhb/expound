@@ -1086,6 +1086,11 @@ returned an invalid value.
   (swap! registry-ref assoc k error-message)
   nil)
 
+(defn undefmsg
+  "dissociate the message for spec named `k`"
+  [k]
+  (swap! registry-ref dissoc k))
+
 #?(:clj
    (defmacro def
      "DEPRECATED: Prefer `defmsg`

@@ -4271,6 +4271,9 @@ Detected 1 error\n"
             :oak
             {:print-specs? false})))))
 
+    ;; clean registry from this last spec, or we get failures on other tests
+    (expound/undefmsg 'clojure.core/string?)))
+
 (deftest printer
   (st/instrument ['expound/printer])
   (binding [s/*explain-out* expound/printer]
@@ -4448,4 +4451,9 @@ Detected 1 error\n"
          [::foo-string 'clojure.core/string?]))
 
   (is (= (util/spec-vals ::lone)
-         [::lone])))
+         [::lone]))
+
+  (s/def ::foo-pred nil)
+  (s/def ::foo-string nil)
+  (s/def ::bar nil)
+  (s/def ::baz nil))
