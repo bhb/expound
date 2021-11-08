@@ -181,7 +181,7 @@
 (defn ^:private spec-w-error-message? [via pred]
   (boolean (let [last-spec (last via)]
              (and (not= ::s/unknown pred)
-                  ;; (qualified-keyword? last-spec)
+                  (qualified-keyword? last-spec)
                   (error-message last-spec)
                   (s/get-spec last-spec)))))
 
