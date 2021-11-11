@@ -1,12 +1,13 @@
 (ns expound.alpha
   "Generates human-readable errors for `clojure.spec`"
-  (:require [expound.problems :as problems]
-            [clojure.spec.alpha :as s]
-            [clojure.string :as string]
-            [clojure.set :as set]
-            [expound.printer :as printer]
-            [expound.util :as util]
-            [expound.ansi :as ansi]))
+  (:require
+   [clojure.set :as set]
+   [clojure.spec.alpha :as s]
+   [clojure.string :as string]
+   [expound.ansi :as ansi]
+   [expound.printer :as printer]
+   [expound.problems :as problems]
+   [expound.util :as util]))
 
 ;;;;;; registry ;;;;;;
 
@@ -1143,3 +1144,58 @@ returned an invalid value.
   "Given a sequence of results from `clojure.spec.test.alpha/check`, returns a string summarizing the results."
   [check-results]
   (with-out-str (explain-results check-results)))
+
+(comment
+  (require '[expound.alpha :as expound])
+  (expound/expound
+   (s/coll-of string? :min-count 3)
+   []
+   {:print-specs? false})
+;; -- Spec failed --------------------
+
+;;   []
+
+;; should satisfy
+
+;;   (<= 3 (count %) Integer/MAX_VALUE)
+
+;; -------------------------
+;; Detected 1 error
+
+;; Wrap the spec in a more meaningful name to fix ... 
+  (s/def ::tags (s/coll-of string? :min-count 3))
+  (expound/defmsg ::tags "should be a Collection with at least 3 strings")
+  (expound/expound
+   ::tags
+   []
+   {:print-specs? false})
+;; -- Spec failed --------------------
+
+;;   []
+
+;; should be a Collection with at least 3 strings
+
+;; -------------------------
+;; Detected 1 error
+
+  (s/def ::string string?)
+  (defmsg ::string "be a string")
+  (s/def ::name ::string)
+
+  (expound ::name :sally {:print-specs? false})
+
+  (expound ::full-name [] {:print-specs? false})
+
+  (expound)
+
+;; -- Spec failed --------------------
+
+;;   []
+
+;; should be a Collection with at least 3 elements
+
+;; -------------------------
+;; Detected 1 error
+  )
+
+
