@@ -24,7 +24,6 @@
             [expound.printer :as printer]
             [expound.problems :as problems]
             [expound.spec-gen :as sg]
-            [expound.util :as util]
             [expound.test-utils :as test-utils]
             [spec-tools.data-spec :as ds]
             #?(:clj [orchestra.spec.test :as orch.st]
@@ -4196,7 +4195,6 @@ Detected 1 error\n"
             {:print-specs? false}))))
 
   (testing "messages can be fetched from parent specs"
-
     (reset! @#'expound/registry-ref {})
 
     (s/def :defmsg-test/parent-string string?)
@@ -4269,10 +4267,11 @@ Detected 1 error\n"
            (expound/expound-str
             :defmsg-test/some-str
             :oak
-            {:print-specs? false})))))
+            {:print-specs? false})))
 
     ;; clean registry from this last spec, or we get failures on other tests
-    (expound/undefmsg 'clojure.core/string?)))
+    (is (= 1 2)
+        (expound/undefmsg 'clojure.core/string?))))
 
 (deftest printer
   (st/instrument ['expound/printer])
@@ -4539,30 +4538,3 @@ Detected 2 errors
                             {:num "1"}
                             {:print-specs? false}))))
 
-;; TODO - move to util spec dir
-(deftest test-spec-vals
-  (s/def ::foo-pred (fn [_] true))
-  (s/def ::foo-string string?)
-
-  (s/def ::bar ::foo-pred)
-  (s/def ::baz ::bar)
-
-  (is (= (util/spec-vals ::bar)
-         [::bar ::foo-pred '(clojure.core/fn [_] true)]))
-
-
-  (s/def ::bar ::foo-string)
-  (is (= (util/spec-vals ::bar)
-         [::bar ::foo-string 'clojure.core/string?]))
-
-
-  (is (= (util/spec-vals ::foo-string)
-         [::foo-string 'clojure.core/string?]))
-
-  (is (= (util/spec-vals ::lone)
-         [::lone]))
-
-  (s/def ::foo-pred nil)
-  (s/def ::foo-string nil)
-  (s/def ::bar nil)
-  (s/def ::baz nil))
