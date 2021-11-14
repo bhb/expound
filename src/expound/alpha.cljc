@@ -1027,12 +1027,16 @@ returned an invalid value.
 ;;;;;; public ;;;;;;
 
 (s/fdef error-message
-  :args (s/cat :k qualified-keyword?)
+  :args (s/cat :k any?)
   :ret (s/nilable string?))
 (defn error-message
   "Given a spec named `k`, return its human-readable error message."
   [k]
-  (get @registry-ref k))
+  (reduce (fn [_ k]
+            (when-let [msg (get @registry-ref k)]
+              (reduced msg)))
+          nil
+          (util/spec-vals k)))
 
 (s/fdef custom-printer
   :args (s/cat :opts :expound.printer/opts)
@@ -1082,7 +1086,8 @@ returned an invalid value.
    (print (expound-str spec form opts))))
 
 (s/fdef defmsg
-  :args (s/cat :k qualified-keyword?
+  :args (s/cat :k (s/or :ident qualified-ident?
+                        :form any?)
                :error-message string?)
   :ret nil?)
 (defn defmsg
@@ -1090,6 +1095,11 @@ returned an invalid value.
   [k error-message]
   (swap! registry-ref assoc k error-message)
   nil)
+
+(defn undefmsg
+  "dissociate the message for spec named `k`"
+  [k]
+  (swap! registry-ref dissoc k))
 
 #?(:clj
    (defmacro def
