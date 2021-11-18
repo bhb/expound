@@ -4195,13 +4195,11 @@ Detected 1 error\n"
             {:print-specs? false}))))
 
   (testing "messages can be fetched from parent specs"
-    (reset! @#'expound/registry-ref {})
+    (s/def :defmsg-test/string string?)
+    (s/def :defmsg-test/identifier :defmsg-test/string)
+    (s/def :defmsg-test/name :defmsg-test/identifier)
 
-    (s/def :defmsg-test/parent-string string?)
-    (s/def :defmsg-test/parent-foo :defmsg-test/parent-string)
-    (s/def :defmsg-test/parent-bar :defmsg-test/parent-foo)
-
-    (expound/defmsg :defmsg-test/parent-string "should be a string")
+    (expound/defmsg :defmsg-test/string "should be a string")
     (is (= "-- Spec failed --------------------
 
   :oak
@@ -4211,22 +4209,22 @@ should be a string
 -------------------------
 Detected 1 error\n"
            (expound/expound-str
-            :defmsg-test/parent-string
+            :defmsg-test/string
             :oak
             {:print-specs? false})
 
            (expound/expound-str
-            :defmsg-test/parent-foo
+            :defmsg-test/identifier
             :oak
             {:print-specs? false})
 
            (expound/expound-str
-            :defmsg-test/parent-bar
+            :defmsg-test/name
             :oak
             {:print-specs? false})))
 
     ;; until a msg is set more precisely
-    (expound/defmsg :defmsg-test/parent-foo "should be a foo")
+    (expound/defmsg :defmsg-test/identifier "should be a foo")
     (is (= "-- Spec failed --------------------
 
   :oak
@@ -4236,11 +4234,11 @@ should be a foo
 -------------------------
 Detected 1 error\n"
            (expound/expound-str
-            :defmsg-test/parent-foo
+            :defmsg-test/identifier
             :oak
             {:print-specs? false})))
 
-    (expound/defmsg :defmsg-test/parent-bar "should be a bar")
+    (expound/defmsg :defmsg-test/name "should be a bar")
     (is (= "-- Spec failed --------------------
 
   :oak
@@ -4250,7 +4248,7 @@ should be a bar
 -------------------------
 Detected 1 error\n"
            (expound/expound-str
-            :defmsg-test/parent-bar
+            :defmsg-test/name
             :oak
             {:print-specs? false})))
 
@@ -4270,8 +4268,9 @@ Detected 1 error\n"
             {:print-specs? false})))
 
     ;; clean registry from this last spec, or we get failures on other tests
-    (is (= 1 2)
-        (expound/undefmsg 'clojure.core/string?))))
+    (expound/undefmsg :defmsg-test/identifier)
+    (expound/undefmsg :defmsg-test/name)
+    (expound/undefmsg 'clojure.core/string?)))
 
 (deftest printer
   (st/instrument ['expound/printer])
