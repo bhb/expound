@@ -17,14 +17,14 @@
   (s/def ::baz ::bar)
 
   (is (= (util/spec-vals ::bar)
-         [::bar ::foo-pred '(clojure.core/fn [_] true)]))
+         [::bar ::foo-pred (list `fn ['_] true)]))
 
   (s/def ::bar ::foo-string)
   (is (= (util/spec-vals ::bar)
-         [::bar ::foo-string 'clojure.core/string?]))
+         [::bar ::foo-string `string?]))
 
   (is (= (util/spec-vals ::foo-string)
-         [::foo-string 'clojure.core/string?]))
+         [::foo-string `string?]))
 
   (is (= (util/spec-vals ::lone)
          [::lone]))

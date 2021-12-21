@@ -26,6 +26,7 @@
             [expound.spec-gen :as sg]
             [expound.test-utils :as test-utils]
             [spec-tools.data-spec :as ds]
+            [spec-tools.core]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -2289,6 +2290,7 @@ Detected 2 errors\n"
       "for any real-world spec and any data, assert returns an error that matches explain-str"
       (chuck/times num-tests)
       [spec sg/spec-gen
+       :let [_spec-form (s/form spec)]
        form gen/any-printable]
       ;; Can't reliably test fspecs until
       ;; https://dev.clojure.org/jira/browse/CLJ-2258 is fixed
@@ -2314,7 +2316,9 @@ Detected 2 errors\n"
                      (s/assert spec form)
                      (finally
                        (s/check-asserts false)))))
-                (str "Expected: " expected-err-msg))))))))
+                (str "Expected: " expected-err-msg)))))
+      ;; Undefine spec
+      (s/def spec nil))))
 
 (deftest test-mutate
   (checking
@@ -4252,25 +4256,14 @@ Detected 1 error\n"
             :oak
             {:print-specs? false})))
 
-    (expound/defmsg 'clojure.core/string? "should be a string, via pred")
-    (s/def :defmsg-test/some-str string?)
-    (is (= "-- Spec failed --------------------
 
-  :oak
 
-should be a string, via pred
+    ;; clean registry from this last spec
 
--------------------------
-Detected 1 error\n"
-           (expound/expound-str
-            :defmsg-test/some-str
-            :oak
-            {:print-specs? false})))
 
-    ;; clean registry from this last spec, or we get failures on other tests
+    (expound/undefmsg :defmsg-test/string?)
     (expound/undefmsg :defmsg-test/identifier)
-    (expound/undefmsg :defmsg-test/name)
-    (expound/undefmsg 'clojure.core/string?)))
+    (expound/undefmsg :defmsg-test/name)))
 
 (deftest printer
   (st/instrument ['expound/printer])

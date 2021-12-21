@@ -178,7 +178,7 @@
 
 (declare error-message)
 
-(defn ^:private spec-w-error-message? [via pred]
+(defn ^:private spec-with-error-message? [via pred]
   (boolean (let [last-spec (last via)]
              (and (not= ::s/unknown pred)
                   (qualified-keyword? last-spec)
@@ -795,7 +795,7 @@ returned an invalid value.
 (defmethod expected-str :expound.problem/unknown [_type _spec-name _form _path problems _opts]
   (let [[with-msg no-msgs] ((juxt filter remove)
                             (fn [{:keys [expound/via pred]}]
-                              (spec-w-error-message? via pred))
+                              (spec-with-error-message? via pred))
                             problems)]
     (->> (when (seq no-msgs)
            (printer/format
@@ -1027,7 +1027,7 @@ returned an invalid value.
 ;;;;;; public ;;;;;;
 
 (s/fdef error-message
-  :args (s/cat :k any?)
+  :args (s/cat :k qualified-keyword?)
   :ret (s/nilable string?))
 (defn error-message
   "Given a spec named `k`, return its human-readable error message."
@@ -1086,8 +1086,7 @@ returned an invalid value.
    (print (expound-str spec form opts))))
 
 (s/fdef defmsg
-  :args (s/cat :k (s/or :ident qualified-ident?
-                        :form any?)
+  :args (s/cat :k qualified-keyword?
                :error-message string?)
   :ret nil?)
 (defn defmsg
