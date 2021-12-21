@@ -1095,10 +1095,14 @@ returned an invalid value.
   (swap! registry-ref assoc k error-message)
   nil)
 
+(s/fdef undefmsg
+  :args (s/cat :k qualified-keyword?)
+  :ret nil?)
 (defn undefmsg
-  "dissociate the message for spec named `k`"
+  "Dissociate the message for spec named `k`."
   [k]
-  (swap! registry-ref dissoc k))
+  (swap! registry-ref dissoc k)
+  nil)
 
 #?(:clj
    (defmacro def
