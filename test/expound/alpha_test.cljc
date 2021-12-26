@@ -26,6 +26,7 @@
             [expound.spec-gen :as sg]
             [expound.test-utils :as test-utils]
             [spec-tools.data-spec :as ds]
+            [spec-tools.core]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -2289,6 +2290,7 @@ Detected 2 errors\n"
       "for any real-world spec and any data, assert returns an error that matches explain-str"
       (chuck/times num-tests)
       [spec sg/spec-gen
+       :let [_spec-form (s/form spec)]
        form gen/any-printable]
       ;; Can't reliably test fspecs until
       ;; https://dev.clojure.org/jira/browse/CLJ-2258 is fixed
@@ -2314,7 +2316,9 @@ Detected 2 errors\n"
                      (s/assert spec form)
                      (finally
                        (s/check-asserts false)))))
-                (str "Expected: " expected-err-msg))))))))
+                (str "Expected: " expected-err-msg)))))
+      ;; Undefine spec
+      (s/def spec nil))))
 
 (deftest test-mutate
   (checking
@@ -4192,7 +4196,74 @@ Detected 1 error\n"
              :defmsg-test/statuses
              :s string?)
             :oak
-            {:print-specs? false})))))
+            {:print-specs? false}))))
+
+  (testing "messages can be fetched from parent specs"
+    (s/def :defmsg-test/string string?)
+    (s/def :defmsg-test/identifier :defmsg-test/string)
+    (s/def :defmsg-test/name :defmsg-test/identifier)
+
+    (expound/defmsg :defmsg-test/string "should be a string")
+    (is (= "-- Spec failed --------------------
+
+  :oak
+
+should be a string
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            :defmsg-test/string
+            :oak
+            {:print-specs? false})
+
+           (expound/expound-str
+            :defmsg-test/identifier
+            :oak
+            {:print-specs? false})
+
+           (expound/expound-str
+            :defmsg-test/name
+            :oak
+            {:print-specs? false})))
+
+    ;; until a msg is set more precisely
+    (expound/defmsg :defmsg-test/identifier "should be a foo")
+    (is (= "-- Spec failed --------------------
+
+  :oak
+
+should be a foo
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            :defmsg-test/identifier
+            :oak
+            {:print-specs? false})))
+
+    (expound/defmsg :defmsg-test/name "should be a bar")
+    (is (= "-- Spec failed --------------------
+
+  :oak
+
+should be a bar
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            :defmsg-test/name
+            :oak
+            {:print-specs? false})))
+
+
+
+    ;; clean registry from this last spec
+
+
+    (expound/undefmsg :defmsg-test/string?)
+    (expound/undefmsg :defmsg-test/identifier)
+    (expound/undefmsg :defmsg-test/name)))
 
 (deftest printer
   (st/instrument ['expound/printer])
@@ -4458,3 +4529,4 @@ Detected 2 errors
        (expound/expound-str :complex-keys-test/map2
                             {:num "1"}
                             {:print-specs? false}))))
+

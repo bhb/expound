@@ -7,7 +7,8 @@
             [expound.problems-test]
             [expound.test-utils]
             [expound.specs-test]
-            [expound.spell-spec-test]))
+            [expound.spell-spec-test]
+            [expound.util-test]))
 
 (enable-console-print!)
 

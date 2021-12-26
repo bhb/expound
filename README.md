@@ -213,7 +213,7 @@ Re-binding `s/*explain-out*` has no effect on the results of `clojure.spec.test.
 ;;   (>= (:ret %) (-> % :args :start)))
 ```
 
-### Error messages for predicates
+### Error messages for specs
 
 #### Adding error messages
 
@@ -227,6 +227,20 @@ If a value fails to satisfy a predicate, Expound will print the name of the func
 ;;
 ;; :bob
 ;;
+;; should be a string
+```
+
+You can also reuse messages by defining specs in terms of other specs:
+
+```clojure
+(s/def :ex/string string?)
+(expound/defmsg :ex/string "should be a string")
+(s/def :ex/city :ex/string)
+(expound/expound :ex/city :denver)
+;; -- Spec failed --------------------
+;; 
+;;   :denver
+
 ;; should be a string
 ```
 

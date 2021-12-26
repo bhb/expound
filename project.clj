@@ -39,7 +39,7 @@
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                   [com.gfredericks/test.chuck "0.2.10"]
-                                  [cider/cider-nrepl "0.24.0"]
+                                  [cider/cider-nrepl "0.27.0"]
                                   ]
                    :injections [(require 'sc.api)]
                    :plugins [
@@ -74,7 +74,7 @@
                                                      cider.nrepl/wrap-undef
                                                      cider.nrepl/wrap-version
                                                      cider.nrepl/wrap-xref
-                                                     ]}
+                                         ]}
                    ;; need to add the compliled assets to the :clean-targets
                    :clean-targets ^{:protect false} ["resources/public/test-web"
                                                      :target-path]}
@@ -102,7 +102,8 @@
                            }
              :test-web [:test-common
                         {:source-paths ["test"]
-                         :dependencies [[karma-reporter "3.1.0"]]}]
+                         :dependencies [[figwheel-sidecar "0.5.18"]
+                                        [karma-reporter "3.1.0"]]}]
              :cljs-repl {:dependencies [[cider/piggieback "0.4.0"]]}
              :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]
                                         [metosin/spec-tools "0.7.1"]]}

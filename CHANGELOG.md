@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file. This change
 ### Fixed
 - [Bug with `keys` specs that used `and`/`or`](https://github.com/bhb/expound/issues/229)
 
+### Added
+
+- Ability to inherit error messages from "parent" specs. Thanks [`@mpenet`](https://github.com/mpenet) for the implementation!
+
 ## [0.8.10] - 2021-09-06
 
 ### Fixed
