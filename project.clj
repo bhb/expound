@@ -10,7 +10,6 @@
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
   :plugins [
-            [com.jakemccrary/lein-test-refresh "0.23.0"]
             [lein-cljfmt "0.6.4"]
             [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
             [lein-hiera "1.1.0"]
@@ -33,7 +32,7 @@
                                   [orchestra "2020.09.18-1"]
                                   [org.clojure/core.specs.alpha "0.2.44"]
                                   [vvvvalvalval/scope-capture "0.3.2"]
-                                  [org.clojure/test.check "1.1.0"]
+                                  [org.clojure/test.check "1.1.1"]
                                   [metosin/spec-tools "0.8.2"]
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
