@@ -81,8 +81,8 @@
              :check {:global-vars {*unchecked-math*     :warn-on-boxed
                                    *warn-on-reflection* true}}
              :kaocha [:test-common
-                      {:dependencies [[lambdaisland/kaocha "0.0-565"]
-                                      [lambdaisland/kaocha-cloverage "0.0-41"]]}]
+                      {:dependencies [[lambdaisland/kaocha "1.60.972"]
+                                      [lambdaisland/kaocha-cloverage "1.0.75"]]}]
              :test-common {:dependencies [[org.clojure/test.check "1.1.0"]
                                           [pjstadig/humane-test-output "0.9.0"]
                                           [com.gfredericks/test.chuck "0.2.10"]
