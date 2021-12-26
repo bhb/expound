@@ -87,7 +87,7 @@
                                           [pjstadig/humane-test-output "0.9.0"]
                                           [com.gfredericks/test.chuck "0.2.10"]
                                           [orchestra "2020.09.18-1"]
-                                          [io.aviso/pretty "0.1.37"]
+                                          [io.aviso/pretty "1.1.1"]
                                           [org.clojure/core.specs.alpha "0.2.44"]
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
