@@ -30,7 +30,7 @@
                                   [binaryage/devtools "0.9.10"]
                                   [cider/piggieback "0.4.0"]
                                   [orchestra "2020.09.18-1"]
-                                  [org.clojure/core.specs.alpha "0.2.44"]
+                                  [org.clojure/core.specs.alpha "0.2.62"]
                                   [vvvvalvalval/scope-capture "0.3.2"]
                                   [org.clojure/test.check "1.1.1"]
                                   [metosin/spec-tools "0.8.2"]
@@ -87,7 +87,7 @@
                                           [com.gfredericks/test.chuck "0.2.10"]
                                           [orchestra "2020.09.18-1"]
                                           [io.aviso/pretty "1.1.1"]
-                                          [org.clojure/core.specs.alpha "0.2.44"]
+                                          [org.clojure/core.specs.alpha "0.2.62"]
                                           [com.stuartsierra/dependency "0.2.0"]
                                           [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                           [ring/ring-spec "0.0.4"] ; to test specs
