@@ -4256,10 +4256,7 @@ Detected 1 error\n"
             :oak
             {:print-specs? false})))
 
-
-
     ;; clean registry from this last spec
-
 
     (expound/undefmsg :defmsg-test/string?)
     (expound/undefmsg :defmsg-test/identifier)

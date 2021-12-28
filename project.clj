@@ -10,7 +10,7 @@
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
   :plugins [
-            [lein-cljfmt "0.6.4"]
+            [lein-cljfmt "0.8.0"]
             [lein-cljsbuild "1.1.8" :exclusions [[org.clojure/clojure]]]
             [lein-hiera "1.1.0"]
             ]
