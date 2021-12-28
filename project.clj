@@ -11,7 +11,7 @@
   :jar-exclusions [#"^public/.*"]
   :plugins [
             [lein-cljfmt "0.6.4"]
-            [lein-cljsbuild "1.1.7" :exclusions [[org.clojure/clojure]]]
+            [lein-cljsbuild "1.1.8" :exclusions [[org.clojure/clojure]]]
             [lein-hiera "1.1.0"]
             ]
   :cljsbuild {:builds
