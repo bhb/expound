@@ -38,7 +38,7 @@
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                   [com.gfredericks/test.chuck "0.2.10"]
-                                  [cider/cider-nrepl "0.27.0"]
+                                  [cider/cider-nrepl "0.27.4"]
                                   ]
                    :injections [(require 'sc.api)]
                    :plugins [
