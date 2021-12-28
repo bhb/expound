@@ -27,13 +27,13 @@
                            :verbose true
                            :compiler-stats true}}]}
   :profiles {:dev {:dependencies [
-                                  [binaryage/devtools "0.9.10"]
+                                  [binaryage/devtools "1.0.4"]
                                   [cider/piggieback "0.4.0"]
                                   [orchestra "2020.09.18-1"]
                                   [org.clojure/core.specs.alpha "0.2.62"]
                                   [vvvvalvalval/scope-capture "0.3.2"]
                                   [org.clojure/test.check "1.1.1"]
-                                  [metosin/spec-tools "0.8.2"]
+                                  [metosin/spec-tools "0.10.5"]
                                   [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
