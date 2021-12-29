@@ -45,6 +45,12 @@ or
 
 `bin/kaocha --plugin cloverage --cov-exclude-call expound.alpha/def`
 
+## Updating packages
+
+You must have `lein-ancient` installed in your `~/.lein/profiles.clj`
+
+e.g. `lein ancient :all` (or in my setup, `lein with-profile +tools ancient :all`
+
 ## Readability and linting
 
 `./bin/inconsistent-aliases` shows namespace aliases that are different across the codebase.

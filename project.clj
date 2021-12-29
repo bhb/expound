@@ -29,7 +29,7 @@
   :profiles {:dev {:dependencies [
                                   [binaryage/devtools "1.0.4"]
                                   [cider/piggieback "0.5.3"]
-                                  [orchestra "2020.07.12-1"]
+                                  [orchestra "2021.01.01-1"]
                                   [org.clojure/core.specs.alpha "0.2.62"]
                                   [vvvvalvalval/scope-capture "0.3.2"]
                                   [org.clojure/test.check "1.1.1"]
@@ -100,18 +100,18 @@
                         {:source-paths ["test"]
                          :dependencies [[karma-reporter "3.1.0"]]}]
              :cljs-repl {:dependencies [[cider/piggieback "0.5.3"]]}
-             :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]
-                                        [metosin/spec-tools "0.7.1"]]}
-             :clj-1.10.0 {:dependencies [[org.clojure/clojure "1.10.0"]
-                                         [metosin/spec-tools "0.7.1"]]}
-             :cljs-1.10.238 {:dependencies  [[org.clojure/clojurescript "1.10.238"]]}
-             :cljs-1.10.339 {:dependencies [[org.clojure/clojurescript "1.10.339"]]}
-             :cljs-1.10.439 {:dependencies [[org.clojure/clojurescript "1.10.439"]]}
-             :cljs-1.10.516 {:dependencies [[org.clojure/clojurescript "1.10.516"]]}
-             :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168"]]}
-             :spec-0.2.176  {:dependencies [[org.clojure/spec.alpha "0.2.176"]]}
-             :orch-2019.02.06-1 {:dependencies [[orchestra "2019.02.06-1"]]}
-             :orch-2020.07.12-1 {:dependencies [[orchestra "2020.07.12-1"]]}
+             :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0" :upgrade false]
+                                        [metosin/spec-tools "0.7.1" :upgrade false]]}
+             :clj-1.10.0 {:dependencies [[org.clojure/clojure "1.10.0" :upgrade false]
+                                         [metosin/spec-tools "0.7.1" :upgrade false]]}
+             :cljs-1.10.238 {:dependencies  [[org.clojure/clojurescript "1.10.238" :upgrade false]]}
+             :cljs-1.10.339 {:dependencies [[org.clojure/clojurescript "1.10.339" :upgrade false]]}
+             :cljs-1.10.439 {:dependencies [[org.clojure/clojurescript "1.10.439" :upgrade false]]}
+             :cljs-1.10.516 {:dependencies [[org.clojure/clojurescript "1.10.516" :upgrade false]]}
+             :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168" :upgrade false]]}
+             :spec-0.2.176  {:dependencies [[org.clojure/spec.alpha "0.2.176" :upgrade false]]}
+             :orch-2019.02.06-1 {:dependencies [[orchestra "2019.02.06-1" :upgrade false]]}
+             :orch-2020.07.12-1 {:dependencies [[orchestra "2020.07.12-1" :upgrade false]]}
              }
   :aliases {"kaocha" ["with-profile" "+kaocha" "run" "-m" "kaocha.runner"]
             "run-tests-once" ["with-profile" "test-web" "cljsbuild" "once" "test"]
