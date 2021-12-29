@@ -82,8 +82,8 @@
              :kaocha [:test-common
                       {:dependencies [[lambdaisland/kaocha "1.60.972"]
                                       [lambdaisland/kaocha-cloverage "1.0.75"]]}]
-             :test-common {:dependencies [[org.clojure/test.check "1.1.0"]
-                                          [pjstadig/humane-test-output "0.9.0"]
+             :test-common {:dependencies [[org.clojure/test.check "1.1.1"]
+                                          [pjstadig/humane-test-output "0.11.0"]
                                           [com.gfredericks/test.chuck "0.2.10"]
                                           [orchestra "2020.09.18-1"]
                                           [io.aviso/pretty "1.1.1"]
