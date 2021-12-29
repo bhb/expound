@@ -29,7 +29,7 @@
   :profiles {:dev {:dependencies [
                                   [binaryage/devtools "1.0.4"]
                                   [cider/piggieback "0.5.3"]
-                                  [orchestra "2020.09.18-1"]
+                                  [orchestra "2020.07.12-1"]
                                   [org.clojure/core.specs.alpha "0.2.62"]
                                   [vvvvalvalval/scope-capture "0.3.2"]
                                   [org.clojure/test.check "1.1.1"]
@@ -84,7 +84,6 @@
              :test-common {:dependencies [[org.clojure/test.check "1.1.1"]
                                           [pjstadig/humane-test-output "0.11.0"]
                                           [com.gfredericks/test.chuck "0.2.13"]
-                                          [orchestra "2020.09.18-1"]
                                           [io.aviso/pretty "1.1.1"]
                                           [org.clojure/core.specs.alpha "0.2.62"]
                                           [com.stuartsierra/dependency "1.0.0"]
