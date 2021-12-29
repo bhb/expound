@@ -80,7 +80,7 @@
                                    *warn-on-reflection* true}}
              :kaocha [:test-common
                       {:dependencies [[lambdaisland/kaocha "1.60.972"]
-                                      [lambdaisland/kaocha-cloverage "1.0.75"]]}]
+                                      [lambdaisland/kaocha-cloverage "1.0-45"]]}]
              :test-common {:dependencies [[org.clojure/test.check "1.1.1"]
                                           [pjstadig/humane-test-output "0.11.0"]
                                           [com.gfredericks/test.chuck "0.2.13"]
