@@ -92,7 +92,7 @@
                                           [ring/ring-spec "0.0.4"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                           [metosin/spec-tools "0.10.5"]
-                                          [com.bhauman/spell-spec "0.1.1"]]
+                                          [com.bhauman/spell-spec "0.1.2"]]
                            :middleware [io.aviso.lein-pretty/inject]
                            :injections [(require 'pjstadig.humane-test-output)
                                         (pjstadig.humane-test-output/activate!)]
