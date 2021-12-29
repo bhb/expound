@@ -6,7 +6,7 @@
 
 Then connect with `inf-clojure-connect`
 
-## Clojurescript REPL
+## Clojurescript REPL (node)
 
 ```
 lein with-profile +test-web,+cljs-repl repl
@@ -14,13 +14,8 @@ lein with-profile +test-web,+cljs-repl repl
 
 ```
 M-x cider-connect
-(use 'figwheel-sidecar.repl-api)
-(start-figwheel!)
-(cljs-repl)
-```
-
-```
-open http://localhost:3446/index.html
+(require 'cljs.repl.node)
+(cider.piggieback/cljs-repl (cljs.repl.node/repl-env))
 ```
 
 ## Running CLJS tests

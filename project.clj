@@ -28,7 +28,7 @@
                            :compiler-stats true}}]}
   :profiles {:dev {:dependencies [
                                   [binaryage/devtools "1.0.4"]
-                                  [cider/piggieback "0.4.0"]
+                                  [cider/piggieback "0.5.3"]
                                   [orchestra "2020.09.18-1"]
                                   [org.clojure/core.specs.alpha "0.2.62"]
                                   [vvvvalvalval/scope-capture "0.3.2"]
@@ -101,9 +101,8 @@
                            }
              :test-web [:test-common
                         {:source-paths ["test"]
-                         :dependencies [[figwheel-sidecar "0.5.18"]
-                                        [karma-reporter "3.1.0"]]}]
-             :cljs-repl {:dependencies [[cider/piggieback "0.4.0"]]}
+                         :dependencies [[karma-reporter "3.1.0"]]}]
+             :cljs-repl {:dependencies [[cider/piggieback "0.5.3"]]}
              :clj-1.9.0 {:dependencies [[org.clojure/clojure "1.9.0"]
                                         [metosin/spec-tools "0.7.1"]]}
              :clj-1.10.0 {:dependencies [[org.clojure/clojure "1.10.0"]
