@@ -34,7 +34,7 @@
                                   [vvvvalvalval/scope-capture "0.3.2"]
                                   [org.clojure/test.check "1.1.1"]
                                   [metosin/spec-tools "0.10.5"]
-                                  [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
+                                  [ring/ring-core "1.9.4"]
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                   [com.gfredericks/test.chuck "0.2.10"]
@@ -89,7 +89,7 @@
                                           [io.aviso/pretty "1.1.1"]
                                           [org.clojure/core.specs.alpha "0.2.62"]
                                           [com.stuartsierra/dependency "0.2.0"]
-                                          [ring/ring-core "1.6.3"] ; required to make ring-spec work, may cause issues with figwheel?
+                                          [ring/ring-core "1.9.4"]
                                           [ring/ring-spec "0.0.4"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                           [vvvvalvalval/scope-capture "0.3.1"]
