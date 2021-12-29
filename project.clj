@@ -37,12 +37,11 @@
                                   [ring/ring-core "1.9.4"]
                                   [ring/ring-spec "0.0.4"] ; to test specs
                                   [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
-                                  [com.gfredericks/test.chuck "0.2.10"]
                                   [cider/cider-nrepl "0.27.4"]
                                   ]
                    :injections [(require 'sc.api)]
                    :plugins [
-                             [io.aviso/pretty "0.1.37"]
+                             [io.aviso/pretty "1.1.1"]
                              ;; I am NOT adding cider-nrepl here because
                              ;; using it as a plugin seems to add it as a top-level dependency
                              ;; when I build the package!
@@ -84,15 +83,14 @@
                                       [lambdaisland/kaocha-cloverage "1.0.75"]]}]
              :test-common {:dependencies [[org.clojure/test.check "1.1.1"]
                                           [pjstadig/humane-test-output "0.11.0"]
-                                          [com.gfredericks/test.chuck "0.2.10"]
+                                          [com.gfredericks/test.chuck "0.2.13"]
                                           [orchestra "2020.09.18-1"]
                                           [io.aviso/pretty "1.1.1"]
                                           [org.clojure/core.specs.alpha "0.2.62"]
-                                          [com.stuartsierra/dependency "0.2.0"]
+                                          [com.stuartsierra/dependency "1.0.0"]
                                           [ring/ring-core "1.9.4"]
                                           [ring/ring-spec "0.0.4"] ; to test specs
                                           [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
-                                          [vvvvalvalval/scope-capture "0.3.1"]
                                           [metosin/spec-tools "0.10.5"]
                                           [com.bhauman/spell-spec "0.1.1"]]
                            :middleware [io.aviso.lein-pretty/inject]
