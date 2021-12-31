@@ -36,7 +36,6 @@
                                   [metosin/spec-tools "0.10.5"]
                                   [ring/ring-core "1.9.4"]
                                   [ring/ring-spec "0.0.4"] ; to test specs
-                                  [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                   [cider/cider-nrepl "0.27.4"]
                                   ]
                    :injections [(require 'sc.api)]
@@ -90,7 +89,6 @@
                                           [com.stuartsierra/dependency "1.0.0"]
                                           [ring/ring-core "1.9.4"]
                                           [ring/ring-spec "0.0.4"] ; to test specs
-                                          [org.onyxplatform/onyx-spec "0.13.0.0"] ; to test specs
                                           [metosin/spec-tools "0.10.5"]
                                           [com.bhauman/spell-spec "0.1.2"]]
                            :middleware [io.aviso.lein-pretty/inject]

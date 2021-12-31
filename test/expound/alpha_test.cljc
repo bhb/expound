@@ -2,8 +2,7 @@
   (:require #?@(:clj
                 ;; just to include the specs
                 [[clojure.core.specs.alpha]
-                 [ring.core.spec]
-                 [onyx.spec]])
+                 [ring.core.spec]])
 
             ;; Deps for specs that generate specs, which are currently disabled
             #_[clojure.test.check.random :as random]
@@ -52,10 +51,6 @@
 (use-fixtures :once
   test-utils/check-spec-assertions
   test-utils/instrument-all)
-
-;; Missing onyx specs
-(s/def :trigger/materialize any?)
-(s/def :flow/short-circuit any?)
 
 (defn pf
   "Fixes platform-specific namespaces and also formats using printf syntax"
@@ -3931,7 +3926,6 @@ should satisfy
            (fn [k] (or
                     (string/starts-with? (namespace k) "clojure")
                     (string/starts-with? (namespace k) "expound")
-                    (string/starts-with? (namespace k) "onyx")
                     (string/starts-with? (namespace k) "ring")))
            (keys (s/registry))))))]
    (is (s/valid? ::spec (s/form (s/get-spec sp)))
