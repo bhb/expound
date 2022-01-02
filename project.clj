@@ -106,7 +106,7 @@
              :cljs-1.10.238 {:dependencies  [[org.clojure/clojurescript "1.10.238" :upgrade false]]}
              :cljs-1.10.339 {:dependencies [[org.clojure/clojurescript "1.10.339" :upgrade false]]}
              :cljs-1.10.439 {:dependencies [[org.clojure/clojurescript "1.10.439" :upgrade false]]}
-             :cljs-1.10.516 {:dependencies [[org.clojure/clojurescript "1.10.516" :upgrade false]]}
+             :cljs-1.10.597 {:dependencies [[org.clojure/clojurescript "1.10.597" :upgrade false]]}
              :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168" :upgrade false]]}
              :spec-0.2.176  {:dependencies [[org.clojure/spec.alpha "0.2.176" :upgrade false]]}
              :orch-2019.02.06-1 {:dependencies [[orchestra "2019.02.06-1" :upgrade false]]}
