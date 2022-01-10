@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :scm {:name "git" :url "https://github.com/bhb/expound"}
   :dependencies [[org.clojure/clojure "1.10.3" :scope "provided"]
-                 [org.clojure/clojurescript "1.10.520" :scope "provided"]
+                 [org.clojure/clojurescript "1.10.914" :scope "provided"]
                  [org.clojure/spec.alpha "0.2.176" :scope "provided"]]
   :deploy-repositories [["releases" :clojars]]
   :jar-exclusions [#"^public/.*"]
@@ -78,7 +78,7 @@
              :check {:global-vars {*unchecked-math*     :warn-on-boxed
                                    *warn-on-reflection* true}}
              :kaocha [:test-common
-                      {:dependencies [[lambdaisland/kaocha "1.60.972"]
+                      {:dependencies [[lambdaisland/kaocha "1.60.977"]
                                       [lambdaisland/kaocha-cloverage "1.0-45"]]}]
              :test-common {:dependencies [[org.clojure/test.check "1.1.1"]
                                           [orchestra "2021.01.01-1"]
