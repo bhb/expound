@@ -76,13 +76,13 @@
                                 :clj (Throwable->map e)))))
         ed #?(:cljs (-> exception-data :data)
               :clj (-> exception-data :via last :data))
-        cause# (-> #?(:cljs (:message exception-data)
-                      :clj (:cause exception-data))
-                   (clojure.string/replace #"Call to (.*) did not conform to spec:"
-                                           "Call to #'$1 did not conform to spec."))]
+        cause (-> #?(:cljs (:message exception-data)
+                     :clj (:cause exception-data))
+                  (clojure.string/replace #"Call to #'(.*) did not conform to spec."
+                                          "Call to $1 did not conform to spec."))]
 
-    (str cause#
-         (if (re-find  #"Detected \d+ error" cause#)
+    (str cause
+         (if (re-find  #"Detected \d+ error" cause)
            ""
            (str "\n"
                 (with-out-str (printer ed)))))))
@@ -1535,7 +1535,7 @@ Detected 1 error\n")
 (deftest test-instrument
   (st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1553,7 +1553,7 @@ should satisfy
 Detected 1 error\n"
                 (formatted-exception {:print-specs? false} #(test-instrument-adder "" :x))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1576,7 +1576,7 @@ Detected 1 error\n"
 (deftest test-instrument-with-orchestra-args-spec-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1593,7 +1593,7 @@ should satisfy
 -------------------------
 Detected 1 error\n"
                 (no-linum (formatted-exception {:print-specs? false} #(test-instrument-adder "" :x)))))
-     :clj (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+     :clj (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1622,7 +1622,7 @@ Detected 1 error\n"
 (deftest test-instrument-with-orchestra-args-syntax-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Syntax error -------------------
@@ -1639,7 +1639,7 @@ should have additional elements. The next element \":y\" should satisfy
 Detected 1 error\n"
                 (no-linum (formatted-exception {:print-specs? false} #(test-instrument-adder 1)))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Syntax error -------------------
@@ -1663,7 +1663,7 @@ Detected 1 error\n"
 (deftest test-instrument-with-orchestra-ret-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1685,7 +1685,7 @@ Detected 1 error\n"
                                  (test-instrument-adder -1 -2))
                                (catch :default e e)))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1709,7 +1709,7 @@ Detected 1 error\n"
 (deftest test-instrument-with-orchestra-fn-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1726,7 +1726,7 @@ should satisfy
 Detected 1 error\n"
                 (formatted-exception {} #(test-instrument-adder 1 0))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1752,7 +1752,7 @@ Detected 1 error\n"
   (st/instrument `test-instrument-adder)
   #?(:cljs
      (is (=
-          "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+          "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1772,7 +1772,7 @@ Detected 1 error\n"
            (formatted-exception {:print-specs? false :show-valid-values? true} #(test-instrument-adder "" :x)))))
      :clj
      (is (=
-          "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+          "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -3978,7 +3978,7 @@ should satisfy
 #?(:clj (deftest macroexpansion-errors
           (let [actual (formatted-exception {:print-specs? false} #(macroexpand '(clojure.core/let [a] 2)))]
             (is (or
-                 (= "Call to #'clojure.core/let did not conform to spec.
+                 (= "Call to clojure.core/let did not conform to spec.
 -- Spec failed --------------------
 
   ([a] ...)
