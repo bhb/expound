@@ -77,7 +77,7 @@ jobs:
       - run: TEST_CHECK_FACTOR=20 lein with-profile test-common test
       - run: lein clean
       - run: lein with-profile test-web cljsbuild once test 2> >(tee -a stderr.log >&2)
-      - run: cat stderr.log | grep -v "Use of undeclared Var goog.math.Long" | bin/check-for-warnings.sh
+      - run: cat stderr.log | grep -v "Options passed to ClojureScript compiler" | grep -v "Use of undeclared Var goog.math.Long" | bin/check-for-warnings.sh
       - run: bin/tests
       - run: bb bin/bb_ex.clj 2> >(tee -a stderr2.log >&2)
       - run: cat stderr2.log | bin/check-for-warnings.sh
