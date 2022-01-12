@@ -78,8 +78,8 @@
               :clj (-> exception-data :via last :data))
         cause (-> #?(:cljs (:message exception-data)
                      :clj (:cause exception-data))
-                  (clojure.string/replace #"Call to #'(.*) did not conform to spec."
-                                          "Call to $1 did not conform to spec."))]
+                  (clojure.string/replace #"Call to (#')?(.*) did not conform to spec."
+                                          "Call to $2 did not conform to spec."))]
 
     (str cause
          (if (re-find  #"Detected \d+ error" cause)
