@@ -67,7 +67,8 @@ e.g. `lein ancient :all` (or in my setup, `lein with-profile +tools ancient :all
 1. Update version in `doc/compatibility.md`
 1. Update version in `package.json`
 1. `npm install`
-1. `git tag -a v0.7.2 -m "version 0.7.2"`
+1. Commit
+1. `git tag -a v0.9.0 -m "version 0.9.0"`
 1. `git push --tags`
 
 

@@ -42,11 +42,11 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ### Leiningen/Boot
 
-`[expound "0.8.10"]`
+`[expound "0.9.0"]`
 
 #### deps.edn
 
-`expound {:mvn/version "0.8.10"}`
+`expound/expound {:mvn/version "0.9.0"}`
 
 ### Lumo
 
@@ -60,7 +60,7 @@ Expound is in alpha while `clojure.spec` is in alpha.
 
 ```
 > brew install clojure
-> clj -Sdeps '{:deps {friendly {:git/url "https://gist.github.com/bhb/2686b023d074ac052dbc21f12f324f18" :sha "bb5806bd655d743f3b48b36ce83c0085a8d7c54a"}}}' -m friendly
+> clj -Sdeps '{:deps {friendly/friendly {:git/url "https://gist.github.com/bhb/2686b023d074ac052dbc21f12f324f18" :sha "bb5806bd655d743f3b48b36ce83c0085a8d7c54a"}}}' -M -m friendly
 user=> (require '[expound.alpha :as expound])
 nil
 user=> (expound/expound string? 1)
@@ -144,7 +144,7 @@ To use other Spec functions, set `clojure.spec.alpha/*explain-out*` to `expound/
 
 Due to the way that macros are expanded in ClojureScript, you'll need to configure Expound in *Clojure* to use Expound during macro-expansion. This does not apply to self-hosted ClojureScript. Note the `-e` arg when starting ClojureScript:
 
-`clj -Srepro -Sdeps '{:deps {expound {:mvn/version "0.8.10"} org.clojure/test.check {:mvn/version "0.9.0"} org.clojure/clojurescript {:mvn/version "1.10.520"}}}' -e "(require '[expound.alpha :as expound]) (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)" -m cljs.main -re node`
+`clj -Srepro -Sdeps '{:deps {expound {:mvn/version "0.9.0"} org.clojure/test.check {:mvn/version "0.9.0"} org.clojure/clojurescript {:mvn/version "1.10.520"}}}' -e "(require '[expound.alpha :as expound]) (set! clojure.spec.alpha/*explain-out* expound.alpha/printer)" -m cljs.main -re node`
 
 As of [this commit](https://github.com/clojure/clojurescript/commit/5f0fabc65ae7ba201b32cc513a1e5931a80a2bf7#diff-c62a39b0b4b1d81ebd2ed6b5d265e8cf), ClojureScript instrumentation errors only contain data and leave formatting/printing errors to the edge of the system e.g. the REPL. To format errors in the browser, you must set up some global handler to catch errors and call `repl/error->str`. For instance, here is a custom formatter for Chrome devtools that uses Expound:
 
