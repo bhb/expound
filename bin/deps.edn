@@ -1,7 +1,7 @@
 {:deps
  {expound/expound {:local/root ".."}
-  orchestra {:mvn/version "2019.02.06-1"}
+  orchestra/orchestra {:mvn/version "2019.02.06-1"}
   org.clojure/test.check {:mvn/version "0.9.0"}
   org.clojure/clojure {:mvn/version "1.10.1-beta1"}
-  marge {:mvn/version "0.16.0"}
+  marge/marge {:mvn/version "0.16.0"}
   }}

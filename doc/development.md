@@ -6,7 +6,7 @@
 
 Then connect with `inf-clojure-connect`
 
-## Clojurescript REPL
+## Clojurescript REPL (node)
 
 ```
 lein with-profile +test-web,+cljs-repl repl
@@ -14,13 +14,8 @@ lein with-profile +test-web,+cljs-repl repl
 
 ```
 M-x cider-connect
-(use 'figwheel-sidecar.repl-api)
-(start-figwheel!)
-(cljs-repl)
-```
-
-```
-open http://localhost:3446/index.html
+(require 'cljs.repl.node)
+(cider.piggieback/cljs-repl (cljs.repl.node/repl-env))
 ```
 
 ## Running CLJS tests
@@ -50,6 +45,12 @@ or
 
 `bin/kaocha --plugin cloverage --cov-exclude-call expound.alpha/def`
 
+## Updating packages
+
+You must have `lein-ancient` installed in your `~/.lein/profiles.clj`
+
+e.g. `lein ancient :all` (or in my setup, `lein with-profile +tools ancient :all`
+
 ## Readability and linting
 
 `./bin/inconsistent-aliases` shows namespace aliases that are different across the codebase.
@@ -66,7 +67,8 @@ or
 1. Update version in `doc/compatibility.md`
 1. Update version in `package.json`
 1. `npm install`
-1. `git tag -a v0.7.2 -m "version 0.7.2"`
+1. Commit
+1. `git tag -a v0.9.0 -m "version 0.9.0"`
 1. `git push --tags`
 
 

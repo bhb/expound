@@ -3,6 +3,16 @@ All notable changes to this project will be documented in this file. This change
 
 ## [Unreleased]
 
+## [0.9.0] - 2022-01-13
+
+### Fixed
+- [Bug with `keys` specs that used `and`/`or`](https://github.com/bhb/expound/issues/229)
+
+### Added
+
+- Ability to reuse messages by defining specs in terms of other specs. See "Adding error messages" in the README for examples. Thanks [`@mpenet`](https://github.com/mpenet) for the implementation!
+- New `undefmsg` function
+
 ## [0.8.10] - 2021-09-06
 
 ### Fixed
@@ -225,7 +235,8 @@ This release was made possible by [Clojurists Together](https://www.clojuriststo
 ### Added
 - `expound` and `expound-str` functions.
 
-[Unreleased]: https://github.com/bhb/expound/compare/v0.8.10...HEAD
+[Unreleased]: https://github.com/bhb/expound/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/bhb/expound/compare/v0.8.10...v0.9.0
 [0.8.10]: https://github.com/bhb/expound/compare/v0.8.9...v0.8.10
 [0.8.9]: https://github.com/bhb/expound/compare/v0.8.8...v0.8.9
 [0.8.8]: https://github.com/bhb/expound/compare/v0.8.7...v0.8.8

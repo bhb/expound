@@ -178,7 +178,7 @@
 
 (declare error-message)
 
-(defn ^:private spec-w-error-message? [via pred]
+(defn ^:private spec-with-error-message? [via pred]
   (boolean (let [last-spec (last via)]
              (and (not= ::s/unknown pred)
                   (qualified-keyword? last-spec)
@@ -452,6 +452,20 @@
      (lcs* xs ys))
    paths))
 
+(defn- all-key-symbols [key-form]
+  (->> (s/conform
+        :expound.spec/keys-spec
+        key-form)
+       :clauses
+       (map :specs)
+       (tree-seq coll? seq)
+       (filter
+        (fn [x]
+          (and (vector? x)
+               (= (first x) :kw))))
+
+       (map second)))
+
 (defn ^:private contains-alternate-at-path? [spec-form path]
   (if (not (coll? spec-form))
     false
@@ -465,11 +479,7 @@
                             :else false))
 
         #{`s/keys `s/keys*} (let [keys-args (->> rest-form (apply hash-map))
-                                  node-keys (set (concat
-                                                  (:opt keys-args [])
-                                                  (:req keys-args [])
-                                                  (map #(keyword (name %)) (:opt-un keys-args []))
-                                                  (map #(keyword (name %)) (:req-un keys-args []))))
+                                  node-keys (set (all-key-symbols spec-form))
                                   possible-spec-names (if (qualified-keyword? k)
                                                         [k]
                                                         (filter
@@ -785,7 +795,7 @@ returned an invalid value.
 (defmethod expected-str :expound.problem/unknown [_type _spec-name _form _path problems _opts]
   (let [[with-msg no-msgs] ((juxt filter remove)
                             (fn [{:keys [expound/via pred]}]
-                              (spec-w-error-message? via pred))
+                              (spec-with-error-message? via pred))
                             problems)]
     (->> (when (seq no-msgs)
            (printer/format
@@ -1022,7 +1032,11 @@ returned an invalid value.
 (defn error-message
   "Given a spec named `k`, return its human-readable error message."
   [k]
-  (get @registry-ref k))
+  (reduce (fn [_ k]
+            (when-let [msg (get @registry-ref k)]
+              (reduced msg)))
+          nil
+          (util/spec-vals k)))
 
 (s/fdef custom-printer
   :args (s/cat :opts :expound.printer/opts)
@@ -1079,6 +1093,15 @@ returned an invalid value.
   "Associates the spec named `k` with `error-message`."
   [k error-message]
   (swap! registry-ref assoc k error-message)
+  nil)
+
+(s/fdef undefmsg
+  :args (s/cat :k qualified-keyword?)
+  :ret nil?)
+(defn undefmsg
+  "Dissociate the message for spec named `k`."
+  [k]
+  (swap! registry-ref dissoc k)
   nil)
 
 #?(:clj
