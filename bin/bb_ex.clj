@@ -7,7 +7,6 @@
           expound/expound {:local/root "."}}})
 
 (require 'spartan.spec
-         '[clojure.spec.alpha :as s]
          '[expound.alpha :as expound])
 
 (expound/expound int? "1")

@@ -77,7 +77,7 @@ jobs:
       - run: TEST_CHECK_FACTOR=20 lein with-profile test-common test
       - run: lein clean
       - run: lein with-profile test-web cljsbuild once test 2> >(tee -a stderr.log >&2)
-      - run: cat stderr.log | grep -v "Options passed to ClojureScript compiler" | bin/check-for-warnings.sh
+      - run: cat stderr.log | grep -v "Options passed to ClojureScript compiler" | grep -v "Use of undeclared Var goog.math.Long" | bin/check-for-warnings.sh
       - run: bin/tests
       - run: bb bin/bb_ex.clj 2> >(tee -a stderr2.log >&2)
       - run: cat stderr2.log | bin/check-for-warnings.sh
@@ -123,7 +123,7 @@ jobs:
       - run: lein clean && lein with-profile test-web,clj-1.9.0,cljs-1.10.238,orch-2020.07.12-1 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,clj-1.9.0,cljs-1.10.339,orch-2020.07.12-1 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,clj-1.10.0,cljs-1.10.439,orch-2020.07.12-1 cljsbuild once test && bin/tests
-      - run: lein clean && lein with-profile test-web,clj-1.10.0,cljs-1.10.516 cljsbuild once test && bin/tests
+      - run: lein clean && lein with-profile test-web,clj-1.10.0,cljs-1.10.597 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,orch-2019.02.06-1 cljsbuild once test && bin/tests
 
   test_clj_old:

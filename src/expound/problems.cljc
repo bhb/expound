@@ -164,7 +164,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;; public ;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
 (defn annotate [explain-data]
   (let [{::s/keys [problems value args ret fn failure spec]} explain-data
         caller (or (:clojure.spec.test.alpha/caller explain-data) (:orchestra.spec.test/caller explain-data))

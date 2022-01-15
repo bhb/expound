@@ -10,7 +10,6 @@
                                org.clojure/core.specs.alpha   {:mvn/version "0.1.24"}
                                ring/ring-core                 {:mvn/version "1.6.3"} ; required to make ring-spec work, may cause issues with figwheel?
                                ring/ring-spec                 {:mvn/version "0.0.4"} ; to test specs
-                               org.onyxplatform/onyx-spec     {:mvn/version "0.12.7.0"} ; to test specs
                                metosin/spec-tools             {:mvn/version "0.8.2"}
                                com.bhauman/spell-spec         {:mvn/version "0.1.1"}}
                   ;; Taken from https://github.com/boot-clj/boot/wiki/Improving-startup-time

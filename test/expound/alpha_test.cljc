@@ -2,8 +2,7 @@
   (:require #?@(:clj
                 ;; just to include the specs
                 [[clojure.core.specs.alpha]
-                 [ring.core.spec]
-                 [onyx.spec]])
+                 [ring.core.spec]])
 
             ;; Deps for specs that generate specs, which are currently disabled
             #_[clojure.test.check.random :as random]
@@ -26,6 +25,7 @@
             [expound.spec-gen :as sg]
             [expound.test-utils :as test-utils]
             [spec-tools.data-spec :as ds]
+            [spec-tools.core]
             #?(:clj [orchestra.spec.test :as orch.st]
                :cljs [orchestra-cljs.spec.test :as orch.st])))
 
@@ -52,10 +52,6 @@
   test-utils/check-spec-assertions
   test-utils/instrument-all)
 
-;; Missing onyx specs
-(s/def :trigger/materialize any?)
-(s/def :flow/short-circuit any?)
-
 (defn pf
   "Fixes platform-specific namespaces and also formats using printf syntax"
   [s & args]
@@ -80,13 +76,13 @@
                                 :clj (Throwable->map e)))))
         ed #?(:cljs (-> exception-data :data)
               :clj (-> exception-data :via last :data))
-        cause# (-> #?(:cljs (:message exception-data)
-                      :clj (:cause exception-data))
-                   (clojure.string/replace #"Call to (.*) did not conform to spec:"
-                                           "Call to #'$1 did not conform to spec."))]
+        cause (-> #?(:cljs (:message exception-data)
+                     :clj (:cause exception-data))
+                  (clojure.string/replace #"Call to (#')?(.*) did not conform to spec."
+                                          "Call to $2 did not conform to spec."))]
 
-    (str cause#
-         (if (re-find  #"Detected \d+ error" cause#)
+    (str cause
+         (if (re-find  #"Detected \d+ error" cause)
            ""
            (str "\n"
                 (with-out-str (printer ed)))))))
@@ -1539,7 +1535,7 @@ Detected 1 error\n")
 (deftest test-instrument
   (st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1557,7 +1553,7 @@ should satisfy
 Detected 1 error\n"
                 (formatted-exception {:print-specs? false} #(test-instrument-adder "" :x))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1580,7 +1576,7 @@ Detected 1 error\n"
 (deftest test-instrument-with-orchestra-args-spec-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1597,7 +1593,7 @@ should satisfy
 -------------------------
 Detected 1 error\n"
                 (no-linum (formatted-exception {:print-specs? false} #(test-instrument-adder "" :x)))))
-     :clj (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+     :clj (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1626,7 +1622,7 @@ Detected 1 error\n"
 (deftest test-instrument-with-orchestra-args-syntax-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Syntax error -------------------
@@ -1643,7 +1639,7 @@ should have additional elements. The next element \":y\" should satisfy
 Detected 1 error\n"
                 (no-linum (formatted-exception {:print-specs? false} #(test-instrument-adder 1)))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Syntax error -------------------
@@ -1667,7 +1663,7 @@ Detected 1 error\n"
 (deftest test-instrument-with-orchestra-ret-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1689,7 +1685,7 @@ Detected 1 error\n"
                                  (test-instrument-adder -1 -2))
                                (catch :default e e)))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1713,7 +1709,7 @@ Detected 1 error\n"
 (deftest test-instrument-with-orchestra-fn-failure
   (orch.st/instrument `test-instrument-adder)
   #?(:cljs (is (=
-                "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+                "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1730,7 +1726,7 @@ should satisfy
 Detected 1 error\n"
                 (formatted-exception {} #(test-instrument-adder 1 0))))
      :clj
-     (is (= "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+     (is (= "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -1756,7 +1752,7 @@ Detected 1 error\n"
   (st/instrument `test-instrument-adder)
   #?(:cljs
      (is (=
-          "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+          "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 <filename missing>:<line number missing>
 
 -- Spec failed --------------------
@@ -1776,7 +1772,7 @@ Detected 1 error\n"
            (formatted-exception {:print-specs? false :show-valid-values? true} #(test-instrument-adder "" :x)))))
      :clj
      (is (=
-          "Call to #'expound.alpha-test/test-instrument-adder did not conform to spec.
+          "Call to expound.alpha-test/test-instrument-adder did not conform to spec.
 alpha_test.cljc:LINUM
 
 -- Spec failed --------------------
@@ -2289,6 +2285,7 @@ Detected 2 errors\n"
       "for any real-world spec and any data, assert returns an error that matches explain-str"
       (chuck/times num-tests)
       [spec sg/spec-gen
+       :let [_spec-form (s/form spec)]
        form gen/any-printable]
       ;; Can't reliably test fspecs until
       ;; https://dev.clojure.org/jira/browse/CLJ-2258 is fixed
@@ -2314,7 +2311,9 @@ Detected 2 errors\n"
                      (s/assert spec form)
                      (finally
                        (s/check-asserts false)))))
-                (str "Expected: " expected-err-msg))))))))
+                (str "Expected: " expected-err-msg)))))
+      ;; Undefine spec
+      (s/def spec nil))))
 
 (deftest test-mutate
   (checking
@@ -3927,7 +3926,6 @@ should satisfy
            (fn [k] (or
                     (string/starts-with? (namespace k) "clojure")
                     (string/starts-with? (namespace k) "expound")
-                    (string/starts-with? (namespace k) "onyx")
                     (string/starts-with? (namespace k) "ring")))
            (keys (s/registry))))))]
    (is (s/valid? ::spec (s/form (s/get-spec sp)))
@@ -3980,7 +3978,7 @@ should satisfy
 #?(:clj (deftest macroexpansion-errors
           (let [actual (formatted-exception {:print-specs? false} #(macroexpand '(clojure.core/let [a] 2)))]
             (is (or
-                 (= "Call to #'clojure.core/let did not conform to spec.
+                 (= "Call to clojure.core/let did not conform to spec.
 -- Spec failed --------------------
 
   ([a] ...)
@@ -4192,7 +4190,71 @@ Detected 1 error\n"
              :defmsg-test/statuses
              :s string?)
             :oak
-            {:print-specs? false})))))
+            {:print-specs? false}))))
+
+  (testing "messages can be fetched from parent specs"
+    (s/def :defmsg-test/string string?)
+    (s/def :defmsg-test/identifier :defmsg-test/string)
+    (s/def :defmsg-test/name :defmsg-test/identifier)
+
+    (expound/defmsg :defmsg-test/string "should be a string")
+    (is (= "-- Spec failed --------------------
+
+  :oak
+
+should be a string
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            :defmsg-test/string
+            :oak
+            {:print-specs? false})
+
+           (expound/expound-str
+            :defmsg-test/identifier
+            :oak
+            {:print-specs? false})
+
+           (expound/expound-str
+            :defmsg-test/name
+            :oak
+            {:print-specs? false})))
+
+    ;; until a msg is set more precisely
+    (expound/defmsg :defmsg-test/identifier "should be a foo")
+    (is (= "-- Spec failed --------------------
+
+  :oak
+
+should be a foo
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            :defmsg-test/identifier
+            :oak
+            {:print-specs? false})))
+
+    (expound/defmsg :defmsg-test/name "should be a bar")
+    (is (= "-- Spec failed --------------------
+
+  :oak
+
+should be a bar
+
+-------------------------
+Detected 1 error\n"
+           (expound/expound-str
+            :defmsg-test/name
+            :oak
+            {:print-specs? false})))
+
+    ;; clean registry from this last spec
+
+    (expound/undefmsg :defmsg-test/string?)
+    (expound/undefmsg :defmsg-test/identifier)
+    (expound/undefmsg :defmsg-test/name)))
 
 (deftest printer
   (st/instrument ['expound/printer])
@@ -4348,3 +4410,114 @@ Detected 1 error\n"
          (expound/expound-str (s/or :k1 (s/keys :req [:keys-within-operators.user/name]
                                                 :req-un [:keys-within-operators.user/age])
                                     :k2  #(contains? % :foo)) {} {:print-specs? false}))))
+
+(s/def :complex-keys-test/str string?)
+(s/def :complex-keys-test/num int?)
+(s/def :complex-keys-test/num2 int?)
+(s/def :complex-keys-test/map1 (s/keys :req-un [(or :complex-keys-test/str :complex-keys-test/num)]))
+(s/def :complex-keys-test/map2 (s/keys :req-un [(or :complex-keys-test/str (and :complex-keys-test/num
+                                                                                :complex-keys-test/num2))]))
+
+;; See https://github.com/bhb/expound/issues/229
+(deftest complex-keys-test
+  (is (=
+       "-- Spec failed --------------------
+
+  {:str 1, :num ...}
+        ^
+
+should satisfy
+
+  string?
+
+-- Spec failed --------------------
+
+  {:str ..., :num \"1\"}
+                  ^^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 2 errors
+"
+       (expound/expound-str :complex-keys-test/map1
+                            {:str 1
+                             :num "1"}
+                            {:print-specs? false})))
+  (is (=
+       "-- Spec failed --------------------
+
+  {:str 1}
+        ^
+
+should satisfy
+
+  string?
+
+-------------------------
+Detected 1 error
+"
+       (expound/expound-str :complex-keys-test/map2
+                            {:str 1}
+                            {:print-specs? false})))
+  (is (=
+       "-- Spec failed --------------------
+
+  {:num \"1\", :num2 ...}
+        ^^^
+
+should satisfy
+
+  int?
+
+-- Spec failed --------------------
+
+  {:num ..., :num2 \"1\"}
+                   ^^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 2 errors
+"
+       (expound/expound-str :complex-keys-test/map2
+                            {:num "1"
+                             :num2 "1"}
+                            {:print-specs? false})))
+  (is (=
+       "-- Spec failed --------------------
+
+  {:num \"1\"}
+
+should contain keys:
+
+(or :str (and :num :num2))
+
+| key   | spec    |
+|=======+=========|
+| :num  | int?    |
+|-------+---------|
+| :num2 | int?    |
+|-------+---------|
+| :str  | string? |
+
+-- Spec failed --------------------
+
+  {:num \"1\"}
+        ^^^
+
+should satisfy
+
+  int?
+
+-------------------------
+Detected 2 errors
+"
+       (expound/expound-str :complex-keys-test/map2
+                            {:num "1"}
+                            {:print-specs? false}))))
+
