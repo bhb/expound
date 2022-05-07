@@ -452,6 +452,6 @@ If you are working on the code, please read the [Development Guide](doc/developm
 
 ## License
 
-Copyright © 2017-2021 Ben Brinckerhoff
+Copyright © 2017-2022 Ben Brinckerhoff
 
 Distributed under the Eclipse Public License version 1.0, just like Clojure.
