@@ -7,7 +7,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.9.1
+      - image: cimg/clojure:1.11.1-browsers
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -41,7 +41,7 @@ jobs:
   test_current:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.9.1
+      - image: cimg/clojure:1.11.1-browsers
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -65,7 +65,6 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
-      - run: bin/install-chrome
       - run: bin/install-clojure
       - run: bin/install-bb
       - run: sudo bin/install-node && npm install
@@ -91,7 +90,7 @@ jobs:
   test_cljs_old:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.9.1
+      - image: cimg/clojure:1.11.1-browsers
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -114,7 +113,6 @@ jobs:
           - v1-dependencies-{{ checksum "project.clj" }}
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
-      - run: bin/install-chrome
       - run: bin/install-clojure
       - run: sudo bin/install-node && npm install
       # The version number (1.10.439) is important - it's the last version in which CLJS itself
@@ -129,7 +127,7 @@ jobs:
   test_clj_old:
     docker:
       # specify the version you desire here
-      - image: circleci/clojure:lein-2.9.1
+      - image: cimg/clojure:1.11.1-browsers
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
