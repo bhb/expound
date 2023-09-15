@@ -1,0 +1,60 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA256
+
+0974cc4ae791faa7b72fbb828d49cf70d8d76fa4aadfcce9582e6119c00a620c  node-v20.1.0-aix-ppc64.tar.gz
+1c8a5d94a57b33f27a80a9262593ecdae745079781e53a75cf5aba54d74d761d  node-v20.1.0-arm64.msi
+fd3bca029883cb84d4f58e7adb1a2c4fc4e616a8297fb08cb5c34465b7c4071a  node-v20.1.0-darwin-arm64.tar.gz
+e2caf635cbb9dd67c1b528fa8cfbffcb1dac9ae90fcce71f2832488adc474c17  node-v20.1.0-darwin-arm64.tar.xz
+770dd45c15cfafa3f945fce173aa84dfed94931923242700718edf6883b74fff  node-v20.1.0-darwin-x64.tar.gz
+d9a8a7b1b186a983191ddac90adce5be9d5abfb57496be1736024a4afc11a90b  node-v20.1.0-darwin-x64.tar.xz
+975b642d3c0f1f109abe9a8c3841da5501581e4e834ade1005feee61dbec1476  node-v20.1.0-headers.tar.gz
+138570a36f8a90cd57de1f3ff5cffc1be0ac36c8ce528903837a16ce076248ce  node-v20.1.0-headers.tar.xz
+b3867bda723ad3e4b1319b5584c99dde84b20d4ac557af82b26921ba6c2dc274  node-v20.1.0-linux-arm64.tar.gz
+7219e00a19efd5f2f631a639d561fb65149b7602b3a103f9b47d5dd8e9be9527  node-v20.1.0-linux-arm64.tar.xz
+12ef1fc0d5f7a6dbb60da74b784ed242ca495cbf6f6f05c568bac8ceb6e6d28e  node-v20.1.0-linux-armv7l.tar.gz
+591521a4a620ee89fee1afc7f3959fd9b8405027ca07c6903e45239a33a8c54b  node-v20.1.0-linux-armv7l.tar.xz
+b450e6d07153aa7f0bf6d67c2de788e9c9c42a04172d01ebce08a45247c885b3  node-v20.1.0-linux-ppc64le.tar.gz
+07ff534cc8af412b4ad82a16b8099aa99c6491bdbdb6779a73aa8be5a290b5eb  node-v20.1.0-linux-ppc64le.tar.xz
+ff3e37ee1199f1fd85950b0af4d4ba4ff88b216856b8c573d5046fa541ea627a  node-v20.1.0-linux-s390x.tar.gz
+8fe597af46c9cf16a1b1d56058318803539d70562f45cff8e5779d75c32652e7  node-v20.1.0-linux-s390x.tar.xz
+fbc345638e3fed3b639353b2b3971bddba9e55e93b6e1848be6215787d7f20b8  node-v20.1.0-linux-x64.tar.gz
+08e01d4ae29013f965dc8bde52d7f1abf780b5867ff40ade6bdd35bc9cbffd96  node-v20.1.0-linux-x64.tar.xz
+e4547515bad012f5552d80db48f7de263e0eff67aeb73ae60dca7dc5d86e22d5  node-v20.1.0.pkg
+714d59336dc7e3291aebae4f0acd7938cdefb1c04f0a7d46a26aabe2662fe3cf  node-v20.1.0.tar.gz
+600f9e11860995814b9122b1ac5318f6ad564274784deed98d8a9206649436b5  node-v20.1.0.tar.xz
+95fd2e4aca8417a22135841757dfc2fccaf0bbd7e0cd5ca7d9078650afabbed5  node-v20.1.0-win-arm64.7z
+53ddbf4040c9a5170188854b621a8b06b0e48ca2e71c9af004a352931d24b254  node-v20.1.0-win-arm64.zip
+528c140b32c95bdaf8a44e4d8f2c856601ae9ea19ee3f5e2e88ea7376154d0e0  node-v20.1.0-win-x64.7z
+c26782b513c97b2847f2802d77c99a834f9494e947edccee5b3686762eddc912  node-v20.1.0-win-x64.zip
+8949e01dd83d264d63bec75bc5e12d8cc710379288e478c9998af2d8b7f9d0eb  node-v20.1.0-win-x86.7z
+98b10152f0391b1a6cb9409d6dd035f7b62627d37a5de2d196d8c2dc0ed534dd  node-v20.1.0-win-x86.zip
+9e26806f7a99ffb5725f4f08e1f51fcd2522d17b180eced25094d5aed75b42f0  node-v20.1.0-x64.msi
+abd01a846689cea3821454987f0c5e344d297b83dc6fc2ac182dc87e36ed6431  node-v20.1.0-x86.msi
+e6079443ef50b355bc18bc8db96075efde6c1f1a5d42533f81f2fe38be72a0a3  win-arm64/node.exe
+caf7a4f2176ca77a98804adfdf4dfebbb4aa10e4372a6596ac663aa090e84c43  win-arm64/node.lib
+5260c746e2145848d3fb099a50f993bfeef9f079a66163d550f64f5bf5c0a6f6  win-arm64/node_pdb.7z
+3e6fca0ab72256a086d15237d80f5268d314457e859b1008e3c8863bbe18fe5f  win-arm64/node_pdb.zip
+3f6114ce6f020dc85a7a36851c45e1dd45f69f8d2bb00b7eb55ff4aa16d61f13  win-x64/node.exe
+2505c7c453e74be248e47123823642c538f86f3741edb7ef4905a5d8e5ba6c96  win-x64/node.lib
+f13407923456a59b6d6b99e3e443e2f289dfc07755fd9a9c2179db04668a5ce7  win-x64/node_pdb.7z
+d2539f504a568ddc01a77bc8186b028dca18ebe765dd92dd7f5526cecb16fcba  win-x64/node_pdb.zip
+a10e18efa8f6af0217c8fc357cc9b872fc08fcd21b520473d890ae2bf32ef9c1  win-x86/node.exe
+beac58300d1065f5f716b93d9f0b289fc319f0fa82c1bb046da05723267efcc0  win-x86/node.lib
+01a3ea87d4b007cc246ca4a3874bed6b8c6c1282da886a3aa9c2ed4281864d39  win-x86/node_pdb.7z
+e89bc87da3003c98d13bb22fe29a91a274813742bcb4431f8179655bed3c1130  win-x86/node_pdb.zip
+-----BEGIN PGP SIGNATURE-----
+
+iQIzBAEBCAAdFiEEj8yhP+8dDC6RAI4Jdw96mlrhVgAFAmRSgV0ACgkQdw96mlrh
+VgDogg/+PdltuXnfT7HCMI3y8OBMpjrMdOTvm9aZfHjdl5rz9w5CyywjVUdbwvoo
+A8bSGz0GCGg4eIS4XVC9scVxwodyu7+ejpWXpZqJjEvFt24glwIcZKlSuIdAaWYQ
+39Y6h5ePUzoTd/p7CNThIlDRqHBbHVkUl9yYXjRb9UVOBRPzF9kvT/D8//QsixkL
+wpyKPAsxqr39hP1hQmefBgZLqADztuL1AB5iwITQMwdrYh8Pjyi6TGPCEO2e093J
+J7N2TozVB3yr9LRB2rkg4xBCkvXQtG3fs2RwXUqFC11h/YaZVzOQddEvPdT5sd/W
+6Kfa33OuNuCsylYEwcWXocb2B1k+PzeQ5NC90AcqUfZhb4kBSGDo5l7PEVC3NA6L
+U6fVWjL/SuxJZNJjerFlZwnijgIBDL2hDf+kfCqzxRV1x7gRg+8PRU+rF5Es9W7f
+9+EqwW2YsRuPw5hf9iqB7rayZ7V7rNlrwMTW9iu9LFOoVSmGhHs+OD//4JdEFLmv
+VNXFNfI4LkQ8jIMUBUiHD+wnqDMCKikVx4cgOC+ixfFco8i7eR2hFVQDnPgnl8Ak
+uGhDT3xVbGW4oCD9IJlfypcJUyCJcY0AOzOHmJhmiGjzhVsa79KpFNSX0UXRCLbK
+FDiTT0snGmVMfqvu7B1Evuct9KnRivazcjMBOL6dniAFj+SNZ5U=
+=pzqI
+-----END PGP SIGNATURE-----
