@@ -103,6 +103,7 @@
                                         [metosin/spec-tools "0.7.1" :upgrade false]]}
              :clj-1.10.0 {:dependencies [[org.clojure/clojure "1.10.0" :upgrade false]
                                          [metosin/spec-tools "0.7.1" :upgrade false]]}
+             :clj-1.12.0 {:dependencies [[org.clojure/clojure "1.12.0" :upgrade false]]}
              :cljs-1.10.339 {:dependencies [[org.clojure/clojurescript "1.10.339" :upgrade false]]}
              :cljs-1.10.439 {:dependencies [[org.clojure/clojurescript "1.10.439" :upgrade false]]}
              :cljs-1.10.597 {:dependencies [[org.clojure/clojurescript "1.10.597" :upgrade false]]}
