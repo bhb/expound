@@ -7,7 +7,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: cimg/clojure:1.11.1-browsers
+      - image: cimg/clojure:1.12.0-openjdk-21.0-browsers
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -41,7 +41,7 @@ jobs:
   test_current:
     docker:
       # specify the version you desire here
-      - image: cimg/clojure:1.11.1-browsers
+      - image: cimg/clojure:1.12.0-openjdk-21.0-browsers
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -90,7 +90,7 @@ jobs:
   test_cljs_old:
     docker:
       # specify the version you desire here
-      - image: cimg/clojure:1.11.1-browsers
+      - image: cimg/clojure:1.12.0-openjdk-21.0-browsers
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -121,12 +121,13 @@ jobs:
       - run: lein clean && lein with-profile test-web,clj-1.9.0,cljs-1.10.339,orch-2020.07.12-1 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,clj-1.10.0,cljs-1.10.439,orch-2020.07.12-1 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,clj-1.10.0,cljs-1.10.597 cljsbuild once test && bin/tests
+      - run: lein clean && lein with-profile test-web,clj-1.12.0,cljs-1.12.134 cljsbuild once test && bin/tests
       - run: lein clean && lein with-profile test-web,orch-2019.02.06-1 cljsbuild once test && bin/tests
 
   test_clj_old:
     docker:
       # specify the version you desire here
-      - image: cimg/clojure:1.11.1-browsers
+      - image: cimg/clojure:1.12.0-openjdk-21.0-browsers
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
@@ -152,6 +153,7 @@ jobs:
       - run: lein with-profile test-common,clj-1.9.0,spec-0.2.168 test
       - run: lein with-profile test-common,clj-1.10.0,spec-0.2.176 test
       - run: lein with-profile test-common,clj-1.10.0,orch-2019.02.06-1 test
+      - run: lein with-profile test-common,clj-1.12.0 test
 
 workflows:
   version: 2

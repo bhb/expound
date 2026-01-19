@@ -103,9 +103,11 @@
                                         [metosin/spec-tools "0.7.1" :upgrade false]]}
              :clj-1.10.0 {:dependencies [[org.clojure/clojure "1.10.0" :upgrade false]
                                          [metosin/spec-tools "0.7.1" :upgrade false]]}
+             :clj-1.12.0 {:dependencies [[org.clojure/clojure "1.12.0" :upgrade false]]}
              :cljs-1.10.339 {:dependencies [[org.clojure/clojurescript "1.10.339" :upgrade false]]}
              :cljs-1.10.439 {:dependencies [[org.clojure/clojurescript "1.10.439" :upgrade false]]}
              :cljs-1.10.597 {:dependencies [[org.clojure/clojurescript "1.10.597" :upgrade false]]}
+             :cljs-1.12.134 {:dependencies [[org.clojure/clojurescript "1.12.134" :upgrade false]]}
              :spec-0.2.168  {:dependencies [[org.clojure/spec.alpha "0.2.168" :upgrade false]]}
              :spec-0.2.176  {:dependencies [[org.clojure/spec.alpha "0.2.176" :upgrade false]]}
              :orch-2019.02.06-1 {:dependencies [[orchestra "2019.02.06-1" :upgrade false]]}
