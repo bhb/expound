@@ -1,18 +1,18 @@
-# Clojure CircleCI 2.0 configuration file
+# Clojure CircleCI configuration file
 #
-# Check https://circleci.com/docs/2.0/language-clojure/ for more details
-#
-version: 2
-jobs:
-  build:
+# Check https://circleci.com/docs/language-clojure/ for more details
+version: 2.1
+
+executors:
+  clojure:
     docker:
       # specify the version you desire here
       - image: cimg/clojure:1.12.0-openjdk-21.0-browsers
 
       # Specify service dependencies here if necessary
       # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
+      # documented at https://circleci.com/docs/circleci-images/
+      # - image: cimg/postgres:9.6
 
     working_directory: ~/repo
 
@@ -21,15 +21,24 @@ jobs:
       # Customize the JVM maximum heap limit
       JVM_OPTS: -Xmx3200m
 
+commands:
+  restore-deps:
+    description: Restore the cached Maven dependencies
+    steps:
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "project.clj" }}
+            # fallback to using the latest cache if no exact match is found
+            - v1-dependencies-
+
+jobs:
+  build:
+    executor: clojure
     steps:
       - checkout
 
       # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "project.clj" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+      - restore-deps
 
       - run: lein with-profile +test-common,+test-web,+dev deps
 
@@ -39,32 +48,10 @@ jobs:
           key: v1-dependencies-{{ checksum "project.clj" }}
 
   test_current:
-    docker:
-      # specify the version you desire here
-      - image: cimg/clojure:1.12.0-openjdk-21.0-browsers
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    working_directory: ~/repo
-
-    environment:
-      LEIN_ROOT: "true"
-      # Customize the JVM maximum heap limit
-      JVM_OPTS: -Xmx3200m
-
+    executor: clojure
     steps:
       - checkout
-
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "project.clj" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
-
+      - restore-deps
       - run: bin/install-clojure
       - run: bin/install-bb
       - run: npm install
@@ -88,31 +75,10 @@ jobs:
       - run: lein jar && diff -u <(jar tf target/*.jar | sort) <(cat expected-jar-contents.txt | sort)
 
   test_cljs_old:
-    docker:
-      # specify the version you desire here
-      - image: cimg/clojure:1.12.0-openjdk-21.0-browsers
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    working_directory: ~/repo
-
-    environment:
-      LEIN_ROOT: "true"
-      # Customize the JVM maximum heap limit
-      JVM_OPTS: -Xmx3200m
-
+    executor: clojure
     steps:
       - checkout
-
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "project.clj" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+      - restore-deps
       - run: bin/install-clojure
       - run: npm install
       # The version number (1.10.439) is important - it's the last version in which CLJS itself
@@ -125,38 +91,16 @@ jobs:
       - run: lein clean && lein with-profile test-web,orch-2019.02.06-1 cljsbuild once test && bin/tests
 
   test_clj_old:
-    docker:
-      # specify the version you desire here
-      - image: cimg/clojure:1.12.0-openjdk-21.0-browsers
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    working_directory: ~/repo
-
-    environment:
-      LEIN_ROOT: "true"
-      # Customize the JVM maximum heap limit
-      JVM_OPTS: -Xmx3200m
-
+    executor: clojure
     steps:
       - checkout
-
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "project.clj" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+      - restore-deps
       - run: lein with-profile test-common,clj-1.9.0,spec-0.2.168 test
       - run: lein with-profile test-common,clj-1.10.0,spec-0.2.176 test
       - run: lein with-profile test-common,clj-1.10.0,orch-2019.02.06-1 test
       - run: lein with-profile test-common,clj-1.12.0 test
 
 workflows:
-  version: 2
   build_test:
     jobs:
       - build
